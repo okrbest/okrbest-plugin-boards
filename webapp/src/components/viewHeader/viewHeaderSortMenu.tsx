@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useCallback} from 'react'
-import {FormattedMessage} from 'react-intl'
+import {FormattedMessage, useIntl} from 'react-intl'
 
 import {IPropertyTemplate} from '../../blocks/board'
 import {BoardView, ISortOption} from '../../blocks/boardView'
@@ -22,6 +22,7 @@ type Props = {
 }
 const ViewHeaderSortMenu = (props: Props) => {
     const {properties, activeView, orderedCards} = props
+    const intl = useIntl()
     const hasSort = activeView.fields.sortOptions?.length > 0
     const sortDisplayOptions = properties?.map((o) => ({id: o.id, name: o.name}))
     sortDisplayOptions?.unshift({id: Constants.titleColumnId, name: 'Name'})
@@ -67,13 +68,13 @@ const ViewHeaderSortMenu = (props: Props) => {
                 <>
                     <Menu.Text
                         id='manual'
-                        name='Manual'
+                        name={intl.formatMessage({id: 'ViewHeaderSortMenu.manual', defaultMessage: 'Manual'})}
                         onClick={onManualSort}
                     />
 
                     <Menu.Text
                         id='revert'
-                        name='Revert'
+                        name={intl.formatMessage({id: 'ViewHeaderSortMenu.revert', defaultMessage: 'Revert'})}
                         onClick={onRevertSort}
                     />
 

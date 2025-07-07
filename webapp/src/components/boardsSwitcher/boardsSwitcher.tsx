@@ -115,7 +115,7 @@ const BoardsSwitcher = (props: Props): JSX.Element => {
                             id='create-new-board-option'
                             icon={<CompassIcon icon='plus'/>}
                             onClick={props.onBoardTemplateSelectorOpen}
-                            name='Create new board'
+                            name={intl.formatMessage({id: 'BoardsSwitcher.CreateNewBoard', defaultMessage: 'Create new board'})}
                         />
                         <Menu.Text
                             id='createNewCategory'
