@@ -23,7 +23,7 @@ export const storeLanguage = createAsyncThunk(
 
 const languageSlice = createSlice({
     name: 'language',
-    initialState: {value: 'en'} as {value: string},
+    initialState: {value: 'ko'} as {value: string},  // 초기값을 한국어로 변경
     reducers: {
         setLanguage: (state, action: PayloadAction<string>) => {
             state.value = action.payload

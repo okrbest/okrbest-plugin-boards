@@ -116,7 +116,7 @@ const ViewTitle = (props: Props) => {
                 <div className='description'>
                     <MarkdownEditor
                         text={board.description}
-                        placeholderText='Add a description...'
+                        placeholderText={intl.formatMessage({id: 'ViewTitle.addDescription', defaultMessage: 'Add a description...'})}
                         onBlur={onDescriptionBlur}
                         readonly={readonly}
                     />
