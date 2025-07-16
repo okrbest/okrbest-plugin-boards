@@ -72,7 +72,7 @@ export function getCurrentLanguage(): string {
         } else if (supportedLanguages.includes(navigator.language.split(/[-_]/)[0])) {
             lang = navigator.language.split(/[-_]/)[0]
         } else {
-            lang = 'en'
+            lang = 'ko'  // 기본 언어를 한국어로 변경
         }
     }
     return lang
