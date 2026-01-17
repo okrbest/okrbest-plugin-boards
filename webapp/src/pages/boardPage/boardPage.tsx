@@ -7,7 +7,7 @@ import {FormattedMessage, useIntl} from 'react-intl'
 import {useRouteMatch, useHistory} from 'react-router-dom'
 
 import Workspace from '../../components/workspace'
-import VersionMessage from '../../components/messages/versionMessage'
+// import VersionMessage from '../../components/messages/versionMessage' // 미사용
 import octoClient from '../../octoClient'
 import {Subscription, WSClient} from '../../wsclient'
 import {Utils} from '../../utils'

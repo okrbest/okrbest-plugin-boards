@@ -3,8 +3,8 @@
 
 import {IntlShape} from 'react-intl'
 
-import {IPropertyTemplate} from '../../blocks/board'
-import {Card} from '../../blocks/card'
+// import {IPropertyTemplate} from '../../blocks/board' // 미사용
+// import {Card} from '../../blocks/card' // 미사용
 import {PropertyType, PropertyTypeEnum, FilterValueType} from '../types'
 
 import CardPropertyEditor from './card'
@@ -19,7 +19,7 @@ export default class CardProperty extends PropertyType {
 
     displayName = (intl: IntlShape) => intl.formatMessage({id: 'PropertyType.Card', defaultMessage: 'Card'})
 
-    displayValue = (propertyValue: string | string[] | undefined, _card: Card, _propertyTemplate: IPropertyTemplate) => {
+    displayValue = (propertyValue: string | string[] | undefined) => {
         if (propertyValue && typeof propertyValue === 'string') {
             // JSON 형식 (새 형식)
             if (propertyValue.startsWith('{')) {

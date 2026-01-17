@@ -13,7 +13,8 @@ import { Card } from '../blocks/card'
  * BlockSuite 이미지 블록에서 사용할 URL을 생성합니다.
  */
 export function getImageUrl(boardId: string, fileId: string): string {
-    const baseUrl = octoClient.getBaseURL()
+    // getBaseURL은 private이므로 타입 단언 사용
+    const baseUrl = (octoClient as any).getBaseURL() || ''
     // teamId는 octoClient의 public 속성
     const teamId = (octoClient as any).teamId || '0'
     // 파일 URL 패턴: /api/v2/files/teams/{teamId}/{boardId}/{fileId}
@@ -157,7 +158,7 @@ function convertAndApplyBlocks(blocks: Block[], card: Card, doc: Doc) {
         // 3. 변환 및 추가 (에러 처리 포함)
         const convertedCount = { success: 0, failed: 0 }
         
-        sortedBlocks.forEach((block, index) => {
+        sortedBlocks.forEach((block) => {
             try {
                 convertBlock(block, noteId, doc)
                 convertedCount.success++

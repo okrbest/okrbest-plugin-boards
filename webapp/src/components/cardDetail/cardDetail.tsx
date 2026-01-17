@@ -1,20 +1,19 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useRef, useState, Fragment, useMemo} from 'react'
-import {FormattedMessage, useIntl, IntlShape} from 'react-intl'
+import React, {useCallback, useEffect, useRef, useState, Fragment} from 'react'
+import {FormattedMessage, useIntl} from 'react-intl'
 
 import {BlockIcons} from '../../blockIcons'
 import {Card} from '../../blocks/card'
 import {BoardView} from '../../blocks/boardView'
 import {Board} from '../../blocks/board'
-import {CommentBlock} from '../../blocks/commentBlock'
+import {CommentBlock} from '../../blocks/commentBlock' 
 import {AttachmentBlock} from '../../blocks/attachmentBlock'
 import {ContentBlock} from '../../blocks/contentBlock'
-import {Block, ContentBlockTypes, createBlock} from '../../blocks/block'
+// import {Block, ContentBlockTypes, createBlock} from '../../blocks/block' // 미사용 (addBlockNewEditor 제거됨)
 import mutator from '../../mutator'
-import octoClient from '../../octoClient'
-import {Utils} from '../../utils'
+// import octoClient from '../../octoClient' // 미사용
 import Button from '../../widgets/buttons/button'
 import {Focusable} from '../../widgets/editable'
 import EditableArea from '../../widgets/editableArea'
@@ -24,12 +23,12 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 import BlockIconSelector from '../blockIconSelector'
 
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
-import {updateCards, setCurrent as setCurrentCard} from '../../store/cards'
-import {updateContents} from '../../store/contents'
+// import {updateCards, setCurrent as setCurrentCard} from '../../store/cards' // 미사용 (addBlockNewEditor 제거됨)
+// import {updateContents} from '../../store/contents' // 미사용 (addBlockNewEditor 제거됨)
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import {BlockSuiteEditor} from '../blockSuite/BlockSuiteEditor'
-import {BlockData} from '../blocksEditor/blocks/types'
+// import {BlockData} from '../blocksEditor/blocks/types' // 미사용 (blocks 변수 제거됨)
 import {ClientConfig} from '../../config/clientConfig'
 import {getClientConfig} from '../../store/clientConfig'
 
@@ -65,41 +64,10 @@ type Props = {
     addAttachment: () => void
 }
 
-async function addBlockNewEditor(card: Card, intl: IntlShape, title: string, fields: any, contentType: ContentBlockTypes, afterBlockId: string, dispatch: any): Promise<Block> {
-    const block = createBlock()
-    block.parentId = card.id
-    block.boardId = card.boardId
-    block.title = title
-    block.type = contentType
-    block.fields = {...block.fields, ...fields}
-
-    const description = intl.formatMessage({id: 'CardDetail.addCardText', defaultMessage: 'add card text'})
-
-    const afterRedo = async (newBlock: Block) => {
-        const contentOrder = card.fields.contentOrder.slice()
-        if (afterBlockId) {
-            const idx = contentOrder.indexOf(afterBlockId)
-            if (idx === -1) {
-                contentOrder.push(newBlock.id)
-            } else {
-                contentOrder.splice(idx + 1, 0, newBlock.id)
-            }
-        } else {
-            contentOrder.push(newBlock.id)
-        }
-        await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
-        dispatch(updateCards([{...card, fields: {...card.fields, contentOrder}}]))
-    }
-
-    const beforeUndo = async () => {
-        const contentOrder = card.fields.contentOrder.slice()
-        await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
-    }
-
-    const newBlock = await mutator.insertBlock(block.boardId, block, description, afterRedo, beforeUndo)
-    dispatch(updateContents([newBlock]))
-    return newBlock
-}
+// addBlockNewEditor 함수는 현재 사용되지 않음 (BlockSuite 에디터로 대체됨)
+// async function addBlockNewEditor(card: Card, intl: IntlShape, title: string, fields: any, contentType: ContentBlockTypes, afterBlockId: string, dispatch: any): Promise<Block> {
+//     ...
+// }
 
 const CardDetail = (props: Props): JSX.Element|null => {
     const {card, comments, attachments, onDelete, addAttachment} = props
@@ -158,43 +126,10 @@ const CardDetail = (props: Props): JSX.Element|null => {
         return null
     }
 
-    const blocks = useMemo(() => props.contents.flatMap((value: Block | Block[]): BlockData<any> => {
-        const v: Block = Array.isArray(value) ? value[0] : value
-
-        let data: any = v?.title
-        if (v?.type === 'image') {
-            data = {
-                file: v?.fields.fileId,
-            }
-        }
-
-        if (v?.type === 'attachment') {
-            data = {
-                file: v?.fields.fileId,
-                filename: v?.fields.filename,
-            }
-        }
-
-        if (v?.type === 'video') {
-            data = {
-                file: v?.fields.fileId,
-                filename: v?.fields.filename,
-            }
-        }
-
-        if (v?.type === 'checkbox') {
-            data = {
-                value: v?.title,
-                checked: v?.fields.value,
-            }
-        }
-
-        return {
-            id: v?.id,
-            value: data,
-            contentType: v?.type,
-        }
-    }), [props.contents])
+    // blocks 변수는 현재 사용되지 않음 (BlockSuite 에디터로 대체됨)
+    // const blocks = useMemo(() => props.contents.flatMap((value: Block | Block[]): BlockData<any> => {
+    //     ...
+    // }), [props.contents])
 
     return (
         <>

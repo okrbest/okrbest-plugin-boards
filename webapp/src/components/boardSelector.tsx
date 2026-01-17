@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useMemo, useCallback, useEffect} from 'react'
+import React, {useState, useCallback, useEffect} from 'react'
 import {IntlProvider, useIntl, FormattedMessage} from 'react-intl'
 import debounce from 'lodash/debounce'
 
@@ -22,11 +22,9 @@ import SearchIcon from '../widgets/icons/search'
 import Button from '../widgets/buttons/button'
 import {getCurrentLinkToChannel, setLinkToChannel} from '../store/boards'
 import {WSClient} from '../wsclient'
-import {SuiteWindow} from '../types/index'
+// import {SuiteWindow} from '../types/index' // 미사용
 
 import BoardSelectorItem from './boardSelectorItem'
-
-const windowAny = (window as SuiteWindow)
 
 import './boardSelector.scss'
 
@@ -138,6 +136,7 @@ const BoardSelector = () => {
     }
 
     const newLinkedBoard = async (): Promise<void> => {
+        const windowAny = window as any
         window.open(`${windowAny.frontendBaseURL}/team/${teamId}/new/${currentChannel}`, '_blank', 'noopener')
         dispatch(setLinkToChannel(''))
     }

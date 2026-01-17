@@ -29,7 +29,6 @@ export const BlockSuiteEditor: React.FC<Props> = ({ card, boardId, readOnly }) =
     const editorRef = useRef<AffineEditorContainer | null>(null)
     const [doc, setDoc] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [isSaving, setIsSaving] = useState(false)
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null)
 
     // 파일 업로드 핸들러
@@ -180,14 +179,12 @@ export const BlockSuiteEditor: React.FC<Props> = ({ card, boardId, readOnly }) =
         const handleUpdate = () => {
             clearTimeout(timeout)
             setSaveStatus('saving')
-            setIsSaving(true)
             
             timeout = setTimeout(async () => {
                 const snapshot = Y.encodeStateAsUpdate(doc.spaceDoc)
                 try {
                     await octoClient.saveBlockSuiteContent(cardId, snapshot)
                     setSaveStatus('saved')
-                    setIsSaving(false)
                     
                     // 3초 후 저장 상태 표시 제거
                     setTimeout(() => {
@@ -196,7 +193,6 @@ export const BlockSuiteEditor: React.FC<Props> = ({ card, boardId, readOnly }) =
                 } catch (e) {
                     console.error("Failed to auto-save BlockSuite content", e)
                     setSaveStatus('error')
-                    setIsSaving(false)
                     sendFlashMessage({
                         content: intl.formatMessage({
                             id: 'blocksuite.save.error',

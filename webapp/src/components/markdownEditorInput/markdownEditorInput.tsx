@@ -73,7 +73,7 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
     const [suggestions, setSuggestions] = useState<MentionUser[]>([])
     const [isComposing, setIsComposing] = useState(false)
     const [manualMentionMode, setManualMentionMode] = useState(false)
-    const [mentionSearchTerm, setMentionSearchTerm] = useState('')
+    // const [mentionSearchTerm, setMentionSearchTerm] = useState('') // 미사용
 
     const loadSuggestions = async (term: string) => {
         let users: IUser[]
@@ -122,7 +122,7 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
 
     // Add DOM input event listener for better Korean detection
     useEffect(() => {
-        const handleDOMInput = (e: Event) => {
+        const handleDOMInput = () => {
             setTimeout(() => {
                 if (ref.current) {
                     const editorState = ref.current.getEditorState()
@@ -490,7 +490,7 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
             onCompositionStart={handleCompositionStart}
             onCompositionUpdate={handleCompositionUpdate}
             onCompositionEnd={handleCompositionEnd}
-            onInput={(e: any) => {
+            onInput={() => {
                 // Handle Korean input in real-time
                 setTimeout(() => {
                     if (ref.current) {
