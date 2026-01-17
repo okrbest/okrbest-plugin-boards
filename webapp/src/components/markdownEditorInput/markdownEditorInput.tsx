@@ -73,7 +73,6 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
     const [suggestions, setSuggestions] = useState<MentionUser[]>([])
     const [isComposing, setIsComposing] = useState(false)
     const [manualMentionMode, setManualMentionMode] = useState(false)
-    // const [mentionSearchTerm, setMentionSearchTerm] = useState('') // 미사용
 
     const loadSuggestions = async (term: string) => {
         let users: IUser[]
@@ -141,7 +140,6 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
                         
                         if (hasKorean && searchTerm.length > 0) {
                             setManualMentionMode(true)
-                            setMentionSearchTerm(searchTerm)
                             setIsMentionPopoverOpen(true)
                             loadSuggestions(searchTerm)
                         }
@@ -267,7 +265,6 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
                 // For Korean, bypass the plugin and handle manually
                 if (hasKorean) {
                     setManualMentionMode(true)
-                    setMentionSearchTerm(searchTerm)
                     setIsMentionPopoverOpen(true)
                 }
                 
@@ -280,7 +277,6 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
             // No mention found, close manual mode
             if (manualMentionMode) {
                 setManualMentionMode(false)
-                setMentionSearchTerm('')
                 setIsMentionPopoverOpen(false)
             }
         }
@@ -388,7 +384,6 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
                 
                 if (hasKorean && searchTerm.length > 0) {
                     setManualMentionMode(true)
-                    setMentionSearchTerm(searchTerm)
                     setIsMentionPopoverOpen(true)
                     loadSuggestions(searchTerm)
                 }
@@ -423,11 +418,6 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
     }, [loadSuggestions])
 
     const onSearchChange = useCallback(({value}: { value: string }) => {
-        // Update manual mention search term
-        if (manualMentionMode) {
-            setMentionSearchTerm(value)
-        }
-        
         // For Korean input (IME), trigger immediate search for better UX
         // Check if the value contains Korean characters
         const hasKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(value)
@@ -539,7 +529,6 @@ const MarkdownEditorInput = (props: Props): ReactElement => {
                     // Reset manual mode when mention is selected
                     if (manualMentionMode) {
                         setManualMentionMode(false)
-                        setMentionSearchTerm('')
                     }
                     
                     if (mention.isBoardMember) {

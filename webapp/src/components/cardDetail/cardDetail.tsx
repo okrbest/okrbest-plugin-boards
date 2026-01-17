@@ -11,7 +11,7 @@ import {Board} from '../../blocks/board'
 import {CommentBlock} from '../../blocks/commentBlock' 
 import {AttachmentBlock} from '../../blocks/attachmentBlock'
 import {ContentBlock} from '../../blocks/contentBlock'
-// import {Block, ContentBlockTypes, createBlock} from '../../blocks/block' // 미사용 (addBlockNewEditor 제거됨)
+import {Block} from '../../blocks/block'
 import mutator from '../../mutator'
 // import octoClient from '../../octoClient' // 미사용
 import Button from '../../widgets/buttons/button'
@@ -23,8 +23,7 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 import BlockIconSelector from '../blockIconSelector'
 
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
-// import {updateCards, setCurrent as setCurrentCard} from '../../store/cards' // 미사용 (addBlockNewEditor 제거됨)
-// import {updateContents} from '../../store/contents' // 미사용 (addBlockNewEditor 제거됨)
+import {setCurrent as setCurrentCard} from '../../store/cards'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import {BlockSuiteEditor} from '../blockSuite/BlockSuiteEditor'
