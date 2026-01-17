@@ -102,11 +102,13 @@ const BoardPage = (props: Props): JSX.Element => {
 
     // Note: Team ID synchronization - updates both UserSettings and octoClient
     // This is safe here because this is the root render function that manages team context
+    // dispatch is stable from useAppDispatch, so it doesn't need to be in dependencies
     useEffect(() => {
         UserSettings.lastTeamId = teamId
         octoClient.teamId = teamId
         dispatch(setTeam(teamId))
-    }, [teamId, dispatch])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [teamId])
 
     const loadAction: (boardId: string) => any = useMemo(() => {
         if (props.readonly) {

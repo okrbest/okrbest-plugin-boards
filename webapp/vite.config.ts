@@ -56,14 +56,39 @@ export default defineConfig(({ mode }) => {
             esbuildOptions: {
                 target: 'es2019',
             },
+            // 강제로 pre-bundling (의존성 변경 시 자동 재빌드)
+            force: false,
+        },
+        
+        // 개발 서버 설정
+        server: {
+            // HMR 최적화
+            hmr: {
+                overlay: true, // 에러 오버레이 표시
+            },
+            // 파일 시스템 감시 최적화
+            watch: {
+                // node_modules 제외로 성능 개선
+                ignored: ['**/node_modules/**', '**/pack/**'],
+            },
         },
 
         build: {
             outDir: 'pack', // 기존 Webpack output path와 일치
             emptyOutDir: false, // watch 모드에서 기존 파일 유지 (깜빡임 방지)
-            // 개발 모드 최적화: 압축 및 소스맵 비활성화로 빌드 속도 향상
-            minify: isDev ? false : 'esbuild',
-            sourcemap: isDev ? false : true, 
+            
+            // 빌드 최적화
+            minify: isDev ? false : 'esbuild', // esbuild가 terser보다 빠름
+            sourcemap: isDev ? false : 'hidden', // production에서는 hidden 소스맵 (파일 크기 절감)
+            target: 'es2019', // 최소 지원 브라우저 타겟
+            
+            // CSS 최적화
+            cssCodeSplit: false, // UMD 번들은 단일 CSS 파일 필요
+            cssMinify: !isDev, // production에서만 CSS 압축
+            
+            // 빌드 성능 최적화
+            reportCompressedSize: false, // 빌드 시간 단축 (큰 번들에서 느림)
+            chunkSizeWarningLimit: 1000, // chunk 크기 경고 임계값 (KB)
             
             lib: {
                 entry: path.resolve(__dirname, 'src/main.tsx'),
@@ -92,23 +117,44 @@ export default defineConfig(({ mode }) => {
                     assetFileNames: (assetInfo) => {
                         if (assetInfo.name === 'style.css') return 'static/main.css'
                         return 'static/[name][extname]'
-                    }
+                    },
+                    // Tree shaking 최적화
+                    manualChunks: undefined, // UMD는 단일 번들 필요
+                },
+                // Tree shaking 최적화
+                treeshake: {
+                    preset: 'recommended',
+                    moduleSideEffects: (id) => {
+                        // CSS 파일과 일부 라이브러리는 side effect 있음
+                        return /\.(css|scss)$/.test(id) || 
+                               id.includes('emoji-mart') ||
+                               id.includes('@mattermost/compass-icons')
+                    },
                 },
                 // Watch 모드 최적화
                 watch: {
                     include: 'src/**',
-                    exclude: 'node_modules/**'
+                    exclude: ['node_modules/**', 'pack/**', 'dist/**']
                 }
             },
             commonjsOptions: {
                 include: [/node_modules/],
-                transformMixedEsModules: true
-            }
+                transformMixedEsModules: true,
+                // CommonJS 변환 최적화
+                defaultIsModuleInterop: true,
+            },
+            // 빌드 성능 최적화
+            assetsInlineLimit: 4096, // 4KB 이하 자산은 인라인 (base64)
         },
     
         define: {
-        // 환경 변수 매핑
+            // 환경 변수 매핑
             'process.env.NODE_ENV': JSON.stringify(mode || 'production'),
-        }
+            // 개발 모드에서만 디버그 플래그
+            __DEV__: isDev,
+        },
+        
+        // 로그 레벨 설정
+        logLevel: isDev ? 'info' : 'warn',
     }
 })
