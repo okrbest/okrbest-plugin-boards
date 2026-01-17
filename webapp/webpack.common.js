@@ -26,7 +26,14 @@ function makeCommonConfig() {
                     },
                 },
                 {
-                    test: /\.tsx?$/,
+                    test: /\.js$/,
+                    include: /node_modules/,
+                    resolve: {
+                        fullySpecified: false,
+                    },
+                },
+                {
+                    test: /\.(t|j)sx?$/,
                     use: {
                         loader: 'ts-loader',
                         options: {
@@ -40,7 +47,7 @@ function makeCommonConfig() {
                             },
                         },
                     },
-                    exclude: [/node_modules/],
+                    exclude: /node_modules\/(?!(yjs|lib0|y-protocols|lit|@lit)\/).*/,
 
                 },
                 {
@@ -78,6 +85,13 @@ function makeCommonConfig() {
             ],
         },
         resolve: {
+            alias: {
+                'yjs': path.resolve(__dirname, 'node_modules/yjs'),
+            },
+            extensionAlias: {
+                '.js': ['.ts', '.js', '.tsx'],
+                '.mjs': ['.mts', '.mjs']
+            },
             modules: [
                 'node_modules',
                 path.resolve(__dirname),
