@@ -86,7 +86,7 @@
 			"^.+\\.tsx?$": "@swc/jest"
 		},
 		"transformIgnorePatterns": [
-			"/nanoevents/"
+			"/node_modules/(?!(nanoevents|@blocksuite|yjs|lib0)/)"
 		],
 		"maxWorkers": "50%",
 		"testEnvironment": "jsdom",
@@ -102,6 +102,7 @@
 	"devDependencies": {
 		"@formatjs/cli": "^4.8.2",
 		"@formatjs/ts-transformer": "^3.9.2",
+		"@swc/core": "^1.15.8",
 		"@swc/jest": "^0.2.20",
 		"@testing-library/cypress": "^8.0.2",
 		"@testing-library/dom": "^8.11.4",

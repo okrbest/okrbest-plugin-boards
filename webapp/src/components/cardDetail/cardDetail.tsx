@@ -28,7 +28,7 @@ import {updateCards, setCurrent as setCurrentCard} from '../../store/cards'
 import {updateContents} from '../../store/contents'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
-import BlocksEditor from '../blocksEditor/blocksEditor'
+import {BlockSuiteEditor} from '../blockSuite/BlockSuiteEditor'
 import {BlockData} from '../blocksEditor/blocks/types'
 import {ClientConfig} from '../../config/clientConfig'
 import {getClientConfig} from '../../store/clientConfig'
@@ -319,74 +319,12 @@ const CardDetail = (props: Props): JSX.Element|null => {
 
             {!limited && <div className='CardDetail CardDetail--fullwidth content-blocks'>
                 {newBoardsEditor && (
-                    <BlocksEditor
+                    <BlockSuiteEditor
+                        cardId={card.id}
                         boardId={card.boardId}
-                        blocks={blocks}
-                        onBlockCreated={async (block: any, afterBlock: any): Promise<BlockData|null> => {
-                            if (block.contentType === 'text' && block.value === '') {
-                                return null
-                            }
-                            let newBlock: Block
-                            if (block.contentType === 'checkbox') {
-                                newBlock = await addBlockNewEditor(card, intl, block.value.value, {value: block.value.checked}, block.contentType, afterBlock?.id, dispatch)
-                            } else if (block.contentType === 'image' || block.contentType === 'attachment' || block.contentType === 'video') {
-                                const newFileId = await octoClient.uploadFile(card.boardId, block.value.file)
-                                newBlock = await addBlockNewEditor(card, intl, '', {fileId: newFileId, filename: block.value.filename}, block.contentType, afterBlock?.id, dispatch)
-                            } else {
-                                newBlock = await addBlockNewEditor(card, intl, block.value, {}, block.contentType, afterBlock?.id, dispatch)
-                            }
-                            return {...block, id: newBlock.id}
-                        }}
-                        onBlockModified={async (block: any): Promise<BlockData<any>|null> => {
-                            const originalContentBlock = props.contents.flatMap((b) => b).find((b) => b.id === block.id)
-                            if (!originalContentBlock) {
-                                return null
-                            }
-
-                            if (block.contentType === 'text' && block.value === '') {
-                                const description = intl.formatMessage({id: 'ContentBlock.DeleteAction', defaultMessage: 'delete'})
-
-                                mutator.deleteBlock(originalContentBlock, description)
-                                return null
-                            }
-                            const newBlock = {
-                                ...originalContentBlock,
-                                title: block.value,
-                            }
-
-                            if (block.contentType === 'checkbox') {
-                                newBlock.title = block.value.value
-                                newBlock.fields = {...newBlock.fields, value: block.value.checked}
-                            }
-                            mutator.updateBlock(card.boardId, newBlock, originalContentBlock, intl.formatMessage({id: 'ContentBlock.editCardText', defaultMessage: 'edit card content'}))
-                            return block
-                        }}
-                        onBlockMoved={async (block: BlockData, beforeBlock: BlockData|null, afterBlock: BlockData|null): Promise<void> => {
-                            if (block.id) {
-                                const idx = card.fields.contentOrder.indexOf(block.id)
-                                let sourceBlockId: string
-                                let sourceWhere: 'after'|'before'
-                                if (idx === -1) {
-                                    Utils.logError('Unable to find the block id in the order of the current block')
-                                    return
-                                }
-                                if (idx === 0) {
-                                    sourceBlockId = card.fields.contentOrder[1] as string
-                                    sourceWhere = 'before'
-                                } else {
-                                    sourceBlockId = card.fields.contentOrder[idx - 1] as string
-                                    sourceWhere = 'after'
-                                }
-                                if (afterBlock && afterBlock.id) {
-                                    await mutator.moveContentBlock(block.id, afterBlock.id, 'after', sourceBlockId, sourceWhere, intl.formatMessage({id: 'ContentBlock.moveBlock', defaultMessage: 'move card content'}))
-                                    return
-                                }
-                                if (beforeBlock && beforeBlock.id) {
-                                    await mutator.moveContentBlock(block.id, beforeBlock.id, 'before', sourceBlockId, sourceWhere, intl.formatMessage({id: 'ContentBlock.moveBlock', defaultMessage: 'move card content'}))
-                                }
-                            }
-                        }}
-                    />)}
+                        readOnly={props.readonly || !canEditBoardCards}
+                    />
+                )}
                 {!newBoardsEditor && (
                     <CardDetailProvider card={card}>
                         <CardDetailContents

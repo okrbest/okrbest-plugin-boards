@@ -1,0 +1,31 @@
+.blocksuite-editor-wrapper {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    padding: 20px;
+    background-color: var(--center-channel-bg);
+    color: var(--center-channel-color);
+
+    /* BlockSuite Theme Variables Mapping */
+    /* 기본 폰트 설정 */
+    --affine-font-family: var(--font-family-base, 'Open Sans', sans-serif);
+    
+    /* 배경색 */
+    --affine-background-primary-color: var(--center-channel-bg);
+    --affine-background-secondary-color: var(--center-channel-bg); /* TODO: Adjust if needed */
+    
+    /* 텍스트 색상 */
+    --affine-text-primary-color: var(--center-channel-color);
+    --affine-text-secondary-color: rgba(var(--center-channel-color-rgb), 0.7);
+    
+    /* 보더 색상 */
+    --affine-border-color: rgba(var(--center-channel-color-rgb), 0.16);
+
+    /* 에디터 내부 조정 */
+    affine-editor-container {
+        --affine-editor-width: 100%;
+        max-width: 800px; /* Notion-like centered width */
+        margin: 0 auto;
+    }
+}

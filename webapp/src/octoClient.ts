@@ -1107,6 +1107,44 @@ class OctoClient {
             body,
         }))
     }
+
+    // BlockSuite Methods
+    async getBlockSuiteInfo(cardId: string): Promise<any | null> {
+        const path = `/api/v2/cards/${cardId}/blocksuite/info`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status === 404) {
+            return null
+        }
+        if (response.status !== 200) {
+            throw new Error(`getBlockSuiteInfo failed with status ${response.status}`)
+        }
+        return this.getJson(response, {})
+    }
+
+    async getBlockSuiteContent(cardId: string): Promise<ArrayBuffer> {
+        const path = `/api/v2/cards/${cardId}/blocksuite/content`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            throw new Error(`getBlockSuiteContent failed with status ${response.status}`)
+        }
+        return response.arrayBuffer()
+    }
+
+    async saveBlockSuiteContent(cardId: string, content: Uint8Array): Promise<void> {
+        const path = `/api/v2/cards/${cardId}/blocksuite/content`
+        const headers = this.headers() as Record<string, string>
+        headers['Content-Type'] = 'application/octet-stream'
+
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'PUT',
+            headers,
+            body: content,
+        }))
+
+        if (response.status !== 200) {
+            throw new Error(`saveBlockSuiteContent failed with status ${response.status}`)
+        }
+    }
 }
 
 const octoClient = new OctoClient()
