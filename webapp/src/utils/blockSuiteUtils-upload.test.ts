@@ -35,6 +35,10 @@ const createMockDoc = () => ({
     getBlocks: jest.fn().mockReturnValue([]),
 })
 
+// Mock URL.createObjectURL and URL.revokeObjectURL
+global.URL.createObjectURL = jest.fn((file: File) => `blob:mock-url-${file.name}`)
+global.URL.revokeObjectURL = jest.fn()
+
 describe('blockSuiteUtils - File Upload', () => {
     let mockDoc: any
     
@@ -60,15 +64,19 @@ describe('blockSuiteUtils - File Upload', () => {
                     get onload() { return onloadHandler },
                     set onload(handler: (() => void) | null) { 
                         onloadHandler = handler
+                        // If src is already set, trigger onload immediately
+                        if (handler && this._src) {
+                            setTimeout(() => handler(), 0)
+                        }
                     },
                     onerror: null,
                     _src: '',
                     get src() { return this._src },
                     set src(value: string) {
                         this._src = value
-                        // Trigger onload when src is set
+                        // Trigger onload asynchronously when src is set
                         if (onloadHandler) {
-                            Promise.resolve().then(() => onloadHandler!())
+                            setTimeout(() => onloadHandler!(), 0)
                         }
                     },
                 }
@@ -76,9 +84,6 @@ describe('blockSuiteUtils - File Upload', () => {
             })
 
             const result = await uploadImageToBlockSuite(boardId, mockFile, mockDoc, noteId)
-            
-            // Wait for async operations to complete
-            await new Promise(resolve => setTimeout(resolve, 100))
 
             expect(octoClient.uploadFile).toHaveBeenCalledWith(boardId, mockFile)
             expect(mockDoc.addBlock).toHaveBeenCalledWith(
@@ -125,14 +130,18 @@ describe('blockSuiteUtils - File Upload', () => {
                     get onerror() { return onerrorHandler },
                     set onerror(handler: (() => void) | null) { 
                         onerrorHandler = handler
+                        // If src is already set, trigger onerror immediately
+                        if (handler && this._src) {
+                            setTimeout(() => handler(), 0)
+                        }
                     },
                     _src: '',
                     get src() { return this._src },
                     set src(value: string) {
                         this._src = value
-                        // Trigger onerror when src is set (simulating error)
+                        // Trigger onerror asynchronously when src is set (simulating error)
                         if (onerrorHandler) {
-                            Promise.resolve().then(() => onerrorHandler!())
+                            setTimeout(() => onerrorHandler!(), 0)
                         }
                     },
                 }
@@ -140,9 +149,6 @@ describe('blockSuiteUtils - File Upload', () => {
             })
 
             const result = await uploadImageToBlockSuite(boardId, mockFile, mockDoc, noteId)
-            
-            // Wait for async operations to complete
-            await new Promise(resolve => setTimeout(resolve, 100))
 
             expect(octoClient.uploadFile).toHaveBeenCalled()
             expect(mockDoc.addBlock).toHaveBeenCalledWith(

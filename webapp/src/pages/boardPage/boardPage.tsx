@@ -100,12 +100,13 @@ const BoardPage = (props: Props): JSX.Element => {
         }, [me?.id])
     }
 
-    // TODO: Make this less brittle. This only works because this is the root render function
+    // Note: Team ID synchronization - updates both UserSettings and octoClient
+    // This is safe here because this is the root render function that manages team context
     useEffect(() => {
         UserSettings.lastTeamId = teamId
         octoClient.teamId = teamId
         dispatch(setTeam(teamId))
-    }, [teamId])
+    }, [teamId, dispatch])
 
     const loadAction: (boardId: string) => any = useMemo(() => {
         if (props.readonly) {

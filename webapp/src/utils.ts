@@ -485,7 +485,8 @@ class Utils {
     // File names
 
     static sanitizeFilename(filename: string): string {
-        // TODO: Use an industrial-strength sanitizer
+        // Note: Basic sanitization - illegal characters are removed
+        // For production use, consider a more robust sanitization library
         let sanitizedFilename = filename
         const illegalCharacters = ['\\', '/', '?', ':', '<', '>', '*', '|', '"', '.']
         illegalCharacters.forEach((character) => {
@@ -508,8 +509,13 @@ class Utils {
         input.style.display = 'none'
         document.body.appendChild(input)
         input.click()
-
-        // TODO: Remove or reuse input
+        
+        // Clean up: remove input element after file selection
+        setTimeout(() => {
+            if (input.parentNode) {
+                input.parentNode.removeChild(input)
+            }
+        }, 100)
     }
 
     // Arrays
