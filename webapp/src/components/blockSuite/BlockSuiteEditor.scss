@@ -3,29 +3,63 @@
     width: 100%;
     overflow-y: auto;
     position: relative;
-    padding: 20px;
     background-color: var(--center-channel-bg);
     color: var(--center-channel-color);
 
-    /* BlockSuite Theme Variables Mapping */
-    /* 기본 폰트 설정 */
+    /* --- BlockSuite Theme Mapping (Mattermost Sync) --- */
+    
+    /* Typography */
     --affine-font-family: var(--font-family-base, 'Open Sans', sans-serif);
     
-    /* 배경색 */
+    /* Colors: Backgrounds */
     --affine-background-primary-color: var(--center-channel-bg);
-    --affine-background-secondary-color: var(--center-channel-bg); /* TODO: Adjust if needed */
-    
-    /* 텍스트 색상 */
-    --affine-text-primary-color: var(--center-channel-color);
-    --affine-text-secondary-color: rgba(var(--center-channel-color-rgb), 0.7);
-    
-    /* 보더 색상 */
-    --affine-border-color: rgba(var(--center-channel-color-rgb), 0.16);
+    --affine-background-secondary-color: rgba(var(--center-channel-color-rgb), 0.04);
+    --affine-background-tertiary-color: rgba(var(--center-channel-color-rgb), 0.08);
+    --affine-background-overlay-panel-color: var(--center-channel-bg);
 
-    /* 에디터 내부 조정 */
+    /* Colors: Text */
+    --affine-text-primary-color: var(--center-channel-color);
+    --affine-text-secondary-color: rgba(var(--center-channel-color-rgb), 0.65);
+    --affine-placeholder-color: rgba(var(--center-channel-color-rgb), 0.4);
+    
+    /* Brand & Accent */
+    --affine-brand-color: var(--button-bg);
+    --affine-primary-color: var(--button-bg);
+    --affine-hover-color: rgba(var(--center-channel-color-rgb), 0.06);
+
+    /* Borders & Dividers */
+    --affine-border-color: rgba(var(--center-channel-color-rgb), 0.12);
+    --affine-divider-color: rgba(var(--center-channel-color-rgb), 0.08);
+
+    /* Selection */
+    --affine-selection-color: rgba(var(--button-bg-rgb), 0.25);
+
+    /* --- Editor Specifics --- */
     affine-editor-container {
-        --affine-editor-width: 100%;
-        max-width: 800px; /* Notion-like centered width */
+        display: block;
+        width: 100%;
+        max-width: 800px;
         margin: 0 auto;
+        padding: 40px 20px 100px 20px;
+        --affine-editor-width: 100%;
+    }
+
+    /* Mattermost Scrollbar Style */
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(var(--center-channel-color-rgb), 0.2);
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.35);
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: transparent;
     }
 }

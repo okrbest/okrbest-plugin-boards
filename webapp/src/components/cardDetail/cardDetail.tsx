@@ -320,7 +320,7 @@ const CardDetail = (props: Props): JSX.Element|null => {
             {!limited && <div className='CardDetail CardDetail--fullwidth content-blocks'>
                 {newBoardsEditor && (
                     <BlockSuiteEditor
-                        cardId={card.id}
+                        card={card}
                         boardId={card.boardId}
                         readOnly={props.readonly || !canEditBoardCards}
                     />

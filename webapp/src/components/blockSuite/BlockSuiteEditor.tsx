@@ -2,24 +2,26 @@
 // See LICENSE.txt for license information.
 
 import React, { useEffect, useRef, useState } from 'react'
-import { DocCollection } from '@blocksuite/store'
-import { EditorContainer } from '@blocksuite/presets'
+import { DocCollection, Schema } from '@blocksuite/store'
+import { AffineEditorContainer } from '@blocksuite/presets'
 import { AffineSchemas } from '@blocksuite/blocks'
 import * as Y from 'yjs'
 
 import { loadData } from '../../utils/blockSuiteUtils'
 import octoClient from '../../octoClient'
+import { Card } from '../../blocks/card'
 
-import '@blocksuite/presets/themes/affine.css'
+// import '@blocksuite/presets/themes/affine.css'
 import './BlockSuiteEditor.scss'
 
 interface Props {
-    cardId: string;
+    card: Card;
     boardId: string;
     readOnly?: boolean;
 }
 
-export const BlockSuiteEditor: React.FC<Props> = ({ cardId, boardId, readOnly }) => {
+export const BlockSuiteEditor: React.FC<Props> = ({ card, boardId, readOnly }) => {
+    const cardId = card.id
     const containerRef = useRef<HTMLDivElement>(null)
     const [doc, setDoc] = useState<any>(null)
 
@@ -30,11 +32,13 @@ export const BlockSuiteEditor: React.FC<Props> = ({ cardId, boardId, readOnly })
         // 기존 에디터 인스턴스 정리 (중복 생성 방지)
         containerRef.current.innerHTML = ''
 
-        const collection = new DocCollection({ schema: AffineSchemas })
+        const schema = new Schema()
+        schema.register(AffineSchemas)
+        const collection = new DocCollection({ schema })
         const newDoc = collection.createDoc({ id: cardId })
         setDoc(newDoc)
 
-        const editor = new EditorContainer()
+        const editor = new AffineEditorContainer()
         editor.doc = newDoc
         containerRef.current.appendChild(editor)
 
@@ -48,7 +52,7 @@ export const BlockSuiteEditor: React.FC<Props> = ({ cardId, boardId, readOnly })
     // 2. 데이터 로드
     useEffect(() => {
         if (!doc) return
-        loadData(cardId, doc)
+        loadData(card, doc)
     }, [doc, cardId])
 
     // 3. 자동 저장 (Debounce 권장)

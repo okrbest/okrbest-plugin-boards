@@ -59,6 +59,7 @@ describe('blockSuiteUtils', () => {
 
     it('should convert text blocks to affine:paragraph', async () => {
         const cardId = 'card-1';
+        const card = { id: cardId, fields: { contentOrder: [] } };
         const legacyBlocks = [
             { id: 'block-1', type: 'text', title: 'Hello World', parentId: cardId }
         ];
@@ -66,12 +67,12 @@ describe('blockSuiteUtils', () => {
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue(null);
         (octoClient.getBlocksWithParent as jest.Mock).mockResolvedValue(legacyBlocks);
 
-        await loadData(cardId, mockDoc);
+        await loadData(card as any, mockDoc);
 
         // Verify that addBlock was called for page structure and content
         expect(mockDoc.addBlock).toHaveBeenCalledWith('affine:page', expect.anything());
         expect(mockDoc.addBlock).toHaveBeenCalledWith('affine:paragraph', expect.objectContaining({
-            text: expect.any(Object) // Mocked Y.Text
+            text: expect.anything()
         }), 'mock-id');
 
         expect(octoClient.saveBlockSuiteContent).toHaveBeenCalledWith(cardId, expect.any(Uint8Array));
@@ -79,11 +80,12 @@ describe('blockSuiteUtils', () => {
 
     it('should load existing BlockSuite document if present', async () => {
         const cardId = 'card-2';
+        const card = { id: cardId, fields: { contentOrder: [] } };
         
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue({ exists: true });
         (octoClient.getBlockSuiteContent as jest.Mock).mockResolvedValue(new ArrayBuffer(8));
 
-        await loadData(cardId, mockDoc);
+        await loadData(card as any, mockDoc);
 
         expect(octoClient.getBlocksWithParent).not.toHaveBeenCalled();
         expect(octoClient.getBlockSuiteInfo).toHaveBeenCalledWith(cardId);
