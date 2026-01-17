@@ -1,6 +1,10 @@
 # Mattermost Boards Plugin - Project Context
 
 ## Overview
+Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
+
+Please print all of AI's answers in Korean.
+
 **Mattermost Boards** (formerly Focalboard) is a project management and task tracking plugin for Mattermost. It serves as an alternative to Trello, Notion, or Asana, integrated directly into the Mattermost platform.
 
 *   **Plugin ID**: `focalboard`
@@ -56,4 +60,6 @@ Detailed project rules and context have been migrated to the `.gemini/instructio
 ## Contribution Guidelines
 *   **Language**: All code comments and documentation responses should be in **Korean** (as per `project.md`).
 *   **Code Style**: Follow the patterns in existing code. Avoid over-engineering.
+*   **TDD (Test-Driven Development)**: 
+    *   새로운 기능 구현 시 테스트 코드를 먼저 작성하는 TDD 방식을 강력히 권장합니다.
 *   **Testing**: Add tests for all new features or bug fixes (`*_test.go` for server, `*.test.tsx` for webapp).
