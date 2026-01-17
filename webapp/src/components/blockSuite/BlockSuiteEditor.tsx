@@ -52,8 +52,17 @@ export const BlockSuiteEditor: React.FC<Props> = ({ card, boardId, readOnly }) =
     // 2. 데이터 로드
     useEffect(() => {
         if (!doc) return
-        loadData(card, doc)
-    }, [doc, cardId])
+        
+        const loadCardData = async () => {
+            try {
+                await loadData(card, doc)
+            } catch (e) {
+                console.error("Failed to load BlockSuite data in editor", e)
+            }
+        }
+        
+        loadCardData()
+    }, [doc, card])
 
     // 3. 자동 저장 (Debounce 권장)
     useEffect(() => {
