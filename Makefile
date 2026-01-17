@@ -142,10 +142,10 @@ ifneq ($(HAS_WEBAPP),)
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else
-	cd webapp && $(NPM) run debug;
+	cd webapp && NODE_ENV=development $(NPM) run build;
 endif
 endif
-	cd webapp; npm run pack
+	# npm run pack removed - Vite build replaces it
 
 ## Generates a tar bundle of the plugin for install.
 .PHONY: bundle
@@ -172,7 +172,6 @@ ifneq ($(HAS_SERVER),)
 endif
 ifneq ($(HAS_WEBAPP),)
 	mkdir -p dist/$(PLUGIN_NAME)/webapp
-	cp -r webapp/dist dist/$(PLUGIN_NAME)/webapp/
 endif
 	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_NAME)
 
@@ -205,10 +204,10 @@ watch: apply server bundle
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
-	cd webapp && $(NPM) run debug:watch
+	cd webapp && NODE_ENV=development $(NPM) run build:watch
 endif
 
-## Installs a previous built plugin with updated webpack assets to a server.
+## Installs a previous built plugin with updated webapp assets to a server.
 .PHONY: deploy-from-watch
 deploy-from-watch: bundle
 	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)

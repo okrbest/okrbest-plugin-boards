@@ -6,6 +6,7 @@
   ],
   "plugins": [
     "react",
+    "react-hooks",
     "babel",
     "import",
     "cypress",
@@ -19,7 +20,12 @@
     "cypress/globals": true
   },
   "settings": {
-    "import/resolver": "webpack",
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": "./tsconfig.json"
+      }
+    },
     "react": {
         "pragma": "React",
         "version": "detect"
