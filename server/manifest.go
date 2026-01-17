@@ -33,7 +33,7 @@ const manifestStr = `
     "executable": ""
   },
   "webapp": {
-    "bundle_path": "webapp/dist/main.js"
+    "bundle_path": "pack/static/main.js"
   },
   "settings_schema": {
     "header": "",
