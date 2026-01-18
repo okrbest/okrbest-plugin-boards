@@ -7,8 +7,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-export default defineConfig(({ mode }) => {
-    const isDev = mode === 'development'
+export default defineConfig((configEnv) => {
+    const isDev = configEnv.mode === 'development'
 
     return {
         // Mattermost 내에서 로드되므로 상대 경로 사용
@@ -38,6 +38,14 @@ export default defineConfig(({ mode }) => {
             ],
             //  호환성을 위해 ESM 우선 순위 지정
             mainFields: ['module', 'browser', 'main'],
+        },
+
+        css: {
+            preprocessorOptions: {
+                scss: {
+                    // Vite 7+ uses modern Sass API by default
+                },
+            },
         },
 
         optimizeDeps: {
@@ -101,6 +109,7 @@ export default defineConfig(({ mode }) => {
                         'react-dom': 'ReactDOM',
                         'react-redux': 'ReactRedux',
                         redux: 'Redux',
+                        'prop-types': 'PropTypes',
                     },
                     // CSS 파일명 고정
                     assetFileNames: (assetInfo) => {
@@ -138,7 +147,7 @@ export default defineConfig(({ mode }) => {
     
         define: {
             // 환경 변수 매핑
-            'process.env.NODE_ENV': JSON.stringify(mode || 'production'),
+            'process.env.NODE_ENV': JSON.stringify(configEnv.mode || 'production'),
             // 개발 모드에서만 디버그 플래그
             __DEV__: isDev,
         },
