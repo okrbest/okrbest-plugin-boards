@@ -1,8 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import { Doc } from '@blocksuite/store'
-import * as Y from 'yjs'
+import { Doc, Job, Text } from '@blocksuite/store'
 
 import octoClient from '../octoClient'
 import { Block } from '../blocks/block'
@@ -19,6 +18,14 @@ export function getImageUrl(boardId: string, fileId: string): string {
     const teamId = (octoClient as any).teamId || '0'
     // 파일 URL 패턴: /api/v2/files/teams/{teamId}/{boardId}/{fileId}
     return `${baseUrl}/api/v2/files/teams/${teamId}/${boardId}/${fileId}`
+}
+
+/**
+ * 문서를 JSON 스냅샷으로 저장
+ */
+export async function saveSnapshot(doc: Doc): Promise<any> {
+    const job = new Job({ collection: doc.collection })
+    return await job.docToSnapshot(doc)
 }
 
 /**
@@ -79,49 +86,162 @@ function getImageSize(file: File): Promise<{ width: number; height: number }> {
     })
 }
 
-export async function loadData(card: Card, doc: Doc) {
+export async function loadData(card: Card, doc: Doc): Promise<Doc> {
     try {
         const info = await octoClient.getBlockSuiteInfo(card.id)
 
         if (info) {
-            const snapshot = await octoClient.getBlockSuiteContent(card.id)
-            // applyUpdate requires Uint8Array
-            Y.applyUpdate(doc.spaceDoc, new Uint8Array(snapshot))
+            const content = await octoClient.getBlockSuiteContent(card.id)
+            if (content) {
+                try {
+                    // JSON 스냅샷으로 복원 시도
+                    let snapshot = content
+                    if (typeof content === 'string') {
+                        snapshot = JSON.parse(content)
+                    } else if (content instanceof ArrayBuffer) {
+                        // ArrayBuffer를 텍스트로 변환 시도 (만약 JSON이 바이너리로 왔다면)
+                        const decoder = new TextDecoder()
+                        const jsonStr = decoder.decode(content)
+                        try {
+                            snapshot = JSON.parse(jsonStr)
+                        } catch (e) {
+                            console.warn('Failed to parse ArrayBuffer as JSON, ignoring content', e)
+                            snapshot = null
+                        }
+                    }
+
+                    if (snapshot) {
+                        const job = new Job({ collection: doc.collection })
+                        const newDoc = await job.snapshotToDoc(snapshot)
+                        return newDoc
+                    }
+                } catch (error) {
+                    console.error('Failed to load snapshot:', error)
+                    await initEmptyPage(doc)
+                }
+            } else {
+                await initEmptyPage(doc)
+            }
         } else {
             // 마이그레이션: 기존 블록 가져오기
             // cardId를 parentId로 가지는 블록들을 조회
             const legacyBlocks = await octoClient.getBlocksWithParent(card.id)
             
             if (legacyBlocks && legacyBlocks.length > 0) {
-                convertAndApplyBlocks(legacyBlocks, card, doc)
+                await convertAndApplyBlocks(legacyBlocks, card, doc)
             } else {
                 // 블록이 없는 경우에도 기본 페이지 구조는 생성해야 함
-                initEmptyPage(doc)
+                await initEmptyPage(doc)
             }
             
             // 자동 저장
-            const snapshot = Y.encodeStateAsUpdate(doc.spaceDoc)
+            const snapshot = await saveSnapshot(doc)
             await octoClient.saveBlockSuiteContent(card.id, snapshot)
         }
     } catch (e) {
         console.error("Failed to load BlockSuite data", e)
     }
+    return doc
 }
 
-function initEmptyPage(doc: Doc) {
+async function initEmptyPage(doc: Doc): Promise<void> {
     // 이미 페이지가 있는지 확인
-    if (doc.getBlocks().length > 0) return
+    try {
+        if (doc.getBlocks().length > 0) return
+    } catch (error) {
+        // getBlocks()가 실패하면 Yjs 문서가 준비되지 않은 것
+        console.warn('getBlocks() failed, doc may not be ready:', error)
+        // doc.load()를 호출하여 초기화 시도
+        doc.load()
+        // 재시도
+        try {
+            if (doc.getBlocks().length > 0) return
+        } catch (retryError) {
+            console.error('getBlocks() still failing after load():', retryError)
+            return
+        }
+    }
 
-    const pageId = doc.addBlock('affine:page' as any, {})
-    doc.addBlock('affine:surface' as any, {}, pageId)
-    const noteId = doc.addBlock('affine:note' as any, {}, pageId)
-    doc.addBlock('affine:paragraph' as any, {}, noteId) // 빈 문단 하나 추가
+    // Yjs 문서가 완전히 준비되었는지 확인
+    if (!doc.spaceDoc) {
+        console.error('Cannot init empty page: spaceDoc is not initialized')
+        return
+    }
+    
+    // doc.load()가 완료될 때까지 기다림
+    await new Promise<void>((resolve) => {
+        const isReadySignal = doc.ready && typeof (doc.ready as any).subscribe === 'function'
+        if (isReadySignal) {
+            let completed = false
+            const subscription = (doc.ready as any).subscribe(() => {
+                if (!completed) {
+                    completed = true
+                    try {
+                        subscription.unsubscribe()
+                    } catch (e) {
+                        // unsubscribe 오류 무시
+                    }
+                    resolve()
+                }
+            })
+            // 타임아웃 설정 (최대 100ms 대기)
+            setTimeout(() => {
+                if (!completed) {
+                    completed = true
+                    try {
+                        subscription.unsubscribe()
+                    } catch (e) {
+                        // unsubscribe 오류 무시
+                    }
+                    resolve()
+                }
+            }, 100)
+        } else {
+            // doc.ready가 없으면 여러 마이크로태스크를 거쳐 대기
+            Promise.resolve().then(() => {
+                Promise.resolve().then(() => {
+                    resolve()
+                })
+            })
+        }
+    })
+    
+    try {
+        // 다시 확인 (다른 곳에서 이미 생성했을 수 있음)
+        if (doc.getBlocks().length > 0) {
+            return
+        }
+        
+        const pageId = doc.addBlock('affine:page' as any, {})
+        doc.addBlock('affine:surface' as any, {}, pageId)
+        const noteId = doc.addBlock('affine:note' as any, {}, pageId)
+        doc.addBlock('affine:paragraph' as any, {}, noteId) // 빈 문단 하나 추가
+    } catch (error) {
+        console.error('Failed to init empty page:', error)
+        // 재시도: 다음 프레임에서 시도
+        await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => {
+                try {
+                    if (doc.getBlocks().length === 0 && doc.spaceDoc) {
+                        const pageId = doc.addBlock('affine:page' as any, {})
+                        doc.addBlock('affine:surface' as any, {}, pageId)
+                        const noteId = doc.addBlock('affine:note' as any, {}, pageId)
+                        doc.addBlock('affine:paragraph' as any, {}, noteId)
+                    }
+                } catch (retryError) {
+                    console.error('Failed to init empty page on retry:', retryError)
+                } finally {
+                    resolve() // 항상 resolve하여 무한 대기 방지
+                }
+            })
+        })
+    }
 }
 
-function convertAndApplyBlocks(blocks: Block[], card: Card, doc: Doc) {
+async function convertAndApplyBlocks(blocks: Block[], card: Card, doc: Doc) {
     if (!blocks || blocks.length === 0) {
         console.warn('No blocks to convert')
-        initEmptyPage(doc)
+        await initEmptyPage(doc)
         return
     }
 
@@ -167,7 +287,7 @@ function convertAndApplyBlocks(blocks: Block[], card: Card, doc: Doc) {
                 convertedCount.failed++
                 // 실패한 블록은 텍스트로 fallback
                 try {
-                    const fallbackText = new Y.Text(block.title || `[Block conversion failed: ${block.type}]`)
+                    const fallbackText = new Text(block.title || `[Block conversion failed: ${block.type}]`)
                     doc.addBlock('affine:paragraph' as any, { text: fallbackText } as any, noteId)
                 } catch (fallbackError) {
                     console.error(`Failed to add fallback block for ${block.id}`, fallbackError)
@@ -184,7 +304,7 @@ function convertAndApplyBlocks(blocks: Block[], card: Card, doc: Doc) {
     } catch (error) {
         console.error('Failed to convert blocks', error)
         // 에러 발생 시 기본 페이지라도 생성
-        initEmptyPage(doc)
+        await initEmptyPage(doc)
         throw error
     }
 }
@@ -193,7 +313,7 @@ function convertAndApplyBlocks(blocks: Block[], card: Card, doc: Doc) {
  * 단일 블록을 BlockSuite 형식으로 변환
  */
 function convertBlock(block: Block, parentId: string, doc: Doc): void {
-    const text = block.title ? new Y.Text(block.title) : new Y.Text()
+    const text = block.title ? new Text(block.title) : new Text()
     
     // 공통 필드: 원본 타입 보존 (역마이그레이션 가능)
     const commonFields: Record<string, any> = {
@@ -319,7 +439,7 @@ function convertBlock(block: Block, parentId: string, doc: Doc): void {
 
     default:
         // 알 수 없는 타입은 텍스트로 처리 (원본 정보 보존)
-        const fallbackText = new Y.Text(block.title || `[Unknown block type: ${block.type}]`)
+        const fallbackText = new Text(block.title || `[Unknown block type: ${block.type}]`)
         doc.addBlock('affine:paragraph' as any, { 
             text: fallbackText,
             ...commonFields

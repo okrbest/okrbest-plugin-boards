@@ -83,11 +83,12 @@ export function initEditor(cardId: string): EditorInitResult {
  * @param editor 에디터 인스턴스
  * @param doc 문서 인스턴스
  * @param card 카드 정보
+ * @returns 로드된(또는 새로 생성된) 문서
  */
 export async function loadEditorData(
     _editor: AffineEditorContainer,
     doc: Doc,
     card: Card
-): Promise<void> {
-    await loadData(card, doc)
+): Promise<Doc> {
+    return await loadData(card, doc)
 }

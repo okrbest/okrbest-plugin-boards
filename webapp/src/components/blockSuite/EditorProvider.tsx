@@ -4,12 +4,12 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { Doc, DocCollection } from '@blocksuite/store'
 import { AffineEditorContainer } from '@blocksuite/presets'
-import * as Y from 'yjs'
 import { useIntl } from 'react-intl'
 
 import { Card } from '../../blocks/card'
 import octoClient from '../../octoClient'
 import { sendFlashMessage } from '../flashMessages'
+import { saveSnapshot } from '../../utils/blockSuiteUtils'
 
 import { EditorContext, EditorContextValue } from './editor/context'
 import { initEditor, loadEditorData } from './editor/editor'
@@ -74,7 +74,15 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
         const loadData = async () => {
             setIsLoading(true)
             try {
-                await loadEditorData(editor, doc, card)
+                const loadedDoc = await loadEditorData(editor, doc, card)
+                
+                // 스냅샷 로드 시 새로운 doc이 생성되므로 에디터에 반영
+                if (loadedDoc && loadedDoc !== doc) {
+                    editor.doc = loadedDoc
+                    setDoc(loadedDoc)
+                    // collection은 동일할 것으로 가정
+                }
+                
                 setIsLoading(false)
             } catch (error) {
                 console.error('Failed to load editor data:', error)
@@ -102,8 +110,8 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
             setSaveStatus('saving')
 
             timeout = setTimeout(async () => {
-                const snapshot = Y.encodeStateAsUpdate(doc.spaceDoc)
                 try {
+                    const snapshot = await saveSnapshot(doc)
                     await octoClient.saveBlockSuiteContent(card.id, snapshot)
                     setSaveStatus('saved')
 
@@ -128,6 +136,8 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
             }, 2000) // 2초 Debounce
         }
 
+        // doc.spaceDoc은 내부 Y.Doc 인스턴스입니다.
+        // Yjs 의존성을 직접 import하지 않아도 BlockSuite 객체를 통해 접근 가능합니다.
         doc.spaceDoc.on('update', handleUpdate)
         return () => {
             doc.spaceDoc.off('update', handleUpdate)

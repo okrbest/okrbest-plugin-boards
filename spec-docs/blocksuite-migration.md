@@ -29,8 +29,8 @@ BlockSuite는 Notion과 유사한 블록 기반 에디터로, 내부적으로 **
 ├──────────────────────────────────────────────────────────────┤
 │                                                               │
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
-│   │  UI Layer   │ -> │  Doc Model  │ -> │    Yjs      │      │
-│   │  (Editor)   │    │  (Blocks)   │    │  (Storage)  │      │
+│   │  UI Layer   │ -> │  Doc Model  │ -> │  Job API    │      │
+│   │  (Editor)   │    │  (Blocks)   │    │ (Snapshot)  │      │
 │   └─────────────┘    └─────────────┘    └─────────────┘      │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
@@ -46,13 +46,13 @@ BlockSuite는 Notion과 유사한 블록 기반 에디터로, 내부적으로 **
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Phase 1: Yjs 스냅샷 저장                                    │
+│  Phase 1: BlockSuite 스냅샷 저장                             │
 ├─────────────────────────────────────────────────────────────┤
 │  ✅ 백엔드 API (4개 엔드포인트)                               │
 │  ✅ DB 테이블 및 CRUD (PostgreSQL, MySQL, SQLite)            │
-│  ✅ Yjs 바이너리 스냅샷 저장/로드                             │
-│  ⏳ 프론트엔드 BlockSuite 에디터 통합 (미구현)                │
-│  ⏳ 기존 블록 → Yjs 자동 마이그레이션 로직 (테스트 코드에만)  │
+│  ✅ BlockSuite JSON 스냅샷 저장/로드 (Job API 활용)           │
+│  ✅ 프론트엔드 BlockSuite 에디터 통합                         │
+│  ✅ 기존 블록 → BlockSuite 자동 마이그레이션 로직              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -204,8 +204,8 @@ Y.Doc {
 ```
 1. 사용자가 카드 에디터 열기
 2. GET /blocksuite/info → 200 OK
-3. GET /blocksuite/content → Yjs 스냅샷 로드
-4. Y.applyUpdate(yDoc, snapshot) → 문서 복원
+3. GET /blocksuite/content → JSON 스냅샷 로드
+4. Job.snapshotToDoc(snapshot) → 문서 복원
 5. 에디터에서 편집 시작
 ```
 
@@ -219,8 +219,8 @@ Y.Doc {
 
 | Method | Endpoint | 설명 |
 |--------|----------|------|
-| `GET` | `/cards/{cardID}/blocksuite/content` | Yjs 바이너리 스냅샷 로드 |
-| `PUT` | `/cards/{cardID}/blocksuite/content` | Yjs 바이너리 스냅샷 저장 |
+| `GET` | `/cards/{cardID}/blocksuite/content` | JSON 스냅샷 로드 |
+| `PUT` | `/cards/{cardID}/blocksuite/content` | JSON 스냅샷 저장 |
 | `GET` | `/cards/{cardID}/blocksuite/info` | 문서 메타데이터 조회 |
 | `DELETE` | `/cards/{cardID}/blocksuite` | 문서 삭제 |
 
@@ -240,15 +240,15 @@ Y.Doc {
 ### 4.3 저장 형식
 
 ```
-Content-Type: application/octet-stream
+Content-Type: application/json
 
 ┌────────────────────────────────────────┐
-│  Yjs Binary Snapshot                    │
-│  (Y.encodeStateAsUpdate(yDoc))         │
+│  BlockSuite JSON Snapshot               │
+│  (Job.docToSnapshot(doc))               │
 ├────────────────────────────────────────┤
-│  • 압축된 바이너리 형식                  │
-│  • 전체 문서 상태 포함                   │
-│  • 증분 업데이트 지원 가능               │
+│  • JSON 형식                             │
+│  • 전체 문서 상태 및 블록 트리 포함        │
+│  • Yjs 의존성 없는 순수 데이터 구조         │
 └────────────────────────────────────────┘
 ```
 
@@ -496,11 +496,10 @@ function convertBlockToYjs(block) {
 | 백엔드 API | ✅ 완료 | 4개 엔드포인트 구현 (`server/api/blocksuite.go`) |
 | DB 레이어 | ✅ 완료 | PostgreSQL, MySQL, SQLite 지원 |
 | 데이터 모델 | ✅ 완료 | `BlockSuiteDoc`, `BlockSuiteDocInfo` |
-| 프론트엔드 통합 | ⏳ 미완료 | BlockSuite 에디터 연동 필요 |
-| 마이그레이션 로직 | ⏳ 테스트만 | 테스트 코드에서 검증됨 |
+| 프론트엔드 통합 | ✅ 완료 | BlockSuite 에디터 및 Job API 연동 완료 |
+| 마이그레이션 로직 | ✅ 완료 | `blockSuiteUtils.ts` 구현 완료 |
 
-> **다음 단계**: 프론트엔드에서 BlockSuite 에디터를 통합하고, 
-> `public/blocksuite-editor.html`의 마이그레이션 로직을 참고하여 Smart Load 기능을 구현하면 됩니다.
+> **다음 단계**: Phase 2에서 실시간 협업 기능 도입 시 WebSocket 및 Yjs Provider 도입 검토 필요.
 
 ### Phase 2 (향후 확장)
 
