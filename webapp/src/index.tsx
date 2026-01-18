@@ -26,9 +26,6 @@ import WithWebSockets from './components/withWebSockets'
 import {setChannel} from './store/channels'
 import {initialLoad} from './store/initialLoad'
 import {Utils} from './utils'
-import './styles/focalboard-variables.scss'
-import './styles/main.scss'
-import './styles/labels.scss'
 import octoClient from './octoClient'
 import {Board} from './blocks/board'
 import {getMessages, getCurrentLanguage} from './i18n'
@@ -53,7 +50,6 @@ import manifest from './manifest'
 import ErrorBoundary from './error_boundary'
 // eslint-disable-next-line import/no-unresolved
 import {PluginRegistry} from './types/mattermost-webapp'
-import './plugin.scss'
 import CloudUpgradeNudge from "./components/cloudUpgradeNudge/cloudUpgradeNudge"
 import CreateBoardFromTemplate from './components/createBoardFromTemplate'
 

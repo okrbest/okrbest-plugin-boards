@@ -7,32 +7,6 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-const cssInjectedByJsPlugin = () => {
-    return {
-        name: 'css-injected-by-js',
-        generateBundle(options, bundle) {
-            let css = ''
-            for (const key in bundle) {
-                if (key.endsWith('.css')) {
-                    css += bundle[key].source
-                    delete bundle[key] // CSS 파일 삭제
-                }
-            }
-            if (css) {
-                for (const key in bundle) {
-                    if (key.endsWith('.js')) {
-                        const jsCode = bundle[key].code
-                        const cssCode = JSON.stringify(css)
-                        // CSS 주입 코드 추가
-                        bundle[key].code = `(function(){try{var elementStyle=document.createElement('style');elementStyle.innerText=${cssCode};document.head.appendChild(elementStyle);}catch(e){console.error('Vite CSS Injection Error', e)}})();` + jsCode
-                        break
-                    }
-                }
-            }
-        }
-    }
-}
-
 export default defineConfig((configEnv) => {
     const isDev = configEnv.mode === 'development'
 
@@ -56,8 +30,7 @@ export default defineConfig((configEnv) => {
                 targets: [
                     { src: 'static/*', dest: 'static' }
                 ]
-            }),
-            cssInjectedByJsPlugin()
+            })
         ],
 
         resolve: {
