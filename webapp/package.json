@@ -66,15 +66,17 @@
 		"react-intl": "^5.20.0",
 		"react-redux": "7.2.4",
 		"react-router-dom": "5.3.4",
-		"react-select": "^5.2.2",
-		"yjs": "^13.6.28"
+		"react-select": "^5.2.2"
 	},
 	"jest": {
 		"moduleNameMapper": {
 			"\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
 			"\\.(scss|css)$": "<rootDir>/__mocks__/styleMock.js",
 			"^mattermost-redux/(.*)$": "<rootDir>/node_modules/mattermost-redux/lib/$1",
-			"^@mattermost/types/(.*)$": "<rootDir>/node_modules/@mattermost/types/lib/$1"
+			"^@mattermost/types/(.*)$": "<rootDir>/node_modules/@mattermost/types/lib/$1",
+			"^@blocksuite/global/utils$": "<rootDir>/node_modules/@blocksuite/global/dist/utils.js",
+			"^@blocksuite/global/env$": "<rootDir>/node_modules/@blocksuite/global/dist/env/index.js",
+			"^@blocksuite/global/exceptions$": "<rootDir>/node_modules/@blocksuite/global/dist/exceptions/index.js"
 		},
 		"globals": {
 			"ts-jest": {
@@ -82,10 +84,10 @@
 			}
 		},
 		"transform": {
-			"^.+\\.tsx?$": "@swc/jest"
+			"^.+\\.(t|j)sx?$": "@swc/jest"
 		},
 		"transformIgnorePatterns": [
-			"/node_modules/(?!(nanoevents|@blocksuite|yjs|lib0)/)"
+			"/node_modules/(?!(nanoevents|@blocksuite|lib0|y-protocols|nanoid|lit|@lit)/)"
 		],
 		"maxWorkers": "50%",
 		"testEnvironment": "jsdom",

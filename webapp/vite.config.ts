@@ -33,25 +33,14 @@ export default defineConfig(({ mode }) => {
         ],
 
         resolve: {
-            alias: {
-                '@': path.resolve(__dirname, './src'),
-                // Yjs 중복 로드 방지 및 ESM 강제
-                'yjs': path.resolve(__dirname, 'node_modules/yjs/dist/yjs.mjs'),
-            },
-            // BlockSuite 호환성을 위해 ESM 우선 순위 지정
+            alias: [
+                { find: '@', replacement: path.resolve(__dirname, './src') },
+            ],
+            //  호환성을 위해 ESM 우선 순위 지정
             mainFields: ['module', 'browser', 'main'],
-            // 중복 패키지 방지 (BlockSuite와 Yjs가 여러 번 번들링되는 것 방지)
-            dedupe: ['yjs', '@blocksuite/store', '@blocksuite/blocks', '@blocksuite/presets'],
         },
 
-        // 개발 서버 최적화: BlockSuite와 Yjs를 pre-bundling
         optimizeDeps: {
-            include: [
-                'yjs',
-                '@blocksuite/store',
-                '@blocksuite/blocks',
-                '@blocksuite/presets',
-            ],
             // ESM 모듈도 pre-bundling 대상에 포함
             esbuildOptions: {
                 target: 'es2019',
