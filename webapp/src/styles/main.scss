@@ -1,6 +1,6 @@
-@import 'typography';
-@import 'modifiers';
-@import 'z-index';
+@use 'typography';
+@use 'modifiers';
+@use 'z-index' as *;
 
 html {
     height: 100%;
