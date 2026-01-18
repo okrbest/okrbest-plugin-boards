@@ -89,10 +89,10 @@ export default defineConfig((configEnv) => {
             chunkSizeWarningLimit: 1000, // chunk 크기 경고 임계값 (KB)
             
             lib: {
-                entry: path.resolve(__dirname, 'src/main.tsx'),
+                entry: path.resolve(__dirname, 'src/plugin_entry.ts'),
                 name: 'Focalboard',
                 formats: ['umd'], // Mattermost 플러그인은 보통 UMD 사용
-                fileName: () => `static/main.js` // 고정된 파일명
+                fileName: () => `focalboard_bundle.js` // 경로 단순화
             },
             rollupOptions: {
                 // 외부 의존성 설정 (Mattermost가 제공하는 패키지들)
@@ -149,10 +149,20 @@ export default defineConfig((configEnv) => {
         define: {
             // 환경 변수 매핑
             'process.env.NODE_ENV': JSON.stringify(configEnv.mode || 'production'),
+            'process.env.TARGET_IS_PRODUCT': JSON.stringify(false), // 기본값
             // 개발 모드에서만 디버그 플래그
             __DEV__: isDev,
             // Node.js global 폴리필 (yjs, lib0 등 일부 라이브러리에서 필요)
             global: 'globalThis',
+            // process 객체 폴리필
+            process: {
+                env: {
+                    NODE_ENV: JSON.stringify(configEnv.mode || 'production'),
+                    TARGET_IS_PRODUCT: JSON.stringify(false)
+                },
+                platform: 'browser',
+                version: ''
+            },
         },
         
         // 로그 레벨 설정

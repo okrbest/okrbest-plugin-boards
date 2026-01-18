@@ -20,7 +20,7 @@ const manifestStr = `
   "support_url": "https://github.com/mattermost/mattermost-plugin-boards/issues",
   "release_notes_url": "https://github.com/mattermost/mattermost-plugin-boards/releases",
   "icon_path": "assets/starter-template-icon.svg",
-  "version": "9.2.1",
+  "version": "9.2.4",
   "min_server_version": "10.7.0",
   "server": {
     "executables": {
@@ -33,7 +33,7 @@ const manifestStr = `
     "executable": ""
   },
   "webapp": {
-    "bundle_path": "pack/static/main.js"
+    "bundle_path": "pack/focalboard_bundle.js"
   },
   "settings_schema": {
     "header": "",
