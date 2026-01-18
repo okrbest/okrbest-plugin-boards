@@ -54,7 +54,8 @@ type Props = {
 
 const CardDialog = (props: Props): JSX.Element => {
     const {board, activeView, cards, views} = props
-    const card = useAppSelector(getCard(props.cardId))
+    const cardFromStore = useAppSelector(getCard(props.cardId))
+    const card = cardFromStore || cards.find((c) => c.id === props.cardId)
     const contents = useAppSelector(getCardContents(props.cardId))
     const comments = useAppSelector(getCardComments(props.cardId))
     const attachments = useAppSelector(getCardAttachments(props.cardId))
