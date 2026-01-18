@@ -6,6 +6,7 @@ import path from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 
 export default defineConfig((configEnv) => {
     const isDev = configEnv.mode === 'development'
@@ -30,7 +31,11 @@ export default defineConfig((configEnv) => {
                 targets: [
                     { src: 'static/*', dest: 'static' }
                 ]
-            })
+            }),
+            // 모든 CSS를 JS 번들에 인라인으로 주입 (Mattermost 플러그인은 CSS 파일을 자동 로드하지 않음)
+            cssInjectedByJsPlugin({
+                topExecutionPriority: true, // CSS가 JS 실행 전에 주입되도록
+            }),
         ],
 
         resolve: {

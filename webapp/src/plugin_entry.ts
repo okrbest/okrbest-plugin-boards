@@ -1,21 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import compassIcons from '@mattermost/compass-icons/css/compass-icons.css?inline'
-
-import mainStyle from './styles/main.scss?inline'
-import pluginStyle from './plugin.scss?inline'
-
-const injectStyle = (css: string) => {
-    if (!css) return
-    const style = document.createElement('style')
-    style.textContent = css
-    document.head.prepend(style)
-}
-
-injectStyle(compassIcons)
-injectStyle(mainStyle)
-injectStyle(pluginStyle)
+// CSS imports - vite-plugin-css-injected-by-js가 자동으로 JS 번들에 인라인 주입
+import '@mattermost/compass-icons/css/compass-icons.css'
+import './styles/main.scss'
+import './plugin.scss'
 
 import manifest from './manifest'
 
