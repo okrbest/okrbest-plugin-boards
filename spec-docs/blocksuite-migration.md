@@ -1,14 +1,14 @@
 # BlockSuite Yjs 마이그레이션 가이드
 
-> 📋 **문서 상태**: 설계 및 구현 현황 문서
+> 📋 **문서 상태**: 설계 및 구현 완료
 > 
 > | 구분 | 상태 | 위치 |
 > |------|------|------|
 > | **백엔드 API** | ✅ 구현 완료 | `server/api/blocksuite.go` |
 > | **데이터 모델** | ✅ 구현 완료 | `server/model/blocksuite_doc.go` |
 > | **DB 레이어** | ✅ 구현 완료 | `server/services/store/sqlstore/blocksuite.go` |
-> | **프론트엔드** | ⏳ 테스트 코드만 존재 | `public/blocksuite-editor.html` |
-> | **BlockSuite 에디터 통합** | ❌ 미구현 | - |
+> | **프론트엔드 유틸리티** | ✅ 구현 완료 | `webapp/src/utils/blockSuiteUtils.ts` |
+> | **BlockSuite 에디터 통합** | ✅ 구현 완료 | `webapp/src/components/cardDetail/cardDetail.tsx` |
 
 ## 개요
 
@@ -46,18 +46,18 @@ BlockSuite는 Notion과 유사한 블록 기반 에디터로, 내부적으로 **
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Phase 1: BlockSuite 스냅샷 저장                             │
+│  Phase 1: BlockSuite 스냅샷 저장 (완료)                      │
 ├─────────────────────────────────────────────────────────────┤
 │  ✅ 백엔드 API (4개 엔드포인트)                               │
 │  ✅ DB 테이블 및 CRUD (PostgreSQL, MySQL, SQLite)            │
 │  ✅ BlockSuite JSON 스냅샷 저장/로드 (Job API 활용)           │
-│  ✅ 프론트엔드 BlockSuite 에디터 통합                         │
+│  ✅ 프론트엔드 BlockSuite 에디터 통합 (`CardDetail`)          │
 │  ✅ 기존 블록 → BlockSuite 자동 마이그레이션 로직              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-> 📝 백엔드는 완전히 구현되어 있습니다. 
-> 프론트엔드 통합 시 `public/blocksuite-editor.html` 테스트 코드의 마이그레이션 로직을 참고하세요.
+> 📝 Phase 1 구현이 완료되었습니다. 
+> 프론트엔드 로직은 `webapp/src/utils/blockSuiteUtils.ts`에 정의되어 있으며, `CardDetail` 컴포넌트에서 사용됩니다.
 
 ### 1.4 향후 확장 가능성 (Phase 2)
 
@@ -240,17 +240,22 @@ Y.Doc {
 ### 4.3 저장 형식
 
 ```
-Content-Type: application/json
+Content-Type: application/octet-stream
 
 ┌────────────────────────────────────────┐
-│  BlockSuite JSON Snapshot               │
-│  (Job.docToSnapshot(doc))               │
+│  BlockSuite JSON Snapshot (Binary)      │
+│  (Job.docToSnapshot(doc) → Bytes)       │
 ├────────────────────────────────────────┤
-│  • JSON 형식                             │
-│  • 전체 문서 상태 및 블록 트리 포함        │
-│  • Yjs 의존성 없는 순수 데이터 구조         │
+│  • JSON 데이터를 바이너리(UTF-8)로 변환   │
+│  • 백엔드는 opaque binary로 취급         │
+│  • 저장 시 Uint8Array로 변환하여 전송     │
 └────────────────────────────────────────┘
 ```
+
+#### 저장 및 로드 세부 로직
+
+- **저장 시**: `Job.docToSnapshot(doc)`으로 생성된 JSON 객체를 `Uint8Array` 또는 `Blob`으로 변환하여 `PUT` 요청을 보냅니다.
+- **로드 시**: `GET` 요청으로 받은 `ArrayBuffer`를 `TextDecoder`를 사용해 문자열로 변환한 뒤, `JSON.parse()`를 거쳐 `Job.snapshotToDoc(snapshot)`에 전달합니다.
 
 ---
 
@@ -496,8 +501,8 @@ function convertBlockToYjs(block) {
 | 백엔드 API | ✅ 완료 | 4개 엔드포인트 구현 (`server/api/blocksuite.go`) |
 | DB 레이어 | ✅ 완료 | PostgreSQL, MySQL, SQLite 지원 |
 | 데이터 모델 | ✅ 완료 | `BlockSuiteDoc`, `BlockSuiteDocInfo` |
-| 프론트엔드 통합 | ✅ 완료 | BlockSuite 에디터 및 Job API 연동 완료 |
-| 마이그레이션 로직 | ✅ 완료 | `blockSuiteUtils.ts` 구현 완료 |
+| 프론트엔드 통합 | ✅ 완료 | `CardDetail` 컴포넌트에 `BlockSuiteEditor` 적용 |
+| 마이그레이션 로직 | ✅ 완료 | `blockSuiteUtils.ts`에 자동 변환 로직 구현 완료 |
 
 > **다음 단계**: Phase 2에서 실시간 협업 기능 도입 시 WebSocket 및 Yjs Provider 도입 검토 필요.
 
@@ -512,13 +517,21 @@ Phase 2 구현을 위해서는 백엔드에 WebSocket 엔드포인트와 Yjs 업
 
 ---
 
-## 부록: 백엔드 구현 파일
+## 부록: 주요 구현 파일
 
+### 백엔드 (Go)
 | 파일 | 설명 |
 |------|------|
 | `server/api/blocksuite.go` | API 핸들러 (4개 엔드포인트) |
-| `server/app/blocksuite.go` | 비즈니스 로직 |
+| `server/app/blocksuite.go` | 비즈니스 로직 및 스냅샷 처리 |
 | `server/model/blocksuite_doc.go` | 데이터 모델 정의 |
-| `server/services/store/sqlstore/blocksuite.go` | DB CRUD |
-| `server/api/blocks.go` | 기존 블록 API (마이그레이션 시 조회용) |
-| `server/api/files.go` | 파일 업로드/다운로드 API |
+| `server/services/store/sqlstore/blocksuite.go` | DB CRUD 구현 |
+
+### 프론트엔드 (TypeScript/React)
+| 파일 | 설명 |
+|------|------|
+| `webapp/src/utils/blockSuiteUtils.ts` | 마이그레이션 및 데이터 로드 유틸리티 |
+| `webapp/src/components/blockSuite/BlockSuiteEditor.tsx` | BlockSuite 에디터 래퍼 컴포넌트 |
+| `webapp/src/components/cardDetail/cardDetail.tsx` | 에디터가 통합된 카드 상세 페이지 |
+| `webapp/src/octoClient.ts` | BlockSuite 관련 API 클라이언트 메서드 |
+| `webapp/src/utils/blockSuiteUtils.test.ts` | 마이그레이션 로직 테스트 코드 |
