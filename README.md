@@ -37,11 +37,13 @@ make dist
 
 After a successful build, a `.tar.gz` file in the `/dist` folder will be created which can be uploaded to Mattermost. To avoid having to manually install your plugin, deploy your plugin using one of the following options.
 
+**Note**: The project uses **Vite** as the build tool. The build process automatically handles TypeScript compilation and bundling.
+
 ##### Building in Dev Mode
 
-Set the following environment variables to true before running `make dist`-
+Set the following environment variables to true before running `make dist`:
 
-1. MM_DEBUG
+1. `MM_DEBUG=true` - Builds only for your current OS/architecture (faster builds)
 
 ### Deploying with Local Mode
 

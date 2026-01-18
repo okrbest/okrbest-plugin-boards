@@ -16,6 +16,7 @@ export default defineConfig((configEnv) => {
     
         plugins: [
             react({
+                jsxRuntime: 'classic',
                 babel: {
                     plugins: [
                         // ['formatjs', {
@@ -150,6 +151,8 @@ export default defineConfig((configEnv) => {
             'process.env.NODE_ENV': JSON.stringify(configEnv.mode || 'production'),
             // 개발 모드에서만 디버그 플래그
             __DEV__: isDev,
+            // Node.js global 폴리필 (yjs, lib0 등 일부 라이브러리에서 필요)
+            global: 'globalThis',
         },
         
         // 로그 레벨 설정

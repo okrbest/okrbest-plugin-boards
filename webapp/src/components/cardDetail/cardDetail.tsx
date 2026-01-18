@@ -22,6 +22,7 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 
 import BlockIconSelector from '../blockIconSelector'
 
+import ErrorBoundary from '../../error_boundary'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {setCurrent as setCurrentCard} from '../../store/cards'
 import {Permission} from '../../constants'
@@ -253,11 +254,13 @@ const CardDetail = (props: Props): JSX.Element|null => {
 
             {!limited && <div className='CardDetail CardDetail--fullwidth content-blocks'>
                 {newBoardsEditor && (
-                    <BlockSuiteEditor
-                        card={card}
-                        boardId={card.boardId}
-                        readOnly={props.readonly || !canEditBoardCards}
-                    />
+                    <ErrorBoundary>
+                        <BlockSuiteEditor
+                            card={card}
+                            boardId={card.boardId}
+                            readOnly={props.readonly || !canEditBoardCards}
+                        />
+                    </ErrorBoundary>
                 )}
                 {!newBoardsEditor && (
                     <CardDetailProvider card={card}>

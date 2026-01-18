@@ -1,40 +1,34 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-jest.mock('yjs', () => ({
-    Doc: jest.fn().mockImplementation(() => ({
-        getMap: jest.fn().mockReturnValue({
-            get: jest.fn(),
-            set: jest.fn(),
-            values: jest.fn().mockReturnValue([]),
-        }),
-        on: jest.fn(),
-        off: jest.fn(),
-    })),
-    Text: jest.fn().mockImplementation((text) => ({
-        toString: () => text,
-    })),
-    applyUpdate: jest.fn(),
-    encodeStateAsUpdate: jest.fn().mockReturnValue(new Uint8Array([1, 2, 3])),
-}))
-
-import * as Y from 'yjs'
-
 import octoClient from '../octoClient'
 
 import { loadData } from './blockSuiteUtils'
 
 // Mock BlockSuite libraries
-jest.mock('@blocksuite/store', () => ({
-    DocCollection: jest.fn().mockImplementation(() => ({
-        createDoc: jest.fn().mockReturnValue({
-            id: 'mock-doc',
-            spaceDoc: new Y.Doc(),
-            getBlocks: jest.fn().mockReturnValue([]),
-            addBlock: jest.fn().mockReturnValue('mock-block-id'),
-        }),
-    })),
-}))
+const mockJobDocToSnapshot = jest.fn().mockResolvedValue({ meta: {}, blocks: {} })
+const mockJobSnapshotToDoc = jest.fn().mockResolvedValue({ id: 'restored-doc' })
+
+jest.mock('@blocksuite/store', () => {
+    return {
+        DocCollection: jest.fn().mockImplementation(() => ({
+            createDoc: jest.fn().mockReturnValue({
+                id: 'mock-doc',
+                collection: {},
+                getBlocks: jest.fn().mockReturnValue([]),
+                addBlock: jest.fn().mockReturnValue('mock-block-id'),
+                load: jest.fn(),
+            }),
+        })),
+        Job: jest.fn().mockImplementation(() => ({
+            docToSnapshot: mockJobDocToSnapshot,
+            snapshotToDoc: mockJobSnapshotToDoc,
+        })),
+        Text: jest.fn().mockImplementation((text) => ({
+            toString: () => text || '',
+        })),
+    }
+})
 
 jest.mock('@blocksuite/blocks', () => ({
     AffineSchemas: [],
@@ -55,9 +49,10 @@ describe('blockSuiteUtils', () => {
         jest.clearAllMocks()
         mockDoc = {
             id: 'card-1',
-            spaceDoc: new Y.Doc(),
+            collection: {},
             getBlocks: jest.fn().mockReturnValue([]),
             addBlock: jest.fn().mockReturnValue('mock-id'),
+            load: jest.fn(),
         }
     })
 
@@ -79,22 +74,27 @@ describe('blockSuiteUtils', () => {
             text: expect.anything()
         }), 'mock-id')
 
-        expect(octoClient.saveBlockSuiteContent).toHaveBeenCalledWith(cardId, expect.any(Uint8Array))
+        // Should save snapshot
+        expect(mockJobDocToSnapshot).toHaveBeenCalledWith(mockDoc)
+        expect(octoClient.saveBlockSuiteContent).toHaveBeenCalledWith(cardId, expect.anything())
     })
 
     it('should load existing BlockSuite document if present', async () => {
         const cardId = 'card-2'
-        const card = { id: cardId, fields: { contentOrder: [] } };
+        const card = { id: cardId, fields: { contentOrder: [] } }
+        const snapshot = { meta: {}, blocks: {} };
         
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue({ exists: true });
-        (octoClient.getBlockSuiteContent as jest.Mock).mockResolvedValue(new ArrayBuffer(8))
+        (octoClient.getBlockSuiteContent as jest.Mock).mockResolvedValue(JSON.stringify(snapshot))
 
-        await loadData(card as any, mockDoc)
+        const resultDoc = await loadData(card as any, mockDoc)
 
         expect(octoClient.getBlocksWithParent).not.toHaveBeenCalled()
         expect(octoClient.getBlockSuiteInfo).toHaveBeenCalledWith(cardId)
         expect(octoClient.getBlockSuiteContent).toHaveBeenCalledWith(cardId)
-        expect(Y.applyUpdate).toHaveBeenCalled()
+        
+        expect(mockJobSnapshotToDoc).toHaveBeenCalledWith(snapshot)
+        expect(resultDoc).toEqual({ id: 'restored-doc' })
     })
 
     it('should initialize empty page when no blocks exist', async () => {

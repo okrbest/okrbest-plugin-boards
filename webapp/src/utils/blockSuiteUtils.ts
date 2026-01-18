@@ -95,7 +95,7 @@ export async function loadData(card: Card, doc: Doc): Promise<Doc> {
             if (content) {
                 try {
                     // JSON 스냅샷으로 복원 시도
-                    let snapshot = content
+                    let snapshot: any = content
                     if (typeof content === 'string') {
                         snapshot = JSON.parse(content)
                     } else if (content instanceof ArrayBuffer) {
@@ -109,13 +109,14 @@ export async function loadData(card: Card, doc: Doc): Promise<Doc> {
                             snapshot = null
                         }
                     }
-
-                    if (snapshot) {
+            
+                    if (snapshot && typeof snapshot === 'object') {
                         const job = new Job({ collection: doc.collection })
                         const newDoc = await job.snapshotToDoc(snapshot)
                         return newDoc
                     }
                 } catch (error) {
+            
                     console.error('Failed to load snapshot:', error)
                     await initEmptyPage(doc)
                 }
