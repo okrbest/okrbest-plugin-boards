@@ -7,6 +7,32 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
+const cssInjectedByJsPlugin = () => {
+    return {
+        name: 'css-injected-by-js',
+        generateBundle(options, bundle) {
+            let css = ''
+            for (const key in bundle) {
+                if (key.endsWith('.css')) {
+                    css += bundle[key].source
+                    delete bundle[key] // CSS 파일 삭제
+                }
+            }
+            if (css) {
+                for (const key in bundle) {
+                    if (key.endsWith('.js')) {
+                        const jsCode = bundle[key].code
+                        const cssCode = JSON.stringify(css)
+                        // CSS 주입 코드 추가
+                        bundle[key].code = `(function(){try{var elementStyle=document.createElement('style');elementStyle.innerText=${cssCode};document.head.appendChild(elementStyle);}catch(e){console.error('Vite CSS Injection Error', e)}})();` + jsCode
+                        break
+                    }
+                }
+            }
+        }
+    }
+}
+
 export default defineConfig((configEnv) => {
     const isDev = configEnv.mode === 'development'
 
@@ -30,7 +56,8 @@ export default defineConfig((configEnv) => {
                 targets: [
                     { src: 'static/*', dest: 'static' }
                 ]
-            })
+            }),
+            cssInjectedByJsPlugin()
         ],
 
         resolve: {
@@ -114,7 +141,9 @@ export default defineConfig((configEnv) => {
                     },
                     // CSS 파일명 고정
                     assetFileNames: (assetInfo) => {
-                        if (assetInfo.name === 'style.css') return 'static/main.css'
+                        if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+                            return 'static/focalboard_bundle.css'
+                        }
                         return 'static/[name][extname]'
                     },
                     // Tree shaking 최적화
@@ -142,8 +171,8 @@ export default defineConfig((configEnv) => {
                 // CommonJS 변환 최적화
                 defaultIsModuleInterop: true,
             },
-            // 빌드 성능 최적화
-            assetsInlineLimit: 4096, // 4KB 이하 자산은 인라인 (base64)
+            // 빌드 성능 최적화 및 경로 문제 방지 (아이콘/폰트 인라인화)
+            assetsInlineLimit: 1048576, // 1MB 이하 자산은 인라인 (base64)
         },
     
         define: {
