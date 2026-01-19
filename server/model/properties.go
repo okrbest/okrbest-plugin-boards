@@ -150,7 +150,8 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 		return sb.String(), nil
 
 	case "card":
-		// v is a string in format "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+		// v is a JSON string: {"boardId":"...","cards":[{"id":"...","title":"..."}]}
+		// or legacy format "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
 		// or old format "boardId:cardId:cardTitle"
 		s, ok := v.(string)
 		if !ok {
@@ -159,7 +160,33 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 		if s == "" {
 			return "", nil
 		}
-		// 새 형식: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+		// JSON format
+		if strings.HasPrefix(s, "{") {
+			type cardRef struct {
+				ID    string `json:"id"`
+				Title string `json:"title"`
+			}
+			type cardValue struct {
+				BoardID string    `json:"boardId"`
+				Cards   []cardRef `json:"cards"`
+			}
+			var parsed cardValue
+			if err := json.Unmarshal([]byte(s), &parsed); err == nil {
+				if len(parsed.Cards) == 0 {
+					return "", nil
+				}
+				titles := make([]string, 0, len(parsed.Cards))
+				for _, c := range parsed.Cards {
+					title := c.Title
+					if title == "" {
+						title = "Untitled"
+					}
+					titles = append(titles, title)
+				}
+				return strings.Join(titles, ", "), nil
+			}
+		}
+		// legacy format: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
 		if strings.Contains(s, "|") {
 			parts := strings.SplitN(s, "|", 2)
 			if len(parts) < 2 || parts[1] == "" {

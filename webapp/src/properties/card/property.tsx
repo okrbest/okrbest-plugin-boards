@@ -21,7 +21,20 @@ export default class CardProperty extends PropertyType {
 
     displayValue = (propertyValue: string | string[] | undefined, _card: Card, _propertyTemplate: IPropertyTemplate) => {
         if (propertyValue && typeof propertyValue === 'string') {
-            // 새 형식: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+            // JSON 형식 (새 형식)
+            if (propertyValue.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(propertyValue)
+                    const cards = parsed.cards || []
+                    if (cards.length === 0) {
+                        return ''
+                    }
+                    return cards.map((c: {id: string, title: string}) => c.title || 'Untitled').join(', ')
+                } catch {
+                    return ''
+                }
+            }
+            // 이전 형식 호환: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
             if (propertyValue.includes('|')) {
                 const [, cardsStr] = propertyValue.split('|')
                 if (!cardsStr) {

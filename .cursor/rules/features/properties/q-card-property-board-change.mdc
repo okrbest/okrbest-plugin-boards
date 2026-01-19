@@ -1,0 +1,209 @@
+---
+description: 카드 타입 속성에서 보드 변경 시 동작 방식
+globs:
+  - webapp/src/properties/card/**
+  - webapp/src/components/cardDetail/cardDetailProperties.tsx
+  - webapp/src/widgets/propertyMenu.tsx
+---
+
+# 카드 타입 속성 - 보드 변경 로직
+
+## 개요
+
+카드 타입 속성(`type: 'card'`)은 다른 보드의 카드를 참조할 수 있는 속성입니다. 이 문서는 보드 변경 시 동작 방식을 설명합니다.
+
+## 데이터 저장 구조
+
+### 보드 ID 저장 위치
+
+| 저장 위치 | 경로 | 설명 |
+|-----------|------|------|
+| 속성 템플릿 | `board.cardProperties[].options[0].id` | 연결된 보드 ID |
+| 카드 속성 값 | `card.properties[propertyId]` | 선택된 카드 정보 |
+
+### 카드 속성 값 형식
+
+```
+"boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+```
+
+- `boardId`: 연결된 보드 ID (레거시 호환용, 실제로는 속성 템플릿에서 읽음)
+- `cardId:cardTitle`: 선택된 카드 ID와 제목
+
+**예시:**
+- 빈 상태: `""` (빈 문자열)
+- 카드 1개 선택: `"board123|card456:할일1"`
+- 카드 여러 개 선택: `"board123|card1:할일1,card2:할일2"`
+
+## 보드 변경 시 동작
+
+### 관련 파일
+
+- `webapp/src/components/cardDetail/cardDetailProperties.tsx`: 보드 선택 핸들러 및 확인 다이얼로그
+- `webapp/src/properties/card/card.tsx`: 카드 속성 에디터
+- `webapp/src/widgets/propertyMenu.tsx`: 보드 선택 메뉴
+- `webapp/src/mutator.ts`: 데이터 변경 로직
+
+### 동작 순서
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant PropertyMenu
+    participant CardDetailProperties
+    participant ConfirmDialog
+    participant Mutator
+    participant Store
+
+    User->>PropertyMenu: 새 보드 선택
+    PropertyMenu->>CardDetailProperties: onBoardSelected(selectedBoard)
+    CardDetailProperties->>CardDetailProperties: 영향 받는 카드 수 계산
+    
+    alt 영향 받는 카드가 있음
+        CardDetailProperties->>ConfirmDialog: 확인 다이얼로그 표시
+        ConfirmDialog->>CardDetailProperties: 사용자 확인
+    end
+    
+    CardDetailProperties->>Mutator: updatePropertyTemplateDefaultBoardId()
+    Note right of Mutator: 속성 템플릿에 새 보드 ID 저장
+    Mutator-->>CardDetailProperties: updatedBoard 반환
+    
+    loop 모든 카드에 대해
+        CardDetailProperties->>Mutator: changePropertyValue(card, '', 'clear card property')
+        Note right of Mutator: 카드 속성 값을 빈 문자열로 초기화
+    end
+    
+    Note over CardDetailProperties: ⚠️ 중요: updatedBoard에서 업데이트된 propertyTemplate 사용
+    CardDetailProperties->>Mutator: changePropertyTypeAndName(updatedBoard, updatedPropertyTemplate)
+    Note right of Mutator: 속성 이름을 보드 제목으로 변경
+```
+
+### 핵심 코드
+
+```tsx
+// cardDetailProperties.tsx - performBoardChange 함수
+async function performBoardChange(selectedBoard: Board, propertyTemplate: IPropertyTemplate) {
+    // 1. 속성 템플릿에 보드 ID 저장
+    const updatedBoard = await mutator.updatePropertyTemplateDefaultBoardId(
+        board, propertyTemplate.id, selectedBoard.id
+    )
+    
+    // 2. 모든 카드의 해당 속성 값 초기화 (필터링되지 않은 모든 카드 대상)
+    for (const c of allBoardCards) {
+        await mutator.changePropertyValue(
+            board.id, c, propertyTemplate.id, '', 'clear card property'
+        )
+    }
+    
+    // 3. 속성 이름을 보드 이름으로 변경
+    // ⚠️ 중요: updatedBoard에서 업데이트된 propertyTemplate을 사용해야 함!
+    const updatedPropertyTemplate = updatedBoard.cardProperties.find(
+        (p) => p.id === propertyTemplate.id
+    )
+    const cardPropertyType = propRegistry.get(updatedPropertyTemplate.type)
+    await mutator.changePropertyTypeAndName(
+        updatedBoard, allBoardCards, updatedPropertyTemplate, 
+        cardPropertyType.type, selectedBoard.title
+    )
+}
+```
+
+## 중요 사항
+
+### 1. 반드시 updatedPropertyTemplate 사용
+
+`changePropertyTypeAndName` 호출 시 **반드시 `updatedBoard`에서 찾은 `updatedPropertyTemplate`을 사용**해야 합니다.
+
+**이유**: `changePropertyTypeAndName` 함수 내부에서 card 타입 속성의 options를 복사합니다:
+
+```typescript
+// mutator.ts - changePropertyTypeAndName 내부
+if (propertyTemplate.type === 'card' && propertyTemplate.options?.length > 0) {
+    newTemplate.options = propertyTemplate.options.map((option) => ({...option}))
+}
+```
+
+원래 `propertyTemplate`을 전달하면 **이전 보드 ID**가 다시 복사되어 새로 저장한 보드 ID가 덮어써집니다!
+
+### 2. 모든 카드 초기화
+
+`allBoardCards` (필터링되지 않은 모든 카드)를 사용하여 초기화합니다.
+- 필터가 적용된 상태에서도 모든 카드가 초기화됨
+
+### 3. 확인 다이얼로그
+
+선택된 카드가 있는 경우 사용자에게 확인 다이얼로그를 표시합니다.
+- `affectsNumOfCards > 0`인 경우에만 표시
+- 빈 값(빈 문자열 또는 `"boardId|"` 형태)은 영향 받는 카드로 계산하지 않음
+
+### 4. 비동기 처리
+
+`setTimeout`을 사용하여 메뉴가 닫힌 후에 실행합니다.
+
+## 보드 ID 읽기
+
+### 속성 템플릿에서 읽기
+
+```tsx
+// card.tsx
+const linkedBoardId = propertyTemplate.options?.[0]?.id || ''
+```
+
+- 보드 ID는 **속성 템플릿**에서 가져옴
+- 카드 속성 값에 저장된 보드 ID는 레거시 호환용
+
+### 선택된 카드 정보 파싱
+
+```tsx
+const parsePropertyValue = (value: string | string[] | undefined): {
+    boardId: string, 
+    selectedCards: SelectedCard[]
+} => {
+    // 새 형식: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+    if (value?.includes('|')) {
+        const [boardId, cardsStr] = value.split('|')
+        // ... 카드 정보 파싱
+    }
+    // 이전 형식: "boardId:cardId:cardTitle"
+    // ... 레거시 호환
+}
+```
+
+## 관련 함수
+
+| 함수 | 파일 | 설명 |
+|------|------|------|
+| `updatePropertyTemplateDefaultBoardId` | `mutator.ts` | 속성 템플릿에 보드 ID 저장 |
+| `changePropertyValue` | `mutator.ts` | 카드 속성 값 변경 |
+| `changePropertyTypeAndName` | `mutator.ts` | 속성 타입/이름 변경 (options 복사 주의!) |
+| `parsePropertyValue` | `card.tsx` | 속성 값 파싱 |
+| `serializePropertyValue` | `card.tsx` | 속성 값 직렬화 |
+| `extractCardIds` | `cardFilter.ts` | 필터링용 카드 ID 추출 |
+| `displayValue` | `property.tsx` | 표시용 카드 제목 추출 |
+
+## 레거시 호환성
+
+이전 형식 (`boardId:cardId:cardTitle`)도 다음 함수들에서 지원됩니다:
+
+- `parsePropertyValue()` - 값 파싱
+- `extractCardIds()` - 필터링용 카드 ID 추출
+- `displayValue()` - 표시용 값 변환
+
+## 자주 발생하는 버그
+
+### 보드 변경 후 UI가 업데이트되지 않는 경우
+
+**증상**: 보드를 변경했는데 이전 보드로 표시됨
+
+**원인**: `changePropertyTypeAndName`에 원래 `propertyTemplate`을 전달하여 이전 보드 ID가 다시 저장됨
+
+**해결책**: `updatedBoard`에서 `updatedPropertyTemplate`을 찾아서 전달
+
+```tsx
+// ❌ 잘못된 코드
+await mutator.changePropertyTypeAndName(updatedBoard, cards, propertyTemplate, ...)
+
+// ✅ 올바른 코드
+const updatedPropertyTemplate = updatedBoard.cardProperties.find((p) => p.id === propertyTemplate.id)
+await mutator.changePropertyTypeAndName(updatedBoard, cards, updatedPropertyTemplate, ...)
+```

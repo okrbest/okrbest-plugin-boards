@@ -28,12 +28,30 @@ interface ReferencedCard {
 }
 
 // propertyValue에서 참조된 카드들 파싱
+// JSON 형식: {"boardId":"...","cards":[{"id":"...","title":"..."}]}
+// 이전 형식 호환: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..." 또는 "boardId:cardId:cardTitle"
 const parseReferencedCards = (propertyValue: string | string[] | undefined): ReferencedCard[] => {
     if (!propertyValue || typeof propertyValue !== 'string') {
         return []
     }
 
-    // 새 형식: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+    // JSON 형식 (새 형식)
+    if (propertyValue.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(propertyValue)
+            const boardId = parsed.boardId || ''
+            const cards = parsed.cards || []
+            return cards.map((c: {id: string, title: string}) => ({
+                id: c.id,
+                title: c.title || 'Untitled',
+                boardId,
+            })).filter((c: ReferencedCard) => c.id)
+        } catch {
+            return []
+        }
+    }
+
+    // 이전 형식 호환: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
     if (propertyValue.includes('|')) {
         const [boardId, cardsStr] = propertyValue.split('|')
         if (!cardsStr || !boardId) {
@@ -52,7 +70,7 @@ const parseReferencedCards = (propertyValue: string | string[] | undefined): Ref
         }).filter((c) => c.id)
     }
 
-    // 이전 형식: "boardId:cardId:cardTitle"
+    // 이전 형식 호환: "boardId:cardId:cardTitle"
     const parts = propertyValue.split(':')
     if (parts.length >= 3) {
         return [{
@@ -166,17 +184,67 @@ const CardFilterValue = (props: Props): JSX.Element => {
         }
     }, [collectedCards, fetchCardDetails])
 
+    // 필터 값에서 카드 ID 추출
+    // JSON 형식: {"id":"cardId","title":"cardTitle"}
+    // 이전 형식 호환: "cardId:title" 또는 "cardId"
+    const extractCardIdFromFilterValue = useCallback((filterValue: string): string => {
+        // JSON 형식
+        if (filterValue.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(filterValue)
+                return parsed.id || ''
+            } catch {
+                return ''
+            }
+        }
+        // 이전 형식 호환: "cardId:title" 또는 "cardId"
+        const colonIndex = filterValue.indexOf(':')
+        return colonIndex === -1 ? filterValue : filterValue.substring(0, colonIndex)
+    }, [])
+
+    // 필터 값에서 카드 ID 목록 추출
+    const filterCardIds = useMemo(() => {
+        return filter.values.map(extractCardIdFromFilterValue)
+    }, [filter.values, extractCardIdFromFilterValue])
+
+    // 필터 값에서 제목 추출
+    // JSON 형식: {"id":"cardId","title":"cardTitle"}
+    // 이전 형식 호환: "cardId:title" 또는 "cardId"
+    const extractTitleFromFilterValue = useCallback((filterValue: string): string | null => {
+        // JSON 형식
+        if (filterValue.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(filterValue)
+                return parsed.title || null
+            } catch {
+                return null
+            }
+        }
+        // 이전 형식 호환: "cardId:title"
+        const colonIndex = filterValue.indexOf(':')
+        if (colonIndex !== -1 && filterValue.length > colonIndex + 1) {
+            return filterValue.substring(colonIndex + 1)
+        }
+        return null
+    }, [])
+
     // 선택된 카드들의 표시 값
     const displayValue = useMemo(() => {
         if (filter.values.length === 0) {
             return emptyDisplayValue
         }
 
-        return filter.values.map((cardId) => {
+        return filter.values.map((filterValue) => {
+            const cardId = extractCardIdFromFilterValue(filterValue)
+            // 필터 값에 제목이 있으면 사용, 없으면 맵에서 찾기
+            const title = extractTitleFromFilterValue(filterValue)
+            if (title) {
+                return title
+            }
             const card = referencedCardsMap.get(cardId) || collectedCards.get(cardId)
             return card?.title || '(Unknown)'
         }).join(', ')
-    }, [filter.values, referencedCardsMap, collectedCards, emptyDisplayValue])
+    }, [filter.values, referencedCardsMap, collectedCards, emptyDisplayValue, extractCardIdFromFilterValue, extractTitleFromFilterValue])
 
     // 선택 가능한 카드 목록
     const availableCards = useMemo(() => {
@@ -204,7 +272,7 @@ const CardFilterValue = (props: Props): JSX.Element => {
                         key={card.id}
                         id={card.id}
                         name={card.title}
-                        isOn={filter.values.includes(card.id)}
+                        isOn={filterCardIds.includes(card.id)}
                         suppressItemClicked={true}
                         onClick={(cardId) => {
                             const filterIndex = view.fields.filter.filters.indexOf(filter)
@@ -214,10 +282,16 @@ const CardFilterValue = (props: Props): JSX.Element => {
                             const newFilter = filterGroup.filters[filterIndex] as FilterClause
                             Utils.assert(newFilter, `No filter at index ${filterIndex}`)
 
-                            if (filter.values.includes(cardId)) {
-                                newFilter.values = newFilter.values.filter((id) => id !== cardId)
+                            // 선택된 카드의 제목 찾기
+                            const selectedCard = availableCards.find((c) => c.id === cardId)
+                            const cardTitle = selectedCard?.title || 'Untitled'
+
+                            if (filterCardIds.includes(cardId)) {
+                                // 제거: 카드 ID로 시작하는 값 제거
+                                newFilter.values = newFilter.values.filter((v) => extractCardIdFromFilterValue(v) !== cardId)
                             } else {
-                                newFilter.values.push(cardId)
+                                // 추가: JSON 형식으로 저장 {"id":"cardId","title":"cardTitle"}
+                                newFilter.values.push(JSON.stringify({id: cardId, title: cardTitle}))
                             }
                             mutator.changeViewFilter(view.boardId, view.id, view.fields.filter, filterGroup)
                         }}

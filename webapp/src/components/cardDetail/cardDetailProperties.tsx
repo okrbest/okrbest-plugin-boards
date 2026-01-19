@@ -24,9 +24,10 @@ import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import propRegistry from '../../properties'
 import {PropertyType} from '../../properties/types'
-import {useAppDispatch} from '../../store/hooks'
+import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {updateBoards} from '../../store/boards'
 import {updateViews} from '../../store/views'
+import {getCurrentBoardCards} from '../../store/cards'
 
 type Props = {
     board: Board
@@ -44,6 +45,9 @@ const CardDetailProperties = (props: Props) => {
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
     const canEditBoardCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
     const intl = useIntl()
+    
+    // 현재 보드의 모든 카드 (필터링되지 않은)
+    const allBoardCards = useAppSelector(getCurrentBoardCards)
 
     useEffect(() => {
         const newProperty = board.cardProperties.find((property) => property.id === newTemplateId)
@@ -133,6 +137,112 @@ const CardDetailProperties = (props: Props) => {
         setShowConfirmationDialog(true)
     }
 
+    function onBoardChangeSetAndOpenConfirmationDialog(selectedBoard: Board, propertyTemplate: IPropertyTemplate) {
+        console.log('onBoardChangeSetAndOpenConfirmationDialog called:', selectedBoard.title, propertyTemplate.name)
+        console.log('allBoardCards:', allBoardCards.length)
+        
+        // 카드 속성에 실제로 선택된 카드가 있는 카드 수 계산
+        // JSON 형식: {"boardId":"...","cards":[...]} 또는 이전 형식 호환
+        const cardsWithSelectedCards = allBoardCards.filter((c) => {
+            const value = c.fields.properties[propertyTemplate.id]
+            console.log('Card value:', c.title, value)
+            if (!value || typeof value !== 'string') {
+                return false
+            }
+            // JSON 형식 (새 형식)
+            if (value.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(value)
+                    return parsed.cards && parsed.cards.length > 0
+                } catch {
+                    return false
+                }
+            }
+            // 이전 형식 호환: "boardId|cardId:title"
+            if (value.includes('|')) {
+                const [, cardsStr] = value.split('|')
+                return cardsStr && cardsStr.length > 0
+            }
+            // 이전 형식 호환: "boardId:cardId:cardTitle"
+            const parts = value.split(':')
+            return parts.length >= 3
+        })
+        const affectsNumOfCards = cardsWithSelectedCards.length
+        console.log('affectsNumOfCards:', affectsNumOfCards)
+
+        // 영향 받는 카드가 없으면 바로 변경
+        if (affectsNumOfCards === 0) {
+            console.log('No affected cards, performing change directly')
+            performBoardChange(selectedBoard, propertyTemplate)
+            return
+        }
+        
+        console.log('Showing confirmation dialog')
+
+        // 확인 다이얼로그 표시
+        setConfirmationDialogBox({
+            heading: intl.formatMessage({id: 'CardDetailProperty.confirm-board-change-heading', defaultMessage: 'Confirm linked board change'}),
+            subText: intl.formatMessage({
+                id: 'CardDetailProperty.confirm-board-change-subtext',
+                defaultMessage: 'Are you sure you want to change the linked board for property "{propertyName}"? This will clear card selections across {numOfCards} card(s) in this board.',
+            },
+            {
+                propertyName: propertyTemplate.name,
+                numOfCards: String(affectsNumOfCards),
+            }),
+            confirmButtonText: intl.formatMessage({id: 'CardDetailProperty.board-change-action-button', defaultMessage: 'Change board'}),
+            onConfirm: async () => {
+                setShowConfirmationDialog(false)
+                await performBoardChange(selectedBoard, propertyTemplate)
+                sendFlashMessage({content: intl.formatMessage({id: 'CardDetailProperty.board-changed', defaultMessage: 'Changed linked board successfully!'}), severity: 'high'})
+            },
+            onClose: () => setShowConfirmationDialog(false),
+        })
+
+        setShowConfirmationDialog(true)
+    }
+
+    async function performBoardChange(selectedBoard: Board, propertyTemplate: IPropertyTemplate) {
+        console.log('performBoardChange called:', selectedBoard.title)
+        try {
+            // 속성 템플릿에 기본 보드 ID 저장 (mutator.updateBoard 내부에서 이미 dispatch됨)
+            console.log('Calling updatePropertyTemplateDefaultBoardId...')
+            const updatedBoard = await mutator.updatePropertyTemplateDefaultBoardId(board, propertyTemplate.id, selectedBoard.id)
+            console.log('updatedBoard:', updatedBoard?.id, updatedBoard?.cardProperties?.find((p) => p.id === propertyTemplate.id)?.options)
+            
+            // 보드가 변경되면 모든 카드의 해당 속성 값 초기화 (필터링되지 않은 모든 카드 대상)
+            console.log('Clearing card properties for', allBoardCards.length, 'cards...')
+            for (let i = 0; i < allBoardCards.length; i++) {
+                const c = allBoardCards[i]
+                console.log(`Clearing card ${i + 1}/${allBoardCards.length}:`, c.title)
+                try {
+                    await mutator.changePropertyValue(board.id, c, propertyTemplate.id, '', 'clear card property')
+                    console.log(`Card ${i + 1} cleared successfully`)
+                } catch (cardErr) {
+                    console.error(`Error clearing card ${i + 1}:`, cardErr)
+                }
+            }
+            console.log('All cards cleared')
+            
+            // 속성 이름을 선택한 보드 이름으로 변경
+            // 중요: updatedBoard에서 업데이트된 propertyTemplate을 사용해야 함!
+            // 그래야 changePropertyTypeAndName이 options를 복사할 때 새 보드 ID가 유지됨
+            const updatedPropertyTemplate = updatedBoard.cardProperties.find((p) => p.id === propertyTemplate.id)
+            if (!updatedPropertyTemplate) {
+                console.error('Could not find updated property template')
+                return
+            }
+            console.log('Changing property name to:', selectedBoard.title)
+            console.log('updatedPropertyTemplate.options:', updatedPropertyTemplate.options)
+            const cardPropertyType = propRegistry.get(updatedPropertyTemplate.type)
+            await mutator.changePropertyTypeAndName(updatedBoard, allBoardCards, updatedPropertyTemplate, cardPropertyType.type, selectedBoard.title)
+            console.log('performBoardChange completed successfully')
+        } catch (err: any) {
+            console.error('Error in performBoardChange:', err)
+            Utils.logError(`Error changing linked board: ${err?.toString()}`)
+        }
+    }
+
     const moveProperty = (propertyTemplate: IPropertyTemplate, direction: 'up' | 'down') => {
         const currentIndex = board.cardProperties.findIndex((template) => template.id === propertyTemplate.id)
         if (currentIndex === -1) {
@@ -205,20 +315,12 @@ const CardDetailProperties = (props: Props) => {
                                     canMoveUp={index > 0}
                                     canMoveDown={index < board.cardProperties.length - 1}
                                     onBoardSelected={(selectedBoard: Board) => {
-                                        // 메뉴가 닫힌 후에 비동기 작업 실행
-                                        setTimeout(async () => {
-                                            // 속성 템플릿에 기본 보드 ID 저장
-                                            const updatedBoard = await mutator.updatePropertyTemplateDefaultBoardId(board, propertyTemplate.id, selectedBoard.id)
-                                            
-                                            // 보드가 변경되면 모든 카드의 해당 속성에 새 보드 ID만 저장 (카드 선택은 초기화)
-                                            // 새로운 형식 사용: "boardId|" (빈 카드 목록)
-                                            for (const c of cards) {
-                                                await mutator.changePropertyValue(board.id, c, propertyTemplate.id, `${selectedBoard.id}|`, 'set board id')
-                                            }
-                                            // 속성 이름을 선택한 보드 이름으로 변경 (업데이트된 보드 사용)
-                                            const cardPropertyType = propRegistry.get(propertyTemplate.type)
-                                            await mutator.changePropertyTypeAndName(updatedBoard, cards, propertyTemplate, cardPropertyType.type, selectedBoard.title)
-                                        }, 0)
+                                        // 메뉴가 닫힌 후에 확인 다이얼로그 표시
+                                        console.log('onBoardSelected called:', selectedBoard.title)
+                                        setTimeout(() => {
+                                            console.log('setTimeout triggered, calling onBoardChangeSetAndOpenConfirmationDialog')
+                                            onBoardChangeSetAndOpenConfirmationDialog(selectedBoard, propertyTemplate)
+                                        }, 100)
                                     }}
                                 />
                             </MenuWrapper>

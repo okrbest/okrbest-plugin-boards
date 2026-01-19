@@ -178,16 +178,33 @@ const CenterPanel = (props: Props) => {
         if ((activeView.fields.viewType === 'board' || activeView.fields.viewType === 'table') && groupByProperty) {
             if (groupByOptionId) {
                 propertiesThatMeetFilters[groupByProperty.id] = groupByOptionId
-            } else {
-                delete propertiesThatMeetFilters[groupByProperty.id]
             }
         }
 
-        // card 타입 속성의 경우, 속성 템플릿의 options[0]에서 보드 ID 참조하여 자동 설정
-        // 이미 설정된 속성이 있으면 건너뛰기
+        // card 타입 속성의 경우, 속성 템플릿의 options[0]에서 보드 ID 참조하여 JSON 형식으로 설정
+        // 필터/그룹화 값이 "cardId:title,cardId2:title2" 형식이면 JSON으로 변환
         for (const propertyTemplate of board.cardProperties) {
-            if (propertyTemplate.type === 'card' && !propertiesThatMeetFilters[propertyTemplate.id] && propertyTemplate.options && propertyTemplate.options.length > 0 && propertyTemplate.options[0].id) {
-                propertiesThatMeetFilters[propertyTemplate.id] = `${propertyTemplate.options[0].id}|`
+            if (propertyTemplate.type === 'card' && propertyTemplate.options && propertyTemplate.options.length > 0 && propertyTemplate.options[0].id) {
+                const linkedBoardId = propertyTemplate.options[0].id
+                const existingValue = propertiesThatMeetFilters[propertyTemplate.id]
+
+                if (!existingValue) {
+                    // 값이 없으면 빈 JSON 상태로 설정
+                    propertiesThatMeetFilters[propertyTemplate.id] = JSON.stringify({boardId: linkedBoardId, cards: []})
+                } else if (!existingValue.startsWith('{')) {
+                    // 필터/그룹화에서 설정된 값 ("cardId:title,cardId2:title2" 형식)을 JSON으로 변환
+                    const cards = existingValue.split(',').map((cardStr) => {
+                        const colonIndex = cardStr.indexOf(':')
+                        if (colonIndex === -1) {
+                            return {id: cardStr, title: 'Untitled'}
+                        }
+                        return {
+                            id: cardStr.substring(0, colonIndex),
+                            title: cardStr.substring(colonIndex + 1) || 'Untitled',
+                        }
+                    }).filter((c) => c.id)
+                    propertiesThatMeetFilters[propertyTemplate.id] = JSON.stringify({boardId: linkedBoardId, cards})
+                }
             }
         }
 
@@ -236,16 +253,39 @@ const CenterPanel = (props: Props) => {
         if ((activeView.fields.viewType === 'board' || activeView.fields.viewType === 'table') && groupByProperty) {
             if (groupByOptionId) {
                 propertiesThatMeetFilters[groupByProperty.id] = groupByOptionId
-            } else {
-                delete propertiesThatMeetFilters[groupByProperty.id]
             }
         }
 
-        // card 타입 속성의 경우, 속성 템플릿의 options[0]에서 보드 ID 참조하여 자동 설정
-        // 이미 설정된 속성이 있으면 건너뛰기
+        // card 타입 속성의 경우, 속성 템플릿의 options[0]에서 보드 ID 참조하여 JSON 형식으로 설정
+        // 필터/그룹화 값이 "cardId:title,cardId2:title2" 형식이면 JSON으로 변환
+        // eslint-disable-next-line no-console
+        console.log('[DEBUG addCard] propertiesThatMeetFilters:', JSON.stringify(propertiesThatMeetFilters))
+        // eslint-disable-next-line no-console
+        console.log('[DEBUG addCard] filter:', JSON.stringify(activeView.fields.filter))
         for (const propertyTemplate of board.cardProperties) {
-            if (propertyTemplate.type === 'card' && !propertiesThatMeetFilters[propertyTemplate.id] && !properties[propertyTemplate.id] && propertyTemplate.options && propertyTemplate.options.length > 0 && propertyTemplate.options[0].id) {
-                propertiesThatMeetFilters[propertyTemplate.id] = `${propertyTemplate.options[0].id}|`
+            if (propertyTemplate.type === 'card' && propertyTemplate.options && propertyTemplate.options.length > 0 && propertyTemplate.options[0].id) {
+                const linkedBoardId = propertyTemplate.options[0].id
+                const existingValue = propertiesThatMeetFilters[propertyTemplate.id] || properties[propertyTemplate.id]
+                // eslint-disable-next-line no-console
+                console.log(`[DEBUG addCard] card prop ${propertyTemplate.name}: existingValue=${existingValue}`)
+
+                if (!existingValue) {
+                    // 값이 없으면 빈 JSON 상태로 설정
+                    propertiesThatMeetFilters[propertyTemplate.id] = JSON.stringify({boardId: linkedBoardId, cards: []})
+                } else if (!existingValue.startsWith('{')) {
+                    // 필터/그룹화에서 설정된 값 ("cardId:title,cardId2:title2" 형식)을 JSON으로 변환
+                    const cards = existingValue.split(',').map((cardStr) => {
+                        const colonIndex = cardStr.indexOf(':')
+                        if (colonIndex === -1) {
+                            return {id: cardStr, title: 'Untitled'}
+                        }
+                        return {
+                            id: cardStr.substring(0, colonIndex),
+                            title: cardStr.substring(colonIndex + 1) || 'Untitled',
+                        }
+                    }).filter((c) => c.id)
+                    propertiesThatMeetFilters[propertyTemplate.id] = JSON.stringify({boardId: linkedBoardId, cards})
+                }
             }
         }
 
