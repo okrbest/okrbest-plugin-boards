@@ -36,28 +36,19 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
     // 1. 에디터 초기화
     useLayoutEffect(() => {
         if (!card?.id) {
-            console.log('🔧 BlockSuite: No card.id, skipping init')
             setIsLoading(false)
             return
         }
 
-        console.log('🔧 BlockSuite: Starting editor init for card:', card.id)
         setIsLoading(true)
 
         try {
             const { editor: newEditor, doc: newDoc, collection: newCollection } = initEditor(card.id)
-            console.log('🔧 BlockSuite: Editor initialized successfully', { 
-                editor: !!newEditor, 
-                doc: !!newDoc, 
-                collection: !!newCollection,
-                docId: newDoc?.id
-            })
-      
             setEditor(newEditor)
             setDoc(newDoc)
             setCollection(newCollection)
         } catch (error) {
-            console.error('🔧 BlockSuite: Failed to initialize editor:', error)
+            console.error('Failed to initialize BlockSuite editor:', error)
             setIsLoading(false)
             sendFlashMessage({
                 content: intl.formatMessage({
@@ -69,7 +60,6 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
         }
 
         return () => {
-            console.log('🔧 BlockSuite: Cleaning up editor')
             setEditor(null)
             setDoc(null)
             setCollection(null)
@@ -78,30 +68,22 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
 
     // 2. 데이터 로드
     useEffect(() => {
-        if (!editor || !doc) {
-            console.log('🔧 BlockSuite loadData: Skipping, editor:', !!editor, 'doc:', !!doc)
-            return
-        }
+        if (!editor || !doc) return
 
         const loadData = async () => {
-            console.log('🔧 BlockSuite loadData: Starting for card:', card.id)
             setIsLoading(true)
             try {
                 const loadedDoc = await loadEditorData(editor, doc, card)
-                console.log('🔧 BlockSuite loadData: loadEditorData returned:', !!loadedDoc)
                 
                 // 스냅샷 로드 시 새로운 doc이 생성되므로 에디터에 반영
                 if (loadedDoc && loadedDoc !== doc) {
-                    console.log('🔧 BlockSuite loadData: Updating doc in editor')
                     editor.doc = loadedDoc
                     setDoc(loadedDoc)
-                    // collection은 동일할 것으로 가정
                 }
                 
-                console.log('🔧 BlockSuite loadData: Setting isLoading to false')
                 setIsLoading(false)
             } catch (error) {
-                console.error('🔧 BlockSuite loadData: Error:', error)
+                console.error('Failed to load BlockSuite content:', error)
                 setIsLoading(false)
                 sendFlashMessage({
                     content: intl.formatMessage({

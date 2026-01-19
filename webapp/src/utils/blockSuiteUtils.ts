@@ -87,10 +87,8 @@ function getImageSize(file: File): Promise<{ width: number; height: number }> {
 }
 
 export async function loadData(card: Card, doc: Doc): Promise<Doc> {
-    console.log('🔧 blockSuiteUtils.loadData: Starting for card:', card.id)
     try {
         const info = await octoClient.getBlockSuiteInfo(card.id)
-        console.log('🔧 blockSuiteUtils.loadData: getBlockSuiteInfo returned:', info)
 
         if (info) {
             const content = await octoClient.getBlockSuiteContent(card.id)

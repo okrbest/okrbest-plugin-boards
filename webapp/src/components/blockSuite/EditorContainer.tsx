@@ -6,6 +6,7 @@ import { useIntl } from 'react-intl'
 
 import { uploadImageToBlockSuite } from '../../utils/blockSuiteUtils'
 import { sendFlashMessage } from '../flashMessages'
+import AddDescriptionTourStep from '../onboardingTour/addDescription/add_description'
 
 import { useEditor } from './editor/context'
 import './BlockSuiteEditor.scss'
@@ -95,37 +96,25 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
     // 에디터를 DOM에 마운트
     useEffect(() => {
         const mountPoint = editorMountRef.current
-        console.log('🔧 EditorContainer mount effect:', { mountPoint: !!mountPoint, editor: !!editor, editorDoc: !!editor?.doc })
-        
-        if (!mountPoint || !editor) {
-            console.log('🔧 EditorContainer: Skipping mount, mountPoint:', !!mountPoint, 'editor:', !!editor)
-            return
-        }
+        if (!mountPoint || !editor) return
 
-        // 기존 내용 정리 (React가 관리하지 않는 영역이므로 안전)
-        mountPoint.innerHTML = '' // replaceChildren은 React 17 환경에서 폴리필 필요할 수 있으므로 innerHTML 사용
+        // 기존 내용 정리
+        mountPoint.innerHTML = ''
     
-        // BlockSuite 권장 순서: doc을 먼저 설정한 후 DOM에 추가
+        // BlockSuite 에디터 마운트
         if (editor.doc) {
-            console.log('🔧 EditorContainer: Appending editor to mountPoint')
             mountPoint.appendChild(editor)
-            console.log('🔧 EditorContainer: Editor appended, mountPoint children:', mountPoint.children.length)
-        } else {
-            console.log('🔧 EditorContainer: editor.doc is falsy, not appending')
         }
 
         return () => {
             // cleanup: React가 DOM을 정리하기 전에 editor를 제거
-            console.log('🔧 EditorContainer: Cleanup')
             if (mountPoint && editor) {
                 try {
-                    // editor가 mountPoint의 직접 자식인지 확인
                     if (mountPoint.contains(editor)) {
                         mountPoint.removeChild(editor)
                     }
-                } catch (error) {
-                    // cleanup 오류 무시 (이미 제거되었을 수 있음)
-                    console.debug('Editor cleanup error (ignored):', error)
+                } catch {
+                    // cleanup 오류 무시
                 }
             }
         }
@@ -168,7 +157,10 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
 
     return (
         <div ref={wrapperRef} className={`blocksuite-editor-wrapper ${isLoading ? 'loading' : ''}`}>
-            <div ref={editorMountRef} className="blocksuite-editor-mount" style={{ height: '100%' }} />
+            {/* 온보딩 투어: 에디터 영역 안내 */}
+            {!isLoading && <AddDescriptionTourStep />}
+            
+            <div ref={editorMountRef} className="blocksuite-editor-mount octo-content" style={{ height: '100%' }} />
             {isLoading && (
                 <div className="blocksuite-loading-overlay">
                     <div className="blocksuite-loading-spinner" />

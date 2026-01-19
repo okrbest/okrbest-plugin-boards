@@ -20,8 +20,6 @@ export interface EditorInitResult {
  * @returns 초기화된 에디터, doc, collection
  */
 export function initEditor(cardId: string): EditorInitResult {
-    console.log('🔧 initEditor: Starting with cardId:', cardId)
-    
     // cardId 유효성 확인
     if (!cardId || typeof cardId !== 'string' || cardId.trim() === '') {
         throw new Error(`Invalid cardId: ${cardId}`)
@@ -29,21 +27,12 @@ export function initEditor(cardId: string): EditorInitResult {
 
     // createEmptyDoc()은 이미 초기화된 doc, collection을 반환
     // 기본 구조(page, surface, note, paragraph)가 이미 포함되어 있음
-    console.log('🔧 initEditor: Calling createEmptyDoc()')
-    const emptyDoc = createEmptyDoc()
-    console.log('🔧 initEditor: createEmptyDoc() returned:', !!emptyDoc)
-    
-    const doc = emptyDoc.init()
-    console.log('🔧 initEditor: doc.init() returned:', !!doc, 'id:', doc?.id)
-    
+    const doc = createEmptyDoc().init()
     const collection = doc.collection
-    console.log('🔧 initEditor: collection:', !!collection)
 
     // 에디터 생성 및 설정
-    console.log('🔧 initEditor: Creating AffineEditorContainer')
     const editor = new AffineEditorContainer()
     editor.doc = doc
-    console.log('🔧 initEditor: Editor created and doc assigned')
 
     return { editor, doc, collection }
 }

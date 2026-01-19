@@ -1,0 +1,15 @@
+# pluginctl configuration for Mattermost
+# Update these values to match your Mattermost server
+
+# Mattermost server URL
+url = "http://localhost:8065"
+
+# Admin credentials (alternatively, you can use a personal access token)
+# username = "admin"
+# password = "your-password"
+
+# OR use a personal access token:
+# token = "your-token-here"
+
+# Plugin ID (from plugin.json)
+plugin_id = "focalboard"
