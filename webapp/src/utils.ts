@@ -616,6 +616,19 @@ class Utils {
         }
 
         const baseURL = Utils.getBaseURL()
+
+        // Handle static assets (images, fonts, etc.) - these are served from /static/plugins/{plugin_id}/
+        // Webpack outputs paths like "static/copyLink.gif" which need to be converted to
+        // "/static/plugins/focalboard/copyLink.gif"
+        if (path.startsWith('static/')) {
+            const filename = path.substring('static/'.length)
+            const staticPath = `/static/${baseURL}/${filename}`
+            if (absolute) {
+                return window.location.origin + staticPath
+            }
+            return staticPath
+        }
+
         let finalPath = baseURL + path
         if (path.indexOf('/') !== 0) {
             finalPath = baseURL + '/' + path
