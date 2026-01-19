@@ -44,6 +44,34 @@
         --affine-editor-width: 100%;
     }
 
+    /* Hide page title and tags - we use card title instead */
+    .affine-doc-page-block-title-container,
+    doc-title,
+    [data-block-is-title="true"],
+    .doc-title-container {
+        display: none !important;
+    }
+
+    /* Hide tags - multiple selectors to ensure it works */
+    .affine-page-tags,
+    .page-tags,
+    [data-tags],
+    .doc-meta-tags,
+    affine-page-meta-tags,
+    .affine-doc-meta-tags,
+    .doc-page-meta-tags {
+        display: none !important;
+    }
+
+    /* Hide tag-related elements in BlockSuite */
+    affine-editor-container {
+        doc-meta-tags,
+        affine-page-meta-tags,
+        .affine-page-meta-tags {
+            display: none !important;
+        }
+    }
+
     /* Mattermost Scrollbar Style */
     &::-webkit-scrollbar {
         width: 8px;

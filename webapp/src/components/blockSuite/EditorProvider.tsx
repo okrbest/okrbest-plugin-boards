@@ -40,10 +40,24 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
             return
         }
 
+        console.log('[EditorProvider] Initializing editor for card:', card.id, 'readOnly:', readOnly)
         setIsLoading(true)
 
         try {
             const { editor: newEditor, doc: newDoc, collection: newCollection } = initEditor(card.id)
+
+            // readOnly 모드 설정
+            // BlockSuite의 mode는 'page' 또는 'edgeless'만 지원
+            // readonly는 doc 레벨에서 설정해야 함
+            newEditor.mode = 'page'
+            console.log('[EditorProvider] Editor mode set to: page, readOnly:', readOnly)
+
+            // readonly 속성 설정 (있다면)
+            if ('readonly' in newEditor) {
+                (newEditor as any).readonly = readOnly
+                console.log('[EditorProvider] Set editor.readonly to', readOnly)
+            }
+
             setEditor(newEditor)
             setDoc(newDoc)
             setCollection(newCollection)
@@ -64,26 +78,42 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
             setDoc(null)
             setCollection(null)
         }
-    }, [card.id, intl])
+    }, [card.id, readOnly, intl])
 
     // 2. 데이터 로드
     useEffect(() => {
-        if (!editor || !doc) return
+        if (!editor || !doc) {
+            console.log('[EditorProvider] Skipping data load: editor or doc not ready')
+            return
+        }
+
+        console.log('[EditorProvider] ====== Data Load useEffect triggered ======')
+        console.log('[EditorProvider] Card:', card.id, card.title)
 
         const loadData = async () => {
+            console.log('[EditorProvider] Setting loading state...')
             setIsLoading(true)
             try {
+                console.log('[EditorProvider] Calling loadEditorData...')
                 const loadedDoc = await loadEditorData(editor, doc, card)
-                
+                console.log('[EditorProvider] loadEditorData returned')
+
                 // 스냅샷 로드 시 새로운 doc이 생성되므로 에디터에 반영
                 if (loadedDoc && loadedDoc !== doc) {
+                    console.log('[EditorProvider] New doc created, updating editor')
                     editor.doc = loadedDoc
                     setDoc(loadedDoc)
+                } else {
+                    console.log('[EditorProvider] Using existing doc')
                 }
-                
+
+                console.log('[EditorProvider] ✅ Data load completed successfully')
                 setIsLoading(false)
             } catch (error) {
-                console.error('Failed to load BlockSuite content:', error)
+                console.error('[EditorProvider] ❌ Failed to load BlockSuite content:', error)
+                if (error instanceof Error) {
+                    console.error('[EditorProvider] Error stack:', error.stack)
+                }
                 setIsLoading(false)
                 sendFlashMessage({
                     content: intl.formatMessage({
@@ -96,34 +126,51 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
         }
 
         loadData()
-    }, [editor, doc, card, intl])
+    }, [editor, card.id, intl])
 
     // 3. 자동 저장
     useEffect(() => {
-        if (!doc || readOnly || isLoading) return
+        console.log('[AutoSave] useEffect triggered - doc:', !!doc, 'readOnly:', readOnly, 'isLoading:', isLoading)
 
-        // spaceDoc이 준비되었는지 확인
-        if (!doc.spaceDoc) {
-            console.warn('doc.spaceDoc is not ready yet')
+        if (!doc || readOnly || isLoading) {
+            console.log('[AutoSave] Skipping auto-save setup')
             return
         }
 
+        // spaceDoc이 준비되었는지 확인
+        if (!doc.spaceDoc) {
+            console.warn('[AutoSave] doc.spaceDoc is not ready yet')
+            return
+        }
+
+        console.log('[AutoSave] Setting up auto-save listener for card:', card.id)
+
         let timeout: NodeJS.Timeout
         const handleUpdate = () => {
+            console.log('[AutoSave] Document updated, scheduling save...')
             clearTimeout(timeout)
             setSaveStatus('saving')
 
             timeout = setTimeout(async () => {
+                console.log('[AutoSave] Saving snapshot...')
                 try {
                     const snapshot = await saveSnapshot(doc)
+                    console.log('[AutoSave] Snapshot created, size:', JSON.stringify(snapshot).length, 'bytes')
+                    console.log('[AutoSave] Calling saveBlockSuiteContent for card:', card.id)
+
                     await octoClient.saveBlockSuiteContent(card.id, snapshot)
+                    console.log('[AutoSave] ✅ Save successful')
                     setSaveStatus('saved')
 
                     setTimeout(() => {
                         setSaveStatus(null)
                     }, 3000)
                 } catch (error) {
-                    console.error('Failed to auto-save:', error)
+                    console.error('[AutoSave] ❌ Failed to auto-save:', error)
+                    if (error instanceof Error) {
+                        console.error('[AutoSave] Error message:', error.message)
+                        console.error('[AutoSave] Error stack:', error.stack)
+                    }
                     setSaveStatus('error')
                     sendFlashMessage({
                         content: intl.formatMessage({
@@ -142,13 +189,16 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
 
         // doc.spaceDoc은 내부 Y.Doc 인스턴스입니다.
         try {
+            console.log('[AutoSave] Attaching update listener to spaceDoc')
             doc.spaceDoc.on('update', handleUpdate)
+            console.log('[AutoSave] ✅ Update listener attached')
         } catch (error) {
-            console.warn('Failed to attach update listener to spaceDoc:', error)
+            console.warn('[AutoSave] ⚠️ Failed to attach update listener to spaceDoc:', error)
             return
         }
-        
+
         return () => {
+            console.log('[AutoSave] Cleaning up auto-save listener')
             try {
                 doc.spaceDoc.off('update', handleUpdate)
             } catch (error) {

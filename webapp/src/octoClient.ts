@@ -304,21 +304,33 @@ class OctoClient {
     }
 
     async getAllBlocks(boardID: string): Promise<Block[]> {
+        console.log('[API] getAllBlocks called for board:', boardID)
         let path = `/api/v2/boards/${boardID}/blocks?all=true`
         const readToken = Utils.getReadToken()
         if (readToken) {
             path += `&read_token=${readToken}`
+            console.log('[API] Using read token:', readToken.substring(0, 10) + '...')
         }
-        return this.getBlocksWithPath(path)
+        console.log('[API] Full path:', path)
+        const blocks = await this.getBlocksWithPath(path)
+        console.log('[API] getAllBlocks returned:', blocks.length, 'blocks')
+        return blocks
     }
 
     private async getBlocksWithPath(path: string): Promise<Block[]> {
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const fullUrl = this.getBaseURL() + path
+        console.log('[API] getBlocksWithPath fetching:', fullUrl)
+        const response = await fetch(fullUrl, {headers: this.headers()})
+        console.log('[API] Response status:', response.status)
         if (response.status !== 200) {
+            console.warn('[API] ⚠️ getBlocksWithPath failed with status:', response.status)
             return []
         }
         const blocks = (await this.getJson(response, [])) as Block[]
-        return this.fixBlocks(blocks)
+        console.log('[API] Fetched raw blocks:', blocks.length)
+        const fixedBlocks = this.fixBlocks(blocks)
+        console.log('[API] Fixed blocks:', fixedBlocks.length)
+        return fixedBlocks
     }
 
     private async getBoardsWithPath(path: string): Promise<Board[]> {
@@ -1121,29 +1133,124 @@ class OctoClient {
         return this.getJson(response, {})
     }
 
-    async getBlockSuiteContent(cardId: string): Promise<ArrayBuffer> {
+    async getBlockSuiteContent(cardId: string): Promise<any> {
         const path = `/api/v2/cards/${cardId}/blocksuite/content`
+        console.log('[API] getBlockSuiteContent called for card:', cardId)
         const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        console.log('[API] Response status:', response.status)
+
         if (response.status !== 200) {
             throw new Error(`getBlockSuiteContent failed with status ${response.status}`)
         }
-        return response.arrayBuffer()
+
+        // Content-Type 확인
+        const contentType = response.headers.get('Content-Type') || ''
+        console.log('[API] Content-Type:', contentType)
+
+        // 응답 본문 크기 확인
+        const contentLength = response.headers.get('Content-Length')
+        console.log('[API] Content-Length:', contentLength)
+
+        // 응답을 복제해서 여러 방식으로 읽어보기
+        const clonedResponse1 = response.clone()
+        const clonedResponse2 = response.clone()
+
+        // 방법 1: JSON으로 시도
+        try {
+            const json = await clonedResponse1.json()
+            console.log('[API] ✅ Successfully parsed as JSON:', json)
+            console.log('[API] JSON keys:', Object.keys(json))
+            return json
+        } catch (jsonError) {
+            console.log('[API] ❌ Failed to parse as JSON:', jsonError)
+        }
+
+        // 방법 2: 텍스트로 시도
+        try {
+            const text = await clonedResponse2.text()
+            console.log('[API] Raw text:', text)
+            console.log('[API] Text length:', text.length)
+
+            // 빈 응답 체크
+            if (!text || text.trim() === '' || text === '[object Object]') {
+                console.log('[API] ⚠️ Response is empty or invalid, returning null')
+                return null
+            }
+
+            // JSON 파싱 재시도
+            try {
+                const json = JSON.parse(text)
+                console.log('[API] ✅ Parsed text as JSON:', json)
+                return json
+            } catch (e) {
+                console.log('[API] Text is not valid JSON')
+            }
+
+            // 그냥 텍스트 반환
+            return text
+        } catch (textError) {
+            console.log('[API] ❌ Failed to parse as text:', textError)
+        }
+
+        // 방법 3: ArrayBuffer로 시도 (최후의 수단)
+        try {
+            const buffer = await response.arrayBuffer()
+            console.log('[API] ArrayBuffer size:', buffer.byteLength, 'bytes')
+
+            if (buffer.byteLength === 0) {
+                console.log('[API] ⚠️ Empty ArrayBuffer')
+                return null
+            }
+
+            return buffer
+        } catch (bufferError) {
+            console.error('[API] ❌ Failed to parse as ArrayBuffer:', bufferError)
+            return null
+        }
     }
 
-    async saveBlockSuiteContent(cardId: string, content: Uint8Array): Promise<void> {
+    async saveBlockSuiteContent(cardId: string, content: Uint8Array | any): Promise<void> {
         const path = `/api/v2/cards/${cardId}/blocksuite/content`
+        console.log('[API] saveBlockSuiteContent called for card:', cardId)
+        console.log('[API] Content type:', typeof content)
+        console.log('[API] Content is Uint8Array?', content instanceof Uint8Array)
+
         const headers = this.headers() as Record<string, string>
         headers['Content-Type'] = 'application/octet-stream'
+
+        // content를 Uint8Array로 변환
+        let bodyData: Uint8Array
+        if (content instanceof Uint8Array) {
+            bodyData = content
+        } else if (typeof content === 'object') {
+            // JSON 객체를 Uint8Array로 변환
+            const jsonStr = JSON.stringify(content)
+            const encoder = new TextEncoder()
+            bodyData = encoder.encode(jsonStr)
+            console.log('[API] Converted JSON to Uint8Array, size:', bodyData.length, 'bytes')
+        } else {
+            throw new Error('Invalid content type for saveBlockSuiteContent')
+        }
+
+        console.log('[API] Sending PUT request to:', this.getBaseURL() + path)
+        console.log('[API] Body size:', bodyData.length, 'bytes')
 
         const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
             method: 'PUT',
             headers,
-            body: content,
+            body: bodyData,
         }))
 
+        console.log('[API] Save response status:', response.status)
+
         if (response.status !== 200) {
-            throw new Error(`saveBlockSuiteContent failed with status ${response.status}`)
+            const errorText = await response.text()
+            console.error('[API] ❌ Save failed with status:', response.status)
+            console.error('[API] Error response:', errorText)
+            throw new Error(`saveBlockSuiteContent failed with status ${response.status}: ${errorText}`)
         }
+
+        console.log('[API] ✅ Save successful')
     }
 }
 

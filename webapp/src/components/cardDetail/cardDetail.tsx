@@ -23,21 +23,15 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 import BlockIconSelector from '../blockIconSelector'
 
 import ErrorBoundary from '../../error_boundary'
-import {useAppDispatch, useAppSelector} from '../../store/hooks'
+import {useAppDispatch} from '../../store/hooks'
 import {setCurrent as setCurrentCard} from '../../store/cards'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import {BlockSuiteEditor} from '../blockSuite/BlockSuiteEditor'
-// import {BlockData} from '../blocksEditor/blocks/types' // 미사용 (blocks 변수 제거됨)
-import {ClientConfig} from '../../config/clientConfig'
-import {getClientConfig} from '../../store/clientConfig'
 
 import CardSkeleton from '../../svg/card-skeleton'
 
 import CommentsList from './commentsList'
-import {CardDetailProvider} from './cardDetailContext'
-import CardDetailContents from './cardDetailContents'
-import CardDetailContentsMenu from './cardDetailContentsMenu'
 import CardDetailProperties from './cardDetailProperties'
 import useImagePaste from './imagePaste'
 import AttachmentList from './attachment'
@@ -86,9 +80,6 @@ const CardDetail = (props: Props): JSX.Element|null => {
     const saveTitleRef = useRef<() => void>(saveTitle)
     saveTitleRef.current = saveTitle
     const intl = useIntl()
-
-    const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
-    const newBoardsEditor = clientConfig?.featureFlags?.newBoardsEditor || false
 
     useImagePaste(props.board.id, card.id, card.fields.contentOrder)
 
@@ -253,24 +244,13 @@ const CardDetail = (props: Props): JSX.Element|null => {
             {/* Content blocks */}
 
             {!limited && <div className='CardDetail CardDetail--fullwidth content-blocks'>
-                {newBoardsEditor && (
-                    <ErrorBoundary>
-                        <BlockSuiteEditor
-                            card={card}
-                            boardId={card.boardId}
-                            readOnly={props.readonly || !canEditBoardCards}
-                        />
-                    </ErrorBoundary>
-                )}
-                {!newBoardsEditor && (
-                    <CardDetailProvider card={card}>
-                        <CardDetailContents
-                            card={props.card}
-                            contents={props.contents}
-                            readonly={props.readonly || !canEditBoardCards}
-                        />
-                        {!props.readonly && canEditBoardCards && <CardDetailContentsMenu/>}
-                    </CardDetailProvider>)}
+                <ErrorBoundary>
+                    <BlockSuiteEditor
+                        card={card}
+                        boardId={card.boardId}
+                        readOnly={props.readonly || !canEditBoardCards}
+                    />
+                </ErrorBoundary>
             </div>}
         </>
     )
