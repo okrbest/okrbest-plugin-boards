@@ -36,20 +36,28 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
     // 1. 에디터 초기화
     useLayoutEffect(() => {
         if (!card?.id) {
+            console.log('🔧 BlockSuite: No card.id, skipping init')
             setIsLoading(false)
             return
         }
 
+        console.log('🔧 BlockSuite: Starting editor init for card:', card.id)
         setIsLoading(true)
 
         try {
             const { editor: newEditor, doc: newDoc, collection: newCollection } = initEditor(card.id)
+            console.log('🔧 BlockSuite: Editor initialized successfully', { 
+                editor: !!newEditor, 
+                doc: !!newDoc, 
+                collection: !!newCollection,
+                docId: newDoc?.id
+            })
       
             setEditor(newEditor)
             setDoc(newDoc)
             setCollection(newCollection)
         } catch (error) {
-            console.error('Failed to initialize editor:', error)
+            console.error('🔧 BlockSuite: Failed to initialize editor:', error)
             setIsLoading(false)
             sendFlashMessage({
                 content: intl.formatMessage({
@@ -61,6 +69,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
         }
 
         return () => {
+            console.log('🔧 BlockSuite: Cleaning up editor')
             setEditor(null)
             setDoc(null)
             setCollection(null)
@@ -69,23 +78,30 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
 
     // 2. 데이터 로드
     useEffect(() => {
-        if (!editor || !doc) return
+        if (!editor || !doc) {
+            console.log('🔧 BlockSuite loadData: Skipping, editor:', !!editor, 'doc:', !!doc)
+            return
+        }
 
         const loadData = async () => {
+            console.log('🔧 BlockSuite loadData: Starting for card:', card.id)
             setIsLoading(true)
             try {
                 const loadedDoc = await loadEditorData(editor, doc, card)
+                console.log('🔧 BlockSuite loadData: loadEditorData returned:', !!loadedDoc)
                 
                 // 스냅샷 로드 시 새로운 doc이 생성되므로 에디터에 반영
                 if (loadedDoc && loadedDoc !== doc) {
+                    console.log('🔧 BlockSuite loadData: Updating doc in editor')
                     editor.doc = loadedDoc
                     setDoc(loadedDoc)
                     // collection은 동일할 것으로 가정
                 }
                 
+                console.log('🔧 BlockSuite loadData: Setting isLoading to false')
                 setIsLoading(false)
             } catch (error) {
-                console.error('Failed to load editor data:', error)
+                console.error('🔧 BlockSuite loadData: Error:', error)
                 setIsLoading(false)
                 sendFlashMessage({
                     content: intl.formatMessage({
@@ -102,7 +118,13 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
 
     // 3. 자동 저장
     useEffect(() => {
-        if (!doc || readOnly) return
+        if (!doc || readOnly || isLoading) return
+
+        // spaceDoc이 준비되었는지 확인
+        if (!doc.spaceDoc) {
+            console.warn('doc.spaceDoc is not ready yet')
+            return
+        }
 
         let timeout: NodeJS.Timeout
         const handleUpdate = () => {
@@ -137,13 +159,22 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
         }
 
         // doc.spaceDoc은 내부 Y.Doc 인스턴스입니다.
-        // Yjs 의존성을 직접 import하지 않아도 BlockSuite 객체를 통해 접근 가능합니다.
-        doc.spaceDoc.on('update', handleUpdate)
+        try {
+            doc.spaceDoc.on('update', handleUpdate)
+        } catch (error) {
+            console.warn('Failed to attach update listener to spaceDoc:', error)
+            return
+        }
+        
         return () => {
-            doc.spaceDoc.off('update', handleUpdate)
+            try {
+                doc.spaceDoc.off('update', handleUpdate)
+            } catch (error) {
+                // cleanup 오류 무시
+            }
             clearTimeout(timeout)
         }
-    }, [doc, card.id, readOnly, intl])
+    }, [doc, card.id, readOnly, isLoading, intl])
 
     const contextValue: EditorContextValue = {
         editor,

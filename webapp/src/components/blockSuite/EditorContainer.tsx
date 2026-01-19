@@ -95,18 +95,28 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
     // 에디터를 DOM에 마운트
     useEffect(() => {
         const mountPoint = editorMountRef.current
-        if (!mountPoint || !editor) return
+        console.log('🔧 EditorContainer mount effect:', { mountPoint: !!mountPoint, editor: !!editor, editorDoc: !!editor?.doc })
+        
+        if (!mountPoint || !editor) {
+            console.log('🔧 EditorContainer: Skipping mount, mountPoint:', !!mountPoint, 'editor:', !!editor)
+            return
+        }
 
         // 기존 내용 정리 (React가 관리하지 않는 영역이므로 안전)
         mountPoint.innerHTML = '' // replaceChildren은 React 17 환경에서 폴리필 필요할 수 있으므로 innerHTML 사용
     
         // BlockSuite 권장 순서: doc을 먼저 설정한 후 DOM에 추가
         if (editor.doc) {
+            console.log('🔧 EditorContainer: Appending editor to mountPoint')
             mountPoint.appendChild(editor)
+            console.log('🔧 EditorContainer: Editor appended, mountPoint children:', mountPoint.children.length)
+        } else {
+            console.log('🔧 EditorContainer: editor.doc is falsy, not appending')
         }
 
         return () => {
             // cleanup: React가 DOM을 정리하기 전에 editor를 제거
+            console.log('🔧 EditorContainer: Cleanup')
             if (mountPoint && editor) {
                 try {
                     // editor가 mountPoint의 직접 자식인지 확인

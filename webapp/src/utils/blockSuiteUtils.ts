@@ -87,8 +87,10 @@ function getImageSize(file: File): Promise<{ width: number; height: number }> {
 }
 
 export async function loadData(card: Card, doc: Doc): Promise<Doc> {
+    console.log('🔧 blockSuiteUtils.loadData: Starting for card:', card.id)
     try {
         const info = await octoClient.getBlockSuiteInfo(card.id)
+        console.log('🔧 blockSuiteUtils.loadData: getBlockSuiteInfo returned:', info)
 
         if (info) {
             const content = await octoClient.getBlockSuiteContent(card.id)
@@ -146,96 +148,28 @@ export async function loadData(card: Card, doc: Doc): Promise<Doc> {
 }
 
 async function initEmptyPage(doc: Doc): Promise<void> {
-    // 이미 페이지가 있는지 확인
+    // createEmptyDoc()으로 생성된 doc은 이미 기본 구조가 있음
+    // getBlocks()를 안전하게 호출하여 확인
     try {
-        if (doc.getBlocks().length > 0) return
-    } catch (error) {
-        // getBlocks()가 실패하면 Yjs 문서가 준비되지 않은 것
-        console.warn('getBlocks() failed, doc may not be ready:', error)
-        // doc.load()를 호출하여 초기화 시도
-        doc.load()
-        // 재시도
-        try {
-            if (doc.getBlocks().length > 0) return
-        } catch (retryError) {
-            console.error('getBlocks() still failing after load():', retryError)
-            return
+        const blocks = doc.getBlocks()
+        if (blocks && blocks.length > 0) {
+            return // 이미 블록이 있음
         }
+    } catch (error) {
+        // getBlocks() 실패 - Yjs 문서가 아직 준비되지 않음
+        // createEmptyDoc().init()을 사용하면 이 경우가 발생하지 않아야 함
+        console.warn('getBlocks() failed, doc may not be fully initialized:', error)
     }
 
-    // Yjs 문서가 완전히 준비되었는지 확인
-    if (!doc.spaceDoc) {
-        console.error('Cannot init empty page: spaceDoc is not initialized')
-        return
-    }
-    
-    // doc.load()가 완료될 때까지 기다림
-    await new Promise<void>((resolve) => {
-        const isReadySignal = doc.ready && typeof (doc.ready as any).subscribe === 'function'
-        if (isReadySignal) {
-            let completed = false
-            const subscription = (doc.ready as any).subscribe(() => {
-                if (!completed) {
-                    completed = true
-                    try {
-                        subscription.unsubscribe()
-                    } catch (e) {
-                        // unsubscribe 오류 무시
-                    }
-                    resolve()
-                }
-            })
-            // 타임아웃 설정 (최대 100ms 대기)
-            setTimeout(() => {
-                if (!completed) {
-                    completed = true
-                    try {
-                        subscription.unsubscribe()
-                    } catch (e) {
-                        // unsubscribe 오류 무시
-                    }
-                    resolve()
-                }
-            }, 100)
-        } else {
-            // doc.ready가 없으면 여러 마이크로태스크를 거쳐 대기
-            Promise.resolve().then(() => {
-                Promise.resolve().then(() => {
-                    resolve()
-                })
-            })
-        }
-    })
-    
+    // 블록이 없거나 확인 실패 시 기본 구조 생성 시도
     try {
-        // 다시 확인 (다른 곳에서 이미 생성했을 수 있음)
-        if (doc.getBlocks().length > 0) {
-            return
-        }
-        
         const pageId = doc.addBlock('affine:page' as any, {})
         doc.addBlock('affine:surface' as any, {}, pageId)
         const noteId = doc.addBlock('affine:note' as any, {}, pageId)
-        doc.addBlock('affine:paragraph' as any, {}, noteId) // 빈 문단 하나 추가
+        doc.addBlock('affine:paragraph' as any, {}, noteId)
     } catch (error) {
         console.error('Failed to init empty page:', error)
-        // 재시도: 다음 프레임에서 시도
-        await new Promise<void>((resolve) => {
-            requestAnimationFrame(() => {
-                try {
-                    if (doc.getBlocks().length === 0 && doc.spaceDoc) {
-                        const pageId = doc.addBlock('affine:page' as any, {})
-                        doc.addBlock('affine:surface' as any, {}, pageId)
-                        const noteId = doc.addBlock('affine:note' as any, {}, pageId)
-                        doc.addBlock('affine:paragraph' as any, {}, noteId)
-                    }
-                } catch (retryError) {
-                    console.error('Failed to init empty page on retry:', retryError)
-                } finally {
-                    resolve() // 항상 resolve하여 무한 대기 방지
-                }
-            })
-        })
+        // createEmptyDoc()으로 생성된 doc이면 이미 기본 구조가 있으므로 무시
     }
 }
 

@@ -89,6 +89,7 @@ const CardDetail = (props: Props): JSX.Element|null => {
 
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
     const newBoardsEditor = clientConfig?.featureFlags?.newBoardsEditor || false
+    console.log('🚀 CardDetail newBoardsEditor:', newBoardsEditor, 'featureFlags:', clientConfig?.featureFlags)
 
     useImagePaste(props.board.id, card.id, card.fields.contentOrder)
 

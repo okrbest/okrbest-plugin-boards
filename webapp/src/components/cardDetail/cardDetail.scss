@@ -175,6 +175,14 @@
         }
     }
 
+    &.CardDetail--fullwidth {
+        width: 100%;
+        min-height: 300px;
+        margin-top: 20px;
+        border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+        padding-top: 20px;
+    }
+
     &.CardDetail--is-limited {
         flex: 1;
     }
