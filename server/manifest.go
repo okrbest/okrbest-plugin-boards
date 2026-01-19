@@ -33,7 +33,7 @@ const manifestStr = `
     "executable": ""
   },
   "webapp": {
-    "bundle_path": "pack/focalboard_bundle.js"
+    "bundle_path": "webapp/main.js"
   },
   "settings_schema": {
     "header": "",

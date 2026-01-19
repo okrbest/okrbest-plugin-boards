@@ -142,10 +142,10 @@ ifneq ($(HAS_WEBAPP),)
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else
-	cd webapp && NODE_ENV=development $(NPM) run build;
+	cd webapp && $(NPM) run debug;
 endif
 endif
-	# npm run pack removed - Vite build replaces it
+	cd webapp; npm run pack
 
 ## Generates a tar bundle of the plugin for install.
 .PHONY: bundle
@@ -153,7 +153,7 @@ bundle:
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_NAME)
 	cp $(MANIFEST_FILE) dist/$(PLUGIN_NAME)/
-	cp -r webapp/pack dist/$(PLUGIN_NAME)/
+	cp -r webapp/dist dist/$(PLUGIN_NAME)/webapp/
 ifneq ($(wildcard LICENSE.txt),)
 	cp -r LICENSE.txt dist/$(PLUGIN_NAME)/
 endif
@@ -204,10 +204,10 @@ watch: apply server bundle
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
-	cd webapp && NODE_ENV=development $(NPM) run build:watch
+	cd webapp && $(NPM) run debug:watch
 endif
 
-## Installs a previous built plugin with updated webapp assets to a server.
+## Installs a previous built plugin with updated webpack assets to a server.
 .PHONY: deploy-from-watch
 deploy-from-watch: bundle
 	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
