@@ -190,12 +190,28 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
 }
 
 // Card 프로퍼티 값에서 모든 연결된 카드 정보를 추출
+// JSON 형식: {"boardId":"...","cards":[{"id":"...","title":"..."}]}
+// 이전 형식 호환: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..." 또는 "boardId:cardId:cardTitle"
 function parseAllCardPropertyValues(propertyValue: string | undefined): {cardId: string, cardTitle: string}[] {
     if (!propertyValue || typeof propertyValue !== 'string') {
         return []
     }
 
-    // 새 형식: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+    // JSON 형식 (새 형식)
+    if (propertyValue.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(propertyValue)
+            const cards = parsed.cards || []
+            return cards.map((c: {id: string, title: string}) => ({
+                cardId: c.id,
+                cardTitle: c.title || 'Untitled',
+            })).filter((c: {cardId: string}) => c.cardId)
+        } catch {
+            return []
+        }
+    }
+
+    // 이전 형식 호환: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
     if (propertyValue.includes('|')) {
         const [, cardsStr] = propertyValue.split('|')
         if (!cardsStr) {
@@ -213,7 +229,7 @@ function parseAllCardPropertyValues(propertyValue: string | undefined): {cardId:
         }).filter((c) => c.cardId)
     }
 
-    // 이전 형식: "boardId:cardId:cardTitle"
+    // 이전 형식 호환: "boardId:cardId:cardTitle"
     const parts = propertyValue.split(':')
     if (parts.length >= 3) {
         return [{
@@ -229,13 +245,21 @@ function parseAllCardPropertyValues(propertyValue: string | undefined): {cardId:
 function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
     const groups: {[key: string]: {cards: Card[], linkedCards: {cardId: string, cardTitle: string}[]}} = {}
 
+    // 연결된 보드 ID 가져오기
+    const linkedBoardId = groupByProperty.options?.[0]?.id || ''
+
     cards.forEach((card) => {
         const propertyValue = card.fields.properties[groupByProperty.id] as string
         const linkedCards = parseAllCardPropertyValues(propertyValue)
 
-        // 카드 ID를 정렬하여 순서와 무관하게 동일한 조합이면 같은 그룹
-        const sortedCardIds = linkedCards.map((c) => c.cardId).sort()
-        const key = sortedCardIds.join(',')
+        // 카드들을 정렬하여 동일한 조합이면 같은 그룹
+        // JSON 형식으로 키 생성: {"boardId":"...","cards":[{"id":"...","title":"..."}]}
+        const sortedCards = [...linkedCards].sort((a, b) => a.cardId.localeCompare(b.cardId))
+        const keyData = {
+            boardId: linkedBoardId,
+            cards: sortedCards.map((c) => ({id: c.cardId, title: c.cardTitle})),
+        }
+        const key = JSON.stringify(keyData)
 
         if (!groups[key]) {
             groups[key] = {cards: [], linkedCards}
