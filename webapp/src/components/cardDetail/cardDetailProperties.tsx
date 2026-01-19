@@ -142,18 +142,28 @@ const CardDetailProperties = (props: Props) => {
         console.log('allBoardCards:', allBoardCards.length)
         
         // 카드 속성에 실제로 선택된 카드가 있는 카드 수 계산
-        // "boardId|cardId:title" 형식에서 "|" 뒤에 내용이 있는 경우만 카운트
+        // JSON 형식: {"boardId":"...","cards":[...]} 또는 이전 형식 호환
         const cardsWithSelectedCards = allBoardCards.filter((c) => {
             const value = c.fields.properties[propertyTemplate.id]
             console.log('Card value:', c.title, value)
             if (!value || typeof value !== 'string') {
                 return false
             }
+            // JSON 형식 (새 형식)
+            if (value.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(value)
+                    return parsed.cards && parsed.cards.length > 0
+                } catch {
+                    return false
+                }
+            }
+            // 이전 형식 호환: "boardId|cardId:title"
             if (value.includes('|')) {
                 const [, cardsStr] = value.split('|')
                 return cardsStr && cardsStr.length > 0
             }
-            // 이전 형식: "boardId:cardId:cardTitle"
+            // 이전 형식 호환: "boardId:cardId:cardTitle"
             const parts = value.split(':')
             return parts.length >= 3
         })

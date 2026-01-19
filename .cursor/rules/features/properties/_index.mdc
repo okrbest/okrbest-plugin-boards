@@ -220,10 +220,20 @@ const dateValue = JSON.stringify({from: Date.now()})
 ### 값 형식
 
 ```typescript
-// 새 형식 (다중 카드 지원)
-"boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+// JSON 형식 (현재 사용)
+interface CardPropertyValue {
+    boardId: string
+    cards: Array<{
+        id: string
+        title: string
+    }>
+}
 
-// 이전 형식 (단일 카드, 하위 호환)
+// 저장 형식: JSON 문자열
+'{"boardId":"board123","cards":[{"id":"card456","title":"버그 수정"}]}'
+
+// 이전 형식 (하위 호환, 읽기만 지원)
+"boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
 "boardId:cardId:cardTitle"
 ```
 
@@ -231,11 +241,19 @@ const dateValue = JSON.stringify({from: Date.now()})
 
 ```typescript
 // 단일 카드 참조
-"board123|card456:버그 수정"
+'{"boardId":"board123","cards":[{"id":"card456","title":"버그 수정"}]}'
 
 // 다중 카드 참조
-"board123|card456:버그 수정,card789:기능 추가"
+'{"boardId":"board123","cards":[{"id":"card456","title":"버그 수정"},{"id":"card789","title":"기능 추가"}]}'
+
+// 빈 상태
+'{"boardId":"board123","cards":[]}'
 ```
+
+### JSON 형식 사용 이유
+
+이전 형식(`boardId|cardId1:title1,cardId2:title2`)은 카드 제목에 쉼표(`,`)가 포함된 경우
+파싱이 잘못되는 버그가 있었습니다. JSON 형식은 이 문제를 해결합니다.
 
 ### 주요 파일
 
@@ -285,20 +303,31 @@ const dateValue = JSON.stringify({from: Date.now()})
    - `extractCardIds()` 함수로 속성값에서 cardId 배열 추출
    - cardId 배열과 필터 값을 비교하여 조건 충족 여부 판단
 
+#### 필터 값 형식
+
+필터 조건에서 선택한 카드들은 `filter.values` 배열에 저장됩니다:
+
+```typescript
+// JSON 형식 (현재 사용)
+'{"id":"card456","title":"버그, 수정"}'
+
+// 이전 형식 (하위 호환)
+"card456:버그 수정"
+"card456"
+```
+
+#### 코드 예시
+
 ```typescript
 // cardFilter.ts - 카드 ID 추출 함수
 function extractCardIds(propertyValue: string): string[] {
-    // "boardId|cardId1:title1,cardId2:title2,..." 형식에서 cardId 추출
-    if (propertyValue.includes('|')) {
-        const [, cardsStr] = propertyValue.split('|')
-        return cardsStr.split(',').map(cardStr => {
-            const colonIndex = cardStr.indexOf(':')
-            return colonIndex === -1 ? cardStr : cardStr.substring(0, colonIndex)
-        }).filter(id => id)
+    // JSON 형식 (현재 사용)
+    if (propertyValue.startsWith('{')) {
+        const parsed = JSON.parse(propertyValue)
+        return parsed.cards.map((c: {id: string}) => c.id)
     }
-    // 이전 형식: "boardId:cardId:title"
-    const parts = propertyValue.split(':')
-    return parts.length >= 2 ? [parts[1]] : []
+    // 이전 형식 호환: "boardId|cardId1:title1,..." 또는 "boardId:cardId:title"
+    // ...
 }
 ```
 

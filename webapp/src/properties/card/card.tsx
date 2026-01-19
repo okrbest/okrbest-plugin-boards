@@ -29,54 +29,76 @@ interface SelectedCard {
     title: string
 }
 
-// 저장 형식: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+// JSON 저장 형식
+interface CardPropertyValue {
+    boardId: string
+    cards: SelectedCard[]
+}
+
+// 저장 형식: JSON {"boardId":"...","cards":[{"id":"...","title":"..."}]}
+// 하위 호환: 이전 형식 "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..." 및 "boardId:cardId:cardTitle"
 const parsePropertyValue = (value: string | string[] | undefined): {boardId: string, selectedCards: SelectedCard[]} => {
-    if (!value || typeof value !== 'string' || !value.includes('|')) {
-        // 이전 형식 호환: "boardId:cardId:cardTitle"
-        if (value && typeof value === 'string') {
-            const parts = value.split(':')
-            if (parts.length >= 1) {
-                const boardId = parts[0]
-                if (parts.length >= 3) {
-                    return {
-                        boardId,
-                        selectedCards: [{id: parts[1], title: parts.slice(2).join(':')}],
-                    }
-                }
-                return {boardId, selectedCards: []}
-            }
-        }
+    if (!value || typeof value !== 'string') {
         return {boardId: '', selectedCards: []}
     }
 
-    const [boardId, cardsStr] = value.split('|')
-    if (!cardsStr) {
+    // JSON 형식 (새 형식)
+    if (value.startsWith('{')) {
+        try {
+            const parsed: CardPropertyValue = JSON.parse(value)
+            return {
+                boardId: parsed.boardId || '',
+                selectedCards: (parsed.cards || []).filter((c) => c.id),
+            }
+        } catch {
+            return {boardId: '', selectedCards: []}
+        }
+    }
+
+    // 이전 형식 호환: "boardId|cardId1:cardTitle1,cardId2:cardTitle2,..."
+    if (value.includes('|')) {
+        const [boardId, cardsStr] = value.split('|')
+        if (!cardsStr) {
+            return {boardId, selectedCards: []}
+        }
+        const selectedCards: SelectedCard[] = cardsStr.split(',').map((cardStr) => {
+            const colonIndex = cardStr.indexOf(':')
+            if (colonIndex === -1) {
+                return {id: cardStr, title: 'Untitled'}
+            }
+            return {
+                id: cardStr.substring(0, colonIndex),
+                title: cardStr.substring(colonIndex + 1) || 'Untitled',
+            }
+        }).filter((c) => c.id)
+        return {boardId, selectedCards}
+    }
+
+    // 이전 형식 호환: "boardId:cardId:cardTitle"
+    const parts = value.split(':')
+    if (parts.length >= 1) {
+        const boardId = parts[0]
+        if (parts.length >= 3) {
+            return {
+                boardId,
+                selectedCards: [{id: parts[1], title: parts.slice(2).join(':')}],
+            }
+        }
         return {boardId, selectedCards: []}
     }
 
-    const selectedCards: SelectedCard[] = cardsStr.split(',').map((cardStr) => {
-        const colonIndex = cardStr.indexOf(':')
-        if (colonIndex === -1) {
-            return {id: cardStr, title: 'Untitled'}
-        }
-        return {
-            id: cardStr.substring(0, colonIndex),
-            title: cardStr.substring(colonIndex + 1) || 'Untitled',
-        }
-    }).filter((c) => c.id)
-
-    return {boardId, selectedCards}
+    return {boardId: '', selectedCards: []}
 }
 
 const serializePropertyValue = (boardId: string, selectedCards: SelectedCard[]): string => {
     if (!boardId) {
         return ''
     }
-    if (selectedCards.length === 0) {
-        return `${boardId}|`
+    const data: CardPropertyValue = {
+        boardId,
+        cards: selectedCards,
     }
-    const cardsStr = selectedCards.map((c) => `${c.id}:${c.title}`).join(',')
-    return `${boardId}|${cardsStr}`
+    return JSON.stringify(data)
 }
 
 const CardPropertyEditor = (props: PropertyProps) => {
