@@ -198,7 +198,7 @@ func (bm *BoardsMigrator) Setup() error {
 		return newErr
 	}
 
-	if bm.withMattermostMigrations {
+	if bm.withMattermostMigrations && bm.driverName != model.SqliteDBType {
 		if newErr := bm.runMattermostMigrations(); newErr != nil {
 			return newErr
 		}
@@ -248,12 +248,17 @@ func (bm *BoardsMigrator) MigrateToStep(step int) error {
 }
 
 func (bm *BoardsMigrator) Interceptors() map[int]func() error {
-	return map[int]func() error{
-		18: bm.store.RunDeletedMembershipBoardsMigration,
+	interceptors := map[int]func() error{
 		35: func() error {
 			return bm.store.RunDeDuplicateCategoryBoardsMigration(35)
 		},
 	}
+
+	if bm.withMattermostMigrations {
+		interceptors[18] = bm.store.RunDeletedMembershipBoardsMigration
+	}
+
+	return interceptors
 }
 
 func (bm *BoardsMigrator) TearDown() error {

@@ -35,15 +35,15 @@ func SetupPluginTestHelper(t *testing.T) (*TestHelper, func()) {
 		t.Skip("Skipping plugin mode test for SQLite")
 	}
 
-	return setupTestHelper(t)
+	return setupTestHelper(t, true)
 }
 
 func SetupTestHelper(t *testing.T) (*TestHelper, func()) {
-	return setupTestHelper(t)
+	return setupTestHelper(t, false)
 }
 
-func setupTestHelper(t *testing.T) (*TestHelper, func()) {
-	f := foundation.New(t, NewBoardsMigrator(true))
+func setupTestHelper(t *testing.T, isPlugin bool) (*TestHelper, func()) {
+	f := foundation.New(t, NewBoardsMigrator(isPlugin))
 
 	th := &TestHelper{
 		t: t,
