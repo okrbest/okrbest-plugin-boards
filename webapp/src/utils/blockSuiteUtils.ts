@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import { Doc, Job, Text, DocCollection } from '@blocksuite/store'
+import { Doc, DocCollection, Job, Text } from '@blocksuite/store'
 
 import octoClient from '../octoClient'
 import { Block } from '../blocks/block'
@@ -18,54 +18,6 @@ export function getImageUrl(boardId: string, fileId: string): string {
     const teamId = (octoClient as any).teamId || '0'
     // 파일 URL 패턴: /api/v2/files/teams/{teamId}/{boardId}/{fileId}
     return `${baseUrl}/api/v2/files/teams/${teamId}/${boardId}/${fileId}`
-}
-
-/**
- * 이미지를 다운로드하여 Blob으로 변환
- */
-async function downloadImageAsBlob(boardId: string, fileId: string): Promise<Blob | null> {
-    try {
-        const imageUrl = getImageUrl(boardId, fileId)
-        console.log('[Image] Downloading image from:', imageUrl)
-
-        const response = await fetch(imageUrl)
-        if (!response.ok) {
-            console.error('[Image] Failed to download image:', response.status)
-            return null
-        }
-
-        const blob = await response.blob()
-        console.log('[Image] Downloaded blob, size:', blob.size, 'type:', blob.type)
-        return blob
-    } catch (error) {
-        console.error('[Image] Error downloading image:', error)
-        return null
-    }
-}
-
-/**
- * Blob을 DocCollection에 저장하고 sourceId 반환
- */
-async function storeBlobInCollection(collection: DocCollection, blob: Blob, filename: string): Promise<string | null> {
-    try {
-        console.log('[Image] Storing blob in collection:', filename)
-
-        // DocCollection의 blob storage에 저장
-        const blobManager = collection.blobSync
-        if (!blobManager) {
-            console.error('[Image] BlobSync not available in collection')
-            return null
-        }
-
-        // Blob을 storage에 저장
-        const blobId = await blobManager.set(blob)
-        console.log('[Image] Blob stored with ID:', blobId)
-
-        return blobId
-    } catch (error) {
-        console.error('[Image] Error storing blob:', error)
-        return null
-    }
 }
 
 /**
@@ -86,11 +38,23 @@ export async function uploadImageToBlockSuite(
     parentId: string
 ): Promise<string | null> {
     try {
-        // Mattermost 파일 API로 업로드
-        const fileId = await octoClient.uploadFile(boardId, file)
+        console.log('[Image] Uploading image using BlobEngine...')
         
-        if (!fileId) {
-            console.error('Failed to upload file')
+        // Doc 또는 Collection의 blobSync 사용
+        const blobSync = (doc as any).blobSync || doc.collection.blobSync
+        
+        if (!blobSync) {
+            console.error('[Image] BlobSync not available')
+            return null
+        }
+
+        // BlobEngine을 통해 업로드 (MattermostBlobEngine.set 호출)
+        // 반환값은 fileId (blobId)
+        const blobId = await blobSync.set(file)
+        console.log('[Image] Image uploaded via BlobEngine, blobId:', blobId)
+
+        if (!blobId) {
+            console.error('[Image] Failed to get blobId from BlobEngine')
             return null
         }
 
@@ -99,7 +63,7 @@ export async function uploadImageToBlockSuite(
         
         // BlockSuite 이미지 블록 생성
         const imageBlockId = doc.addBlock('affine:image' as any, {
-            sourceId: fileId,
+            sourceId: blobId,
             filename: file.name,
             width: imageSize.width || 0,
             height: imageSize.height || 0,
@@ -134,6 +98,110 @@ function getImageSize(file: File): Promise<{ width: number; height: number }> {
     })
 }
 
+/**
+ * Collection에 데이터를 로드하여 Doc을 반환
+ * 에디터 마운트 전에 호출하여 올바른 Y.js 구조 생성
+ */
+export async function loadDataIntoCollection(card: Card, collection: DocCollection): Promise<Doc> {
+    console.log('[BlockSuite] ====== loadDataIntoCollection START ======')
+    console.log('[BlockSuite] Card ID:', card.id)
+    console.log('[BlockSuite] Board ID:', card.boardId)
+
+    try {
+        // 1. 서버에서 BlockSuite 정보 확인
+        const info = await octoClient.getBlockSuiteInfo(card.id)
+        console.log('[BlockSuite] getBlockSuiteInfo result:', info)
+
+        if (info) {
+            // 2. 콘텐츠 로드
+            const content = await octoClient.getBlockSuiteContent(card.id)
+            console.log('[BlockSuite] Content type:', typeof content)
+
+            if (content) {
+                let snapshot: any = content
+                if (typeof content === 'string') {
+                    snapshot = JSON.parse(content)
+                }
+
+                if (snapshot && typeof snapshot === 'object' && snapshot.blocks) {
+                    const hasContent = checkSnapshotHasContent(snapshot)
+                    console.log('[BlockSuite] Has real content?', hasContent)
+
+                    if (hasContent) {
+                        // Job을 사용하여 스냅샷에서 Doc 생성
+                        console.log('[BlockSuite] Loading snapshot using Job.snapshotToDoc...')
+                        const job = new Job({ collection })
+                        const loadedDoc = await job.snapshotToDoc(snapshot)
+                        
+                        if (loadedDoc) {
+                            console.log('[BlockSuite] ✅ Snapshot loaded successfully')
+                            return loadedDoc
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. 스냅샷이 없거나 빈 경우: 레거시 마이그레이션 시도 또는 빈 문서 생성
+        console.log('[BlockSuite] No valid snapshot, attempting migration or creating empty doc...')
+        return await createDocWithMigration(card, collection)
+
+    } catch (error) {
+        console.error('[BlockSuite] ❌ Error in loadDataIntoCollection:', error)
+        // 오류 발생 시 빈 문서 생성
+        return createEmptyDoc(card.id, collection)
+    }
+}
+
+/**
+ * 레거시 블록에서 마이그레이션하거나 빈 문서 생성
+ */
+async function createDocWithMigration(card: Card, collection: DocCollection): Promise<Doc> {
+    try {
+        // 레거시 블록 확인
+        const allBlocks = await octoClient.getAllBlocks(card.boardId)
+        const legacyBlocks = allBlocks.filter(block => block.parentId === card.id)
+        
+        if (legacyBlocks && legacyBlocks.length > 0) {
+            console.log('[BlockSuite] Found', legacyBlocks.length, 'legacy blocks, migrating...')
+            
+            // 빈 문서 생성 후 블록 변환
+            const doc = createEmptyDoc(card.id, collection)
+            await convertAndApplyBlocks(legacyBlocks, card, doc)
+            
+            // 저장
+            const snapshot = await saveSnapshot(doc)
+            await octoClient.saveBlockSuiteContent(card.id, snapshot)
+            console.log('[BlockSuite] ✅ Migration completed')
+            
+            return doc
+        }
+    } catch (error) {
+        console.warn('[BlockSuite] Migration failed:', error)
+    }
+
+    // 마이그레이션 실패 또는 레거시 블록 없음 - 빈 문서 생성
+    return createEmptyDoc(card.id, collection)
+}
+
+/**
+ * 빈 문서 생성 (기본 페이지 구조 포함)
+ */
+function createEmptyDoc(cardId: string, collection: DocCollection): Doc {
+    console.log('[BlockSuite] Creating empty doc with ID:', cardId)
+    const doc = collection.createDoc({ id: cardId })
+    doc.load(() => {
+        // 기본 페이지 구조 생성
+        const pageBlockId = doc.addBlock('affine:page', {})
+        doc.addBlock('affine:surface', {}, pageBlockId)
+        const noteId = doc.addBlock('affine:note', {}, pageBlockId)
+        doc.addBlock('affine:paragraph', {}, noteId)
+    })
+    console.log('[BlockSuite] Empty doc created')
+    return doc
+}
+
+// 이전 loadData 함수는 하위 호환성을 위해 유지 (deprecated)
 export async function loadData(card: Card, doc: Doc): Promise<Doc> {
     console.log('[BlockSuite Migration] ====== loadData START ======')
     console.log('[BlockSuite Migration] Card ID:', card.id)
@@ -195,19 +263,13 @@ export async function loadData(card: Card, doc: Doc): Promise<Doc> {
                         console.log('[BlockSuite Migration] Has real content?', hasRealContent)
 
                         if (hasRealContent) {
-                            console.log('[BlockSuite Migration] Loading existing snapshot...')
-                            const job = new Job({ collection: doc.collection })
+                            console.log('[BlockSuite Migration] Loading existing snapshot into current doc...')
 
                             try {
-                                // 기존 doc을 collection에서 제거
-                                if (doc.collection.getDoc(doc.id)) {
-                                    console.log('[BlockSuite Migration] Removing existing doc from collection')
-                                    doc.collection.removeDoc(doc.id)
-                                }
-
-                                const newDoc = await job.snapshotToDoc(snapshot)
-                                console.log('[BlockSuite Migration] Snapshot loaded successfully')
-                                return newDoc
+                                // 기존 doc의 블록을 모두 제거하고 스냅샷에서 로드
+                                await loadSnapshotIntoDoc(doc, snapshot)
+                                console.log('[BlockSuite Migration] Snapshot loaded successfully into existing doc')
+                                return doc
                             } catch (error) {
                                 console.error('[BlockSuite Migration] Failed to load from snapshot, falling back to migration', error)
                                 // 스냅샷 로드 실패 시 마이그레이션으로 fallback
@@ -242,6 +304,121 @@ export async function loadData(card: Card, doc: Doc): Promise<Doc> {
     }
     console.log('[BlockSuite Migration] ====== loadData END (returning doc) ======')
     return doc
+}
+
+/**
+ * 스냅샷을 기존 doc에 로드 (doc 교체 없이)
+ * 기존 블록을 모두 제거하고 스냅샷의 블록들을 추가
+ */
+async function loadSnapshotIntoDoc(doc: Doc, snapshot: any): Promise<void> {
+    console.log('[LoadSnapshot] Loading snapshot into existing doc...')
+
+    // Job-style 스냅샷 구조: { type: 'page', meta: {...}, blocks: { children: [...] } }
+    const rootBlock = snapshot.blocks
+    if (!rootBlock || !rootBlock.children) {
+        console.warn('[LoadSnapshot] Invalid snapshot structure, initializing empty page')
+        await initEmptyPage(doc)
+        return
+    }
+
+    // 기존 블록 모두 제거
+    try {
+        const existingBlocks = doc.getBlocks()
+        console.log('[LoadSnapshot] Removing', existingBlocks.length, 'existing blocks')
+        for (const block of existingBlocks) {
+            if (block.flavour === 'affine:page') {
+                try {
+                    doc.deleteBlock(block)
+                } catch (e) {
+                    // 이미 삭제되었거나 삭제 불가한 경우 무시
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('[LoadSnapshot] Failed to clear existing blocks:', e)
+    }
+
+    // 스냅샷에서 블록 구조 복원
+    const pageBlock = rootBlock
+    console.log('[LoadSnapshot] Page block flavour:', pageBlock.flavour)
+
+    // 1. page 블록 생성
+    const pageId = doc.addBlock('affine:page' as any, pageBlock.props || {})
+    console.log('[LoadSnapshot] Created page:', pageId)
+
+    // 2. children (surface, note 등) 추가
+    if (pageBlock.children && Array.isArray(pageBlock.children)) {
+        for (const child of pageBlock.children) {
+            await addBlockFromSnapshot(doc, child, pageId)
+        }
+    }
+
+    console.log('[LoadSnapshot] Snapshot loaded successfully')
+}
+
+/**
+ * 스냅샷의 블록을 재귀적으로 추가
+ */
+async function addBlockFromSnapshot(doc: Doc, blockData: any, parentId: string): Promise<void> {
+    const { flavour, props, children } = blockData
+
+    // props에서 text 처리 (delta 형식을 Text 객체로 변환)
+    const processedProps = { ...props }
+    if (props?.text && props.text.delta) {
+        const textContent = props.text.delta
+            .map((op: any) => op.insert || '')
+            .join('')
+        processedProps.text = new Text(textContent)
+
+        // delta에 스타일 정보가 있으면 적용
+        let offset = 0
+        for (const op of props.text.delta) {
+            if (op.attributes && op.insert) {
+                const length = op.insert.length
+                // Text 객체에 스타일 적용 (가능한 경우)
+                // BlockSuite Text API에 따라 format 메서드 사용
+                try {
+                    if (op.attributes.bold) {
+                        processedProps.text.format(offset, length, { bold: true })
+                    }
+                    if (op.attributes.italic) {
+                        processedProps.text.format(offset, length, { italic: true })
+                    }
+                    if (op.attributes.underline) {
+                        processedProps.text.format(offset, length, { underline: true })
+                    }
+                    if (op.attributes.strike) {
+                        processedProps.text.format(offset, length, { strike: true })
+                    }
+                    if (op.attributes.code) {
+                        processedProps.text.format(offset, length, { code: true })
+                    }
+                    if (op.attributes.link) {
+                        processedProps.text.format(offset, length, { link: op.attributes.link })
+                    }
+                } catch (e) {
+                    // format 실패 시 무시 (텍스트는 유지)
+                }
+                offset += length
+            } else if (op.insert) {
+                offset += op.insert.length
+            }
+        }
+    }
+
+    // 블록 추가
+    try {
+        const blockId = doc.addBlock(flavour as any, processedProps as any, parentId)
+
+        // children 재귀 추가
+        if (children && Array.isArray(children)) {
+            for (const child of children) {
+                await addBlockFromSnapshot(doc, child, blockId)
+            }
+        }
+    } catch (e) {
+        console.warn(`[LoadSnapshot] Failed to add block ${flavour}:`, e)
+    }
 }
 
 /**
@@ -523,30 +700,20 @@ async function convertBlock(block: Block, boardId: string, parentId: string, doc
         break
 
     case 'image': {
-        // 이미지를 다운로드하여 Blob storage에 저장
+        // 이미지를 BlobEngine을 통해 로드할 수 있도록 sourceId만 설정
         const fileId = block.fields?.fileId
         if (fileId) {
             console.log(`[Convert] Processing image block: ${fileId}`)
 
-            // 이미지 다운로드
-            const blob = await downloadImageAsBlob(boardId, fileId)
-
-            if (blob && doc.collection) {
-                // Blob storage에 저장
-                const blobId = await storeBlobInCollection(doc.collection, blob, block.fields?.filename || 'image')
-
-                if (blobId) {
-                    // affine:image 블록 생성
-                    doc.addBlock('affine:image' as any, {
-                        sourceId: blobId,
-                        width: block.fields?.width || 0,
-                        height: block.fields?.height || 0,
-                        ...commonFields
-                    } as any, parentId)
-                    console.log(`[Convert] ✅ Image block created with blobId: ${blobId}`)
-                    break
-                }
-            }
+            // affine:image 블록 생성 (다운로드 불필요, fileId를 sourceId로 사용)
+            doc.addBlock('affine:image' as any, {
+                sourceId: fileId,
+                width: block.fields?.width || 0,
+                height: block.fields?.height || 0,
+                ...commonFields
+            } as any, parentId)
+            console.log(`[Convert] ✅ Image block created with sourceId: ${fileId}`)
+            break
         }
 
         // 실패 시 텍스트 링크로 fallback

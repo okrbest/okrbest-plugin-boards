@@ -684,6 +684,30 @@ class OctoClient {
         return fileInfo
     }
 
+    /**
+     * 파일을 Blob으로 직접 가져오기 (BlockSuite BlobEngine용)
+     */
+    async getFileAsBlob(boardId: string, fileId: string): Promise<Blob | null> {
+        let path = '/api/v2/files/teams/' + this.teamId + '/' + boardId + '/' + fileId
+        const readToken = Utils.getReadToken()
+        if (readToken) {
+            path += `?read_token=${readToken}`
+        }
+        // Client4.getOptions()를 사용하여 credentials: 'include'가 포함되도록 함
+        // 이것이 있어야 브라우저가 세션 쿠키를 보내고 Mattermost가 Mattermost-User-Id 헤더를 추가함
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+
+        if (response.status === 200) {
+            return response.blob()
+        }
+        
+        Utils.logWarn(`getFileAsBlob failed: ${response.status} ${response.statusText}`)
+        return null
+    }
+
     async getTeam(): Promise<Team | null> {
         const path = this.teamPath()
         const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
