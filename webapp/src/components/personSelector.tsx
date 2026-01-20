@@ -153,6 +153,8 @@ const PersonSelector = (props: Props): JSX.Element => {
         for (const u of allUsers) {
             if (boardUsersById[u.id]) {
                 usersInsideBoard.push(u)
+            } else {
+                usersOutsideBoard.push(u)
             }
         }
         return [

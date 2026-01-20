@@ -134,11 +134,11 @@ class Utils {
     }
 
     static getFullName(user: IUser): string {
-        if (user.firstname !== '' && user.lastname !== '') {
+        if (user.firstname && user.lastname) {
             return user.firstname + ' ' + user.lastname
-        } else if (user.firstname !== '') {
+        } else if (user.firstname) {
             return user.firstname
-        } else if (user.lastname !== '') {
+        } else if (user.lastname) {
             return user.lastname
         }
         return ''

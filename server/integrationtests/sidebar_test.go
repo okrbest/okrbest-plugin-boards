@@ -1,6 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+
+//go:build integration
+// +build integration
+
 package integrationtests
 
 import (

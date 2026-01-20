@@ -50,6 +50,15 @@ func setupTestHelper(t *testing.T, isPlugin bool) (*TestHelper, func()) {
 		f: f,
 	}
 
+	if th.IsSQLite() {
+		var result string
+		err := th.f.DB().Get(&result, "SELECT json_set('{}', '$.a', 1)")
+		if err != nil {
+			th.f.TearDown()
+			t.Skip("Skipping SQLite test: json1 extension not enabled (missing -tags 'json1'?)")
+		}
+	}
+
 	tearDown := func() {
 		th.f.TearDown()
 	}

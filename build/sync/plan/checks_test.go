@@ -23,7 +23,7 @@ func TestRepoIsCleanChecker(t *testing.T) {
 	assert := assert.New(t)
 
 	// Create a git repository in a temporary dir.
-	dir, err := os.TempDir("", "test")
+	dir, err := os.MkdirTemp("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
 	repo, err := git.PlainInit(dir, false)
@@ -53,7 +53,7 @@ func TestPathExistsChecker(t *testing.T) {
 	assert := assert.New(t)
 
 	// Set up a working directory.
-	wd, err := os.TempDir("", "repo")
+	wd, err := os.MkdirTemp("", "repo")
 	assert.Nil(err)
 	defer os.RemoveAll(wd)
 	err = os.Mkdir(filepath.Join(wd, "t"), 0755)
@@ -83,7 +83,7 @@ func TestPathExistsChecker(t *testing.T) {
 
 func tempGitRepo(assert *assert.Assertions) (string, *git.Repository, func()) {
 	// Setup repository.
-	wd, err := os.TempDir("", "repo")
+	wd, err := os.MkdirTemp("", "repo")
 	assert.Nil(err)
 
 	// Initialize a repository.
@@ -162,7 +162,7 @@ func TestUnalteredCheckerDifferentContents(t *testing.T) {
 	checker.Params.TargetRepo = plan.TargetRepo
 
 	// Create a file with the same suffix path, but different contents.
-	tmpDir, err := os.TempDir("", "test")
+	tmpDir, err := os.MkdirTemp("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(tmpDir)
 	err = os.WriteFile(filepath.Join(tmpDir, "a.txt"),
@@ -188,7 +188,7 @@ func TestUnalteredCheckerNonExistant(t *testing.T) {
 	defer cleanup()
 
 	// Temporary repo.
-	tmpDir, err := os.TempDir("", "test")
+	tmpDir, err := os.MkdirTemp("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(tmpDir)
 

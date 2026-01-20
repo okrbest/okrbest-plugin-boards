@@ -25,6 +25,8 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/store/sqlstore"
+
+	_ "github.com/mattn/go-sqlite3" // sqlite driver
 )
 
 var tablePrefix = "focalboard_"

@@ -79,9 +79,24 @@
 			"\\.(scss|css)$": "<rootDir>/__mocks__/styleMock.js",
 			"^mattermost-redux/(.*)$": "<rootDir>/node_modules/mattermost-redux/lib/$1",
 			"^@mattermost/types/(.*)$": "<rootDir>/node_modules/@mattermost/types/lib/$1",
-			"^@blocksuite/global/utils$": "<rootDir>/node_modules/@blocksuite/global/dist/utils.js",
-			"^@blocksuite/global/env$": "<rootDir>/node_modules/@blocksuite/global/dist/env/index.js",
-			"^@blocksuite/global/exceptions$": "<rootDir>/node_modules/@blocksuite/global/dist/exceptions/index.js"
+			"^@blocksuite/global/(.*)$": "<rootDir>/node_modules/@blocksuite/global/dist/$1",
+			"^@blocksuite/affine-components/(.*)$": "<rootDir>/node_modules/@blocksuite/affine-components/dist/$1/index.js",
+			"^@blocksuite/affine-shared/(.*)$": "<rootDir>/node_modules/@blocksuite/affine-shared/dist/$1",
+			"^@blocksuite/block-std/(.*)$": "<rootDir>/node_modules/@blocksuite/block-std/dist/$1",
+			"^@toeverything/theme/(.*)$": "<rootDir>/node_modules/@toeverything/theme/dist/$1",
+			"^@blocksuite/icons/(.*)$": "<rootDir>/node_modules/@blocksuite/icons/dist/$1.js",
+			"^@blocksuite/data-view/view-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/view-presets/index.js",
+			"^@blocksuite/data-view/property-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/property-presets/index.js",
+			"^@blocksuite/data-view/property-pure-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/property-presets/pure-index.js",
+			"^@blocksuite/data-view/widget-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/widget-presets/index.js",
+			"^@blocksuite/([^/]+)/effects$": "<rootDir>/node_modules/@blocksuite/$1/dist/effects.js",
+			"^@blocksuite/([^/]+)/schemas$": "<rootDir>/node_modules/@blocksuite/$1/dist/schemas.js",
+			"^shiki$": "<rootDir>/__mocks__/shikiMock.js",
+			"^shiki/(.*)$": "<rootDir>/__mocks__/shikiMock.js",
+			"unist-util-visit-parents/do-not-use-color": "<rootDir>/__mocks__/fileMock.js",
+			"#minpath": "<rootDir>/node_modules/vfile/lib/minpath.js",
+			"#minproc": "<rootDir>/node_modules/vfile/lib/minproc.js",
+			"#minurl": "<rootDir>/node_modules/vfile/lib/minurl.js"
 		},
 		"globals": {
 			"ts-jest": {
@@ -92,7 +107,11 @@
 			"^.+\\.(t|j)sx?$": "@swc/jest"
 		},
 		"transformIgnorePatterns": [
-			"/node_modules/(?!(nanoevents|@blocksuite|lib0|y-protocols|nanoid|lit|@lit)/)"
+			"/node_modules/(?!(nanoevents|@blocksuite|@toeverything|lib0|y-protocols|nanoid|lit|@lit|lit-.*|rehype-.*|remark-.*|unified|micromark|micromark-.*|mdast-.*|hast-.*|unist-.*|vfile.*|bail|trough|zwitch|property-.*|space-.*|comma-.*|web-namespaces|ccount|escape-string-regexp|markdown-table|longest-streak|decode-named-character-reference|character-entities.*|character-reference-invalid|trim-lines|devlop|hastscript|html-void-elements|is-plain-obj|fractional-indexing|@lottiefiles|shiki|date-fns|stringify-entities|collapse-white-space)/)"
+		],
+		"testPathIgnorePatterns": [
+			"/node_modules/",
+			"/dist/"
 		],
 		"maxWorkers": "50%",
 		"testEnvironment": "jsdom",
@@ -103,6 +122,9 @@
 		],
 		"setupFiles": [
 			"./tests/setupFile.ts"
+		],
+		"snapshotSerializers": [
+			"./tests/litSnapshotSerializer.js"
 		]
 	},
 	"devDependencies": {

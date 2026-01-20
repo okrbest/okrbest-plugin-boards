@@ -30,10 +30,22 @@ jest.mock('../octoClient', () => ({
 }))
 
 // Mock BlockSuite Doc
-const createMockDoc = () => ({
-    addBlock: jest.fn().mockReturnValue('mock-block-id'),
-    getBlocks: jest.fn().mockReturnValue([]),
-})
+const createMockDoc = () => {
+    const mockBlobSync = {
+        set: jest.fn().mockResolvedValue('mock-blob-id'),
+        get: jest.fn(),
+        delete: jest.fn(),
+    }
+
+    return {
+        addBlock: jest.fn().mockReturnValue('mock-block-id'),
+        getBlocks: jest.fn().mockReturnValue([]),
+        collection: {
+            blobSync: mockBlobSync,
+        },
+        blobSync: mockBlobSync,
+    }
+}
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
 global.URL.createObjectURL = jest.fn((file: File) => `blob:mock-url-${file.name}`)
@@ -62,7 +74,7 @@ describe('blockSuiteUtils - File Upload', () => {
                     width: 800,
                     height: 600,
                     get onload() { return onloadHandler },
-                    set onload(handler: (() => void) | null) { 
+                    set onload(handler: (() => void) | null) {
                         onloadHandler = handler
                         // If src is already set, trigger onload immediately
                         if (handler && this._src) {
@@ -85,11 +97,11 @@ describe('blockSuiteUtils - File Upload', () => {
 
             const result = await uploadImageToBlockSuite(boardId, mockFile, mockDoc, noteId)
 
-            expect(octoClient.uploadFile).toHaveBeenCalledWith(boardId, mockFile)
+            expect(mockDoc.blobSync.set).toHaveBeenCalledWith(mockFile)
             expect(mockDoc.addBlock).toHaveBeenCalledWith(
                 'affine:image',
                 expect.objectContaining({
-                    sourceId: 'file-id-123',
+                    sourceId: 'mock-blob-id',
                     filename: 'test.png',
                     width: 800,
                     height: 600,
@@ -102,13 +114,14 @@ describe('blockSuiteUtils - File Upload', () => {
         it('should return null if upload fails', async () => {
             const mockFile = new File(['image content'], 'test.png', { type: 'image/png' })
             const boardId = 'board-1'
-            const noteId = 'note-id-1';
+            const noteId = 'note-id-1'
 
-            (octoClient.uploadFile as jest.Mock).mockResolvedValue(undefined)
+            // BlobEngine이 null을 반환하도록 설정
+            mockDoc.blobSync.set.mockResolvedValue(null)
 
             const result = await uploadImageToBlockSuite(boardId, mockFile, mockDoc, noteId)
 
-            expect(octoClient.uploadFile).toHaveBeenCalled()
+            expect(mockDoc.blobSync.set).toHaveBeenCalledWith(mockFile)
             expect(mockDoc.addBlock).not.toHaveBeenCalled()
             expect(result).toBeNull()
         })
@@ -116,9 +129,10 @@ describe('blockSuiteUtils - File Upload', () => {
         it('should handle image size detection errors', async () => {
             const mockFile = new File(['image content'], 'test.png', { type: 'image/png' })
             const boardId = 'board-1'
-            const noteId = 'note-id-1';
+            const noteId = 'note-id-1'
 
-            (octoClient.uploadFile as jest.Mock).mockResolvedValue('file-id-123')
+            // BlobEngine이 정상적으로 동작하도록 설정
+            mockDoc.blobSync.set.mockResolvedValue('mock-blob-id')
 
             // Mock Image constructor to trigger error
             let onerrorHandler: (() => void) | null = null
@@ -128,7 +142,7 @@ describe('blockSuiteUtils - File Upload', () => {
                     height: 0,
                     onload: null,
                     get onerror() { return onerrorHandler },
-                    set onerror(handler: (() => void) | null) { 
+                    set onerror(handler: (() => void) | null) {
                         onerrorHandler = handler
                         // If src is already set, trigger onerror immediately
                         if (handler && this._src) {
@@ -150,11 +164,11 @@ describe('blockSuiteUtils - File Upload', () => {
 
             const result = await uploadImageToBlockSuite(boardId, mockFile, mockDoc, noteId)
 
-            expect(octoClient.uploadFile).toHaveBeenCalled()
+            expect(mockDoc.blobSync.set).toHaveBeenCalledWith(mockFile)
             expect(mockDoc.addBlock).toHaveBeenCalledWith(
                 'affine:image',
                 expect.objectContaining({
-                    sourceId: 'file-id-123',
+                    sourceId: 'mock-blob-id',
                     width: 0,
                     height: 0,
                 }),
@@ -166,9 +180,10 @@ describe('blockSuiteUtils - File Upload', () => {
         it('should handle upload exceptions', async () => {
             const mockFile = new File(['image content'], 'test.png', { type: 'image/png' })
             const boardId = 'board-1'
-            const noteId = 'note-id-1';
+            const noteId = 'note-id-1'
 
-            (octoClient.uploadFile as jest.Mock).mockRejectedValue(new Error('Upload failed'))
+            // BlobEngine이 에러를 발생시키도록 설정
+            mockDoc.blobSync.set.mockRejectedValue(new Error('Upload failed'))
 
             const result = await uploadImageToBlockSuite(boardId, mockFile, mockDoc, noteId)
 

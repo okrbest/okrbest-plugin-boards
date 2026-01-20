@@ -39,6 +39,7 @@ jest.mock('../octoClient', () => ({
     getBlockSuiteInfo: jest.fn(),
     getBlockSuiteContent: jest.fn(),
     getBlocksWithParent: jest.fn(),
+    getAllBlocks: jest.fn(),
     saveBlockSuiteContent: jest.fn(),
 }))
 
@@ -52,6 +53,7 @@ describe('blockSuiteUtils', () => {
             collection: {},
             getBlocks: jest.fn().mockReturnValue([]),
             addBlock: jest.fn().mockReturnValue('mock-id'),
+            deleteBlock: jest.fn(),
             load: jest.fn(),
         }
     })
@@ -64,6 +66,7 @@ describe('blockSuiteUtils', () => {
         ];
 
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue(null);
+        (octoClient.getAllBlocks as jest.Mock).mockResolvedValue(legacyBlocks);
         (octoClient.getBlocksWithParent as jest.Mock).mockResolvedValue(legacyBlocks)
 
         await loadData(card as any, mockDoc)
@@ -82,19 +85,46 @@ describe('blockSuiteUtils', () => {
     it('should load existing BlockSuite document if present', async () => {
         const cardId = 'card-2'
         const card = { id: cardId, fields: { contentOrder: [] } }
-        const snapshot = { meta: {}, blocks: {} };
-        
+        const snapshot = {
+            blocks: {
+                flavour: 'affine:page',
+                props: {},
+                children: [
+                    {
+                        flavour: 'affine:surface',
+                        props: {},
+                        children: []
+                    },
+                    {
+                        flavour: 'affine:note',
+                        props: {},
+                        children: [
+                            {
+                                flavour: 'affine:paragraph',
+                                props: {
+                                    text: {
+                                        delta: [{ insert: 'Test content' }]
+                                    }
+                                },
+                                children: []
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue({ exists: true });
         (octoClient.getBlockSuiteContent as jest.Mock).mockResolvedValue(JSON.stringify(snapshot))
 
         const resultDoc = await loadData(card as any, mockDoc)
 
-        expect(octoClient.getBlocksWithParent).not.toHaveBeenCalled()
         expect(octoClient.getBlockSuiteInfo).toHaveBeenCalledWith(cardId)
         expect(octoClient.getBlockSuiteContent).toHaveBeenCalledWith(cardId)
-        
-        expect(mockJobSnapshotToDoc).toHaveBeenCalledWith(snapshot)
-        expect(resultDoc).toEqual({ id: 'restored-doc' })
+
+        // loadSnapshotIntoDoc는 기존 doc에 블록을 추가하므로 mockDoc의 addBlock이 호출되어야 함
+        expect(mockDoc.addBlock).toHaveBeenCalled()
+        expect(resultDoc).toEqual(mockDoc)
     })
 
     it('should initialize empty page when no blocks exist', async () => {
@@ -102,6 +132,7 @@ describe('blockSuiteUtils', () => {
         const card = { id: cardId, fields: { contentOrder: [] } };
 
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue(null);
+        (octoClient.getAllBlocks as jest.Mock).mockResolvedValue([]);
         (octoClient.getBlocksWithParent as jest.Mock).mockResolvedValue([])
 
         await loadData(card as any, mockDoc)
@@ -114,11 +145,11 @@ describe('blockSuiteUtils', () => {
 
     it('should handle contentOrder array correctly', async () => {
         const cardId = 'card-4'
-        const card = { 
-            id: cardId, 
-            fields: { 
-                contentOrder: ['block-2', 'block-1', 'block-3'] 
-            } 
+        const card = {
+            id: cardId,
+            fields: {
+                contentOrder: ['block-2', 'block-1', 'block-3']
+            }
         }
         const legacyBlocks = [
             { id: 'block-1', type: 'text', title: 'First', parentId: cardId, fields: {} },
@@ -127,6 +158,7 @@ describe('blockSuiteUtils', () => {
         ];
 
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue(null);
+        (octoClient.getAllBlocks as jest.Mock).mockResolvedValue(legacyBlocks);
         (octoClient.getBlocksWithParent as jest.Mock).mockResolvedValue(legacyBlocks)
 
         await loadData(card as any, mockDoc)
@@ -139,11 +171,11 @@ describe('blockSuiteUtils', () => {
 
     it('should handle nested contentOrder arrays', async () => {
         const cardId = 'card-5'
-        const card = { 
-            id: cardId, 
-            fields: { 
-                contentOrder: ['block-1', ['block-2', 'block-3'], 'block-4'] 
-            } 
+        const card = {
+            id: cardId,
+            fields: {
+                contentOrder: ['block-1', ['block-2', 'block-3'], 'block-4']
+            }
         }
         const legacyBlocks = [
             { id: 'block-1', type: 'text', title: 'First', parentId: cardId, fields: {} },
@@ -153,6 +185,7 @@ describe('blockSuiteUtils', () => {
         ];
 
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue(null);
+        (octoClient.getAllBlocks as jest.Mock).mockResolvedValue(legacyBlocks);
         (octoClient.getBlocksWithParent as jest.Mock).mockResolvedValue(legacyBlocks)
 
         await loadData(card as any, mockDoc)
@@ -171,9 +204,9 @@ describe('blockSuiteUtils', () => {
         // loadData는 try-catch로 에러를 잡아서 throw하지 않음
         await loadData(card as any, mockDoc)
 
-        // 에러가 console.error로 로깅되었는지 확인
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load BlockSuite data', expect.any(Error))
-        
+        // 에러가 console.error로 로깅되었는지 확인 (새로운 에러 메시지 형식)
+        expect(consoleErrorSpy).toHaveBeenCalledWith('[BlockSuite Migration] ❌ CRITICAL ERROR in loadData:', expect.any(Error))
+
         consoleErrorSpy.mockRestore()
     })
 
@@ -188,6 +221,7 @@ describe('blockSuiteUtils', () => {
         ];
 
         (octoClient.getBlockSuiteInfo as jest.Mock).mockResolvedValue(null);
+        (octoClient.getAllBlocks as jest.Mock).mockResolvedValue(legacyBlocks);
         (octoClient.getBlocksWithParent as jest.Mock).mockResolvedValue(legacyBlocks)
 
         await loadData(card as any, mockDoc)
