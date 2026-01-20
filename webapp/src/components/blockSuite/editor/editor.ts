@@ -47,6 +47,9 @@ export async function initEditor(cardId: string, boardId: string, card: Card): P
     const schema = new Schema().register(AffineSchemas)
 
     // 2. BlobEngine 생성
+    // MattermostBlobEngine은 내부에 IndexedDB 캐시를 포함
+    // - get(): IndexedDB 캐시에서 먼저 찾고, 없으면 서버에서 가져와서 캐시
+    // - set(): 서버에 업로드 후 IndexedDB에 캐시
     const blobEngine = new MattermostBlobEngine(boardId)
 
     // 3. DocCollection 생성

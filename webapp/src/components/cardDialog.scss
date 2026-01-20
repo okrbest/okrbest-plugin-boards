@@ -3,6 +3,7 @@
         width: 100%;
         top: 0;
         height: 100%;
+        overflow-y: auto; /* 다이얼로그 전체 스크롤 */
 
         @media (min-width: 975px) {
             height: calc(100% - 144px);
@@ -22,9 +23,7 @@
             }
         }
 
-        >.CardDetail--fullwidth {
-            padding-left: 78px;
-        }
+      
     }
 }
 

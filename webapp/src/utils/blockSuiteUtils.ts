@@ -8,6 +8,16 @@ import { Block } from '../blocks/block'
 import { Card } from '../blocks/card'
 
 /**
+ * 문자열을 BlockSuite Text 객체로 변환
+ */
+export function stringToText(str: string): Text {
+    if (!str) {
+        return new Text()
+    }
+    return new Text(str)
+}
+
+/**
  * 이미지 URL 생성 (Mattermost 파일 API 사용)
  * BlockSuite 이미지 블록에서 사용할 URL을 생성합니다.
  */
@@ -192,10 +202,10 @@ function createEmptyDoc(cardId: string, collection: DocCollection): Doc {
     const doc = collection.createDoc({ id: cardId })
     doc.load(() => {
         // 기본 페이지 구조 생성
-        const pageBlockId = doc.addBlock('affine:page', {})
-        doc.addBlock('affine:surface', {}, pageBlockId)
-        const noteId = doc.addBlock('affine:note', {}, pageBlockId)
-        doc.addBlock('affine:paragraph', {}, noteId)
+        const pageBlockId = doc.addBlock('affine:page' as any, {})
+        doc.addBlock('affine:surface' as any, {}, pageBlockId)
+        const noteId = doc.addBlock('affine:note' as any, {}, pageBlockId)
+        doc.addBlock('affine:paragraph' as any, {}, noteId)
     })
     console.log('[BlockSuite] Empty doc created')
     return doc
@@ -683,7 +693,7 @@ async function convertAndApplyBlocks(blocks: Block[], card: Card, doc: Doc) {
  * 단일 블록을 BlockSuite 형식으로 변환
  */
 async function convertBlock(block: Block, boardId: string, parentId: string, doc: Doc): Promise<void> {
-    const text = block.title ? new Text(block.title) : new Text()
+    const text = block.title ? stringToText(block.title) : new Text()
 
     // 공통 필드: 원본 타입 보존 (역마이그레이션 가능)
     const commonFields: Record<string, any> = {

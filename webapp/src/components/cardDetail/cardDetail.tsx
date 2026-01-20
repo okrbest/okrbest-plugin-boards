@@ -243,7 +243,7 @@ const CardDetail = (props: Props): JSX.Element|null => {
 
             {/* Content blocks */}
 
-            {!limited && <div className='CardDetail CardDetail--fullwidth content-blocks'>
+            {!limited && <div className='CardDetail content-blocks'>
                 <ErrorBoundary>
                     <BlockSuiteEditor
                         card={card}

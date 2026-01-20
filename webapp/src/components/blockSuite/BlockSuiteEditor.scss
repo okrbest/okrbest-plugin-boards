@@ -1,47 +1,98 @@
 .blocksuite-editor-wrapper {
     height: 100%;
+    min-height: 100%;
     width: 100%;
     overflow-y: auto;
     position: relative;
-    background-color: var(--center-channel-bg, #ffffff);
-    color: #333333;
-
-    /* --- BlockSuite Theme Mapping (Mattermost Sync) --- */
+    background-color: var(--affine-background-primary-color, #ffffff);
+    color: #000000;
+    display: flex;
+    flex-direction: column;
     
-    /* Typography */
-    --affine-font-family: var(--font-family-base, 'Open Sans', sans-serif);
-    
-    /* Colors: Backgrounds - 불투명 배경색 사용 */
-    --affine-background-primary-color: #ffffff;
-    --affine-background-secondary-color: #f8f9fa;
-    --affine-background-tertiary-color: #f1f3f5;
-    --affine-background-overlay-panel-color: #ffffff;
+    /* CSS 변수 강제 오버라이드 */
+    --affine-text-primary-color: #000000 !important;
+    --affine-text-secondary-color: #666666 !important;
+    --affine-text-disable-color: #999999 !important;
 
-    /* Colors: Text - 검정색 계열로 강제 */
-    --affine-text-primary-color: #333333;
-    --affine-text-secondary-color: #666666;
-    --affine-placeholder-color: #999999;
-    
-    /* Brand & Accent */
-    --affine-brand-color: var(--button-bg);
-    --affine-primary-color: var(--button-bg);
-    --affine-hover-color: rgba(var(--center-channel-color-rgb), 0.06);
-
-    /* Borders & Dividers */
-    --affine-border-color: rgba(var(--center-channel-color-rgb), 0.12);
-    --affine-divider-color: rgba(var(--center-channel-color-rgb), 0.08);
-
-    /* Selection */
-    --affine-selection-color: rgba(var(--button-bg-rgb), 0.25);
-
-    /* --- Editor Specifics --- */
+    /* --- BlockSuite 에디터 컨테이너 스타일 --- */
     affine-editor-container {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 100%;
         width: 100%;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 40px 20px 100px 20px;
+        padding: 0 !important; /* 상하좌우 패딩 제거 */
+        border: none !important; /* border 제거 */
+        border-width: 0 !important;
+        border-style: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         --affine-editor-width: 100%;
+        --affine-text-primary-color: #000000 !important;
+        color: #000000 !important;
+    }
+    
+    /* 에디터 내부 요소들이 전체 높이를 채우도록 */
+    editor-host {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 100%;
+    }
+    
+    affine-doc-page,
+    affine-page-root {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        border: none !important; /* border 제거 */
+        border-width: 0 !important;
+        border-style: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    
+    .affine-page-viewport {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 100%;
+    }
+    
+    .affine-page-root-block-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 0 !important; /* 상하좌우 패딩 제거 */
+    }
+    
+    /* 노트 블록이 전체 공간을 채우도록 */
+    affine-note {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 200px;
+    }
+    
+    .affine-note-block-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    
+    /* BlockSuite 내부 요소 텍스트 색상 강제 적용 */
+    affine-page-root,
+    affine-note,
+    affine-paragraph,
+    affine-list,
+    .affine-paragraph-block-container,
+    .affine-paragraph-rich-text-wrapper,
+    rich-text,
+    v-line,
+    v-text,
+    [data-block-id] {
+        --affine-text-primary-color: #000000 !important;
+        color: #000000 !important;
     }
 
     /* Hide page title and tags - we use card title instead */
@@ -79,12 +130,12 @@
     }
 
     &::-webkit-scrollbar-thumb {
-        background: rgba(var(--center-channel-color-rgb), 0.2);
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 4px;
     }
 
     &::-webkit-scrollbar-thumb:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.35);
+        background: rgba(0, 0, 0, 0.35);
     }
     
     &::-webkit-scrollbar-track {
@@ -106,12 +157,12 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: rgba(var(--center-channel-bg-rgb), 0.9);
+        background: rgba(255, 255, 255, 0.9);
         z-index: 1000;
         gap: 16px;
 
         span {
-            color: var(--center-channel-color);
+            color: #333333;
             font-size: 14px;
         }
     }
@@ -119,8 +170,8 @@
     .blocksuite-loading-spinner {
         width: 40px;
         height: 40px;
-        border: 3px solid rgba(var(--center-channel-color-rgb), 0.1);
-        border-top-color: var(--button-bg);
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-top-color: var(--affine-primary-color, #1E96EB);
         border-radius: 50%;
         animation: blocksuite-spin 1s linear infinite;
     }
@@ -145,35 +196,23 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 
         &.saving {
-            background: rgba(var(--button-bg-rgb), 0.1);
-            color: var(--button-bg);
-            border: 1px solid rgba(var(--button-bg-rgb), 0.3);
+            background: rgba(30, 150, 235, 0.1);
+            color: #1E96EB;
+            border: 1px solid rgba(30, 150, 235, 0.3);
         }
 
         &.saved {
-            background: rgba(var(--online-indicator-rgb, 61, 184, 135), 0.1);
-            color: rgb(var(--online-indicator-rgb, 61, 184, 135));
-            border: 1px solid rgba(var(--online-indicator-rgb, 61, 184, 135), 0.3);
+            background: rgba(61, 184, 135, 0.1);
+            color: rgb(61, 184, 135);
+            border: 1px solid rgba(61, 184, 135, 0.3);
         }
 
         &.error {
-            background: rgba(var(--error-text-rgb, 242, 73, 78), 0.1);
-            color: rgb(var(--error-text-rgb, 242, 73, 78));
-            border: 1px solid rgba(var(--error-text-rgb, 242, 73, 78), 0.3);
+            background: rgba(242, 73, 78, 0.1);
+            color: rgb(242, 73, 78);
+            border: 1px solid rgba(242, 73, 78, 0.3);
         }
     }
-
-    /* Additional Theme Variables for better BlockSuite integration */
-    --affine-link-color: var(--button-bg);
-    --affine-code-background: rgba(var(--center-channel-color-rgb), 0.08);
-    --affine-code-color: var(--center-channel-color);
-    
-    /* Focus states */
-    --affine-focus-color: var(--button-bg);
-    
-    /* Toolbar */
-    --affine-toolbar-background: var(--center-channel-bg);
-    --affine-toolbar-border-color: rgba(var(--center-channel-color-rgb), 0.12);
 
     /* --- Korean Placeholder Customization --- */
     
@@ -186,7 +225,7 @@
     .affine-doc-page-block-title:empty::before,
     [data-block-is-title="true"]:empty::before {
         content: '제목 없음';
-        color: var(--affine-placeholder-color);
+        color: var(--affine-text-disable-color, #999999);
         pointer-events: none;
     }
 
@@ -194,7 +233,7 @@
     .affine-paragraph-block-container[data-block-id] .affine-paragraph-rich-text-wrapper:empty::before,
     .affine-paragraph-placeholder::before {
         content: '내용을 입력하세요... ("/" 입력하면 블록 추가)';
-        color: var(--affine-placeholder-color);
+        color: var(--affine-text-disable-color, #999999);
         pointer-events: none;
         position: absolute;
         opacity: 0;
@@ -214,51 +253,85 @@
     
     [data-placeholder="Tags"]:empty::before {
         content: '태그';
-        color: var(--affine-placeholder-color);
+        color: var(--affine-text-disable-color, #999999);
     }
+}
 
-    /* 에디터 텍스트 색상 강제 적용 */
-    affine-editor-container,
-    affine-editor-container *,
-    .affine-paragraph-block-container,
-    .affine-list-block-container,
-    .affine-code-block-container,
-    [data-block-id] {
-        color: #333333 !important;
-    }
-
-    /* 슬래시 메뉴 커스텀 스타일 - z-index를 높여 카드 다이얼로그 위에 표시 */
-    .affine-slash-menu,
-    affine-slash-menu,
-    [data-affine-slash-menu],
-    .blocksuite-overlay,
-    .affine-popover-container,
-    affine-linked-doc-popover,
-    .affine-linked-doc-popover,
-    .affine-block-selection,
-    .affine-reference-popover,
-    affine-format-bar-widget,
-    .affine-format-bar,
-    affine-drag-handle-widget,
-    .affine-drag-handle {
+/* 
+ * BlockSuite 포털 요소 스타일 (body에 직접 렌더링되는 요소들)
+ * 슬래시 메뉴, 포맷 바, 팝오버 등
+ * z-index를 높여 카드 다이얼로그 위에 표시
+ */
+body {
+    /* 슬래시 메뉴 */
+    > affine-slash-menu,
+    affine-slash-menu {
         z-index: 10001 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        border-radius: var(--affine-popover-radius, 12px) !important;
+        border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+        color: #000000 !important;
+        
+        /* 슬래시 메뉴의 서브메뉴 (Other Headings 등) 위치 수정 */
+        [data-testid="sub-menu-0"],
+        [data-testid="sub-menu-1"],
+        [data-testid^="sub-menu-"] {
+            position: absolute !important;
+            /* 메인 메뉴 오른쪽에 배치 */
+            left: 100% !important;
+            top: 0 !important;
+            bottom: auto !important;
+            margin-left: 4px !important;
+            z-index: 10002 !important;
+            background-color: var(--affine-background-primary-color, #ffffff) !important;
+            box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+            border-radius: var(--affine-popover-radius, 12px) !important;
+            border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+        }
+    }
+    
+    /* 슬래시 메뉴 서브메뉴 (body에 직접 렌더링되는 경우) */
+    > [data-testid="sub-menu-0"],
+    > [data-testid="sub-menu-1"],
+    > [data-testid^="sub-menu-"] {
+        z-index: 10002 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        border-radius: var(--affine-popover-radius, 12px) !important;
+        border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+        color: #000000 !important;
     }
 
-    /* Editor Toolbar 스타일 - 배경색과 그림자로 콘텐츠와 구분 */
+    /* 포맷 바/툴바 */
+    > affine-format-bar-widget,
     affine-format-bar-widget,
-    .affine-format-bar,
-    editor-toolbar,
-    .editor-toolbar,
-    .affine-toolbar,
-    affine-toolbar,
-    [data-widget="format-bar"],
-    .affine-embed-editing-state,
-    .affine-image-toolbar,
-    .affine-database-toolbar {
-        background-color: #ffffff !important;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1) !important;
+    .affine-format-bar {
+        z-index: 10001 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
         border-radius: 8px !important;
-        border: 1px solid rgba(0, 0, 0, 0.08) !important;
-        color: #333333 !important;
+        border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+        color: #000000 !important;
+    }
+
+    /* 팝오버 컨테이너 */
+    > .affine-popover-container,
+    .affine-popover-container,
+    > affine-linked-doc-popover,
+    affine-linked-doc-popover,
+    > .blocksuite-overlay,
+    .blocksuite-overlay {
+        z-index: 10001 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        border-radius: var(--affine-popover-radius, 12px) !important;
+        border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+    }
+
+    /* 드래그 핸들 */
+    > affine-drag-handle-widget,
+    affine-drag-handle-widget {
+        z-index: 10001 !important;
     }
 }

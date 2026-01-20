@@ -1,53 +1,59 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import { BlobSource } from '@blocksuite/sync'
+import { BlobSource, IndexedDBBlobSource } from '@blocksuite/sync'
 
 import octoClient from '../../../octoClient'
 
 /**
- * Mattermost 파일 API를 사용하는 BlobSource 구현
+ * Mattermost 파일 API를 사용하는 BlobSource 구현 (IndexedDB 캐시 포함)
  * BlockSuite 에디터의 이미지/첨부파일 업로드/다운로드를 처리합니다.
  * 
- * BlockSuite는 blob의 hash를 key로 사용하지만, Mattermost는 자체 fileId를 생성합니다.
- * 이 매핑을 관리하기 위해 keyToFileId 맵을 사용합니다.
+ * 성능 최적화:
+ * - get(): IndexedDB 캐시에서 먼저 찾고, 없으면 서버에서 가져와서 캐시
+ * - set(): 서버에 업로드 후 IndexedDB에 캐시
+ * 
+ * 참고: BlockSuite는 blob의 hash를 key로 사용하지만, Mattermost는 자체 fileId를 생성합니다.
+ * set()에서 fileId를 반환하여 BlockSuite 문서에 fileId가 저장되도록 합니다.
  */
 export class MattermostBlobEngine implements BlobSource {
     readonly name = 'mattermost'
     readonly = false
     private boardId: string
     
-    // BlockSuite blob key (hash) -> Mattermost fileId 매핑
-    // 업로드 시 저장하고, 다운로드 시 참조합니다.
-    private keyToFileId: Map<string, string> = new Map()
+    // IndexedDB 캐시 - 로컬에서 빠르게 이미지를 로드
+    private cache: IndexedDBBlobSource
 
     constructor(boardId: string) {
         this.boardId = boardId
-        console.log('[MattermostBlobEngine] Created for board:', boardId)
+        this.cache = new IndexedDBBlobSource(`focalboard_blob_${boardId}`)
+        console.log('[MattermostBlobEngine] Created for board:', boardId, 'with IndexedDB cache')
     }
 
     /**
      * Blob 다운로드 (이미지 렌더링 시 호출됨)
-     * @param key BlockSuite blob key 또는 Mattermost fileId
+     * 1. IndexedDB 캐시에서 먼저 찾음 (빠름)
+     * 2. 캐시에 없으면 서버에서 가져와서 캐시에 저장
+     * @param key Mattermost fileId (스냅샷에 저장된 값)
      */
     async get(key: string): Promise<Blob | null> {
         console.log('[MattermostBlobEngine] get() called with key:', key)
+        
         try {
-            // 1. 먼저 key가 매핑에 있는지 확인 (업로드 직후 조회하는 경우)
-            let fileId = this.keyToFileId.get(key)
-            
-            if (fileId) {
-                console.log('[MattermostBlobEngine] Found fileId in mapping:', fileId)
-            } else {
-                // 2. 매핑에 없으면 key 자체가 fileId일 수 있음 (기존에 저장된 이미지)
-                // key에서 확장자 제거 (예: "abc123.gif" -> "abc123")
-                fileId = key.includes('.') ? key.split('.')[0] : key
-                console.log('[MattermostBlobEngine] Using key as fileId:', fileId)
+            // 1. IndexedDB 캐시에서 먼저 찾기
+            const cached = await this.cache.get(key)
+            if (cached) {
+                console.log('[MattermostBlobEngine] ✅ Cache hit for:', key)
+                return cached
             }
+            console.log('[MattermostBlobEngine] Cache miss for:', key, '- fetching from server')
             
-            console.log('[MattermostBlobEngine] Fetching file with fileId:', fileId, 'boardId:', this.boardId)
+            // 2. 캐시에 없으면 서버에서 가져오기
+            // key에서 확장자 제거 (예: "abc123.gif" -> "abc123")
+            const fileId = key.includes('.') ? key.split('.')[0] : key
             
-            // octoClient를 사용하여 인증된 요청 수행
+            console.log('[MattermostBlobEngine] Fetching from server, fileId:', fileId, 'boardId:', this.boardId)
+            
             const blob = await octoClient.getFileAsBlob(this.boardId, fileId)
             
             if (!blob) {
@@ -56,6 +62,12 @@ export class MattermostBlobEngine implements BlobSource {
             }
             
             console.log('[MattermostBlobEngine] Downloaded blob:', key, 'size:', blob.size, 'type:', blob.type)
+            
+            // 3. 캐시에 저장 (백그라운드로 처리하여 렌더링 지연 방지)
+            this.cache.set(key, blob).catch(err => {
+                console.warn('[MattermostBlobEngine] Failed to cache blob:', key, err)
+            })
+            
             return blob
         } catch (error) {
             console.error(`[MattermostBlobEngine] Error downloading blob ${key}:`, error)
@@ -65,26 +77,26 @@ export class MattermostBlobEngine implements BlobSource {
 
     /**
      * Blob 업로드 (이미지 드래그앤드롭/붙여넣기 시 호출됨)
-     * @param key 클라이언트에서 생성한 키 (SHA hash)
-     * @param value 업로드할 Blob 데이터
-     * @returns key 그대로 반환 (BlockSuite가 이 key를 문서에 저장함)
+     * 1. 서버에 업로드
+     * 2. IndexedDB 캐시에 저장 (fileId를 key로)
+     * 3. fileId 반환 (BlockSuite가 문서에 fileId를 저장)
      * 
-     * 중요: BlockSuite는 set()에서 반환된 값을 blob의 새 key로 사용합니다.
-     * Mattermost fileId를 반환하면 BlockSuite가 문서에 fileId를 저장하게 됩니다.
-     * 하지만 BlockSuite가 이미 hash를 계산해서 set()을 호출했으므로,
-     * 내부적으로 매핑을 관리하고 원래 key를 반환하는 것이 안전합니다.
+     * @param key 클라이언트에서 생성한 키 (SHA hash) - 사용하지 않음
+     * @param value 업로드할 Blob 데이터
+     * @returns fileId (Mattermost에서 생성한 파일 ID)
      */
     async set(key: string, value: Blob): Promise<string> {
         console.log('[MattermostBlobEngine] set() called with key:', key, 'blob size:', value.size, 'type:', value.type)
         
-        // 이미 이 key에 대한 업로드가 진행 중이거나 완료된 경우 스킵
-        if (this.keyToFileId.has(key)) {
-            console.log('[MattermostBlobEngine] Key already mapped, returning fileId:', this.keyToFileId.get(key))
-            return this.keyToFileId.get(key)!
+        // 이미 캐시에 있는지 확인 (중복 업로드 방지)
+        const cached = await this.cache.get(key)
+        if (cached) {
+            console.log('[MattermostBlobEngine] Blob already cached with key:', key)
+            return key
         }
         
         try {
-            // Blob을 File 객체로 변환 (파일명은 key 기반으로 생성)
+            // 1. 서버에 업로드
             const extension = this.getExtensionFromMimeType(value.type)
             const filename = `image_${key.substring(0, 8)}${extension}`
             const file = new File([value], filename, { type: value.type })
@@ -96,11 +108,13 @@ export class MattermostBlobEngine implements BlobSource {
                 throw new Error('Failed to upload file to Mattermost - no fileId returned')
             }
             
-            // 매핑 저장: BlockSuite key -> Mattermost fileId
-            this.keyToFileId.set(key, fileId)
-            console.log('[MattermostBlobEngine] Upload successful, fileId:', fileId, 'mapped from key:', key)
+            console.log('[MattermostBlobEngine] Upload successful, fileId:', fileId)
             
-            // fileId를 반환하여 BlockSuite 문서에 fileId가 저장되도록 함
+            // 2. IndexedDB 캐시에 저장 (fileId를 key로 사용)
+            await this.cache.set(fileId, value)
+            console.log('[MattermostBlobEngine] Cached blob with fileId:', fileId)
+            
+            // 3. fileId 반환 (BlockSuite가 문서에 fileId를 저장)
             return fileId
         } catch (error) {
             console.error('[MattermostBlobEngine] Error uploading blob:', error)

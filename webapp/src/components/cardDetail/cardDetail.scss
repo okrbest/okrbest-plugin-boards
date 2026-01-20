@@ -175,14 +175,6 @@
         }
     }
 
-    &.CardDetail--fullwidth {
-        width: 100%;
-        min-height: 300px;
-        margin-top: 20px;
-        border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-        padding-top: 20px;
-    }
-
     &.CardDetail--is-limited {
         flex: 1;
     }
@@ -236,5 +228,15 @@
 
     .BlocksEditor {
         width: 100%;
+        flex: 1;
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* BlockSuite 에디터가 카드 전체 높이를 채우도록 */
+    .blocksuite-editor-wrapper {
+        flex: 1;
+        min-height: 300px;
     }
 }
