@@ -19,7 +19,10 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     msg = 'Redirecting to error page...'
 
     handleError = (): void => {
-        const url = Utils.getBaseURL() + '/error?id=unknown'
+        // 절대 경로를 사용하여 상대 경로 해석으로 인한 무한 리다이렉션 방지
+        const baseURL = Utils.getBaseURL()
+        // baseURL이 비어있으면 '/error?id=unknown', 아니면 '/{baseURL}/error?id=unknown'
+        const url = baseURL ? `/${baseURL}/error?id=unknown` : '/error?id=unknown'
         Utils.log('error boundary redirecting to ' + url)
         window.location.replace(url)
     }

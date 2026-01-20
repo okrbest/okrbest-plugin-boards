@@ -394,10 +394,6 @@ class CardFilter {
 
     static propertyThatMeetsFilterClause(filterClause: FilterClause, templates: readonly IPropertyTemplate[]): { id: string, value?: string } {
         const template = templates.find((o) => o.id === filterClause.propertyId)
-        // eslint-disable-next-line no-console
-        console.log(`[DEBUG propertyThatMeetsFilterClause] propertyId=${filterClause.propertyId}, template=${template?.name}, condition=${filterClause.condition}, values=${JSON.stringify(filterClause.values)}`)
-        // eslint-disable-next-line no-console
-        console.log(`[DEBUG propertyThatMeetsFilterClause] available templates:`, templates.map((t) => ({id: t.id, name: t.name, type: t.type})))
         if (!template) {
             Utils.assertFailure(`propertyThatMeetsFilterClause. Cannot find template: ${filterClause.propertyId}`)
             return {id: filterClause.propertyId}
