@@ -4,6 +4,8 @@ exports[`src/components/kanban/kanbanColumn should match snapshot 1`] = `
 <div>
   <div
     class="octo-board-column"
-  />
+  >
+    <div />
+  </div>
 </div>
 `;

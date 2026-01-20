@@ -36,10 +36,15 @@ describe('components/cardDetail/comment', () => {
     (window as any).store = mockMMStore
     const state = {
         users: {
-            boardUsers: {[comment.modifiedBy]: {username: 'username_1'}},
+            boardUsers: {[comment.modifiedBy]: {username: 'username_1', firstname: '', lastname: '', nickname: ''}},
         },
         teams: {
             current: {id: 'team_id'},
+        },
+        clientConfig: {
+            value: {
+                teammateNameDisplay: 'username',
+            },
         },
     }
     const store = mockStateStore([], state)
@@ -113,13 +118,21 @@ describe('components/cardDetail/comment', () => {
                 boardUsers: {
                     [comment.modifiedBy]: {
                         username: 'username_1', 
-                        is_guest: true
+                        is_guest: true,
+                        firstname: '',
+                        lastname: '',
+                        nickname: '',
                     }
                 }
             }, 
             teams: {
                 current: {id: 'team_id'},
-            }
+            },
+            clientConfig: {
+                value: {
+                    teammateNameDisplay: 'username',
+                },
+            },
         })
         const {container} = render(wrapIntl(
             <ReduxProvider store={localStore}>
@@ -142,12 +155,20 @@ describe('components/cardDetail/comment', () => {
                 boardUsers: {
                     [comment.modifiedBy]: {
                         username: 'username_1', 
-                        is_guest: true
+                        is_guest: true,
+                        firstname: '',
+                        lastname: '',
+                        nickname: '',
                     }
                 }
             },
             teams: {
                 current: {id: 'team_id'},
+            },
+            clientConfig: {
+                value: {
+                    teammateNameDisplay: 'username',
+                },
             },
         })
         const {container} = render(wrapIntl(
@@ -169,12 +190,20 @@ describe('components/cardDetail/comment', () => {
                 boardUsers: {
                     [comment.modifiedBy]: {
                         username: 'username_1',
-                        is_guest: true
+                        is_guest: true,
+                        firstname: '',
+                        lastname: '',
+                        nickname: '',
                     }
                 }
             },
             teams: {
                 current: {id: 'team_id'},
+            },
+            clientConfig: {
+                value: {
+                    teammateNameDisplay: 'username',
+                },
             },
         })
         const {container} = render(wrapIntl(

@@ -27,11 +27,13 @@
 		"cypress:run:firefox": "cypress run --browser firefox",
 		"cypress:run:edge": "cypress run --browser edge",
 		"cypress:run:electron": "cypress run --browser electron",
-		"cypress:open": "cypress open"
+		"cypress:open": "cypress open",
+		"postinstall": "node scripts/patch-blocksuite.js"
 	},
 	"dependencies": {
-		"@blocksuite/blocks": "^0.19.5",
-		"@blocksuite/presets": "^0.19.5",
+		"@blocksuite/blocks": "^0.0.0-canary-20250316001624",
+		"@blocksuite/presets": "^0.0.0-canary-20250316001624",
+		"@blocksuite/store": "^0.0.0-canary-20250316001624",
 		"@draft-js-plugins/editor": "^4.1.2",
 		"@draft-js-plugins/emoji": "^4.6.0",
 		"@draft-js-plugins/mention": "^5.1.2",
@@ -43,6 +45,7 @@
 		"@mattermost/desktop-api": "5.10.0-2",
 		"@reduxjs/toolkit": "^1.8.0",
 		"@tippyjs/react": "4.2.6",
+		"@toeverything/theme": "^1.1.23",
 		"@types/react-custom-scrollbars": "^4.0.13",
 		"color": "^4.2.1",
 		"draft-js": "^0.11.7",
@@ -68,14 +71,32 @@
 		"react-redux": "7.2.4",
 		"react-router-dom": "5.3.4",
 		"react-select": "^5.2.2",
-		"yjs": "^13.6.28"
+		"yjs": "^13.6.29"
 	},
 	"jest": {
 		"moduleNameMapper": {
 			"\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
 			"\\.(scss|css)$": "<rootDir>/__mocks__/styleMock.js",
 			"^mattermost-redux/(.*)$": "<rootDir>/node_modules/mattermost-redux/lib/$1",
-			"^@mattermost/types/(.*)$": "<rootDir>/node_modules/@mattermost/types/lib/$1"
+			"^@mattermost/types/(.*)$": "<rootDir>/node_modules/@mattermost/types/lib/$1",
+			"^@blocksuite/global/(.*)$": "<rootDir>/node_modules/@blocksuite/global/dist/$1",
+			"^@blocksuite/affine-components/(.*)$": "<rootDir>/node_modules/@blocksuite/affine-components/dist/$1/index.js",
+			"^@blocksuite/affine-shared/(.*)$": "<rootDir>/node_modules/@blocksuite/affine-shared/dist/$1",
+			"^@blocksuite/block-std/(.*)$": "<rootDir>/node_modules/@blocksuite/block-std/dist/$1",
+			"^@toeverything/theme/(.*)$": "<rootDir>/node_modules/@toeverything/theme/dist/$1",
+			"^@blocksuite/icons/(.*)$": "<rootDir>/node_modules/@blocksuite/icons/dist/$1.js",
+			"^@blocksuite/data-view/view-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/view-presets/index.js",
+			"^@blocksuite/data-view/property-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/property-presets/index.js",
+			"^@blocksuite/data-view/property-pure-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/property-presets/pure-index.js",
+			"^@blocksuite/data-view/widget-presets$": "<rootDir>/node_modules/@blocksuite/data-view/dist/widget-presets/index.js",
+			"^@blocksuite/([^/]+)/effects$": "<rootDir>/node_modules/@blocksuite/$1/dist/effects.js",
+			"^@blocksuite/([^/]+)/schemas$": "<rootDir>/node_modules/@blocksuite/$1/dist/schemas.js",
+			"^shiki$": "<rootDir>/__mocks__/shikiMock.js",
+			"^shiki/(.*)$": "<rootDir>/__mocks__/shikiMock.js",
+			"unist-util-visit-parents/do-not-use-color": "<rootDir>/__mocks__/fileMock.js",
+			"#minpath": "<rootDir>/node_modules/vfile/lib/minpath.js",
+			"#minproc": "<rootDir>/node_modules/vfile/lib/minproc.js",
+			"#minurl": "<rootDir>/node_modules/vfile/lib/minurl.js"
 		},
 		"globals": {
 			"ts-jest": {
@@ -83,10 +104,14 @@
 			}
 		},
 		"transform": {
-			"^.+\\.tsx?$": "@swc/jest"
+			"^.+\\.(t|j)sx?$": "@swc/jest"
 		},
 		"transformIgnorePatterns": [
-			"/nanoevents/"
+			"/node_modules/(?!(nanoevents|@blocksuite|@toeverything|lib0|y-protocols|nanoid|lit|@lit|lit-.*|rehype-.*|remark-.*|unified|micromark|micromark-.*|mdast-.*|hast-.*|unist-.*|vfile.*|bail|trough|zwitch|property-.*|space-.*|comma-.*|web-namespaces|ccount|escape-string-regexp|markdown-table|longest-streak|decode-named-character-reference|character-entities.*|character-reference-invalid|trim-lines|devlop|hastscript|html-void-elements|is-plain-obj|fractional-indexing|@lottiefiles|shiki|date-fns|stringify-entities|collapse-white-space)/)"
+		],
+		"testPathIgnorePatterns": [
+			"/node_modules/",
+			"/dist/"
 		],
 		"maxWorkers": "50%",
 		"testEnvironment": "jsdom",
@@ -97,11 +122,15 @@
 		],
 		"setupFiles": [
 			"./tests/setupFile.ts"
+		],
+		"snapshotSerializers": [
+			"./tests/litSnapshotSerializer.js"
 		]
 	},
 	"devDependencies": {
 		"@formatjs/cli": "^4.8.2",
 		"@formatjs/ts-transformer": "^3.9.2",
+		"@swc/core": "^1.15.8",
 		"@swc/jest": "^0.2.20",
 		"@testing-library/cypress": "^8.0.2",
 		"@testing-library/dom": "^8.11.4",
@@ -125,6 +154,7 @@
 		"@types/redux-mock-store": "^1.0.3",
 		"@typescript-eslint/eslint-plugin": "^5.16.0",
 		"@typescript-eslint/parser": "^5.16.0",
+		"ajv": "^8.17.1",
 		"copy-webpack-plugin": "^10.2.4",
 		"cross-env": "^7.0.3",
 		"css-loader": "^6.7.1",
@@ -141,6 +171,7 @@
 		"eslint-plugin-mattermost": "github:mattermost/eslint-plugin-mattermost#23abcf9988f7fa00d26929f11841aab7ccb16b2b",
 		"eslint-plugin-no-only-tests": "2.6.0",
 		"eslint-plugin-react": "7.29.4",
+		"eslint-plugin-react-hooks": "^7.0.1",
 		"fetch-mock-jest": "^1.5.1",
 		"file-loader": "^6.2.0",
 		"html-webpack-plugin": "^5.5.0",
@@ -150,7 +181,7 @@
 		"jest-mock": "27.5.1",
 		"prettier": "^2.6.1",
 		"redux-mock-store": "^1.5.4",
-		"sass": "^1.49.9",
+		"sass": "^1.97.2",
 		"sass-loader": "^12.6.0",
 		"start-server-and-test": "^1.14.0",
 		"style-loader": "^3.3.1",
@@ -159,7 +190,7 @@
 		"terser-webpack-plugin": "^5.3.1",
 		"ts-jest": "^27.1.4",
 		"ts-loader": "^9.2.8",
-		"typescript": "^4.6.3",
+		"typescript": "^5.9.3",
 		"webpack": "^5.70.0",
 		"webpack-cli": "^4.9.2",
 		"webpack-dev-server": "^4.11.1",

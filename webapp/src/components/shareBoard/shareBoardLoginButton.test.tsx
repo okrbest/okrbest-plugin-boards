@@ -35,12 +35,12 @@ describe('src/components/shareBoard/shareBoardLoginButton', () => {
     const savedLocation = window.location
 
     afterEach(() => {
-        window.location = savedLocation
+        (window as any).location = savedLocation
     })
 
     test('should match snapshot', async () => {
         // delete window.location
-        window.location = Object.assign(new URL('https://example.org/mattermost'))
+        (window as any).location = Object.assign(new URL('https://example.org/mattermost'))
         const result = render(
             wrapDNDIntl(
                 <ShareBoardLoginButton/>,

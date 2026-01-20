@@ -157,6 +157,11 @@ func (s *SQLStore) DeleteBlockRecord(blockID string, modifiedBy string) error {
 
 }
 
+func (s *SQLStore) DeleteBlockSuiteDocByCardID(cardID string) error {
+	return s.deleteBlockSuiteDocByCardID(s.db, cardID)
+
+}
+
 func (s *SQLStore) DeleteBoard(boardID string, userID string) error {
 	if s.dbType == model.SqliteDBType {
 		return s.deleteBoard(s.db, boardID, userID)
@@ -310,6 +315,16 @@ func (s *SQLStore) GetBlockHistoryDescendants(boardID string, opts model.QueryBl
 
 func (s *SQLStore) GetBlockHistoryNewestChildren(parentID string, opts model.QueryBlockHistoryChildOptions) ([]*model.Block, bool, error) {
 	return s.getBlockHistoryNewestChildren(s.db, parentID, opts)
+
+}
+
+func (s *SQLStore) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error) {
+	return s.getBlockSuiteDocByCardID(s.db, cardID)
+
+}
+
+func (s *SQLStore) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocInfo, error) {
+	return s.getBlockSuiteDocInfoByCardID(s.db, cardID)
 
 }
 
@@ -766,6 +781,11 @@ func (s *SQLStore) ReorderCategoryBoards(categoryID string, newBoardsOrder []str
 
 }
 
+func (s *SQLStore) RestoreFiles(fileIDs []string) error {
+	return s.restoreFiles(s.db, fileIDs)
+
+}
+
 func (s *SQLStore) RunDataRetention(globalRetentionDate int64, batchSize int64) (int64, error) {
 	if s.dbType == model.SqliteDBType {
 		return s.runDataRetention(s.db, globalRetentionDate, batchSize)
@@ -792,11 +812,6 @@ func (s *SQLStore) RunDataRetention(globalRetentionDate int64, batchSize int64) 
 
 func (s *SQLStore) SaveFileInfo(fileInfo *mmModel.FileInfo) error {
 	return s.saveFileInfo(s.db, fileInfo)
-
-}
-
-func (s *SQLStore) RestoreFiles(fileIDs []string) error {
-	return s.restoreFiles(s.db, fileIDs)
 
 }
 
@@ -900,6 +915,30 @@ func (s *SQLStore) UpdateCategory(category model.Category) error {
 
 func (s *SQLStore) UpdateSubscribersNotifiedAt(blockID string, notifiedAt int64) error {
 	return s.updateSubscribersNotifiedAt(s.db, blockID, notifiedAt)
+
+}
+
+func (s *SQLStore) UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error {
+	if s.dbType == model.SqliteDBType {
+		return s.upsertBlockSuiteDoc(s.db, doc)
+	}
+	tx, txErr := s.db.BeginTx(context.Background(), nil)
+	if txErr != nil {
+		return txErr
+	}
+	err := s.upsertBlockSuiteDoc(tx, doc)
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			s.logger.Error("transaction rollback error", mlog.Err(rollbackErr), mlog.String("methodName", "UpsertBlockSuiteDoc"))
+		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 
 }
 

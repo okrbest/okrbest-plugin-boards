@@ -7,7 +7,7 @@ import {FormattedMessage, useIntl} from 'react-intl'
 import {useRouteMatch, useHistory} from 'react-router-dom'
 
 import Workspace from '../../components/workspace'
-import VersionMessage from '../../components/messages/versionMessage'
+// import VersionMessage from '../../components/messages/versionMessage' // 미사용
 import octoClient from '../../octoClient'
 import {Subscription, WSClient} from '../../wsclient'
 import {Utils} from '../../utils'
@@ -100,11 +100,14 @@ const BoardPage = (props: Props): JSX.Element => {
         }, [me?.id])
     }
 
-    // TODO: Make this less brittle. This only works because this is the root render function
+    // Note: Team ID synchronization - updates both UserSettings and octoClient
+    // This is safe here because this is the root render function that manages team context
+    // dispatch is stable from useAppDispatch, so it doesn't need to be in dependencies
     useEffect(() => {
         UserSettings.lastTeamId = teamId
         octoClient.teamId = teamId
         dispatch(setTeam(teamId))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [teamId])
 
     const loadAction: (boardId: string) => any = useMemo(() => {

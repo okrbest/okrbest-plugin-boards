@@ -118,7 +118,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector a focalboard Plu
               <span
                 class="template-name"
               >
-                Welcome to Boards!
+                Boards에 오신 것을 환영합니다!
               </span>
             </div>
           </div>
@@ -270,7 +270,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector a focalboard Plu
               <span
                 class="template-name"
               >
-                Welcome to Boards!
+                Boards에 오신 것을 환영합니다!
               </span>
             </div>
           </div>
@@ -422,7 +422,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector a focalboard Plu
               <span
                 class="template-name"
               >
-                Welcome to Boards!
+                Boards에 오신 것을 환영합니다!
               </span>
             </div>
           </div>
@@ -587,7 +587,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector not a focalboard
               <span
                 class="template-name"
               >
-                Welcome to Boards!
+                Boards에 오신 것을 환영합니다!
               </span>
             </div>
           </div>

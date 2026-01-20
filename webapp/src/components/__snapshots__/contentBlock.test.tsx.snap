@@ -419,6 +419,7 @@ exports[`components/contentBlock should match snapshot with imageBlock 1`] = `
         alt=""
         class="ImageElement"
         src="test.jpg"
+        style="cursor: pointer;"
       />
     </div>
     <div

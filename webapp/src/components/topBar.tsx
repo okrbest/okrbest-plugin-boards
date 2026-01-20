@@ -5,15 +5,15 @@
 import React from 'react'
 
 import './topBar.scss'
-import {FormattedMessage} from 'react-intl'
+// import {FormattedMessage} from 'react-intl' // 미사용
 
-import HelpIcon from '../widgets/icons/help'
+// import HelpIcon from '../widgets/icons/help' // 미사용
 import {Utils} from '../utils'
-import {Constants} from '../constants'
+// import {Constants} from '../constants' // 미사용
 
 const TopBar = (): JSX.Element => {
     if (Utils.isFocalboardPlugin()) {
-        const feedbackUrl = 'https://www.focalboard.com/fwlink/feedback-boards.html?v=' + Constants.versionString
+        // const feedbackUrl = 'https://www.focalboard.com/fwlink/feedback-boards.html?v=' + Constants.versionString // 미사용
         return (
             <div
                 className='TopBar'
@@ -41,7 +41,7 @@ const TopBar = (): JSX.Element => {
         )
     }
 
-    const focalboardFeedbackUrl = 'https://www.focalboard.com/fwlink/feedback-focalboard.html?v=' + Constants.versionString
+    // const focalboardFeedbackUrl = 'https://www.focalboard.com/fwlink/feedback-focalboard.html?v=' + Constants.versionString // 미사용
     return (
         <div
             className='TopBar'

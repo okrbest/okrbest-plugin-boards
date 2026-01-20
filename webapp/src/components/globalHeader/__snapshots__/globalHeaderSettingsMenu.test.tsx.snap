@@ -44,6 +44,7 @@ exports[`components/sidebar/GlobalHeaderSettingsMenu imports menu open should ma
                 />
                 <div
                   class="SubMenu Menu noselect left-bottom"
+                  data-submenu-id="import"
                 >
                   <div
                     class="menu-contents"
@@ -408,6 +409,7 @@ exports[`components/sidebar/GlobalHeaderSettingsMenu languages menu open should 
                 />
                 <div
                   class="SubMenu Menu noselect left-bottom"
+                  data-submenu-id="lang"
                 >
                   <div
                     class="menu-contents"
@@ -515,6 +517,31 @@ exports[`components/sidebar/GlobalHeaderSettingsMenu languages menu open should 
                             class="menu-name"
                           >
                             日本語
+                          </div>
+                        </div>
+                        <div
+                          class="noicon"
+                        />
+                      </div>
+                      <div
+                        aria-label="한국어"
+                        class="MenuOption TextOption menu-option"
+                        role="button"
+                      >
+                        <div
+                          class="d-flex"
+                        >
+                          <div
+                            class="noicon"
+                          />
+                        </div>
+                        <div
+                          class="menu-option__content"
+                        >
+                          <div
+                            class="menu-name"
+                          >
+                            한국어
                           </div>
                         </div>
                         <div

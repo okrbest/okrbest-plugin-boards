@@ -6,13 +6,13 @@ import {Provider as ReduxProvider} from 'react-redux'
 import {IntlProvider} from 'react-intl'
 import {History} from 'history'
 
-import HelpIcon from '../../widgets/icons/help'
+// import HelpIcon from '../../widgets/icons/help' // 미사용 (주석 처리된 코드)
 import store from '../../store'
 import {useAppSelector} from '../../store/hooks'
 import {getLanguage} from '../../store/language'
 import {getMessages} from '../../i18n'
 
-import {Constants} from '../../constants'
+// import {Constants} from '../../constants' // 미사용 (주석 처리된 코드)
 
 import GlobalHeaderSettingsMenu from './globalHeaderSettingsMenu'
 
@@ -24,7 +24,7 @@ type HeaderItemProps = {
 
 const HeaderItems = (props: HeaderItemProps) => {
     const language = useAppSelector<string>(getLanguage)
-    const helpUrl = 'https://www.focalboard.com/fwlink/doc-boards.html?v=' + Constants.versionString
+    // const helpUrl = 'https://www.focalboard.com/fwlink/doc-boards.html?v=' + Constants.versionString // 미사용 (주석 처리된 코드)
 
     return (
         <IntlProvider

@@ -11,6 +11,7 @@ import configureStore from 'redux-mock-store'
 import {Provider as ReduxProvider} from 'react-redux'
 
 import {wrapIntl} from '../../../testUtils'
+import {OnboardingBoardTitle} from '../../cardDetail/cardDetail'
 
 import AddViewTourStep from './add_view'
 
@@ -29,7 +30,7 @@ describe('components/onboardingTour/addComments/AddViewTourStep', () => {
         },
         boards: {
             boards: {
-                board_id_1: {title: 'Welcome to Boards!'},
+                board_id_1: {title: OnboardingBoardTitle},
             },
             current: 'board_id_1',
         },

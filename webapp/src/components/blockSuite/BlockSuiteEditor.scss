@@ -1,0 +1,334 @@
+.blocksuite-editor-wrapper {
+    height: auto;
+    min-height: auto;
+    width: 100%;
+    position: relative;
+    background-color: var(--affine-background-primary-color, #ffffff);
+    color: #000000;
+    display: block;
+    overflow: visible !important; /* 스크롤 비활성화 - 카드 디테일에서 스크롤 */
+    --affine-text-primary-color: #000000;
+    --affine-text-secondary-color: #666666;
+    --affine-text-disable-color: #999999;
+
+    /* --- BlockSuite 에디터 컨테이너 스타일 --- */
+    affine-editor-container {
+        display: block;
+        width: 100%;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important; /* 스크롤 비활성화 */
+        padding: 0 !important; /* 상하좌우 패딩 제거 */
+        border: none !important; /* border 제거 */
+        border-width: 0 !important;
+        border-style: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        --affine-editor-width: 100%;
+        --affine-text-primary-color: #000000;
+        color: #000000;
+    }
+    
+    /* 에디터 내부 요소들 스크롤 비활성화 */
+    editor-host {
+        display: block;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    affine-doc-page,
+    affine-page-root {
+        display: block;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border: none !important; /* border 제거 */
+        border-width: 0 !important;
+        border-style: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    
+    .affine-page-viewport {
+        display: block;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    .affine-page-root-block-container {
+        display: block;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 0 !important; /* 상하좌우 패딩 제거 */
+    }
+    
+    /* 노트 블록 스크롤 비활성화 */
+    affine-note {
+        display: block;
+        min-height: 200px;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    .affine-note-block-container {
+        display: block;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    /* affine-block-component opacity 강제 적용 */
+    .affine-block-component.light {
+        opacity: 1 !important;
+    }
+
+    /* Hide page title and tags - we use card title instead */
+    .affine-doc-page-block-title-container,
+    doc-title,
+    [data-block-is-title="true"],
+    .doc-title-container {
+        display: none !important;
+    }
+
+    /* Hide tags - multiple selectors to ensure it works */
+    .affine-page-tags,
+    .page-tags,
+    [data-tags],
+    .doc-meta-tags,
+    affine-page-meta-tags,
+    .affine-doc-meta-tags,
+    .doc-page-meta-tags {
+        display: none !important;
+    }
+
+    /* Hide tag-related elements in BlockSuite */
+    affine-editor-container {
+        doc-meta-tags,
+        affine-page-meta-tags,
+        .affine-page-meta-tags {
+            display: none !important;
+        }
+    }
+
+    /* Mattermost Scrollbar Style */
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.35);
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    /* Loading Overlay */
+    &.loading {
+        position: relative;
+    }
+
+    .blocksuite-loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.9);
+        z-index: 1000;
+        gap: 16px;
+
+        span {
+            color: #333333;
+            font-size: 14px;
+        }
+    }
+
+    .blocksuite-loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-top-color: var(--affine-primary-color, #1E96EB);
+        border-radius: 50%;
+        animation: blocksuite-spin 1s linear infinite;
+    }
+
+    @keyframes blocksuite-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Save Status Indicator */
+    .blocksuite-save-status {
+        position: fixed;
+        top: 60px;
+        right: 20px;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        z-index: 999;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+        &.saving {
+            background: rgba(30, 150, 235, 0.1);
+            color: #1E96EB;
+            border: 1px solid rgba(30, 150, 235, 0.3);
+        }
+
+        &.saved {
+            background: rgba(61, 184, 135, 0.1);
+            color: rgb(61, 184, 135);
+            border: 1px solid rgba(61, 184, 135, 0.3);
+        }
+
+        &.error {
+            background: rgba(242, 73, 78, 0.1);
+            color: rgb(242, 73, 78);
+            border: 1px solid rgba(242, 73, 78, 0.3);
+        }
+    }
+
+    /* --- Korean Placeholder Customization --- */
+    
+    /* 제목 플레이스홀더 숨기고 한국어로 대체 */
+    .affine-doc-page-block-title::placeholder,
+    [data-block-is-title="true"]::placeholder {
+        color: transparent;
+    }
+    
+    .affine-doc-page-block-title:empty::before,
+    [data-block-is-title="true"]:empty::before {
+        content: '제목 없음';
+        color: var(--affine-text-disable-color, #999999);
+        pointer-events: none;
+    }
+
+    /* 빈 문단 플레이스홀더 */
+    .affine-paragraph-block-container[data-block-id] .affine-paragraph-rich-text-wrapper:empty::before,
+    .affine-paragraph-placeholder::before {
+        content: '내용을 입력하세요... ("/" 입력하면 블록 추가)';
+        color: var(--affine-text-disable-color, #999999);
+        pointer-events: none;
+        position: absolute;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    /* 포커스 시 플레이스홀더 표시 */
+    .affine-paragraph-block-container:focus-within .affine-paragraph-rich-text-wrapper:empty::before,
+    .affine-paragraph-placeholder:focus-within::before {
+        opacity: 1;
+    }
+
+    /* Tags 섹션 한국어화 (있다면) */
+    [data-placeholder="Tags"]::placeholder {
+        color: transparent;
+    }
+    
+    [data-placeholder="Tags"]:empty::before {
+        content: '태그';
+        color: var(--affine-text-disable-color, #999999);
+    }
+}
+
+/* 
+ * BlockSuite 포털 요소 스타일 (body에 직접 렌더링되는 요소들)
+ * 슬래시 메뉴, 포맷 바, 팝오버 등
+ * z-index를 높여 카드 다이얼로그 위에 표시
+ */
+body {
+    /* 슬래시 메뉴 */
+    > affine-slash-menu,
+    affine-slash-menu {
+        z-index: 10001 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        border-radius: var(--affine-popover-radius, 12px) !important;
+        border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+        color: #000000;
+        
+        /* 슬래시 메뉴의 서브메뉴 (Other Headings 등) 위치 수정 */
+        [data-testid="sub-menu-0"],
+        [data-testid="sub-menu-1"],
+        [data-testid^="sub-menu-"] {
+            position: absolute !important;
+            /* 메인 메뉴 오른쪽에 배치 */
+            left: 100% !important;
+            top: 0 !important;
+            bottom: auto !important;
+            margin-left: 4px !important;
+            z-index: 10002 !important;
+            background-color: var(--affine-background-primary-color, #ffffff) !important;
+            box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+            border-radius: var(--affine-popover-radius, 12px) !important;
+            border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+        }
+    }
+    
+    /* 슬래시 메뉴 서브메뉴 (body에 직접 렌더링되는 경우) */
+    > [data-testid="sub-menu-0"],
+    > [data-testid="sub-menu-1"],
+    > [data-testid^="sub-menu-"] {
+        z-index: 10002 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        border-radius: var(--affine-popover-radius, 12px) !important;
+        border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+        color: #000000;
+    }
+
+    /* 포맷 바/툴바 */
+    > affine-format-bar-widget,
+    affine-format-bar-widget,
+    .affine-format-bar {
+        z-index: 10001 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        border-radius: 8px !important;
+        border: none !important;
+        color: #000000;
+    }
+
+    /* 팝오버 컨테이너 */
+    > .affine-popover-container,
+    .affine-popover-container,
+    > affine-linked-doc-popover,
+    affine-linked-doc-popover,
+    > .blocksuite-overlay,
+    .blocksuite-overlay {
+        z-index: 10001 !important;
+        background-color: var(--affine-background-primary-color, #ffffff) !important;
+        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        border-radius: var(--affine-popover-radius, 12px) !important;
+        border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
+    }
+
+    /* 드래그 핸들 */
+    > affine-drag-handle-widget,
+    affine-drag-handle-widget {
+        z-index: 10001 !important;
+    }
+}

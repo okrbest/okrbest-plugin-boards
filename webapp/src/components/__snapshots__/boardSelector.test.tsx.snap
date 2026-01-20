@@ -79,7 +79,6 @@ exports[`components/boardSelector escape button should unmount the component 1`]
               class="searchResults"
             >
               
-              
               <div
                 class="noResults introScreen"
               >
@@ -290,121 +289,23 @@ exports[`components/boardSelector renders with some results 1`] = `
               class="searchResults"
             >
               <div
-                class="BoardSelectorItem"
+                class="noResults"
               >
                 <div
-                  class="BoardSelectorItem-info"
+                  class="iconWrapper"
                 >
-                  <div
-                    class="d-flex"
-                  >
-                    <span
-                      class="icon"
-                    >
-                      <i
-                        class="CompassIcon icon-product-boards"
-                      />
-                    </span>
-                    <div
-                      class="resultTitle"
-                    >
-                      Untitled board
-                    </div>
-                  </div>
-                  <div
-                    class="resultDescription"
+                  <i
+                    class="CompassIcon icon-magnify MagnifyIcon"
                   />
                 </div>
-                <div
-                  class="linkUnlinkButton"
+                <h4
+                  class="text-heading4"
                 >
-                  <button
-                    class="Button emphasis--primary"
-                    type="button"
-                  >
-                    <span>
-                      Link
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                class="BoardSelectorItem"
-              >
-                <div
-                  class="BoardSelectorItem-info"
-                >
-                  <div
-                    class="d-flex"
-                  >
-                    <span
-                      class="icon"
-                    >
-                      <i
-                        class="CompassIcon icon-product-boards"
-                      />
-                    </span>
-                    <div
-                      class="resultTitle"
-                    >
-                      Untitled board
-                    </div>
-                  </div>
-                  <div
-                    class="resultDescription"
-                  />
-                </div>
-                <div
-                  class="linkUnlinkButton"
-                >
-                  <button
-                    class="Button emphasis--primary"
-                    type="button"
-                  >
-                    <span>
-                      Link
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                class="BoardSelectorItem"
-              >
-                <div
-                  class="BoardSelectorItem-info"
-                >
-                  <div
-                    class="d-flex"
-                  >
-                    <span
-                      class="icon"
-                    >
-                      <i
-                        class="CompassIcon icon-product-boards"
-                      />
-                    </span>
-                    <div
-                      class="resultTitle"
-                    >
-                      Untitled board
-                    </div>
-                  </div>
-                  <div
-                    class="resultDescription"
-                  />
-                </div>
-                <div
-                  class="linkUnlinkButton"
-                >
-                  <button
-                    class="Button emphasis--primary"
-                    type="button"
-                  >
-                    <span>
-                      Link
-                    </span>
-                  </button>
-                </div>
+                  No results for "test"
+                </h4>
+                <span>
+                  Check the spelling or try another search.
+                </span>
               </div>
             </div>
           </div>
@@ -493,7 +394,6 @@ exports[`components/boardSelector renders without start searching 1`] = `
             <div
               class="searchResults"
             >
-              
               
               <div
                 class="noResults introScreen"

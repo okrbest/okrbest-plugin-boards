@@ -17,7 +17,7 @@ func TestCopyDirectory(t *testing.T) {
 	assert := assert.New(t)
 
 	// Create a temporary directory to copy to.
-	dir, err := os.TempDir("", "test")
+	dir, err := os.MkdirTemp("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
 
@@ -35,7 +35,7 @@ func TestOverwriteFileAction(t *testing.T) {
 	assert := assert.New(t)
 
 	// Create a temporary directory to copy to.
-	dir, err := os.TempDir("", "test")
+	dir, err := os.MkdirTemp("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
 
@@ -64,7 +64,7 @@ func TestOverwriteDirectoryAction(t *testing.T) {
 	assert := assert.New(t)
 
 	// Create a temporary directory to copy to.
-	dir, err := os.TempDir("", "test")
+	dir, err := os.MkdirTemp("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
 
@@ -102,13 +102,19 @@ func compareDirectories(t *testing.T, pathA, pathB string) {
 	assert.Len(aContents, len(bContents))
 
 	// Check the directory contents are equal.
-	for i, aFInfo := range aContents {
-		bFInfo := bContents[i]
-		assert.Equal(aFInfo.Name(), bFInfo.Name())
-		assert.Equal(aFInfo.Mode(), bFInfo.Mode())
-		assert.Equal(aFInfo.IsDir(), bFInfo.IsDir())
-		if !aFInfo.IsDir() {
-			assert.Equal(aFInfo.Size(), bFInfo.Size())
+	for i, aEntry := range aContents {
+		bEntry := bContents[i]
+		assert.Equal(aEntry.Name(), bEntry.Name())
+		assert.Equal(aEntry.IsDir(), bEntry.IsDir())
+
+		aInfo, err := aEntry.Info()
+		assert.Nil(err)
+		bInfo, err := bEntry.Info()
+		assert.Nil(err)
+
+		assert.Equal(aInfo.Mode(), bInfo.Mode())
+		if !aEntry.IsDir() {
+			assert.Equal(aInfo.Size(), bInfo.Size())
 		}
 	}
 }

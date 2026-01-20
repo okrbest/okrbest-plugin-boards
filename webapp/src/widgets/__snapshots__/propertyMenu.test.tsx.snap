@@ -38,6 +38,7 @@ exports[`widgets/PropertyMenu should match snapshot 1`] = `
             />
             <div
               class="SubMenu Menu noselect bottom"
+              data-submenu-id="type"
             >
               <div
                 class="menu-contents"
@@ -341,6 +342,31 @@ exports[`widgets/PropertyMenu should match snapshot 1`] = `
                     />
                   </div>
                   <div
+                    aria-label="Card"
+                    class="MenuOption TextOption menu-option"
+                    role="button"
+                  >
+                    <div
+                      class="d-flex"
+                    >
+                      <div
+                        class="noicon"
+                      />
+                    </div>
+                    <div
+                      class="menu-option__content"
+                    >
+                      <div
+                        class="menu-name"
+                      >
+                        Card
+                      </div>
+                    </div>
+                    <div
+                      class="noicon"
+                    />
+                  </div>
+                  <div
                     aria-label="Created time"
                     class="MenuOption TextOption menu-option"
                     role="button"
@@ -477,6 +503,7 @@ exports[`widgets/PropertyMenu should match snapshot 1`] = `
             </div>
           </div>
         </div>
+        <div />
         <div>
           <div
             aria-label="Move property up"

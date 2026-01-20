@@ -306,12 +306,12 @@ CREATE TABLE IF NOT EXISTS {{.prefix}}board_members (
 
 {{- /* if we're in plugin, migrate channel memberships to the board */ -}}
 {{if .plugin}}
-INSERT INTO {{.prefix}}board_members (
+INSERT INTO {{.prefix}}board_members
     SELECT B.Id, CM.UserId, CM.Roles, TRUE, TRUE, FALSE, FALSE
     FROM {{.prefix}}boards AS B
     INNER JOIN ChannelMembers as CM ON CM.ChannelId=B.channel_id
     WHERE CM.SchemeAdmin=True OR (CM.UserId=B.created_by)
-);
+;
 {{end}}
 
 {{- /* if we're in personal server or desktop, create memberships for everyone */ -}}
