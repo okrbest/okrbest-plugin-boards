@@ -228,15 +228,13 @@
 
     .BlocksEditor {
         width: 100%;
-        flex: 1;
         min-height: 300px;
-        display: flex;
-        flex-direction: column;
     }
     
-    /* BlockSuite 에디터가 카드 전체 높이를 채우도록 */
+    /* BlockSuite 에디터 - 스크롤 비활성화 (카드 디테일에서 스크롤) */
     .blocksuite-editor-wrapper {
-        flex: 1;
         min-height: 300px;
+        height: auto;
+        overflow: visible !important;
     }
 }

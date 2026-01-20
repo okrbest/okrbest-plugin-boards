@@ -18,21 +18,21 @@ import './BlockSuiteEditor.scss'
  */
 const THEME_CSS = `
 :host, :root, body, html {
-    --affine-text-primary-color: #000000 !important;
-    --affine-text-secondary-color: #666666 !important;
-    --affine-text-disable-color: #999999 !important;
-    --affine-background-primary-color: #ffffff !important;
-    --affine-background-secondary-color: #f8f9fa !important;
-    --affine-background-tertiary-color: #f1f3f5 !important;
-    --affine-background-overlay-panel-color: #ffffff !important;
-    --affine-background-code-block: #f8f9fa !important;
-    --affine-hover-color: rgba(0,0,0,0.04) !important;
-    --affine-hover-color-filled: #f5f5f5 !important;
-    --affine-border-color: #e3e2e4 !important;
-    --affine-popover-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
-    --affine-menu-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
-    --affine-white: #ffffff !important;
-    --affine-black: #000000 !important;
+    --affine-text-primary-color: #000000;
+    --affine-text-secondary-color: #666666;
+    --affine-text-disable-color: #999999;
+    --affine-background-primary-color: #ffffff;
+    --affine-background-secondary-color: #f8f9fa;
+    --affine-background-tertiary-color: #f1f3f5;
+    --affine-background-overlay-panel-color: #ffffff;
+    --affine-background-code-block: #f8f9fa;
+    --affine-hover-color: rgba(0,0,0,0.04);
+    --affine-hover-color-filled: #f5f5f5;
+    --affine-border-color: #e3e2e4;
+    --affine-popover-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    --affine-menu-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    --affine-white: #ffffff;
+    --affine-black: #000000;
     --affine-z-index-modal: 10001 !important;
     --affine-z-index-popover: 10001 !important;
 }
@@ -49,8 +49,8 @@ affine-image,
 .affine-paragraph-block-container,
 .affine-block-children-container,
 [data-block-id] {
-    --affine-text-primary-color: #000000 !important;
-    color: #000000 !important;
+    --affine-text-primary-color: #000000;
+    color: #000000;
 }
 
 /* Remove border from editor containers */
@@ -60,14 +60,6 @@ affine-page-root {
     border-width: 0 !important;
     border-style: none !important;
     outline: none !important;
-}
-
-/* Rich text content */
-.affine-paragraph-rich-text-wrapper,
-rich-text,
-v-line,
-v-text {
-    color: #000000 !important;
 }
 `
 
@@ -268,7 +260,7 @@ function setupBodyObserver(): void {
                         const el = node as HTMLElement
                         el.style.cssText = `
                             background-color: #ffffff !important;
-                            color: #000000 !important;
+                            color: #000000;
                             box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
                             border-radius: 8px !important;
                             border: 1px solid rgba(0,0,0,0.1) !important;
