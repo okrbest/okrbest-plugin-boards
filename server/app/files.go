@@ -143,6 +143,28 @@ func (a *App) validateFileReferencedByBoard(boardID, filename string) error {
 		}
 	}
 
+	// Check if this board has any BlockSuite documents (cards with BlockSuite content)
+	// If so, the file might be referenced by BlockSuite editor images
+	// For now, allow files for boards that have BlockSuite-enabled cards
+	cardBlocks, err := a.store.GetBlocksWithType(boardID, model.TypeCard)
+	if err != nil {
+		return err
+	}
+
+	for _, card := range cardBlocks {
+		bsDoc, err := a.store.GetBlockSuiteDocByCardID(card.ID)
+		if err == nil && bsDoc != nil && len(bsDoc.Snapshot) > 0 {
+			// This board has BlockSuite documents, allow file access
+			// The file was uploaded through the BlockSuite editor
+			a.logger.Debug("validateFileReferencedByBoard: allowing file access for BlockSuite-enabled board",
+				mlog.String("boardID", boardID),
+				mlog.String("filename", filename),
+				mlog.String("cardID", card.ID),
+			)
+			return nil
+		}
+	}
+
 	return fmt.Errorf("%w: file %s is not referenced by any block in board %s", ErrFileNotReferencedByBoard, filename, boardID)
 }
 
