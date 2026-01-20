@@ -27,12 +27,13 @@
 		"cypress:run:firefox": "cypress run --browser firefox",
 		"cypress:run:edge": "cypress run --browser edge",
 		"cypress:run:electron": "cypress run --browser electron",
-		"cypress:open": "cypress open"
+		"cypress:open": "cypress open",
+		"postinstall": "node scripts/patch-blocksuite.js"
 	},
 	"dependencies": {
-		"@blocksuite/blocks": "0.15.0-canary-202406291027-8aed732",
-		"@blocksuite/presets": "0.15.0-canary-202406291027-8aed732",
-		"@blocksuite/store": "0.15.0-canary-202406291027-8aed732",
+		"@blocksuite/blocks": "^0.0.0-canary-20250316001624",
+		"@blocksuite/presets": "^0.0.0-canary-20250316001624",
+		"@blocksuite/store": "^0.0.0-canary-20250316001624",
 		"@draft-js-plugins/editor": "^4.1.2",
 		"@draft-js-plugins/emoji": "^4.6.0",
 		"@draft-js-plugins/mention": "^5.1.2",
