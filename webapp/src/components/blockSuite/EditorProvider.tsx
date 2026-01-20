@@ -12,7 +12,7 @@ import { sendFlashMessage } from '../flashMessages'
 import { saveSnapshot } from '../../utils/blockSuiteUtils'
 
 import { EditorContext, EditorContextValue } from './editor/context'
-import { initEditor, loadEditorData } from './editor/editor'
+import { initEditor } from './editor/editor'
 
 interface EditorProviderProps {
     card: Card;
@@ -33,7 +33,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
     const [isLoading, setIsLoading] = useState(true)
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null)
 
-    // 1. 에디터 초기화
+    // 1. 에디터 초기화 및 데이터 로드 (한 번에 처리)
     useLayoutEffect(() => {
         if (!card?.id) {
             setIsLoading(false)
@@ -43,90 +43,57 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
         console.log('[EditorProvider] Initializing editor for card:', card.id, 'readOnly:', readOnly)
         setIsLoading(true)
 
-        try {
-            const { editor: newEditor, doc: newDoc, collection: newCollection } = initEditor(card.id)
+        let mounted = true
 
-            // readOnly 모드 설정
-            // BlockSuite의 mode는 'page' 또는 'edgeless'만 지원
-            // readonly는 doc 레벨에서 설정해야 함
-            newEditor.mode = 'page'
-            console.log('[EditorProvider] Editor mode set to: page, readOnly:', readOnly)
+        const initAndLoad = async () => {
+            try {
+                // boardId가 없으면 card.boardId 사용
+                const boardId = card.boardId
+                
+                // 1. 에디터와 컬렉션 초기화 (데이터 로드 포함)
+                const { editor: newEditor, doc: loadedDoc, collection: newCollection } = await initEditor(card.id, boardId, card)
 
-            // readonly 속성 설정 (있다면)
-            if ('readonly' in newEditor) {
-                (newEditor as any).readonly = readOnly
-                console.log('[EditorProvider] Set editor.readonly to', readOnly)
+                if (!mounted) return
+
+                // readOnly 모드 설정
+                newEditor.mode = 'page'
+                console.log('[EditorProvider] Editor mode set to: page, readOnly:', readOnly)
+     
+                // readonly 속성 설정 (있다면)
+                if ('readonly' in newEditor) {
+                    (newEditor as any).readonly = readOnly
+                    console.log('[EditorProvider] Set editor.readonly to', readOnly)
+                }
+
+                setEditor(newEditor)
+                setDoc(loadedDoc)
+                setCollection(newCollection)
+                setIsLoading(false)
+                console.log('[EditorProvider] ✅ Editor initialized and data loaded successfully')
+            } catch (error) {
+                console.error('Failed to initialize BlockSuite editor:', error)
+                if (mounted) {
+                    setIsLoading(false)
+                    sendFlashMessage({
+                        content: intl.formatMessage({
+                            id: 'blocksuite.init.error',
+                            defaultMessage: 'Failed to initialize editor'
+                        }),
+                        severity: 'high'
+                    })
+                }
             }
-
-            setEditor(newEditor)
-            setDoc(newDoc)
-            setCollection(newCollection)
-        } catch (error) {
-            console.error('Failed to initialize BlockSuite editor:', error)
-            setIsLoading(false)
-            sendFlashMessage({
-                content: intl.formatMessage({
-                    id: 'blocksuite.init.error',
-                    defaultMessage: 'Failed to initialize editor'
-                }),
-                severity: 'high'
-            })
         }
 
+        initAndLoad()
+
         return () => {
+            mounted = false
             setEditor(null)
             setDoc(null)
             setCollection(null)
         }
-    }, [card.id, readOnly, intl])
-
-    // 2. 데이터 로드
-    useEffect(() => {
-        if (!editor || !doc) {
-            console.log('[EditorProvider] Skipping data load: editor or doc not ready')
-            return
-        }
-
-        console.log('[EditorProvider] ====== Data Load useEffect triggered ======')
-        console.log('[EditorProvider] Card:', card.id, card.title)
-
-        const loadData = async () => {
-            console.log('[EditorProvider] Setting loading state...')
-            setIsLoading(true)
-            try {
-                console.log('[EditorProvider] Calling loadEditorData...')
-                const loadedDoc = await loadEditorData(editor, doc, card)
-                console.log('[EditorProvider] loadEditorData returned')
-
-                // 스냅샷 로드 시 새로운 doc이 생성되므로 에디터에 반영
-                if (loadedDoc && loadedDoc !== doc) {
-                    console.log('[EditorProvider] New doc created, updating editor')
-                    editor.doc = loadedDoc
-                    setDoc(loadedDoc)
-                } else {
-                    console.log('[EditorProvider] Using existing doc')
-                }
-
-                console.log('[EditorProvider] ✅ Data load completed successfully')
-                setIsLoading(false)
-            } catch (error) {
-                console.error('[EditorProvider] ❌ Failed to load BlockSuite content:', error)
-                if (error instanceof Error) {
-                    console.error('[EditorProvider] Error stack:', error.stack)
-                }
-                setIsLoading(false)
-                sendFlashMessage({
-                    content: intl.formatMessage({
-                        id: 'blocksuite.load.error',
-                        defaultMessage: 'Failed to load editor content'
-                    }),
-                    severity: 'high'
-                })
-            }
-        }
-
-        loadData()
-    }, [editor, card.id, intl])
+    }, [card.id, card.boardId, readOnly, intl])
 
     // 3. 자동 저장
     useEffect(() => {

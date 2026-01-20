@@ -1,11 +1,9 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, { useEffect, useRef, useCallback } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useIntl } from 'react-intl'
 
-import { uploadImageToBlockSuite } from '../../utils/blockSuiteUtils'
-import { sendFlashMessage } from '../flashMessages'
 import AddDescriptionTourStep from '../onboardingTour/addDescription/add_description'
 
 import { useEditor } from './editor/context'
@@ -25,75 +23,9 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
     const wrapperRef = useRef<HTMLDivElement>(null)
     const editorMountRef = useRef<HTMLDivElement>(null)
 
-    // 파일 업로드 핸들러
-    const handleFileUpload = useCallback(async (files: FileList) => {
-        if (!doc || readOnly || !files.length || !card) return
-
-        try {
-            // BlockSuite의 현재 선택된 블록 또는 기본 note 블록 찾기
-            const blocks = doc.getBlocks()
-            const noteBlock = blocks.find((block: any) => block.flavour === 'affine:note')
-            const parentId = noteBlock?.id || blocks[0]?.id
-
-            if (!parentId) {
-                console.warn('No parent block found for image insertion')
-                sendFlashMessage({
-                    content: intl.formatMessage({
-                        id: 'blocksuite.upload.error',
-                        defaultMessage: 'Failed to upload image: No block found'
-                    }),
-                    severity: 'normal'
-                })
-                return
-            }
-
-            let uploadedCount = 0
-            for (const file of Array.from(files)) {
-                if (file.type.startsWith('image/')) {
-                    const result = await uploadImageToBlockSuite(boardId, file, doc, parentId)
-                    if (result) {
-                        uploadedCount++
-                    }
-                }
-            }
-
-            if (uploadedCount > 0) {
-                sendFlashMessage({
-                    content: intl.formatMessage({
-                        id: 'blocksuite.upload.success',
-                        defaultMessage: `Uploaded ${uploadedCount} image(s)`
-                    }, { count: uploadedCount }),
-                    severity: 'low'
-                })
-            }
-        } catch (error) {
-            console.error('Failed to handle file upload', error)
-            sendFlashMessage({
-                content: intl.formatMessage({
-                    id: 'blocksuite.upload.error',
-                    defaultMessage: 'Failed to upload image'
-                }),
-                severity: 'high'
-            })
-        }
-    }, [doc, boardId, readOnly, card, intl])
-
-    // 드래그 앤 드롭 핸들러
-    const handleDrop = useCallback((event: DragEvent) => {
-        if (readOnly || !event.dataTransfer?.files.length) return
-        event.preventDefault()
-        event.stopPropagation()
-        handleFileUpload(event.dataTransfer.files)
-    }, [handleFileUpload, readOnly])
-
-    // 클립보드 붙여넣기 핸들러
-    const handlePaste = useCallback((event: ClipboardEvent) => {
-        if (readOnly || !event.clipboardData?.files.length) return
-        event.preventDefault()
-        handleFileUpload(event.clipboardData.files)
-    }, [handleFileUpload, readOnly])
-
     // 에디터를 DOM에 마운트
+    // 참고: 이미지 드래그앤드롭과 붙여넣기는 BlockSuite 에디터가 자체적으로 처리합니다.
+    // BlobEngine.set()이 호출되어 Mattermost 서버에 업로드됩니다.
     useEffect(() => {
         const mountPoint = editorMountRef.current
         if (!mountPoint || !editor) return
@@ -120,25 +52,8 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
         }
     }, [editor])
 
-    // 이벤트 리스너 관리
-    useEffect(() => {
-        const wrapper = wrapperRef.current
-        if (!wrapper) return
-
-        const handleDragOver = (e: DragEvent) => {
-            e.preventDefault()
-        }
-
-        wrapper.addEventListener('drop', handleDrop)
-        wrapper.addEventListener('dragover', handleDragOver)
-        document.addEventListener('paste', handlePaste)
-
-        return () => {
-            wrapper.removeEventListener('drop', handleDrop)
-            wrapper.removeEventListener('dragover', handleDragOver)
-            document.removeEventListener('paste', handlePaste)
-        }
-    }, [handleDrop, handlePaste])
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _ = { boardId, readOnly, doc, card } // lint 경고 방지 (향후 사용 가능)
 
     // editor가 없으면 로딩 표시만 (모든 hooks 호출 후 조건부 렌더링)
     if (!editor) {
