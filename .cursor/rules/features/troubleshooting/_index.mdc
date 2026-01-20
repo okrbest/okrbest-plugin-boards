@@ -174,4 +174,4 @@ curl http://localhost:8067/plugins/boards/api/v2/metrics
 
 | 문제 | 파일 |
 |------|------|
-| (새 문제 해결 사례가 생기면 여기에 추가) | |
+| 카드 정렬 시 localeCompare 에러 및 무한 리다이렉션 | `q-sort-localecompare-error.mdc` |

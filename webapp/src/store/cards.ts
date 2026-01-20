@@ -302,20 +302,52 @@ function sortCards(cards: Card[], lastCommentByCard: {[key: string]: CommentBloc
                         bValue = template.options.find((o) => o.id === (Array.isArray(bValue) ? bValue[0] : bValue))?.value || ''
                     }
 
-                    if (template.type === 'multiPerson') {
-                        aValue = Array.isArray(aValue) && aValue.length !== 0 && Object.keys(usersById).length > 0 ? aValue.map((id) => {
-                            if (usersById[id] !== undefined) {
-                                return usersById[id].username
+                    // card 타입: JSON 문자열에서 카드 제목 추출하여 정렬
+                    if (template.type === 'card') {
+                        const extractCardTitles = (value: string | string[]): string => {
+                            if (typeof value !== 'string') {
+                                return ''
+                            }
+                            try {
+                                if (value.startsWith('{')) {
+                                    const parsed = JSON.parse(value)
+                                    return (parsed.cards || []).map((c: {title?: string}) => c.title || '').join(', ')
+                                }
+                            } catch {
+                                // JSON 파싱 실패 시 빈 문자열 반환
                             }
                             return ''
-                        }).toString() : aValue
+                        }
+                        aValue = extractCardTitles(aValue)
+                        bValue = extractCardTitles(bValue)
+                    }
 
-                        bValue = Array.isArray(bValue) && bValue.length !== 0 && Object.keys(usersById).length > 0 ? bValue.map((id) => {
-                            if (usersById[id] !== undefined) {
-                                return usersById[id].username
+                    if (template.type === 'multiPerson') {
+                        if (Array.isArray(aValue)) {
+                            if (aValue.length !== 0 && Object.keys(usersById).length > 0) {
+                                aValue = aValue.map((id) => usersById[id]?.username || '').toString()
+                            } else {
+                                // usersById가 비어있으면 user ID로 정렬 (이전 동작 유지)
+                                aValue = aValue.toString()
                             }
-                            return ''
-                        }).toString() : bValue
+                        }
+
+                        if (Array.isArray(bValue)) {
+                            if (bValue.length !== 0 && Object.keys(usersById).length > 0) {
+                                bValue = bValue.map((id) => usersById[id]?.username || '').toString()
+                            } else {
+                                // usersById가 비어있으면 user ID로 정렬 (이전 동작 유지)
+                                bValue = bValue.toString()
+                            }
+                        }
+                    }
+
+                    // 배열이 남아있을 경우 문자열로 변환 (안전 처리)
+                    if (Array.isArray(aValue)) {
+                        aValue = aValue.toString()
+                    }
+                    if (Array.isArray(bValue)) {
+                        bValue = bValue.toString()
                     }
 
                     result = (aValue as string).localeCompare(bValue as string)
@@ -360,6 +392,24 @@ function searchFilterCards(cards: Card[], board: Board, searchTextRaw: string): 
                     // Look up the value of the select option
                     const options = (Array.isArray(propertyValue) ? propertyValue : [propertyValue]).map((value) => propertyTemplate.options.find((o) => o.id === value)?.value.toLowerCase())
                     if (options.some((v) => v?.includes(searchText))) {
+                        return true
+                    }
+                } else if (propertyTemplate.type === 'card') {
+                    // card 타입: JSON에서 연결된 카드 제목 추출하여 검색
+                    if (typeof propertyValue === 'string' && propertyValue.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(propertyValue)
+                            const cardTitles = (parsed.cards || []).map((c: {title?: string}) => c.title || '').join(' ')
+                            if (cardTitles.toLowerCase().includes(searchText)) {
+                                return true
+                            }
+                        } catch {
+                            // JSON 파싱 실패 시 기본 문자열 검색
+                            if (propertyValue.toLowerCase().includes(searchText)) {
+                                return true
+                            }
+                        }
+                    } else if (typeof propertyValue === 'string' && propertyValue.toLowerCase().includes(searchText)) {
                         return true
                     }
                 } else if (propertyTemplate.type !== 'date' && (propertyValue.toString()).toLowerCase().includes(searchText)) {
