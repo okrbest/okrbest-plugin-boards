@@ -8,7 +8,7 @@ import {generatePath} from 'react-router-dom'
 
 import {Board} from '../blocks/board'
 import {Card} from '../blocks/card'
-import {Block} from '../blocks/block'
+// import {Block} from '../blocks/block' // 미사용
 import {sortBoardViewsAlphabetically} from '../blocks/boardView'
 import {Utils} from '../utils'
 import CompassIcon from '../widgets/icons/compassIcon'
@@ -68,10 +68,10 @@ const RHSBoardCards = (props: Props) => {
     // 카드가 로드되지 않았을 때를 위한 로딩 상태
     const isLoading = Object.keys(allCardsObj).length === 0
 
-    // 디버깅을 위한 viewId 정보 로그
-    const viewId = useMemo(() => {
-        return currentViewId // 디버깅용으로만 사용
-    }, [currentViewId, currentBoardViews])
+    // 디버깅을 위한 viewId 정보 로그 (현재 사용되지 않음)
+    // const viewId = useMemo(() => {
+    //     return currentViewId // 디버깅용으로만 사용
+    // }, [currentViewId, currentBoardViews])
 
     const handleCardClicked = (card: Card) => {
         TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.ViewCard, {board: board.id, card: card.id})

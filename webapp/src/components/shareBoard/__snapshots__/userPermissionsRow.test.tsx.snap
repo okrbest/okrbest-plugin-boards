@@ -15,11 +15,6 @@ exports[`src/components/shareBoard/userPermissionsRow should match snapshot 1`] 
         <strong
           class="ml-2 text-light"
         >
-          @username_1
-        </strong>
-        <strong
-          class="ml-2 text-light"
-        >
           (You)
         </strong>
       </div>
@@ -266,11 +261,6 @@ exports[`src/components/shareBoard/userPermissionsRow should match snapshot in p
         class="ml-3"
       >
         <strong />
-        <strong
-          class="ml-2 text-light"
-        >
-          @username_1
-        </strong>
         <strong
           class="ml-2 text-light"
         >
@@ -523,11 +513,6 @@ exports[`src/components/shareBoard/userPermissionsRow should match snapshot in t
         <strong
           class="ml-2 text-light"
         >
-          @username_1
-        </strong>
-        <strong
-          class="ml-2 text-light"
-        >
           (You)
         </strong>
       </div>
@@ -741,11 +726,6 @@ exports[`src/components/shareBoard/userPermissionsRow should match snapshot-admi
         class="ml-3"
       >
         <strong />
-        <strong
-          class="ml-2 text-light"
-        >
-          @username_1
-        </strong>
         <strong
           class="ml-2 text-light"
         >

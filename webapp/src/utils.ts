@@ -134,11 +134,11 @@ class Utils {
     }
 
     static getFullName(user: IUser): string {
-        if (user.firstname !== '' && user.lastname !== '') {
+        if (user.firstname && user.lastname) {
             return user.firstname + ' ' + user.lastname
-        } else if (user.firstname !== '') {
+        } else if (user.firstname) {
             return user.firstname
-        } else if (user.lastname !== '') {
+        } else if (user.lastname) {
             return user.lastname
         }
         return ''
@@ -485,7 +485,8 @@ class Utils {
     // File names
 
     static sanitizeFilename(filename: string): string {
-        // TODO: Use an industrial-strength sanitizer
+        // Note: Basic sanitization - illegal characters are removed
+        // For production use, consider a more robust sanitization library
         let sanitizedFilename = filename
         const illegalCharacters = ['\\', '/', '?', ':', '<', '>', '*', '|', '"', '.']
         illegalCharacters.forEach((character) => {
@@ -508,8 +509,13 @@ class Utils {
         input.style.display = 'none'
         document.body.appendChild(input)
         input.click()
-
-        // TODO: Remove or reuse input
+        
+        // Clean up: remove input element after file selection
+        setTimeout(() => {
+            if (input.parentNode) {
+                input.parentNode.removeChild(input)
+            }
+        }, 100)
     }
 
     // Arrays
@@ -610,6 +616,19 @@ class Utils {
         }
 
         const baseURL = Utils.getBaseURL()
+
+        // Handle static assets (images, fonts, etc.) - these are served from /static/plugins/{plugin_id}/
+        // Webpack outputs paths like "static/copyLink.gif" which need to be converted to
+        // "/static/plugins/focalboard/copyLink.gif"
+        if (path.startsWith('static/')) {
+            const filename = path.substring('static/'.length)
+            const staticPath = `/static/${baseURL}/${filename}`
+            if (absolute) {
+                return window.location.origin + staticPath
+            }
+            return staticPath
+        }
+
         let finalPath = baseURL + path
         if (path.indexOf('/') !== 0) {
             finalPath = baseURL + '/' + path

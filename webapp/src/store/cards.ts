@@ -379,7 +379,8 @@ function searchFilterCards(cards: Card[], board: Board, searchTextRaw: string): 
         }
 
         for (const [propertyId, propertyValue] of Object.entries(card.fields.properties)) {
-            // TODO: Refactor to a shared function that returns the display value of a property
+            // Note: Property display value logic - consider extracting to a shared utility function
+            // See: properties/*/property.tsx for property-specific displayValue implementations
             const propertyTemplate = board.cardProperties.find((o) => o.id === propertyId)
             if (propertyTemplate && propertyValue) {
                 if (propertyTemplate.type === 'select') {

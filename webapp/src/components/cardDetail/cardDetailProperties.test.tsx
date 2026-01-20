@@ -215,17 +215,24 @@ describe('components/cardDetail/CardDetailProperties', () => {
     })
 
     it('confirmation on delete dialog should delete the property', () => {
-        const result = renderComponent()
-        const container = result.container
-
-        openDeleteConfirmationDialog(container)
+        renderComponent()
 
         const propertyTemplate = board.cardProperties[0]
 
-        const confirmButton = result.getByTitle('Delete')
-        expect(confirmButton).toBeDefined()
+        // Open property menu
+        const menuElement = screen.getByRole('button', {name: 'Owner'})
+        userEvent.click(menuElement)
 
-        //click delete button
+        // Click delete option in menu
+        const deleteOption = screen.getByRole('button', {name: /^delete$/i})
+        userEvent.click(deleteOption)
+
+        // Confirm dialog should appear
+        expect(screen.getByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
+
+        // Click confirm button in dialog
+        const confirmButton = screen.getByTitle('Delete')
+        expect(confirmButton).toBeDefined()
         userEvent.click(confirmButton!)
 
         // should be called once on confirming delete
@@ -234,30 +241,26 @@ describe('components/cardDetail/CardDetailProperties', () => {
     })
 
     it('cancel on delete dialog should do nothing', () => {
-        const result = renderComponent()
-        const container = result.container
+        const {container} = renderComponent()
 
-        openDeleteConfirmationDialog(container)
+        // Open property menu
+        const menuElement = screen.getByRole('button', {name: 'Owner'})
+        userEvent.click(menuElement)
 
-        const cancelButton = result.getByTitle('Cancel')
+        // Click delete option in menu
+        const deleteOption = screen.getByRole('button', {name: /^delete$/i})
+        userEvent.click(deleteOption)
+
+        // Confirm dialog should appear
+        expect(screen.getByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
+
+        // Click cancel button
+        const cancelButton = screen.getByTitle('Cancel')
         expect(cancelButton).toBeDefined()
-
         userEvent.click(cancelButton!)
+
         expect(container).toMatchSnapshot()
     })
-
-    function openDeleteConfirmationDialog(container: HTMLElement) {
-        const propertyLabel = container.querySelector('.MenuWrapper')
-        expect(propertyLabel).toBeDefined()
-        userEvent.click(propertyLabel!)
-
-        const deleteOption = container.querySelector('.MenuOption.TextOption')
-        expect(propertyLabel).toBeDefined()
-        userEvent.click(deleteOption!)
-
-        const confirmDialog = container.querySelector('.dialog.confirmation-dialog-box')
-        expect(confirmDialog).toBeDefined()
-    }
 
     function onPropertyRenameNoConfirmationDialog(container: HTMLElement) {
         const propertyLabel = container.querySelector('.MenuWrapper')

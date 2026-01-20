@@ -11,8 +11,19 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/services/store"
 	"github.com/stretchr/testify/require"
 
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
+	mmModel "github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
+
+type noOpMutexAPIAdapter struct{}
+
+func (m *noOpMutexAPIAdapter) KVSetWithOptions(key string, value []byte, options mmModel.PluginKVSetOptions) (bool, *mmModel.AppError) {
+	return true, nil
+}
+
+func (m *noOpMutexAPIAdapter) LogError(msg string, keyValuePairs ...interface{}) {
+}
 
 func SetupTests(t *testing.T) (store.Store, func()) {
 	origUnitTesting := os.Getenv("FOCALBOARD_UNIT_TESTING")
@@ -28,6 +39,15 @@ func SetupTests(t *testing.T) (store.Store, func()) {
 	err = sqlDB.Ping()
 	require.NoError(t, err)
 
+	if dbType == "sqlite3" {
+		var result string
+		err := sqlDB.QueryRow("SELECT json_set('{}', '$.a', 1)").Scan(&result)
+		if err != nil {
+			t.Skip("Skipping SQLite test: json1 extension not enabled (missing -tags 'json1'?)")
+			return nil, nil
+		}
+	}
+
 	storeParams := Params{
 		DBType:           dbType,
 		ConnectionString: connectionString,
@@ -35,8 +55,25 @@ func SetupTests(t *testing.T) (store.Store, func()) {
 		TablePrefix:      "test_",
 		Logger:           logger,
 		DB:               sqlDB,
+		NewMutexFn: func(name string) (*cluster.Mutex, error) {
+			return cluster.NewMutex(&noOpMutexAPIAdapter{}, name)
+		},
+		SkipMigrations: true,
 	}
 	store, err := New(storeParams)
+	require.NoError(t, err)
+
+	// Pre-mark migration as complete for tests to avoid missing table error
+	if dbType == "sqlite3" {
+		_, err = sqlDB.Exec("CREATE TABLE IF NOT EXISTS test_system_settings (id VARCHAR(100) PRIMARY KEY, value TEXT)")
+		require.NoError(t, err)
+		_, err = sqlDB.Exec("INSERT INTO test_system_settings (id, value) VALUES ('DeletedMembershipBoardsMigrationComplete', 'true')")
+		require.NoError(t, err)
+		_, err = sqlDB.Exec("INSERT INTO test_system_settings (id, value) VALUES ('CategoryUuidIdMigrationComplete', 'true')")
+		require.NoError(t, err)
+	}
+
+	err = store.Migrate()
 	require.NoError(t, err)
 
 	tearDown := func() {

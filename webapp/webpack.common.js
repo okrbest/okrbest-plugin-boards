@@ -84,6 +84,8 @@ function makeCommonConfig() {
             ],
             fullySpecified: false,
             extensions: ['.js', '.jsx', '.ts', '.tsx'],
+            // BlockSuite ESM 패키지 지원을 위한 conditionNames 설정
+            conditionNames: ['import', 'require', 'module', 'browser', 'default'],
         },
         plugins: [
             new CopyPlugin({

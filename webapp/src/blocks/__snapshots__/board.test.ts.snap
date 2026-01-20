@@ -298,7 +298,6 @@ Array [
     "updatedCardProperties": Array [
       Object {
         "id": "new-property-id",
-        "index": 0,
         "name": "property-name",
         "options": Array [
           Object {

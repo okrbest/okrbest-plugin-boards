@@ -21,7 +21,7 @@ var fileContents = []byte("abcdefg")
 func TestFileHistory(t *testing.T) {
 	assert := assert.New(t)
 
-	dir, err := os.TempDir("", "repo")
+	dir, err := os.MkdirTemp("", "repo")
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
 

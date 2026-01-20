@@ -270,25 +270,7 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
         >
           <div
             class="TopBar"
-          >
-            <a
-              class="link"
-              href="https://www.focalboard.com/fwlink/feedback-focalboard.html?v=1.0.0"
-              rel="noreferrer"
-              target="_blank"
-            >
-              Give feedback
-            </a>
-            <a
-              href="https://www.focalboard.com/guide/user?utm_source=webapp"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <i
-                class="CompassIcon icon-help-circle-outline HelpIcon"
-              />
-            </a>
-          </div>
+          />
           <div
             class="mid-head"
           >
@@ -808,25 +790,7 @@ exports[`src/components/workspace return workspace readonly and showcard 1`] = `
         >
           <div
             class="TopBar"
-          >
-            <a
-              class="link"
-              href="https://www.focalboard.com/fwlink/feedback-focalboard.html?v=1.0.0"
-              rel="noreferrer"
-              target="_blank"
-            >
-              Give feedback
-            </a>
-            <a
-              href="https://www.focalboard.com/guide/user?utm_source=webapp"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <i
-                class="CompassIcon icon-help-circle-outline HelpIcon"
-              />
-            </a>
-          </div>
+          />
           <div
             class="mid-head"
           >
@@ -1381,25 +1345,7 @@ exports[`src/components/workspace should match snapshot 1`] = `
         >
           <div
             class="TopBar"
-          >
-            <a
-              class="link"
-              href="https://www.focalboard.com/fwlink/feedback-focalboard.html?v=1.0.0"
-              rel="noreferrer"
-              target="_blank"
-            >
-              Give feedback
-            </a>
-            <a
-              href="https://www.focalboard.com/guide/user?utm_source=webapp"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <i
-                class="CompassIcon icon-help-circle-outline HelpIcon"
-              />
-            </a>
-          </div>
+          />
           <div
             class="mid-head"
           >
@@ -1919,25 +1865,7 @@ exports[`src/components/workspace should match snapshot with readonly 1`] = `
         >
           <div
             class="TopBar"
-          >
-            <a
-              class="link"
-              href="https://www.focalboard.com/fwlink/feedback-focalboard.html?v=1.0.0"
-              rel="noreferrer"
-              target="_blank"
-            >
-              Give feedback
-            </a>
-            <a
-              href="https://www.focalboard.com/guide/user?utm_source=webapp"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <i
-                class="CompassIcon icon-help-circle-outline HelpIcon"
-              />
-            </a>
-          </div>
+          />
           <div
             class="mid-head"
           >

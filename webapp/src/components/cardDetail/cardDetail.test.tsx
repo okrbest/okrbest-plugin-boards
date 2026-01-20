@@ -24,7 +24,7 @@ import {createTextBlock} from '../../blocks/textBlock'
 
 import {mockMMStore} from '../../../tests/mock_window'
 
-import CardDetail from './cardDetail'
+import CardDetail, {OnboardingBoardTitle, OnboardingCardTitle} from './cardDetail'
 
 global.fetch = FetchMock.fn
 jest.mock('../../octoClient')
@@ -33,6 +33,7 @@ const mockedOctoClient = mocked(octoClient, true)
 
 beforeEach(() => {
     FetchMock.fn.mockReset()
+    mockedOctoClient.patchUserConfig.mockReset()
 })
 
 // This is needed to run EasyMDE in tests.
@@ -153,6 +154,12 @@ describe('components/cardDetail/CardDetail', () => {
                     [board.id]: {userId: 'user_id_1', schemeAdmin: true},
                 },
             },
+            cards: {
+                cards: {
+                    [card.id]: card,
+                },
+                current: card.id,
+            },
             users: {
                 boardUsers: {
                     'user-id-1': {username: 'username_1'},
@@ -206,10 +213,10 @@ describe('components/cardDetail/CardDetail', () => {
         const mockStore = configureStore([])
 
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = OnboardingBoardTitle
 
         const welcomeCard = TestBlockFactory.createCard(welcomeBoard)
-        welcomeCard.title = 'Create a new card'
+        welcomeCard.title = OnboardingCardTitle
 
         const store = mockStore({
             users: {
@@ -250,10 +257,10 @@ describe('components/cardDetail/CardDetail', () => {
         })
 
         const onboardingBoard = TestBlockFactory.createBoard()
-        onboardingBoard.title = 'Welcome to Boards!'
+        onboardingBoard.title = OnboardingBoardTitle
 
         const onboardingCard = TestBlockFactory.createCard(board)
-        onboardingCard.title = 'Create a new card'
+        onboardingCard.title = OnboardingCardTitle
 
         const component = (
             <ReduxProvider store={store}>
@@ -313,10 +320,10 @@ describe('components/cardDetail/CardDetail', () => {
         const mockStore = configureStore([])
 
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = OnboardingBoardTitle
 
         const welcomeCard = TestBlockFactory.createCard(welcomeBoard)
-        welcomeCard.title = 'Create a new card'
+        welcomeCard.title = OnboardingCardTitle
 
         const store = mockStore({
             users: {
@@ -357,10 +364,10 @@ describe('components/cardDetail/CardDetail', () => {
         })
 
         const onboardingBoard = TestBlockFactory.createBoard()
-        onboardingBoard.title = 'Welcome to Boards!'
+        onboardingBoard.title = OnboardingBoardTitle
 
         const onboardingCard = TestBlockFactory.createCard(board)
-        onboardingCard.title = 'Create a new card'
+        onboardingCard.title = OnboardingCardTitle
 
         const component = (
             <ReduxProvider store={store}>
@@ -419,10 +426,10 @@ describe('components/cardDetail/CardDetail', () => {
     test('should show add description tour tip', async () => {
         const mockStore = configureStore([])
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = OnboardingBoardTitle
 
         const welcomeCard = TestBlockFactory.createCard(welcomeBoard)
-        welcomeCard.title = 'Create a new card'
+        welcomeCard.title = OnboardingCardTitle
         const state = {
             users: {
                 me: {
@@ -463,10 +470,10 @@ describe('components/cardDetail/CardDetail', () => {
         const store = mockStore(state)
 
         const onboardingBoard = TestBlockFactory.createBoard()
-        onboardingBoard.title = 'Welcome to Boards!'
+        onboardingBoard.title = OnboardingBoardTitle
 
         const onboardingCard = TestBlockFactory.createCard(board)
-        onboardingCard.title = 'Create a new card'
+        onboardingCard.title = OnboardingCardTitle
 
         const text = createTextBlock()
         text.title = 'description'
@@ -517,11 +524,13 @@ describe('components/cardDetail/CardDetail', () => {
         await act(async () => {
             userEvent.click(nextBtn!)
         })
+        // After the last step of card tour, it transitions to 'board' tour category
         expect(mockedOctoClient.patchUserConfig).toBeCalledWith(
             'user_id_1',
             {
                 updatedFields: {
-                    onboardingTourStep: '999',
+                    onboardingTourStep: '0',
+                    tourCategory: 'board',
                 },
             },
         )

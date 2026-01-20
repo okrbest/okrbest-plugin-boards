@@ -63,11 +63,23 @@ const config = {
         ],
         alias: {
             moment: path.resolve(__dirname, './node_modules/moment/'),
+            // yjs ESM 모듈 명시적 지정
+            yjs: path.resolve(__dirname, './node_modules/yjs/dist/yjs.mjs'),
         },
-        extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
+        extensions: ['*', '.js', '.jsx', '.ts', '.tsx', '.mjs'],
+        // ESM 모듈 지원을 위한 설정
+        mainFields: ['module', 'browser', 'main'],
+        fullySpecified: false,
     },
     module: {
         rules: [
+            // ESM 모듈 처리 (BlockSuite, yjs, lib0 등)
+            {
+                test: /\.m?js$/,
+                resolve: {
+                    fullySpecified: false,
+                },
+            },
             {
                 test: /\.tsx?$/,
                 use: {
@@ -117,7 +129,7 @@ const config = {
                 type: 'asset/resource',
                 generator: {
                     filename: '[name][ext]',
-                    publicPath: TARGET_IS_PRODUCT ? undefined : '/static/',
+                    publicPath: TARGET_IS_PRODUCT ? undefined : 'static/',
                 }
             },
             {
@@ -125,7 +137,7 @@ const config = {
                 type: 'asset/resource',
                 generator: {
                     filename: '[name][ext]',
-                    publicPath: TARGET_IS_PRODUCT ? undefined : '/plugins/focalboard/static/',
+                    publicPath: TARGET_IS_PRODUCT ? undefined : 'static/',
                 }
             },
         ],

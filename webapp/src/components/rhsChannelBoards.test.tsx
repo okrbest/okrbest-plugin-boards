@@ -83,6 +83,10 @@ describe('components/rhsChannelBoards', () => {
                 type: 'O',
             },
         },
+        rhs: {
+            currentView: 'boards',
+            selectedBoard: null,
+        },
     }
 
     beforeEach(() => {

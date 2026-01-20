@@ -13,8 +13,8 @@ import (
 )
 
 // GetBlockSuiteDocByCardID retrieves a BlockSuite document by card_id.
-func (s *SQLStore) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error) {
-	query := s.getQueryBuilder(s.db).
+func (s *SQLStore) getBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) (*model.BlockSuiteDoc, error) {
+	query := s.getQueryBuilder(db).
 		Select(
 			"doc_id",
 			"card_id",
@@ -54,8 +54,8 @@ func (s *SQLStore) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc
 }
 
 // GetBlockSuiteDocInfoByCardID retrieves metadata (without snapshot) by card_id.
-func (s *SQLStore) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocInfo, error) {
-	query := s.getQueryBuilder(s.db).
+func (s *SQLStore) getBlockSuiteDocInfoByCardID(db sq.BaseRunner, cardID string) (*model.BlockSuiteDocInfo, error) {
+	query := s.getQueryBuilder(db).
 		Select(
 			"doc_id",
 			"card_id",
@@ -93,13 +93,13 @@ func (s *SQLStore) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuit
 }
 
 // UpsertBlockSuiteDoc inserts or updates a BlockSuite document.
-func (s *SQLStore) UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error {
+func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDoc) error {
 	if err := doc.IsValid(); err != nil {
 		return err
 	}
 
 	// Verify that the card exists
-	cardExistsQuery := s.getQueryBuilder(s.db).
+	cardExistsQuery := s.getQueryBuilder(db).
 		Select("1").
 		From(s.tablePrefix + "blocks").
 		Where(sq.Eq{
@@ -122,7 +122,7 @@ func (s *SQLStore) UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error {
 
 	// Build upsert query based on database type
 	var query sq.InsertBuilder
-	query = s.getQueryBuilder(s.db).
+	query = s.getQueryBuilder(db).
 		Insert(s.tablePrefix + "blocksuite_docs").
 		Columns(
 			"doc_id",
@@ -187,8 +187,8 @@ func (s *SQLStore) UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error {
 }
 
 // DeleteBlockSuiteDocByCardID deletes a BlockSuite document by card_id.
-func (s *SQLStore) DeleteBlockSuiteDocByCardID(cardID string) error {
-	query := s.getQueryBuilder(s.db).
+func (s *SQLStore) deleteBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) error {
+	query := s.getQueryBuilder(db).
 		Delete(s.tablePrefix + "blocksuite_docs").
 		Where(sq.Eq{"card_id": cardID})
 

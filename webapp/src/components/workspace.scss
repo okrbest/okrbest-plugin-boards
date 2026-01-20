@@ -1,4 +1,4 @@
-@import '../styles/z-index';
+@use '../styles/z-index' as *;
 
 .Workspace {
     flex: 1 1 auto;

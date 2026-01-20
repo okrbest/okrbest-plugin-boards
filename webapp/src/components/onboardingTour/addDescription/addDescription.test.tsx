@@ -11,6 +11,7 @@ import configureStore from 'redux-mock-store'
 import {Provider as ReduxProvider} from 'react-redux'
 
 import {wrapIntl} from '../../../testUtils'
+import {OnboardingBoardTitle, OnboardingCardTitle} from '../../cardDetail/cardDetail'
 
 import AddDescriptionTourStep from './add_description'
 
@@ -29,13 +30,13 @@ describe('components/onboardingTour/addComments/AddDescriptionTourStep', () => {
         },
         boards: {
             boards: {
-                board_id_1: {title: 'Welcome to Boards!'},
+                board_id_1: {title: OnboardingBoardTitle},
             },
             current: 'board_id_1',
         },
         cards: {
             cards: {
-                card_id_1: {title: 'Create a new card'},
+                card_id_1: {title: OnboardingCardTitle},
             },
             current: 'card_id_1',
         },
