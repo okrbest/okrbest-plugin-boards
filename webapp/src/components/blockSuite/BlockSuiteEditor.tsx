@@ -3,6 +3,8 @@
 
 import React from 'react'
 
+import '@toeverything/theme/style.css'
+
 import { Card } from '../../blocks/card'
 
 import { EditorProvider } from './EditorProvider'

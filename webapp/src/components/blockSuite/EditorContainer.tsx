@@ -4,8 +4,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useIntl } from 'react-intl'
 
-// BlockSuite 공식 테마 CSS
-import '@toeverything/theme/style.css'
+
 
 import AddDescriptionTourStep from '../onboardingTour/addDescription/add_description'
 
@@ -53,13 +52,9 @@ affine-image,
     color: #000000;
 }
 
-/* Remove border from editor containers */
-affine-editor-container,
-affine-page-root {
-    border: none !important;
-    border-width: 0 !important;
-    border-style: none !important;
-    outline: none !important;
+.affine-list-block__prefix,
+.affine-list-block__suffix {
+    color: #000000;
 }
 `
 
@@ -494,7 +489,34 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
                 'affine-page-root', 
                 'affine-doc-page',
                 'affine-paragraph',
-                'affine-page-image'
+                'affine-page-image',
+                'affine-code',
+                'affine-divider',
+                'affine-text',
+                'affine-list',
+                'affine-quote',
+                'affine-embed',
+                'affine-equation',
+                'affine-image',
+                'affine-video',
+                'affine-audio',
+                'affine-file',
+                'affine-link',
+                'affine-bookmark',
+                'affine-bookmark-list',
+                'affine-bookmark-list-item',
+                'affine-bookmark-list-item-title',
+                'affine-bookmark-list-item-url',
+                'affine-bookmark-list-item-description',
+                'affine-bookmark-list-item-icon',
+                'affine-bookmark-list-item-thumbnail',
+                'affine-bookmark-list-item-thumbnail-url',
+                'affine-bookmark-list-item-thumbnail-width',
+                'affine-bookmark-list-item-thumbnail-height',
+                'affine-bookmark-list-item-thumbnail-width',
+                'affine-bookmark-list-item-thumbnail-height',
+                'affine-bookmark-list-item-thumbnail-width',
+                'affine-bookmark-list-item-thumbnail-height',
             ]
             selectors.forEach(selector => {
                 const elements = mountPoint.querySelectorAll(selector)
