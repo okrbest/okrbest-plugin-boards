@@ -1,0 +1,8 @@
+{
+  "track_id": "blocksuite_stabilization_20260121",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-21T00:00:00Z",
+  "updated_at": "2026-01-21T00:00:00Z",
+  "description": "BlockSuite 에디터 안정화 및 기본 기능 검증"
+}

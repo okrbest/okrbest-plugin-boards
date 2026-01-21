@@ -9,7 +9,7 @@ import { effects as presetsEffects } from '@blocksuite/presets/effects'
 blocksEffects()
 presetsEffects()
 
-import { AffineEditorContainer } from '@blocksuite/presets'
+import { PageEditor } from '@blocksuite/presets'
 import { AffineSchemas } from '@blocksuite/blocks/schemas'
 import { Doc, DocCollection, Schema } from '@blocksuite/store'
 
@@ -19,7 +19,7 @@ import { loadDataIntoCollection } from '../../../utils/blockSuiteUtils'
 import { MattermostBlobEngine } from './blobEngine'
 
 export interface EditorInitResult {
-    editor: AffineEditorContainer;
+    editor: PageEditor;
     doc: Doc;
     collection: DocCollection;
 }
@@ -70,7 +70,7 @@ export async function initEditor(cardId: string, boardId: string, card: Card): P
     console.log('[Editor] Data loaded, doc ID:', doc.id)
 
     // 5. 에디터 생성 및 설정 (데이터가 로드된 doc에 연결)
-    const editor = new AffineEditorContainer()
+    const editor = new PageEditor()
     editor.doc = doc
 
     console.log('[Editor] Editor initialized successfully')
