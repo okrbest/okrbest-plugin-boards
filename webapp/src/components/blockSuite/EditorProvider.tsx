@@ -3,7 +3,7 @@
 
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { Doc, DocCollection } from '@blocksuite/store'
-import { AffineEditorContainer } from '@blocksuite/presets'
+import { PageEditor } from '@blocksuite/presets'
 import { useIntl } from 'react-intl'
 
 import { Card } from '../../blocks/card'
@@ -27,7 +27,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
     children 
 }) => {
     const intl = useIntl()
-    const [editor, setEditor] = useState<AffineEditorContainer | null>(null)
+    const [editor, setEditor] = useState<PageEditor | null>(null)
     const [doc, setDoc] = useState<Doc | null>(null)
     const [collection, setCollection] = useState<DocCollection | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -55,9 +55,8 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
 
                 if (!mounted) return
 
-                // readOnly 모드 설정
-                newEditor.mode = 'page'
-                console.log('[EditorProvider] Editor mode set to: page, readOnly:', readOnly)
+                // PageEditor is specifically designed for page editing, no mode setting needed
+                console.log('[EditorProvider] PageEditor initialized, readOnly:', readOnly)
      
                 // readonly 속성 설정 (있다면)
                 if ('readonly' in newEditor) {

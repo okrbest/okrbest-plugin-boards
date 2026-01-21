@@ -4,8 +4,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useIntl } from 'react-intl'
 
-// BlockSuite 공식 테마 CSS
-import '@toeverything/theme/style.css'
+
 
 import AddDescriptionTourStep from '../onboardingTour/addDescription/add_description'
 
@@ -13,8 +12,8 @@ import { useEditor } from './editor/context'
 import './BlockSuiteEditor.scss'
 
 /**
- * BlockSuite 테마 CSS 변수 오버라이드
- * @toeverything/theme/style.css 에서 정의된 --affine-* 변수들을 커스터마이징
+ * BlockSuite 테마 CSS 변수 - 최소한의 커스터마이징
+ * z-index만 Mattermost 모달과의 호환성을 위해 조정
  */
 const THEME_CSS = `
 :host, :root, body, html {
@@ -53,13 +52,9 @@ affine-image,
     color: #000000;
 }
 
-/* Remove border from editor containers */
-affine-editor-container,
-affine-page-root {
-    border: none !important;
-    border-width: 0 !important;
-    border-style: none !important;
-    outline: none !important;
+.affine-list-block__prefix,
+.affine-list-block__suffix {
+    color: #000000;
 }
 `
 
@@ -158,141 +153,33 @@ function injectGlobalStyle(): void {
 }
 
 /**
- * Shadow DOM 내부를 포함하여 요소를 검색
- * @param root 검색을 시작할 루트 노드
- * @param selector CSS 선택자
- * @returns 찾은 요소들의 배열
- */
-function querySelectorAllDeep(root: Document | ShadowRoot | Element, selector: string): Element[] {
-    const results: Element[] = []
-    
-    // 현재 루트에서 검색
-    const found = root.querySelectorAll(selector)
-    results.push(...Array.from(found))
-    
-    // 모든 요소의 Shadow DOM 내부 검색
-    const allElements = root.querySelectorAll('*')
-    for (const el of allElements) {
-        if (el.shadowRoot) {
-            results.push(...querySelectorAllDeep(el.shadowRoot, selector))
-        }
-    }
-    
-    return results
-}
-
-/**
- * 서브메뉴 위치를 부모 메뉴 오른쪽에 고정
- * @param el 위치를 수정할 서브메뉴 요소
- * @param subMenuIndex 서브메뉴 인덱스
- * @param allSubMenus 모든 서브메뉴 요소 배열 (Shadow DOM 포함)
- */
-function fixSubMenuPosition(el: HTMLElement, subMenuIndex: number, allSubMenus: Element[]): void {
-    // sub-menu-0은 슬래시 메뉴 자체이므로 수정 불필요
-    if (subMenuIndex === 0) return
-    
-    // 부모 메뉴 찾기 (allSubMenus에서 검색)
-    const parentMenu = allSubMenus.find(m => m.getAttribute('data-testid') === `sub-menu-${subMenuIndex - 1}`)
-    if (!parentMenu) return
-    
-    const parentRect = parentMenu.getBoundingClientRect()
-    
-    // 서브메뉴를 부모 메뉴 오른쪽에 배치 (important로 강제 적용)
-    el.style.setProperty('position', 'fixed', 'important')
-    el.style.setProperty('left', `${parentRect.right + 4}px`, 'important')
-    el.style.setProperty('top', `${parentRect.top}px`, 'important')
-    el.style.setProperty('bottom', 'auto', 'important')
-    el.style.setProperty('right', 'auto', 'important')
-    el.style.setProperty('transform', 'none', 'important')
-    el.style.setProperty('z-index', `${10002 + subMenuIndex}`, 'important')
-    el.style.setProperty('background-color', '#ffffff', 'important')
-    el.style.setProperty('box-shadow', '0 4px 16px rgba(0,0,0,0.15)', 'important')
-    el.style.setProperty('border-radius', '12px', 'important')
-    el.style.setProperty('border', '1px solid rgb(227, 226, 228)', 'important')
-}
-
-/**
- * 모든 서브메뉴의 위치를 확인하고 수정 (Shadow DOM 포함)
- */
-function fixAllSubMenuPositions(): void {
-    // Shadow DOM 내부를 포함하여 모든 sub-menu 찾기
-    const subMenus = querySelectorAllDeep(document, '[data-testid^="sub-menu-"]')
-    
-    subMenus.forEach(menu => {
-        const testId = menu.getAttribute('data-testid')
-        if (!testId) return
-        
-        const match = testId.match(/sub-menu-(\d+)/)
-        if (!match) return
-        
-        const index = parseInt(match[1], 10)
-        if (index > 0) {
-            fixSubMenuPosition(menu as HTMLElement, index, subMenus)
-        }
-    })
-}
-
-/**
  * Body 포털 요소 감시 (슬래시 메뉴, 포맷 바 등)
+ * BlockSuite의 기본 동작을 유지하되, z-index만 조정
  */
 let bodyObserver: MutationObserver | null = null
-let subMenuCheckInterval: number | null = null
 
 function setupBodyObserver(): void {
     if (bodyObserver) return
-    
+
     bodyObserver = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 if (!(node instanceof Element)) continue
-                
+
                 const tag = node.tagName.toLowerCase()
-                
-                // BlockSuite 포털 요소 감지
-                if (tag.startsWith('affine-') || 
+
+                // BlockSuite 포털 요소 감지 - z-index 스타일만 주입
+                if (tag.startsWith('affine-') ||
                     node.classList.contains('blocksuite-overlay') ||
                     node.classList.contains('blocksuite-portal')) {
-                    
                     injectStyles(node)
-                    
-                    // Shadow DOM이 없는 포털 요소에 직접 스타일 적용
-                    if (!node.shadowRoot) {
-                        const el = node as HTMLElement
-                        el.style.cssText = `
-                            background-color: #ffffff !important;
-                            color: #000000;
-                            box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
-                            border-radius: 8px !important;
-                            border: 1px solid rgba(0,0,0,0.1) !important;
-                        `
-                    }
-                }
-                
-                // 슬래시 메뉴 서브메뉴 위치 수정 (Shadow DOM 포함)
-                const testId = node.getAttribute('data-testid')
-                if (testId && testId.startsWith('sub-menu-')) {
-                    // 새로운 sub-menu가 추가되면 전체 서브메뉴 위치 재계산
-                    fixAllSubMenuPositions()
-                }
-                
-                // 내부에 서브메뉴가 있는지도 확인 (중첩된 경우)
-                const innerSubMenus = node.querySelectorAll('[data-testid^="sub-menu-"]')
-                if (innerSubMenus.length > 0) {
-                    fixAllSubMenuPositions()
                 }
             }
         }
     })
-    
+
     // body와 그 모든 자손 요소 감시
     bodyObserver.observe(document.body, { childList: true, subtree: true })
-    
-    // 서브메뉴 위치 주기적 확인 (MutationObserver가 놓친 경우 대비)
-    if (!subMenuCheckInterval) {
-        subMenuCheckInterval = window.setInterval(() => {
-            fixAllSubMenuPositions()
-        }, 100)
-    }
 }
 
 interface EditorContainerProps {
@@ -315,161 +202,32 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
         setupBodyObserver()
     }, [])
 
-    // 에디터 외부 클릭 시 selection 해제 및 위젯 정리
+    // 에디터 외부 클릭 시 selection 해제
     useEffect(() => {
-        // 실제 편집 가능한 요소에 포커스되어 있는지 확인하는 헬퍼
-        const isEditableElement = (element: Element | null): boolean => {
-            if (!element) return false
-            const tagName = element.tagName.toLowerCase()
-            // 실제 편집 가능한 요소들
-            if (tagName === 'rich-text' || 
-                tagName === 'v-line' || 
-                tagName === 'v-text' ||
-                element.getAttribute('contenteditable') === 'true' ||
-                element.closest('rich-text') ||
-                element.closest('[contenteditable="true"]')) {
-                return true
-            }
-            return false
-        }
-
-        // 에디터 컨테이너 요소인지 확인 (편집 불가능한 wrapper 요소들)
-        const isEditorContainerElement = (element: Element | null): boolean => {
-            if (!element) return false
-            const tagName = element.tagName.toLowerCase()
-            return tagName === 'affine-page-root' || 
-                   tagName === 'affine-editor-container' ||
-                   tagName === 'editor-host' ||
-                   tagName === 'affine-doc-page' ||
-                   tagName === 'affine-note' ||
-                   element.classList.contains('affine-page-viewport') ||
-                   element.classList.contains('affine-page-root-block-container') ||
-                   element.classList.contains('affine-note-block-container')
-        }
-        
-        // 마지막 편집 가능한 블록에 포커스 주기
-        const focusLastEditableBlock = (): boolean => {
-            const wrapper = wrapperRef.current
-            if (!wrapper) return false
-            
-            // 마지막 rich-text 요소 찾기
-            const richTexts = wrapper.querySelectorAll('rich-text')
-            if (richTexts.length > 0) {
-                const lastRichText = richTexts[richTexts.length - 1] as HTMLElement
-                
-                // rich-text 내의 v-line 또는 contenteditable 요소에 포커스
-                const editableContent = lastRichText.querySelector('[contenteditable="true"]') ||
-                                       lastRichText.querySelector('v-line')
-                if (editableContent) {
-                    (editableContent as HTMLElement).focus()
-                    
-                    // 커서를 텍스트 끝으로 이동
-                    const selection = window.getSelection()
-                    if (selection && editableContent.textContent) {
-                        const range = document.createRange()
-                        range.selectNodeContents(editableContent)
-                        range.collapse(false) // false = 끝으로 이동
-                        selection.removeAllRanges()
-                        selection.addRange(range)
-                    }
-                    return true
-                }
-            }
-            return false
-        }
-        
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Element
             const wrapper = wrapperRef.current
-            
+
             // BlockSuite 포털 요소(슬래시 메뉴, 포맷 바 등)인 경우 무시
             if (target.closest('affine-slash-menu') ||
                 target.closest('affine-format-bar-widget') ||
                 target.closest('.blocksuite-overlay') ||
-                target.closest('.blocksuite-portal') ||
-                target.closest('[data-testid^="sub-menu-"]')) {
+                target.closest('.blocksuite-portal')) {
                 return
             }
-            
+
             // 에디터 wrapper 외부 클릭 시 selection 해제
             if (wrapper && !wrapper.contains(target)) {
                 if (editor?.host?.selection) {
                     editor.host.selection.clear()
                 }
-                // 기존 format bar 등 위젯 제거
-                const widgets = document.querySelectorAll('affine-format-bar-widget, affine-slash-menu')
-                widgets.forEach(w => {
-                    try { w.remove() } catch { /* 무시 */ }
-                })
-            }
-        }
-        
-        // 에디터 컨테이너의 빈 영역 클릭 시 마지막 블록에 포커스
-        const handleEditorContainerClick = (event: MouseEvent) => {
-            const target = event.target as Element
-            const wrapper = wrapperRef.current
-            
-            if (!wrapper || !wrapper.contains(target)) return
-            
-            // 편집 가능한 요소 클릭은 정상 처리
-            if (isEditableElement(target)) return
-            
-            // 에디터 컨테이너 영역(빈 공간) 클릭 시 마지막 블록에 포커스
-            if (isEditorContainerElement(target)) {
-                event.preventDefault()
-                event.stopPropagation()
-                
-                // 약간의 딜레이 후 포커스 (BlockSuite 내부 처리 완료 후)
-                requestAnimationFrame(() => {
-                    focusLastEditableBlock()
-                })
-            }
-        }
-
-        // 에디터 컨테이너(비편집 영역)에서 키 입력 시 불필요한 동작 방지
-        const handleKeyDown = (event: KeyboardEvent) => {
-            const target = event.target as Element
-            
-            // BlockSuite 포털 요소 포커스인 경우: 정상 동작
-            if (target.closest('affine-format-bar-widget') ||
-                target.closest('affine-slash-menu') ||
-                target.closest('.blocksuite-portal')) {
-                return
-            }
-            
-            // 포커스된 요소가 에디터 컨테이너 요소(비편집 영역)인 경우
-            // 예: affine-page-root, affine-editor-container 등을 직접 클릭한 경우
-            if (isEditorContainerElement(target) && !isEditableElement(target)) {
-                // Enter 키 입력 시 새 블록 생성 및 format bar 생성 방지
-                // 대신 마지막 블록에 포커스를 줌
-                if (event.key === 'Enter') {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    focusLastEditableBlock()
-                    return
-                }
-                
-                // format bar 중복 생성 방지 (다른 키 입력의 경우)
-                requestAnimationFrame(() => {
-                    const formatBars = document.querySelectorAll('affine-format-bar-widget')
-                    if (formatBars.length > 1) {
-                        // 첫 번째를 제외한 나머지 제거
-                        Array.from(formatBars).slice(1).forEach(bar => {
-                            try { bar.remove() } catch { /* 무시 */ }
-                        })
-                    }
-                })
             }
         }
 
         document.addEventListener('mousedown', handleClickOutside)
-        document.addEventListener('click', handleEditorContainerClick, true)
-        document.addEventListener('keydown', handleKeyDown, true)
-        
+
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
-            document.removeEventListener('click', handleEditorContainerClick, true)
-            document.removeEventListener('keydown', handleKeyDown, true)
         }
     }, [editor])
 
@@ -484,41 +242,10 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
         
         mountPoint.appendChild(editor)
         
-        // 초기 스타일 주입
+        // 초기 스타일 주입 (z-index만)
         injectStyles(editor)
-        
-        // 인라인 스타일에서 border와 box-shadow 제거하는 함수
-        const removeBorderFromElements = () => {
-            const selectors = [
-                'affine-editor-container', 
-                'affine-page-root', 
-                'affine-doc-page',
-                'affine-paragraph',
-                'affine-page-image'
-            ]
-            selectors.forEach(selector => {
-                const elements = mountPoint.querySelectorAll(selector)
-                elements.forEach(el => {
-                    const htmlEl = el as HTMLElement
-                    // border 관련 속성 제거
-                    htmlEl.style.removeProperty('border')
-                    htmlEl.style.removeProperty('border-width')
-                    htmlEl.style.removeProperty('border-style')
-                    htmlEl.style.removeProperty('border-color')
-                    htmlEl.style.removeProperty('border-top')
-                    htmlEl.style.removeProperty('border-bottom')
-                    htmlEl.style.removeProperty('border-left')
-                    htmlEl.style.removeProperty('border-right')
-                    // box-shadow 제거
-                    htmlEl.style.removeProperty('box-shadow')
-                })
-            })
-        }
-        
-        // 초기 border 제거
-        removeBorderFromElements()
-        
-        // 동적 변경 감시
+
+        // 동적 변경 감시 - 새로 추가되는 요소에도 스타일 주입
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
                 for (const node of mutation.addedNodes) {
@@ -527,11 +254,9 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
                     }
                 }
             }
-            // 매 변경마다 border 제거 확인
-            removeBorderFromElements()
         })
-        
-        observer.observe(mountPoint, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] })
+
+        observer.observe(mountPoint, { childList: true, subtree: true })
 
         return () => {
             observer.disconnect()

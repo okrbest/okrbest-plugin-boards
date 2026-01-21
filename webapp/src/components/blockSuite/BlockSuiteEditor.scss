@@ -12,7 +12,8 @@
     --affine-text-disable-color: #999999;
 
     /* --- BlockSuite 에디터 컨테이너 스타일 --- */
-    affine-editor-container {
+    affine-editor-container,
+    page-editor {
         display: block;
         width: 100%;
         height: auto !important;
