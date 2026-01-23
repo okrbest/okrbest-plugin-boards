@@ -35,6 +35,8 @@ function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
     const flavour = CONTENT_TYPE_TO_FLAVOUR[blockType] || 'affine:paragraph'
     const fields = block.fields || {}
 
+    Utils.log(`convertContentBlockToSnapshot: type=${blockType}, title=${block.title?.substring(0, 30)}`)
+
     const snapshot: BlockSnapshot = {
         type: 'block',
         id: block.id,
