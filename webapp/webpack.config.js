@@ -63,28 +63,35 @@ const config = {
         ],
         alias: {
             moment: path.resolve(__dirname, './node_modules/moment/'),
-            // yjs ESM 모듈 명시적 지정
-            yjs: path.resolve(__dirname, './node_modules/yjs/dist/yjs.mjs'),
+            '@blocksuite/store/src': path.resolve(__dirname, './node_modules/@blocksuite/store/dist'),
         },
-        extensions: ['*', '.js', '.jsx', '.ts', '.tsx', '.mjs'],
-        // ESM 모듈 지원을 위한 설정
-        mainFields: ['module', 'browser', 'main'],
+        extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
         fullySpecified: false,
+        conditionNames: ['import', 'module', 'browser', 'default'],
     },
     module: {
         rules: [
-            // ESM 모듈 처리 (BlockSuite, yjs, lib0 등)
             {
                 test: /\.m?js$/,
+                include: /node_modules\/@blocksuite/,
                 resolve: {
                     fullySpecified: false,
                 },
             },
             {
+                test: /\.m?js$/,
+                include: /node_modules\/yjs/,
+                resolve: {
+                    fullySpecified: false,
+                },
+            },
+            
+            {
                 test: /\.tsx?$/,
                 use: {
                     loader: 'ts-loader',
                     options: {
+                        transpileOnly: true,
                         getCustomTransformers: {
                             before: [
                                 tsTransformer.transform({
@@ -129,7 +136,7 @@ const config = {
                 type: 'asset/resource',
                 generator: {
                     filename: '[name][ext]',
-                    publicPath: TARGET_IS_PRODUCT ? undefined : 'static/',
+                    publicPath: TARGET_IS_PRODUCT ? undefined : '/static/',
                 }
             },
             {
@@ -137,7 +144,7 @@ const config = {
                 type: 'asset/resource',
                 generator: {
                     filename: '[name][ext]',
-                    publicPath: TARGET_IS_PRODUCT ? undefined : 'static/',
+                    publicPath: TARGET_IS_PRODUCT ? undefined : '/plugins/focalboard/static/',
                 }
             },
         ],
@@ -218,9 +225,17 @@ if (TARGET_IS_PRODUCT) {
     config.output = {
         devtoolNamespace: PLUGIN_ID,
         path: path.join(__dirname, '/dist'),
-        publicPath: '/',
+        publicPath: '/static/plugins/focalboard/',
         filename: 'main.js',
     };
+
+    // Disable code splitting for plugin environment
+    // BlockSuite uses dynamic imports which cause chunk loading issues in Mattermost plugin context
+    config.plugins.push(
+        new webpack.optimize.LimitChunkCountPlugin({
+            maxChunks: 1,
+        }),
+    );
 }
 
 const env = {};
