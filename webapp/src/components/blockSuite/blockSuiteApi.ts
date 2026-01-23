@@ -1,6 +1,8 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {DocSnapshot} from '@blocksuite/store'
+
 import {Utils} from '../../utils'
 
 /**
@@ -27,8 +29,8 @@ interface SaveDocResponse {
  * BlockSuite API 클라이언트
  *
  * 백엔드 API 엔드포인트:
- * - GET  /cards/{cardId}/blocksuite/content - Yjs 바이너리 스냅샷 로드
- * - PUT  /cards/{cardId}/blocksuite/content - Yjs 바이너리 스냅샷 저장
+ * - GET  /cards/{cardId}/blocksuite/content - DocSnapshot JSON 로드
+ * - PUT  /cards/{cardId}/blocksuite/content - DocSnapshot JSON 저장
  * - GET  /cards/{cardId}/blocksuite/info    - 문서 메타데이터 조회
  * - DELETE /cards/{cardId}/blocksuite       - 문서 삭제
  */
@@ -43,10 +45,10 @@ class BlockSuiteApiClient {
         }
     }
 
-    private getBinaryHeaders(): Record<string, string> {
+    private getJsonHeaders(): Record<string, string> {
         return {
             ...this.getHeaders(),
-            'Content-Type': 'application/octet-stream',
+            'Content-Type': 'application/json',
         }
     }
 
@@ -81,11 +83,11 @@ class BlockSuiteApiClient {
     }
 
     /**
-     * BlockSuite 문서 Yjs 바이너리 스냅샷 로드
+     * BlockSuite 문서 DocSnapshot JSON 로드
      * @param cardId 카드 ID
-     * @returns Yjs 바이너리 데이터 또는 null (404인 경우)
+     * @returns DocSnapshot 또는 null (404인 경우)
      */
-    async getDocContent(cardId: string): Promise<Uint8Array | null> {
+    async getDocContent(cardId: string): Promise<DocSnapshot | null> {
         const url = `${this.getBaseURL()}/api/v2/cards/${encodeURIComponent(cardId)}/blocksuite/content`
 
         try {
@@ -103,8 +105,7 @@ class BlockSuiteApiClient {
                 throw new Error(`Failed to get doc content: ${response.status}`)
             }
 
-            const arrayBuffer = await response.arrayBuffer()
-            return new Uint8Array(arrayBuffer)
+            return await response.json() as DocSnapshot
         } catch (error) {
             Utils.logError(`BlockSuiteApi.getDocContent error: ${error}`)
             throw error
@@ -112,20 +113,20 @@ class BlockSuiteApiClient {
     }
 
     /**
-     * BlockSuite 문서 Yjs 바이너리 스냅샷 저장
+     * BlockSuite 문서 DocSnapshot JSON 저장
      * @param cardId 카드 ID
-     * @param snapshot Yjs 바이너리 스냅샷
+     * @param snapshot DocSnapshot JSON
      * @returns 저장된 문서 정보
      */
-    async saveDocContent(cardId: string, snapshot: Uint8Array): Promise<SaveDocResponse> {
+    async saveDocContent(cardId: string, snapshot: DocSnapshot): Promise<SaveDocResponse> {
         const url = `${this.getBaseURL()}/api/v2/cards/${encodeURIComponent(cardId)}/blocksuite/content`
 
         try {
             const response = await fetch(url, {
                 method: 'PUT',
                 credentials: 'include',
-                headers: this.getBinaryHeaders(),
-                body: snapshot as unknown as BodyInit,
+                headers: this.getJsonHeaders(),
+                body: JSON.stringify(snapshot),
             })
 
             if (!response.ok) {

@@ -1,18 +1,20 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useState, useEffect, useRef, useCallback, useMemo} from 'react'
-import * as Y from 'yjs'
+import {useState, useEffect, useRef, useCallback} from 'react'
+import type {DocSnapshot} from '@blocksuite/store'
 
 import {Block} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import {Utils} from '../../utils'
 
 import blockSuiteApi from './blockSuiteApi'
-import {convertLegacyBlocksToYjsDoc, createEmptyYjsDoc} from './legacyConverter'
+import {convertLegacyBlocksToDocSnapshot, createEmptyDocSnapshot} from './legacyConverter'
 
 const AUTO_SAVE_DELAY_MS = 2000
-const ENABLE_API_SYNC = false
+const ENABLE_API_SYNC = true
+
+type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error'
 
 interface UseBlockSuiteEditorProps {
     card: Card
@@ -21,63 +23,78 @@ interface UseBlockSuiteEditorProps {
 }
 
 interface UseBlockSuiteEditorReturn {
-    doc: Y.Doc | null
+    snapshot: DocSnapshot | null
     loading: boolean
     error: Error | null
-    saving: boolean
-    save: () => Promise<void>
-}
-
-function debounce<T extends (...args: Parameters<T>) => void>(
-    func: T,
-    wait: number,
-): (...args: Parameters<T>) => void {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-    return (...args: Parameters<T>) => {
-        if (timeoutId) {
-            clearTimeout(timeoutId)
-        }
-        timeoutId = setTimeout(() => {
-            func(...args)
-            timeoutId = null
-        }, wait)
-    }
+    saveStatus: SaveStatus
+    saveSnapshot: (snapshot: DocSnapshot) => Promise<void>
+    scheduleSave: (snapshot: DocSnapshot) => void
 }
 
 export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSuiteEditorReturn {
     const {card, contents, readonly} = props
     const cardId = card.id
 
-    const [doc, setDoc] = useState<Y.Doc | null>(null)
+    const [snapshot, setSnapshot] = useState<DocSnapshot | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<Error | null>(null)
-    const [saving, setSaving] = useState(false)
+    const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
 
-    const docRef = useRef<Y.Doc | null>(null)
     const initializedRef = useRef(false)
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const pendingSnapshotRef = useRef<DocSnapshot | null>(null)
+    const savingRef = useRef(false)
 
-    const saveToServer = useCallback(async () => {
-        if (!docRef.current || readonly || !ENABLE_API_SYNC) {
+    const saveSnapshot = useCallback(async (snapshotToSave: DocSnapshot) => {
+        if (readonly || !ENABLE_API_SYNC) {
             return
         }
 
-        setSaving(true)
+        if (savingRef.current) {
+            pendingSnapshotRef.current = snapshotToSave
+            return
+        }
+
+        savingRef.current = true
+        setSaveStatus('saving')
+
         try {
-            const snapshot = Y.encodeStateAsUpdate(docRef.current)
-            await blockSuiteApi.saveDocContent(cardId, snapshot)
-            Utils.log(`BlockSuite doc saved: ${snapshot.byteLength} bytes`)
+            await blockSuiteApi.saveDocContent(cardId, snapshotToSave)
+            Utils.log(`BlockSuite snapshot saved for card: ${cardId}`)
+            setSaveStatus('saved')
+
+            setTimeout(() => {
+                setSaveStatus((current) => (current === 'saved' ? 'idle' : current))
+            }, 3000)
+
+            if (pendingSnapshotRef.current) {
+                const pending = pendingSnapshotRef.current
+                pendingSnapshotRef.current = null
+                setTimeout(() => saveSnapshot(pending), 100)
+            }
         } catch (err) {
             Utils.logError(`BlockSuite save error: ${err}`)
+            setSaveStatus('error')
         } finally {
-            setSaving(false)
+            savingRef.current = false
         }
     }, [cardId, readonly])
 
-    const debouncedSave = useMemo(
-        () => debounce(saveToServer, AUTO_SAVE_DELAY_MS),
-        [saveToServer],
-    )
+    const scheduleSave = useCallback((snapshotToSave: DocSnapshot) => {
+        if (readonly || !ENABLE_API_SYNC) {
+            return
+        }
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current)
+        }
+
+        setSaveStatus('pending')
+        saveTimeoutRef.current = setTimeout(() => {
+            saveSnapshot(snapshotToSave)
+            saveTimeoutRef.current = null
+        }, AUTO_SAVE_DELAY_MS)
+    }, [readonly, saveSnapshot])
 
     useEffect(() => {
         if (initializedRef.current) {
@@ -85,80 +102,70 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
         }
         initializedRef.current = true
 
-        async function initializeDoc() {
+        async function initializeSnapshot() {
             setLoading(true)
             setError(null)
 
+            Utils.log(`useBlockSuiteEditor: Initializing for card ${cardId}, contents=${contents.length}`)
+
             try {
-                let yDoc: Y.Doc
+                let loadedSnapshot: DocSnapshot | null = null
 
                 if (ENABLE_API_SYNC) {
+                    Utils.log('useBlockSuiteEditor: Checking for existing doc...')
                     const docInfo = await blockSuiteApi.getDocInfo(cardId)
+                    Utils.log(`useBlockSuiteEditor: docInfo=${docInfo ? 'found' : 'not found'}`)
 
                     if (docInfo) {
-                        const snapshot = await blockSuiteApi.getDocContent(cardId)
-                        yDoc = new Y.Doc()
-
-                        if (snapshot && snapshot.byteLength > 0) {
-                            Y.applyUpdate(yDoc, snapshot)
-                        }
-
-                        Utils.log(`BlockSuite doc loaded: ${snapshot?.byteLength || 0} bytes`)
-                    } else if (contents.length > 0) {
-                        yDoc = convertLegacyBlocksToYjsDoc(contents, card)
-                        Utils.log(`Converted ${contents.length} legacy blocks to Yjs`)
-
-                        if (!readonly) {
-                            const snapshot = Y.encodeStateAsUpdate(yDoc)
-                            await blockSuiteApi.saveDocContent(cardId, snapshot)
-                            Utils.log(`Initial migration saved: ${snapshot.byteLength} bytes`)
-                        }
-                    } else {
-                        yDoc = createEmptyYjsDoc(card)
-                        Utils.log('Created empty Yjs doc')
+                        loadedSnapshot = await blockSuiteApi.getDocContent(cardId)
+                        Utils.log(`BlockSuite snapshot loaded for card: ${cardId}`)
+                        Utils.log(`useBlockSuiteEditor: Loaded snapshot type=${loadedSnapshot?.type}`)
                     }
-                } else {
+                }
+
+                if (!loadedSnapshot) {
                     if (contents.length > 0) {
-                        yDoc = convertLegacyBlocksToYjsDoc(contents, card)
-                        Utils.log(`Converted ${contents.length} legacy blocks to Yjs`)
+                        loadedSnapshot = convertLegacyBlocksToDocSnapshot(contents, card)
+                        Utils.log(`Converted ${contents.length} legacy blocks to DocSnapshot`)
+
+                        if (!readonly && ENABLE_API_SYNC) {
+                            await blockSuiteApi.saveDocContent(cardId, loadedSnapshot)
+                            Utils.log('Initial migration snapshot saved')
+                        }
                     } else {
-                        yDoc = createEmptyYjsDoc(card)
-                        Utils.log('Created empty Yjs doc')
+                        loadedSnapshot = createEmptyDocSnapshot(card)
+                        Utils.log('Created empty DocSnapshot')
                     }
                 }
 
-                docRef.current = yDoc
-                setDoc(yDoc)
-
-                if (!readonly && ENABLE_API_SYNC) {
-                    yDoc.on('update', () => {
-                        debouncedSave()
-                    })
-                }
+                Utils.log(`useBlockSuiteEditor: Setting snapshot, type=${loadedSnapshot?.type}`)
+                setSnapshot(loadedSnapshot)
             } catch (err) {
                 Utils.logError(`BlockSuite init error: ${err}`)
+                console.error('useBlockSuiteEditor error details:', err)
                 setError(err instanceof Error ? err : new Error(String(err)))
             } finally {
                 setLoading(false)
+                Utils.log('useBlockSuiteEditor: Loading complete')
             }
         }
 
-        initializeDoc()
+        initializeSnapshot()
 
         return () => {
-            if (docRef.current) {
-                docRef.current.destroy()
-                docRef.current = null
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current)
             }
         }
-    }, [cardId, card, contents, readonly, debouncedSave])
+    }, [cardId, card, contents, readonly])
 
     return {
-        doc,
+        snapshot,
         loading,
         error,
-        saving,
-        save: saveToServer,
+        saveStatus,
+        saveSnapshot,
+        scheduleSave,
     }
 }
 
