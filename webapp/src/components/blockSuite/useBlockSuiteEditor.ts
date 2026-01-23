@@ -3,17 +3,39 @@
 
 import {useState, useEffect, useRef, useCallback} from 'react'
 import type {DocSnapshot} from '@blocksuite/store'
+import {Schema, DocCollection, Job} from '@blocksuite/store'
+import {AffineSchemas} from '@blocksuite/blocks'
+import {MarkdownAdapter} from '@blocksuite/blocks'
 
 import {Block} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import {Utils} from '../../utils'
 
 import blockSuiteApi from './blockSuiteApi'
-import {convertLegacyBlocksToDocSnapshot, createEmptyDocSnapshot} from './legacyConverter'
+import {convertLegacyBlocksToDocSnapshot, convertLegacyBlocksToMarkdown, hasComplexMarkdown, createEmptyDocSnapshot} from './legacyConverter'
 import {prepareSnapshotForSave, restoreSnapshotBlobMappings} from './focalboardBlobSource'
 
 const AUTO_SAVE_DELAY_MS = 2000
 const ENABLE_API_SYNC = true
+
+async function convertMarkdownToDocSnapshot(markdownText: string, card: Card): Promise<DocSnapshot> {
+    const schema = new Schema().register(AffineSchemas)
+    const collection = new DocCollection({schema})
+    collection.meta.initialize()
+
+    const job = new Job({collection})
+    const adapter = new MarkdownAdapter(job)
+
+    const docSnapshot = await adapter.toDocSnapshot({
+        file: markdownText,
+    })
+
+    docSnapshot.meta.id = card.id
+    docSnapshot.meta.title = card.title || ''
+    docSnapshot.meta.createDate = card.createAt || Date.now()
+
+    return docSnapshot
+}
 
 type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error'
 
@@ -133,7 +155,13 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
 
                 if (!loadedSnapshot) {
                     if (contents.length > 0) {
-                        loadedSnapshot = convertLegacyBlocksToDocSnapshot(contents, card)
+                        if (hasComplexMarkdown(contents)) {
+                            Utils.log('useBlockSuiteEditor: Using MarkdownAdapter for complex markdown')
+                            const markdownText = convertLegacyBlocksToMarkdown(contents, card)
+                            loadedSnapshot = await convertMarkdownToDocSnapshot(markdownText, card)
+                        } else {
+                            loadedSnapshot = convertLegacyBlocksToDocSnapshot(contents, card)
+                        }
                         Utils.log(`Converted ${contents.length} legacy blocks to DocSnapshot`)
 
                         if (!readonly && ENABLE_API_SYNC) {

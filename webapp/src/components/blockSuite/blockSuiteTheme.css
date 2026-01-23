@@ -9,4 +9,7 @@
     --affine-font-h-6: 14px;
     --affine-font-base: 15px;
     --affine-line-height: 1.6;
+    --affine-quote-color: rgba(0, 0, 0, 0.2);
+    --affine-black-30: rgba(0, 0, 0, 0.3);
+    --affine-paragraph-space: 8px;
 }
