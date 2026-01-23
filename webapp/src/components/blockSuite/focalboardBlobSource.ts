@@ -52,10 +52,10 @@ interface ExtendedDocSnapshot extends DocSnapshot {
     }
 }
 
-export function prepareSnapshotForSave(snapshot: DocSnapshot, boardId: string): DocSnapshot {
+export function prepareSnapshotForSave(snapshot: DocSnapshot, boardId: string): ExtendedDocSnapshot {
     const blobMap = getAllBlobMappings(boardId)
     if (Object.keys(blobMap).length === 0) {
-        return snapshot
+        return snapshot as ExtendedDocSnapshot
     }
 
     Utils.log(`prepareSnapshotForSave: saving ${Object.keys(blobMap).length} blob mappings`)
@@ -64,13 +64,14 @@ export function prepareSnapshotForSave(snapshot: DocSnapshot, boardId: string): 
     }
 
     const extended = snapshot as ExtendedDocSnapshot
-    return {
+    const result: ExtendedDocSnapshot = {
         ...extended,
         meta: {
             ...extended.meta,
             blobMap,
         },
     }
+    return result
 }
 
 export function restoreSnapshotBlobMappings(snapshot: DocSnapshot, boardId: string): void {
