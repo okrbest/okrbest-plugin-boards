@@ -8,7 +8,9 @@ import {AffineSchemas} from '@blocksuite/blocks'
 import {Schema, DocCollection, Job, type Doc} from '@blocksuite/store'
 import {PageEditor} from '@blocksuite/presets'
 
+// @ts-expect-error - effects module has no type declarations
 import {effects as presetsEffects} from '@blocksuite/presets/effects'
+// @ts-expect-error - effects module has no type declarations
 import {effects as blocksEffects} from '@blocksuite/blocks/effects'
 
 import {Block} from '../../blocks/block'
@@ -36,7 +38,7 @@ function BlockSuiteEditor(props: Props): JSX.Element {
     const intl = useIntl()
 
     const [containerMounted, setContainerMounted] = useState(false)
-    const containerRef = useRef<HTMLDivElement>(null)
+    const containerRef = useRef<HTMLDivElement | null>(null)
     const editorRef = useRef<PageEditor | null>(null)
     const collectionRef = useRef<DocCollection | null>(null)
     const jobRef = useRef<Job | null>(null)

@@ -7,6 +7,8 @@ import {Block, ContentBlockTypes} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import {Utils, IDType} from '../../utils'
 
+import {parseMarkdownToDelta} from './markdownToDelta'
+
 type BlockSuiteFlavour =
     | 'affine:page'
     | 'affine:surface'
@@ -51,7 +53,7 @@ function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
             type: 'text',
             text: {
                 '$blocksuite:internal:text$': true,
-                delta: block.title ? [{insert: block.title}] : [],
+                delta: block.title ? parseMarkdownToDelta(block.title) : [],
             },
         }
         break
@@ -63,7 +65,7 @@ function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
             type: blockType,
             text: {
                 '$blocksuite:internal:text$': true,
-                delta: block.title ? [{insert: block.title}] : [],
+                delta: block.title ? parseMarkdownToDelta(block.title) : [],
             },
         }
         break
@@ -73,7 +75,7 @@ function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
             type: 'quote',
             text: {
                 '$blocksuite:internal:text$': true,
-                delta: block.title ? [{insert: block.title}] : [],
+                delta: block.title ? parseMarkdownToDelta(block.title) : [],
             },
         }
         break
@@ -84,7 +86,7 @@ function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
             checked: Boolean(fields.value),
             text: {
                 '$blocksuite:internal:text$': true,
-                delta: block.title ? [{insert: block.title}] : [],
+                delta: block.title ? parseMarkdownToDelta(block.title) : [],
             },
         }
         break
@@ -94,7 +96,7 @@ function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
             type: 'bulleted',
             text: {
                 '$blocksuite:internal:text$': true,
-                delta: block.title ? [{insert: block.title}] : [],
+                delta: block.title ? parseMarkdownToDelta(block.title) : [],
             },
         }
         break
@@ -127,7 +129,7 @@ function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
             type: 'text',
             text: {
                 '$blocksuite:internal:text$': true,
-                delta: block.title ? [{insert: block.title}] : [],
+                delta: block.title ? parseMarkdownToDelta(block.title) : [],
             },
         }
     }
@@ -218,7 +220,7 @@ export function convertLegacyBlocksToDocSnapshot(
         props: {
             title: {
                 '$blocksuite:internal:text$': true,
-                delta: card.title ? [{insert: card.title}] : [],
+                delta: card.title ? parseMarkdownToDelta(card.title) : [],
             },
         },
         children: [surfaceBlock, noteBlock],
@@ -287,7 +289,7 @@ export function createEmptyDocSnapshot(card: Card): DocSnapshot {
         props: {
             title: {
                 '$blocksuite:internal:text$': true,
-                delta: card.title ? [{insert: card.title}] : [],
+                delta: card.title ? parseMarkdownToDelta(card.title) : [],
             },
         },
         children: [surfaceBlock, noteBlock],
@@ -303,6 +305,113 @@ export function createEmptyDocSnapshot(card: Card): DocSnapshot {
         },
         blocks: pageBlock,
     }
+}
+
+export function convertLegacyBlocksToMarkdown(
+    blocks: Block[],
+    card: Card,
+): string {
+    const contentOrder = card.fields?.contentOrder || []
+    const sortedBlocks = sortBlocksByContentOrder(blocks, contentOrder)
+
+    const markdownParts: string[] = []
+
+    for (const block of sortedBlocks) {
+        const blockType = block.type as ContentBlockTypes
+        const fields = block.fields || {}
+        const title = block.title || ''
+
+        switch (blockType) {
+        case 'text':
+            markdownParts.push(title)
+            break
+
+        case 'h1':
+            markdownParts.push(`# ${title}`)
+            break
+
+        case 'h2':
+            markdownParts.push(`## ${title}`)
+            break
+
+        case 'h3':
+            markdownParts.push(`### ${title}`)
+            break
+
+        case 'quote':
+            markdownParts.push(title.split('\n').map((line) => `> ${line}`).join('\n'))
+            break
+
+        case 'checkbox':
+            markdownParts.push(`- [${fields.value ? 'x' : ' '}] ${title}`)
+            break
+
+        case 'list-item':
+            markdownParts.push(`- ${title}`)
+            break
+
+        case 'divider':
+            markdownParts.push('---')
+            break
+
+        case 'image':
+            if (fields.fileId) {
+                markdownParts.push(`![${title || 'image'}](${fields.fileId})`)
+            }
+            break
+
+        case 'video':
+        case 'attachment':
+            markdownParts.push(`[${blockType}: ${fields.filename || 'file'}]`)
+            break
+
+        default:
+            markdownParts.push(title)
+        }
+    }
+
+    return markdownParts.join('\n\n')
+}
+
+export function hasComplexMarkdown(blocks: Block[]): boolean {
+    const BLOCK_LEVEL_PATTERNS = [
+        /^#{1,6}\s/,
+        /^[-*+]\s/,
+        /^\d+\.\s/,
+        /^>\s/,
+        /^```/,
+    ]
+
+    const INLINE_PATTERNS = [
+        /\*\*.+?\*\*/,
+        /__.+?__/,
+        /\*[^*]+\*/,
+        /_[^_]+_/,
+        /~~.+?~~/,
+        /`.+?`/,
+        /\[.+?\]\(.+?\)/,
+    ]
+
+    for (const block of blocks) {
+        const title = block.title || ''
+
+        if (title.includes('\n')) {
+            return true
+        }
+
+        for (const pattern of BLOCK_LEVEL_PATTERNS) {
+            if (pattern.test(title)) {
+                return true
+            }
+        }
+
+        for (const pattern of INLINE_PATTERNS) {
+            if (pattern.test(title)) {
+                return true
+            }
+        }
+    }
+    return false
 }
 
 export {sortBlocksByContentOrder}
