@@ -32,6 +32,24 @@
         background: rgba(255, 255, 255, 0.9);
         border-radius: 4px;
         z-index: 10;
+        transition: opacity 0.2s ease, background-color 0.2s ease;
+
+        &--pending {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        &--saving {
+            color: var(--button-bg, #1c58d9);
+        }
+
+        &--saved {
+            color: var(--online-indicator, #3db887);
+        }
+
+        &--error {
+            color: var(--error-text, #dc2626);
+            background: rgba(220, 38, 38, 0.1);
+        }
     }
 
     &__spinner {

@@ -1,26 +1,25 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef} from 'react'
+import React, {useEffect, useRef, useCallback, useState} from 'react'
 import {useIntl} from 'react-intl'
 
 import {AffineSchemas} from '@blocksuite/blocks'
-import {Schema, DocCollection} from '@blocksuite/store'
+import {Schema, DocCollection, Job, type Doc} from '@blocksuite/store'
 import {PageEditor} from '@blocksuite/presets'
 
 import {effects as presetsEffects} from '@blocksuite/presets/effects'
-
 import {effects as blocksEffects} from '@blocksuite/blocks/effects'
 
 import {Block} from '../../blocks/block'
 import {Card} from '../../blocks/card'
+import {Utils} from '../../utils'
 
 import {useBlockSuiteEditor} from './useBlockSuiteEditor'
 import {createFocalboardBlobSource} from './focalboardBlobSource'
 
 import './blockSuiteTheme.css'
 import './blockSuite.scss'
-
 
 presetsEffects()
 blocksEffects()
@@ -35,18 +34,43 @@ function BlockSuiteEditor(props: Props): JSX.Element {
     const {card, contents, readonly} = props
     const intl = useIntl()
 
+    const [containerMounted, setContainerMounted] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const editorRef = useRef<PageEditor | null>(null)
     const collectionRef = useRef<DocCollection | null>(null)
+    const jobRef = useRef<Job | null>(null)
+    const editorDocRef = useRef<Doc | null>(null)
 
-    const {doc, loading, error, saving} = useBlockSuiteEditor({
+    const {snapshot, loading, error, saveStatus, scheduleSave} = useBlockSuiteEditor({
         card,
         contents,
         readonly,
     })
 
+    const containerCallbackRef = useCallback((node: HTMLDivElement | null) => {
+        containerRef.current = node
+        setContainerMounted(!!node)
+    }, [])
+
+    const handleDocUpdate = useCallback(async () => {
+        if (readonly || !editorDocRef.current || !jobRef.current) {
+            return
+        }
+
+        try {
+            const docSnapshot = await jobRef.current.docToSnapshot(editorDocRef.current)
+            if (docSnapshot) {
+                scheduleSave(docSnapshot)
+            }
+        } catch (err) {
+            Utils.logError(`Failed to create snapshot: ${err}`)
+        }
+    }, [readonly, scheduleSave])
+
     useEffect(() => {
-        if (!containerRef.current || !doc) {
+        Utils.log(`BlockSuiteEditor useEffect: containerMounted=${containerMounted}, snapshot=${!!snapshot}`)
+
+        if (!containerMounted || !containerRef.current || !snapshot) {
             return
         }
 
@@ -55,110 +79,77 @@ function BlockSuiteEditor(props: Props): JSX.Element {
             editorRef.current = null
         }
 
-        try {
-            const schema = new Schema().register(AffineSchemas)
-            const blobSource = createFocalboardBlobSource(card.boardId)
-            const collection = new DocCollection({
-                schema,
-                blobSources: {
-                    main: blobSource,
-                },
-            })
-            collection.meta.initialize()
-
-            const editorDoc = collection.createDoc()
-
-            editorDoc.load(() => {
-                const yBlocks = doc.getMap('blocks')
-                const yMeta = doc.getMap('meta')
-
-                const rootId = editorDoc.addBlock('affine:page', {
-                    title: new editorDoc.Text(yMeta.get('cardTitle') as string || ''),
-                })
-
-                editorDoc.addBlock('affine:surface', {}, rootId)
-                const noteId = editorDoc.addBlock('affine:note', {}, rootId)
-
-                const blockOrder = (yMeta.get('blockOrder') as string[]) || []
-
-                blockOrder.forEach((blockId: string) => {
-                    const yBlock = yBlocks.get(blockId) as Map<string, unknown> | undefined
-                    if (!yBlock) {
-                        return
-                    }
-
-                    const blockType = yBlock.get('type') as string
-                    const blockProps = yBlock.get('props') as Record<string, unknown> || {}
-                    const blockText = yBlock.get('text') as string || ''
-
-                    switch (blockType) {
-                    case 'affine:paragraph': {
-                        const paragraphType = (blockProps.type as string) || 'text'
-                        editorDoc.addBlock('affine:paragraph', {
-                            type: paragraphType as 'text' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'quote',
-                            text: new editorDoc.Text(blockText),
-                        }, noteId)
-                        break
-                    }
-                    case 'affine:list': {
-                        const listType = (blockProps.type as string) || 'bulleted'
-                        editorDoc.addBlock('affine:list', {
-                            type: listType as 'bulleted' | 'numbered' | 'todo' | 'toggle',
-                            text: new editorDoc.Text(blockText),
-                            checked: (blockProps.checked as boolean) || false,
-                        }, noteId)
-                        break
-                    }
-                    case 'affine:divider': {
-                        editorDoc.addBlock('affine:divider', {}, noteId)
-                        break
-                    }
-                    case 'affine:image': {
-                        editorDoc.addBlock('affine:image', {
-                            sourceId: (blockProps.sourceId as string) || '',
-                        }, noteId)
-                        break
-                    }
-                    default: {
-                        editorDoc.addBlock('affine:paragraph', {
-                            type: 'text' as const,
-                            text: new editorDoc.Text(blockText),
-                        }, noteId)
-                    }
-                    }
-                })
-
-                if (blockOrder.length === 0) {
-                    editorDoc.addBlock('affine:paragraph', {
-                        type: 'text' as const,
-                        text: new editorDoc.Text(''),
-                    }, noteId)
-                }
-            })
-
-            const editor = new PageEditor()
-            editor.doc = editorDoc
-
-            if (readonly) {
-                editor.setAttribute('readonly', 'true')
+        async function initEditor() {
+            if (!containerRef.current || !snapshot) {
+                return
             }
 
-            containerRef.current.innerHTML = ''
-            containerRef.current.appendChild(editor)
+            try {
+                Utils.log('BlockSuiteEditor: Starting initialization...')
+                Utils.log(`BlockSuiteEditor: Snapshot type=${snapshot.type}, blocks flavour=${snapshot.blocks?.flavour}`)
 
-            editorRef.current = editor
-            collectionRef.current = collection
-        } catch (err) {
-            console.error('BlockSuite editor initialization error:', err)
+                const schema = new Schema().register(AffineSchemas)
+                const blobSource = createFocalboardBlobSource(card.boardId)
+                const collection = new DocCollection({
+                    schema,
+                    blobSources: {
+                        main: blobSource,
+                    },
+                })
+                collection.meta.initialize()
+
+                const job = new Job({collection})
+
+                Utils.log('BlockSuiteEditor: Calling snapshotToDoc...')
+                const editorDoc = await job.snapshotToDoc(snapshot)
+                if (!editorDoc) {
+                    throw new Error('Failed to load document from snapshot')
+                }
+                Utils.log(`BlockSuiteEditor: snapshotToDoc returned doc id=${editorDoc.id}`)
+
+                editorDoc.load()
+                Utils.log('BlockSuiteEditor: Doc loaded')
+
+                const editor = new PageEditor()
+                editor.doc = editorDoc
+
+                if (readonly) {
+                    editor.setAttribute('readonly', 'true')
+                }
+
+                containerRef.current.innerHTML = ''
+                containerRef.current.appendChild(editor)
+
+                editorRef.current = editor
+                collectionRef.current = collection
+                jobRef.current = job
+                editorDocRef.current = editorDoc
+
+                if (!readonly && editorDoc.spaceDoc) {
+                    editorDoc.spaceDoc.on('update', handleDocUpdate)
+                }
+
+                Utils.log('BlockSuiteEditor: Initialization complete')
+            } catch (err) {
+                Utils.logError(`BlockSuite editor initialization error: ${err}`)
+                console.error('BlockSuite init error details:', err)
+            }
         }
 
+        initEditor()
+
         return () => {
+            if (editorDocRef.current?.spaceDoc) {
+                editorDocRef.current.spaceDoc.off('update', handleDocUpdate)
+            }
             if (editorRef.current) {
                 editorRef.current.remove()
                 editorRef.current = null
             }
+            editorDocRef.current = null
+            jobRef.current = null
         }
-    }, [doc, readonly])
+    }, [containerMounted, snapshot, readonly, card.boardId, handleDocUpdate])
 
     if (loading) {
         return (
@@ -188,18 +179,44 @@ function BlockSuiteEditor(props: Props): JSX.Element {
         )
     }
 
+    const getSaveStatusMessage = () => {
+        switch (saveStatus) {
+        case 'pending':
+            return intl.formatMessage({
+                id: 'BlockSuiteEditor.pending',
+                defaultMessage: 'Unsaved changes...',
+            })
+        case 'saving':
+            return intl.formatMessage({
+                id: 'BlockSuiteEditor.saving',
+                defaultMessage: 'Saving...',
+            })
+        case 'saved':
+            return intl.formatMessage({
+                id: 'BlockSuiteEditor.saved',
+                defaultMessage: 'Saved',
+            })
+        case 'error':
+            return intl.formatMessage({
+                id: 'BlockSuiteEditor.saveError',
+                defaultMessage: 'Save failed',
+            })
+        default:
+            return null
+        }
+    }
+
+    const statusMessage = getSaveStatusMessage()
+
     return (
         <div className='BlockSuiteEditor'>
-            {saving && (
-                <div className='BlockSuiteEditor__saving'>
-                    {intl.formatMessage({
-                        id: 'BlockSuiteEditor.saving',
-                        defaultMessage: 'Saving...',
-                    })}
+            {statusMessage && (
+                <div className={`BlockSuiteEditor__saving BlockSuiteEditor__saving--${saveStatus}`}>
+                    {statusMessage}
                 </div>
             )}
             <div
-                ref={containerRef}
+                ref={containerCallbackRef}
                 className='BlockSuiteEditor__container'
             />
         </div>
