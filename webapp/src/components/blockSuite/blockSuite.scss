@@ -8,6 +8,14 @@
         min-height: 200px;
         isolation: isolate;
 
+        &.light {
+            opacity: 1;
+        }
+
+        .affine-block-component.light {
+            opacity: 1;
+        }
+
         affine-editor-container,
         page-editor {
             width: 100%;
@@ -239,4 +247,18 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+affine-link-popover,
+affine-slash-menu,
+affine-toolbar-widget,
+affine-format-bar-widget,
+affine-linked-doc-popover,
+embed-card-create-modal,
+editor-toolbar,
+blocksuite-portal,
+affine-mobile-toolbar,
+[data-blocksuite-overlay],
+[data-affine-overlay] {
+    z-index: 1001 !important;
 }
