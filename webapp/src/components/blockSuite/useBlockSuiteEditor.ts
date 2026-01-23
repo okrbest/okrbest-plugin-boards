@@ -10,6 +10,7 @@ import {Utils} from '../../utils'
 
 import blockSuiteApi from './blockSuiteApi'
 import {convertLegacyBlocksToDocSnapshot, createEmptyDocSnapshot} from './legacyConverter'
+import {prepareSnapshotForSave, restoreSnapshotBlobMappings} from './focalboardBlobSource'
 
 const AUTO_SAVE_DELAY_MS = 2000
 const ENABLE_API_SYNC = true
@@ -59,7 +60,8 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
         setSaveStatus('saving')
 
         try {
-            await blockSuiteApi.saveDocContent(cardId, snapshotToSave)
+            const preparedSnapshot = prepareSnapshotForSave(snapshotToSave, card.boardId)
+            await blockSuiteApi.saveDocContent(cardId, preparedSnapshot)
             Utils.log(`BlockSuite snapshot saved for card: ${cardId}`)
             setSaveStatus('saved')
 
@@ -78,7 +80,7 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
         } finally {
             savingRef.current = false
         }
-    }, [cardId, readonly])
+    }, [cardId, card.boardId, readonly])
 
     const scheduleSave = useCallback((snapshotToSave: DocSnapshot) => {
         if (readonly || !ENABLE_API_SYNC) {
@@ -120,6 +122,10 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
                         loadedSnapshot = await blockSuiteApi.getDocContent(cardId)
                         Utils.log(`BlockSuite snapshot loaded for card: ${cardId}`)
                         Utils.log(`useBlockSuiteEditor: Loaded snapshot type=${loadedSnapshot?.type}`)
+
+                        if (loadedSnapshot) {
+                            restoreSnapshotBlobMappings(loadedSnapshot, card.boardId)
+                        }
                     }
                 }
 

@@ -536,5 +536,8 @@
   "BoardMessage.cardNotify": "@{username} notified about card [{cardTitle}]({cardLink}) in board [{boardTitle}]({boardLink})",
   "BlockSuiteEditor.loading": "Loading editor...",
   "BlockSuiteEditor.error": "Failed to load editor",
-  "BlockSuiteEditor.saving": "Saving..."
+  "BlockSuiteEditor.saving": "Saving...",
+  "BlockSuiteEditor.pending": "Unsaved changes...",
+  "BlockSuiteEditor.saved": "Saved",
+  "BlockSuiteEditor.saveError": "Save failed"
 }
