@@ -1,140 +1,111 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {BlockSnapshot, DocSnapshot} from '@blocksuite/store'
+import * as Y from 'yjs'
 
 import {Block, ContentBlockTypes} from '../../blocks/block'
 import {Card} from '../../blocks/card'
-import {Utils, IDType} from '../../utils'
 
-import {parseMarkdownToDelta} from './markdownToDelta'
-
-type BlockSuiteFlavour =
-    | 'affine:page'
-    | 'affine:surface'
-    | 'affine:note'
+type BlockSuiteBlockType =
     | 'affine:paragraph'
     | 'affine:list'
     | 'affine:divider'
     | 'affine:image'
+    | 'affine:embed'
+    | 'affine:attachment'
 
-const CONTENT_TYPE_TO_FLAVOUR: Record<ContentBlockTypes, BlockSuiteFlavour> = {
-    'text': 'affine:paragraph',
-    'h1': 'affine:paragraph',
-    'h2': 'affine:paragraph',
-    'h3': 'affine:paragraph',
-    'quote': 'affine:paragraph',
-    'checkbox': 'affine:list',
-    'list-item': 'affine:list',
-    'divider': 'affine:divider',
-    'image': 'affine:image',
-    'video': 'affine:paragraph',
-    'attachment': 'affine:paragraph',
+interface BlockSuiteProps {
+    type?: string
+    checked?: boolean
+    sourceId?: string
+    filename?: string
+    width?: number
+    height?: number
+    size?: number
 }
 
-function convertContentBlockToSnapshot(block: Block): BlockSnapshot {
+interface ConvertedBlock {
+    id: string
+    type: BlockSuiteBlockType
+    originalType: ContentBlockTypes
+    props: BlockSuiteProps
+    text?: string
+    createdAt: number
+    updatedAt: number
+}
+
+const BLOCK_TYPE_MAP: Record<ContentBlockTypes, {type: BlockSuiteBlockType; props: BlockSuiteProps}> = {
+    'text': {type: 'affine:paragraph', props: {type: 'text'}},
+    'h1': {type: 'affine:paragraph', props: {type: 'h1'}},
+    'h2': {type: 'affine:paragraph', props: {type: 'h2'}},
+    'h3': {type: 'affine:paragraph', props: {type: 'h3'}},
+    'quote': {type: 'affine:paragraph', props: {type: 'quote'}},
+    'checkbox': {type: 'affine:list', props: {type: 'todo'}},
+    'list-item': {type: 'affine:list', props: {type: 'bulleted'}},
+    'divider': {type: 'affine:divider', props: {}},
+    'image': {type: 'affine:image', props: {}},
+    'video': {type: 'affine:embed', props: {type: 'video'}},
+    'attachment': {type: 'affine:attachment', props: {}},
+}
+
+function convertBlockToBlockSuite(block: Block): ConvertedBlock {
     const blockType = block.type as ContentBlockTypes
-    const flavour = CONTENT_TYPE_TO_FLAVOUR[blockType] || 'affine:paragraph'
+    const mapping = BLOCK_TYPE_MAP[blockType] || BLOCK_TYPE_MAP.text
     const fields = block.fields || {}
 
-    Utils.log(`convertContentBlockToSnapshot: type=${blockType}, title=${block.title?.substring(0, 30)}`)
-
-    const snapshot: BlockSnapshot = {
-        type: 'block',
+    const result: ConvertedBlock = {
         id: block.id,
-        flavour,
-        props: {},
-        children: [],
+        type: mapping.type,
+        originalType: blockType,
+        props: {...mapping.props},
+        createdAt: block.createAt || Date.now(),
+        updatedAt: block.updateAt || Date.now(),
     }
 
     switch (blockType) {
     case 'text':
-        snapshot.props = {
-            type: 'text',
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: block.title ? parseMarkdownToDelta(block.title) : [],
-            },
-        }
-        break
-
     case 'h1':
     case 'h2':
     case 'h3':
-        snapshot.props = {
-            type: blockType,
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: block.title ? parseMarkdownToDelta(block.title) : [],
-            },
-        }
-        break
-
     case 'quote':
-        snapshot.props = {
-            type: 'quote',
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: block.title ? parseMarkdownToDelta(block.title) : [],
-            },
-        }
+        result.text = block.title || ''
         break
 
     case 'checkbox':
-        snapshot.props = {
-            type: 'todo',
-            checked: Boolean(fields.value),
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: block.title ? parseMarkdownToDelta(block.title) : [],
-            },
-        }
+        result.text = block.title || ''
+        result.props.checked = Boolean(fields.value)
         break
 
     case 'list-item':
-        snapshot.props = {
-            type: 'bulleted',
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: block.title ? parseMarkdownToDelta(block.title) : [],
-            },
-        }
+        result.text = block.title || ''
         break
 
     case 'divider':
-        snapshot.props = {}
         break
 
     case 'image':
-        snapshot.props = {
-            sourceId: fields.fileId || '',
-            width: fields.width || 0,
-            height: fields.height || 0,
-        }
+        result.props.sourceId = fields.fileId || ''
+        result.props.filename = fields.filename || 'image'
+        result.props.width = fields.width || 0
+        result.props.height = fields.height || 0
         break
 
     case 'video':
+        result.props.sourceId = fields.fileId || ''
+        result.props.filename = fields.filename || 'video'
+        break
+
     case 'attachment':
-        snapshot.props = {
-            type: 'text',
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: [{insert: `[${blockType}: ${fields.filename || 'file'}]`}],
-            },
-        }
+        result.props.sourceId = fields.fileId || ''
+        result.props.filename = fields.filename || 'file'
+        result.props.size = fields.size || 0
         break
 
     default:
-        snapshot.props = {
-            type: 'text',
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: block.title ? parseMarkdownToDelta(block.title) : [],
-            },
-        }
+        result.text = block.title || ''
     }
 
-    return snapshot
+    return result
 }
 
 function sortBlocksByContentOrder(blocks: Block[], contentOrder: Array<string | string[]>): Block[] {
@@ -158,261 +129,53 @@ function sortBlocksByContentOrder(blocks: Block[], contentOrder: Array<string | 
     })
 }
 
-export function convertLegacyBlocksToDocSnapshot(
+export function convertLegacyBlocksToYjsDoc(
     blocks: Block[],
     card: Card,
-): DocSnapshot {
+): Y.Doc {
+    const yDoc = new Y.Doc()
+    const yBlocks = yDoc.getMap('blocks')
+    const yMeta = yDoc.getMap('meta')
+
     const contentOrder = card.fields?.contentOrder || []
     const sortedBlocks = sortBlocksByContentOrder(blocks, contentOrder)
 
-    const pageId = `page:${card.id}`
-    const surfaceId = Utils.createGuid(IDType.None)
-    const noteId = Utils.createGuid(IDType.None)
+    const blockOrder = sortedBlocks.map((b) => b.id)
+    yMeta.set('blockOrder', blockOrder)
+    yMeta.set('cardId', card.id)
+    yMeta.set('cardTitle', card.title || '')
 
-    const contentChildren = sortedBlocks.map((block) =>
-        convertContentBlockToSnapshot(block),
-    )
+    sortedBlocks.forEach((block) => {
+        const yBlock = new Y.Map()
+        const converted = convertBlockToBlockSuite(block)
 
-    if (contentChildren.length === 0) {
-        contentChildren.push({
-            type: 'block',
-            id: Utils.createGuid(IDType.None),
-            flavour: 'affine:paragraph',
-            props: {
-                type: 'text',
-                text: {
-                    '$blocksuite:internal:text$': true,
-                    delta: [],
-                },
-            },
-            children: [],
-        })
-    }
+        yBlock.set('id', converted.id)
+        yBlock.set('type', converted.type)
+        yBlock.set('originalType', converted.originalType)
+        yBlock.set('props', converted.props)
+        yBlock.set('createdAt', converted.createdAt)
+        yBlock.set('updatedAt', converted.updatedAt)
 
-    const noteBlock: BlockSnapshot = {
-        type: 'block',
-        id: noteId,
-        flavour: 'affine:note',
-        props: {
-            xywh: '[0,0,800,600]',
-            background: '--affine-background-secondary-color',
-            index: 'a0',
-            hidden: false,
-            displayMode: 'both',
-        },
-        children: contentChildren,
-    }
-
-    const surfaceBlock: BlockSnapshot = {
-        type: 'block',
-        id: surfaceId,
-        flavour: 'affine:surface',
-        props: {
-            elements: {},
-        },
-        children: [],
-    }
-
-    const pageBlock: BlockSnapshot = {
-        type: 'block',
-        id: pageId,
-        flavour: 'affine:page',
-        props: {
-            title: {
-                '$blocksuite:internal:text$': true,
-                delta: card.title ? parseMarkdownToDelta(card.title) : [],
-            },
-        },
-        children: [surfaceBlock, noteBlock],
-    }
-
-    return {
-        type: 'page',
-        meta: {
-            id: card.id,
-            title: card.title || '',
-            createDate: card.createAt || Date.now(),
-            tags: [],
-        },
-        blocks: pageBlock,
-    }
-}
-
-export function createEmptyDocSnapshot(card: Card): DocSnapshot {
-    const pageId = `page:${card.id}`
-    const surfaceId = Utils.createGuid(IDType.None)
-    const noteId = Utils.createGuid(IDType.None)
-    const paragraphId = Utils.createGuid(IDType.None)
-
-    const emptyParagraph: BlockSnapshot = {
-        type: 'block',
-        id: paragraphId,
-        flavour: 'affine:paragraph',
-        props: {
-            type: 'text',
-            text: {
-                '$blocksuite:internal:text$': true,
-                delta: [],
-            },
-        },
-        children: [],
-    }
-
-    const noteBlock: BlockSnapshot = {
-        type: 'block',
-        id: noteId,
-        flavour: 'affine:note',
-        props: {
-            xywh: '[0,0,800,600]',
-            background: '--affine-background-secondary-color',
-            index: 'a0',
-            hidden: false,
-            displayMode: 'both',
-        },
-        children: [emptyParagraph],
-    }
-
-    const surfaceBlock: BlockSnapshot = {
-        type: 'block',
-        id: surfaceId,
-        flavour: 'affine:surface',
-        props: {
-            elements: {},
-        },
-        children: [],
-    }
-
-    const pageBlock: BlockSnapshot = {
-        type: 'block',
-        id: pageId,
-        flavour: 'affine:page',
-        props: {
-            title: {
-                '$blocksuite:internal:text$': true,
-                delta: card.title ? parseMarkdownToDelta(card.title) : [],
-            },
-        },
-        children: [surfaceBlock, noteBlock],
-    }
-
-    return {
-        type: 'page',
-        meta: {
-            id: card.id,
-            title: card.title || '',
-            createDate: card.createAt || Date.now(),
-            tags: [],
-        },
-        blocks: pageBlock,
-    }
-}
-
-export function convertLegacyBlocksToMarkdown(
-    blocks: Block[],
-    card: Card,
-): string {
-    const contentOrder = card.fields?.contentOrder || []
-    const sortedBlocks = sortBlocksByContentOrder(blocks, contentOrder)
-
-    const markdownParts: string[] = []
-
-    for (const block of sortedBlocks) {
-        const blockType = block.type as ContentBlockTypes
-        const fields = block.fields || {}
-        const title = block.title || ''
-
-        switch (blockType) {
-        case 'text':
-            markdownParts.push(title)
-            break
-
-        case 'h1':
-            markdownParts.push(`# ${title}`)
-            break
-
-        case 'h2':
-            markdownParts.push(`## ${title}`)
-            break
-
-        case 'h3':
-            markdownParts.push(`### ${title}`)
-            break
-
-        case 'quote':
-            markdownParts.push(title.split('\n').map((line) => `> ${line}`).join('\n'))
-            break
-
-        case 'checkbox':
-            markdownParts.push(`- [${fields.value ? 'x' : ' '}] ${title}`)
-            break
-
-        case 'list-item':
-            markdownParts.push(`- ${title}`)
-            break
-
-        case 'divider':
-            markdownParts.push('---')
-            break
-
-        case 'image':
-            if (fields.fileId) {
-                markdownParts.push(`![${title || 'image'}](${fields.fileId})`)
-            }
-            break
-
-        case 'video':
-        case 'attachment':
-            markdownParts.push(`[${blockType}: ${fields.filename || 'file'}]`)
-            break
-
-        default:
-            markdownParts.push(title)
-        }
-    }
-
-    return markdownParts.join('\n\n')
-}
-
-export function hasComplexMarkdown(blocks: Block[]): boolean {
-    const BLOCK_LEVEL_PATTERNS = [
-        /^#{1,6}\s/,
-        /^[-*+]\s/,
-        /^\d+\.\s/,
-        /^>\s/,
-        /^```/,
-    ]
-
-    const INLINE_PATTERNS = [
-        /\*\*.+?\*\*/,
-        /__.+?__/,
-        /\*[^*]+\*/,
-        /_[^_]+_/,
-        /~~.+?~~/,
-        /`.+?`/,
-        /\[.+?\]\(.+?\)/,
-    ]
-
-    for (const block of blocks) {
-        const title = block.title || ''
-
-        if (title.includes('\n')) {
-            return true
+        if (converted.text !== undefined) {
+            yBlock.set('text', converted.text)
         }
 
-        for (const pattern of BLOCK_LEVEL_PATTERNS) {
-            if (pattern.test(title)) {
-                return true
-            }
-        }
+        yBlocks.set(block.id, yBlock)
+    })
 
-        for (const pattern of INLINE_PATTERNS) {
-            if (pattern.test(title)) {
-                return true
-            }
-        }
-    }
-    return false
+    return yDoc
 }
 
-export {sortBlocksByContentOrder}
-export type {BlockSuiteFlavour}
+export function createEmptyYjsDoc(card: Card): Y.Doc {
+    const yDoc = new Y.Doc()
+    const yMeta = yDoc.getMap('meta')
+
+    yMeta.set('blockOrder', [])
+    yMeta.set('cardId', card.id)
+    yMeta.set('cardTitle', card.title || '')
+
+    return yDoc
+}
+
+export {convertBlockToBlockSuite, sortBlocksByContentOrder}
+export type {ConvertedBlock, BlockSuiteBlockType, BlockSuiteProps}
