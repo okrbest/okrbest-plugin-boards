@@ -28,10 +28,11 @@ type Props = {
     card: Card
     contents: Block[]
     readonly: boolean
+    teamId: string
 }
 
 function BlockSuiteEditor(props: Props): JSX.Element {
-    const {card, contents, readonly} = props
+    const {card, contents, readonly, teamId} = props
     const intl = useIntl()
 
     const [containerMounted, setContainerMounted] = useState(false)
@@ -89,7 +90,7 @@ function BlockSuiteEditor(props: Props): JSX.Element {
                 Utils.log(`BlockSuiteEditor: Snapshot type=${snapshot.type}, blocks flavour=${snapshot.blocks?.flavour}`)
 
                 const schema = new Schema().register(AffineSchemas)
-                const blobSource = createFocalboardBlobSource(card.boardId)
+                const blobSource = createFocalboardBlobSource(card.boardId, teamId)
                 const collection = new DocCollection({
                     schema,
                     blobSources: {
@@ -149,7 +150,7 @@ function BlockSuiteEditor(props: Props): JSX.Element {
             editorDocRef.current = null
             jobRef.current = null
         }
-    }, [containerMounted, snapshot, readonly, card.boardId, handleDocUpdate])
+    }, [containerMounted, snapshot, readonly, card.boardId, teamId, handleDocUpdate])
 
     if (loading) {
         return (

@@ -82,7 +82,8 @@ const CardDetail = (props: Props): JSX.Element|null => {
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
     const newBoardsEditor = clientConfig?.featureFlags?.newBoardsEditor ?? true
 
-    useImagePaste(props.board.id, card.id, card.fields.contentOrder)
+    // Disable legacy image paste when using BlockSuite editor (it handles its own paste)
+    useImagePaste(props.board.id, card.id, card.fields.contentOrder, !newBoardsEditor)
 
     useEffect(() => {
         if (!title) {
@@ -245,6 +246,7 @@ const CardDetail = (props: Props): JSX.Element|null => {
                         card={card}
                         contents={props.contents.flatMap((b) => b)}
                         readonly={props.readonly || !canEditBoardCards}
+                        teamId={props.board.teamId}
                     />
                 )}
                
