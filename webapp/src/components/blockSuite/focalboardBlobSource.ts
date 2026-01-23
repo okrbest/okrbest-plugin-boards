@@ -27,7 +27,9 @@ export function getFileIdForKey(boardId: string, key: string): string | undefine
 export function getAllBlobMappings(boardId: string): Record<string, string> {
     const result: Record<string, string> = {}
     const prefix = `${boardId}:`
+    Utils.log(`getAllBlobMappings: boardId=${boardId}, globalMap size=${globalKeyToFileIdMap.size}`)
     globalKeyToFileIdMap.forEach((fileId, globalKey) => {
+        Utils.log(`getAllBlobMappings: checking ${globalKey}`)
         if (globalKey.startsWith(prefix)) {
             const key = globalKey.substring(prefix.length)
             result[key] = fileId
@@ -37,6 +39,7 @@ export function getAllBlobMappings(boardId: string): Record<string, string> {
 }
 
 export function restoreBlobMappings(boardId: string, mappings: Record<string, string>): void {
+    Utils.log(`restoreBlobMappings: boardId=${boardId}, mappings count=${Object.keys(mappings).length}`)
     for (const [key, fileId] of Object.entries(mappings)) {
         registerBlobMapping(boardId, key, fileId)
         Utils.log(`restoreBlobMappings: restored ${key} -> ${fileId}`)
@@ -56,6 +59,9 @@ export function prepareSnapshotForSave(snapshot: DocSnapshot, boardId: string): 
     }
 
     Utils.log(`prepareSnapshotForSave: saving ${Object.keys(blobMap).length} blob mappings`)
+    for (const [key, fileId] of Object.entries(blobMap)) {
+        Utils.log(`prepareSnapshotForSave: ${key} -> ${fileId}`)
+    }
 
     const extended = snapshot as ExtendedDocSnapshot
     return {
@@ -75,7 +81,7 @@ export function restoreSnapshotBlobMappings(snapshot: DocSnapshot, boardId: stri
     }
 }
 
-export function createFocalboardBlobSource(boardId: string): BlobSource {
+export function createFocalboardBlobSource(boardId: string, teamId: string): BlobSource {
     return {
         name: 'focalboard',
         readonly: false,
@@ -98,8 +104,8 @@ export function createFocalboardBlobSource(boardId: string): BlobSource {
             try {
                 const fileId = globalKeyToFileIdMap.get(globalKey) || key
 
-                Utils.log(`BlobSource.get: fetching file from server, boardId=${boardId}, key=${key}, fileId=${fileId}`)
-                const fileInfo = await octoClient.getFileAsDataUrl(boardId, fileId)
+                Utils.log(`BlobSource.get: fetching file from server, boardId=${boardId}, teamId=${teamId}, key=${key}, fileId=${fileId}`)
+                const fileInfo = await octoClient.getFileAsDataUrl(boardId, fileId, teamId)
                 Utils.log(`BlobSource.get: fileInfo=${JSON.stringify(fileInfo)}`)
 
                 if (!fileInfo?.url) {
@@ -141,7 +147,7 @@ export function createFocalboardBlobSource(boardId: string): BlobSource {
 
                 if (fileId && fileId !== key) {
                     globalKeyToFileIdMap.set(globalKey, fileId)
-                    Utils.log(`BlobSource.set: stored key->fileId mapping: ${key} -> ${fileId}`)
+                    Utils.log(`BlobSource.set: stored key->fileId mapping: globalKey=${globalKey}, key=${key} -> ${fileId}`)
                 }
 
                 return key
