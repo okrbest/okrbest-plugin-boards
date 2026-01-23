@@ -61,6 +61,8 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
 
         try {
             const preparedSnapshot = prepareSnapshotForSave(snapshotToSave, card.boardId)
+            const blobMapSize = (preparedSnapshot as {meta?: {blobMap?: Record<string, string>}}).meta?.blobMap
+            Utils.log(`BlockSuite saving snapshot, blobMap entries: ${blobMapSize ? Object.keys(blobMapSize).length : 0}`)
             await blockSuiteApi.saveDocContent(cardId, preparedSnapshot)
             Utils.log(`BlockSuite snapshot saved for card: ${cardId}`)
             setSaveStatus('saved')
