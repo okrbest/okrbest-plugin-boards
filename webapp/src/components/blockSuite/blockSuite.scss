@@ -6,7 +6,6 @@
     &__container {
         width: 100%;
         min-height: 200px;
-        isolation: isolate;
 
         &.light {
             opacity: 1;
@@ -260,5 +259,41 @@ blocksuite-portal,
 affine-mobile-toolbar,
 [data-blocksuite-overlay],
 [data-affine-overlay] {
-    z-index: 1001 !important;
+    z-index: 10001 !important;
+}
+
+affine-drag-handle-widget {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+}
+
+affine-drag-handle-widget .affine-drag-handle-widget {
+    display: flex !important;
+}
+
+affine-drag-handle-widget .affine-drag-handle-container {
+    pointer-events: auto !important;
+    cursor: grab !important;
+    visibility: visible !important;
+}
+
+affine-drag-handle-widget .affine-drag-handle-grabber {
+    visibility: visible !important;
+    background: var(--affine-placeholder-color, rgba(0, 0, 0, 0.3)) !important;
+}
+
+affine-drag-handle-widget .affine-drag-hover-rect {
+    pointer-events: none !important;
+}
+
+.affine-page-viewport,
+affine-page-root {
+    position: relative;
+}
+
+affine-note {
+    position: relative;
 }

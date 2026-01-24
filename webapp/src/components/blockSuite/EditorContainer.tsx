@@ -34,10 +34,9 @@ const THEME_CSS = `
     --affine-black: #000000;
     --affine-z-index-modal: 10001 !important;
     --affine-z-index-popover: 10001 !important;
-    --affine-editor-side-padding: 24px;
-    --affine-editor-bottom-padding: 0;
 }
 
+/* Force text color directly on BlockSuite elements */
 affine-editor-container,
 affine-page-root,
 affine-note,
@@ -56,13 +55,6 @@ affine-image,
 .affine-list-block__prefix,
 .affine-list-block__suffix {
     color: #000000;
-}
-
-.affine-page-root-block-container,
-div.affine-page-root-block-container {
-    padding-left: 24px !important;
-    padding-right: 0 !important;
-    padding-bottom: 0 !important;
 }
 
 /* Drag handle widget styles */
