@@ -53,13 +53,13 @@ export const CardDetailProvider = (props: CardDetailProps): ReactElement => {
         const description = intl.formatMessage({id: 'ContentBlock.addElement', defaultMessage: 'add {type}'}, {type: typeName})
         await mutator.performAsUndoGroup(async () => {
             const afterRedo = async (newBlock: Block) => {
-                const contentOrder = card.fields.contentOrder.slice()
+                const contentOrder = (card.fields.contentOrder || []).slice()
                 contentOrder.splice(index, 0, newBlock.id)
                 await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
             }
 
             const beforeUndo = async () => {
-                const contentOrder = card.fields.contentOrder.slice()
+                const contentOrder = (card.fields.contentOrder || []).slice()
                 await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
             }
 
@@ -69,12 +69,13 @@ export const CardDetailProvider = (props: CardDetailProps): ReactElement => {
     }, [card.boardId, card.id, card.fields.contentOrder])
 
     const deleteBlock = useCallback(async (block: Block, index: number) => {
-        const contentOrder = card.fields.contentOrder.slice()
+        const originalContentOrder = card.fields.contentOrder || []
+        const contentOrder = originalContentOrder.slice()
         contentOrder.splice(index, 1)
         const description = intl.formatMessage({id: 'ContentBlock.DeleteAction', defaultMessage: 'delete'})
         await mutator.performAsUndoGroup(async () => {
             await mutator.deleteBlock(block, description)
-            await mutator.changeCardContentOrder(card.boardId, card.id, card.fields.contentOrder, contentOrder, description)
+            await mutator.changeCardContentOrder(card.boardId, card.id, originalContentOrder, contentOrder, description)
         })
     }, [card.boardId, card.id, card.fields.contentOrder])
 

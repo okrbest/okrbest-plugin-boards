@@ -126,6 +126,9 @@ class TestBlockFactory {
         block.parentId = card.id
         block.boardId = card.boardId
         if (isContent) {
+            if (!card.fields.contentOrder) {
+                card.fields.contentOrder = []
+            }
             card.fields.contentOrder.push(block.id)
         }
         return block

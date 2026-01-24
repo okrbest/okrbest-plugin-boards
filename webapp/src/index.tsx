@@ -394,6 +394,7 @@ export default class Plugin {
             // @ts-ignore
             return mmStore.getState().entities.teams.currentTeamId
         }
+
     }
 
     uninitialize(): void {
