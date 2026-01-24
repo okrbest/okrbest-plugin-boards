@@ -682,7 +682,7 @@ func TestCopyAndUpdateCardFiles(t *testing.T) {
 		th.App.filesBackend = mockedFileBackend
 		mockedFileBackend.On("CopyFile", mock.Anything, mock.Anything).Return(nil)
 
-		err := th.App.CopyAndUpdateCardFiles("bvalidtestboard123456789012", "userID", []*model.Block{imageBlock}, false)
+		_, err := th.App.CopyAndUpdateCardFiles("bvalidtestboard123456789012", "userID", []*model.Block{imageBlock}, false)
 		assert.NoError(t, err)
 
 		assert.NotEqual(t, testPath, imageBlock.Fields["fileId"])
@@ -702,20 +702,20 @@ func TestCopyAndUpdateCardFiles(t *testing.T) {
 		th.App.filesBackend = mockedFileBackend
 		mockedFileBackend.On("CopyFile", mock.Anything, mock.Anything).Return(nil)
 
-		err := th.App.CopyAndUpdateCardFiles(validTestBoardID2, "userID", []*model.Block{validImageBlock}, false)
+		_, err := th.App.CopyAndUpdateCardFiles(validTestBoardID2, "userID", []*model.Block{validImageBlock}, false)
 		assert.NoError(t, err)
 	})
 
 	t.Run("Invalid file ID length", func(t *testing.T) {
 		th.Store.EXPECT().GetBoard(validTestBoardID2).Return(&model.Board{ID: validTestBoardID2, TeamID: "validteam12345678901234567", IsTemplate: false}, nil)
-		err := th.App.CopyAndUpdateCardFiles(validTestBoardID2, "userID", []*model.Block{invalidShortFileIDBlock}, false)
+		_, err := th.App.CopyAndUpdateCardFiles(validTestBoardID2, "userID", []*model.Block{invalidShortFileIDBlock}, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Invalid Block ID")
 	})
 
 	t.Run("Empty file ID", func(t *testing.T) {
 		th.Store.EXPECT().GetBoard(validTestBoardID2).Return(&model.Board{ID: validTestBoardID2, TeamID: "validteam12345678901234567", IsTemplate: false}, nil)
-		err := th.App.CopyAndUpdateCardFiles(validTestBoardID2, "userID", []*model.Block{emptyFileBlock}, false)
+		_, err := th.App.CopyAndUpdateCardFiles(validTestBoardID2, "userID", []*model.Block{emptyFileBlock}, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Block ID cannot be empty")
 	})
