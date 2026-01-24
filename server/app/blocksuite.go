@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
+	"github.com/mattermost/mattermost-plugin-boards/server/utils"
 
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
@@ -21,9 +22,42 @@ func (a *App) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocI
 	return a.store.GetBlockSuiteDocInfoByCardID(cardID)
 }
 
-// UpsertBlockSuiteDoc inserts or updates a BlockSuite document.
 func (a *App) UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error {
-	return a.store.UpsertBlockSuiteDoc(doc)
+	if err := a.store.UpsertBlockSuiteDoc(doc); err != nil {
+		return err
+	}
+
+	a.broadcastBlockSuiteDocChange(doc.CardID, doc.UpdatedBy)
+	return nil
+}
+
+func (a *App) broadcastBlockSuiteDocChange(cardID, userID string) {
+	card, err := a.store.GetBlock(cardID)
+	if err != nil || card == nil {
+		return
+	}
+
+	board, err := a.store.GetBoard(card.BoardID)
+	if err != nil || board == nil {
+		return
+	}
+
+	now := utils.GetMillis()
+	patch := &model.BlockPatch{
+		UpdatedFields: map[string]interface{}{
+			"blocksuite_updated_at": now,
+		},
+	}
+	updatedCard, err := a.PatchBlock(cardID, patch, userID)
+	if err != nil {
+		a.logger.Warn("Failed to update card timestamp for BlockSuite change",
+			mlog.String("cardID", cardID),
+			mlog.Err(err))
+		a.wsAdapter.BroadcastBlockChange(board.TeamID, card)
+		return
+	}
+
+	a.wsAdapter.BroadcastBlockChange(board.TeamID, updatedCard)
 }
 
 // DeleteBlockSuiteDocByCardID deletes a BlockSuite document by card_id.
