@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
@@ -147,8 +148,8 @@ func convertLegacyBlocksToDocSnapshot(card *model.Block, contentBlocks []*model.
 	blobMap := make(map[string]string)
 	contentChildren := make([]BlockSnapshot, 0, len(sortedBlocks))
 	for _, block := range sortedBlocks {
-		snapshot, fileId := convertContentBlockToSnapshotWithBlobMap(block)
-		contentChildren = append(contentChildren, snapshot)
+		snapshots, fileId := convertContentBlockToSnapshots(block)
+		contentChildren = append(contentChildren, snapshots...)
 		if fileId != "" {
 			blobMap[fileId] = fileId
 		}
@@ -282,89 +283,203 @@ func sortBlocksByContentOrder(blocks []*model.Block, cardFields map[string]inter
 	return sorted
 }
 
-func convertContentBlockToSnapshotWithBlobMap(block *model.Block) (BlockSnapshot, string) {
+func convertContentBlockToSnapshots(block *model.Block) ([]BlockSnapshot, string) {
 	blockType := string(block.Type)
-	flavour := getBlockSuiteFlavour(blockType)
 	fields := block.Fields
 	if fields == nil {
 		fields = make(map[string]interface{})
-	}
-
-	snapshot := BlockSnapshot{
-		Type:     "block",
-		ID:       block.ID,
-		Flavour:  flavour,
-		Props:    make(map[string]interface{}),
-		Children: []BlockSnapshot{},
 	}
 
 	var fileId string
 
 	switch blockType {
 	case "text":
-		snapshot.Props["type"] = "text"
-		snapshot.Props["text"] = BlockSuiteText{
-			BlockSuiteInternalText: true,
-			Delta:                  parseTextToDelta(block.Title),
-		}
+		return parseMultilineMarkdown(block.Title, block.ID), ""
 
 	case "h1", "h2", "h3":
-		snapshot.Props["type"] = blockType
-		snapshot.Props["text"] = BlockSuiteText{
-			BlockSuiteInternalText: true,
-			Delta:                  parseTextToDelta(block.Title),
-		}
+		return []BlockSnapshot{createParagraphSnapshot(block.ID, blockType, block.Title)}, ""
 
 	case "quote":
-		snapshot.Props["type"] = "quote"
-		snapshot.Props["text"] = BlockSuiteText{
-			BlockSuiteInternalText: true,
-			Delta:                  parseTextToDelta(block.Title),
-		}
+		return []BlockSnapshot{createParagraphSnapshot(block.ID, "quote", block.Title)}, ""
 
 	case "checkbox":
-		snapshot.Props["type"] = "todo"
-		snapshot.Props["checked"] = getBoolField(fields, "value")
-		snapshot.Props["text"] = BlockSuiteText{
-			BlockSuiteInternalText: true,
-			Delta:                  parseTextToDelta(block.Title),
+		snapshot := BlockSnapshot{
+			Type:    "block",
+			ID:      block.ID,
+			Flavour: "affine:list",
+			Props: map[string]interface{}{
+				"type":    "todo",
+				"checked": getBoolField(fields, "value"),
+				"text": BlockSuiteText{
+					BlockSuiteInternalText: true,
+					Delta:                  parseTextToDelta(block.Title),
+				},
+			},
+			Children: []BlockSnapshot{},
 		}
+		return []BlockSnapshot{snapshot}, ""
 
 	case "list-item":
-		snapshot.Props["type"] = "bulleted"
-		snapshot.Props["text"] = BlockSuiteText{
-			BlockSuiteInternalText: true,
-			Delta:                  parseTextToDelta(block.Title),
+		snapshot := BlockSnapshot{
+			Type:    "block",
+			ID:      block.ID,
+			Flavour: "affine:list",
+			Props: map[string]interface{}{
+				"type": "bulleted",
+				"text": BlockSuiteText{
+					BlockSuiteInternalText: true,
+					Delta:                  parseTextToDelta(block.Title),
+				},
+			},
+			Children: []BlockSnapshot{},
 		}
+		return []BlockSnapshot{snapshot}, ""
 
 	case "divider":
+		snapshot := BlockSnapshot{
+			Type:     "block",
+			ID:       block.ID,
+			Flavour:  "affine:divider",
+			Props:    map[string]interface{}{},
+			Children: []BlockSnapshot{},
+		}
+		return []BlockSnapshot{snapshot}, ""
 
 	case "image":
 		fileId = getStringField(fields, "fileId")
-		snapshot.Props["sourceId"] = fileId
-		snapshot.Props["width"] = getIntField(fields, "width")
-		snapshot.Props["height"] = getIntField(fields, "height")
+		snapshot := BlockSnapshot{
+			Type:    "block",
+			ID:      block.ID,
+			Flavour: "affine:image",
+			Props: map[string]interface{}{
+				"sourceId": fileId,
+				"width":    getIntField(fields, "width"),
+				"height":   getIntField(fields, "height"),
+			},
+			Children: []BlockSnapshot{},
+		}
+		return []BlockSnapshot{snapshot}, fileId
 
 	case "video", "attachment":
 		filename := getStringField(fields, "filename")
 		if filename == "" {
 			filename = "file"
 		}
-		snapshot.Props["type"] = "text"
-		snapshot.Props["text"] = BlockSuiteText{
-			BlockSuiteInternalText: true,
-			Delta:                  []TextDelta{{Insert: "[" + blockType + ": " + filename + "]"}},
-		}
+		return []BlockSnapshot{createParagraphSnapshot(block.ID, "text", "["+blockType+": "+filename+"]")}, ""
 
 	default:
-		snapshot.Props["type"] = "text"
-		snapshot.Props["text"] = BlockSuiteText{
-			BlockSuiteInternalText: true,
-			Delta:                  parseTextToDelta(block.Title),
-		}
+		return parseMultilineMarkdown(block.Title, block.ID), ""
+	}
+}
+
+func createParagraphSnapshot(id, paragraphType, text string) BlockSnapshot {
+	return BlockSnapshot{
+		Type:    "block",
+		ID:      id,
+		Flavour: "affine:paragraph",
+		Props: map[string]interface{}{
+			"type": paragraphType,
+			"text": BlockSuiteText{
+				BlockSuiteInternalText: true,
+				Delta:                  parseTextToDelta(text),
+			},
+		},
+		Children: []BlockSnapshot{},
+	}
+}
+
+var (
+	headerPattern     = regexp.MustCompile(`^(#{1,6})\s+(.*)$`)
+	bulletListPattern = regexp.MustCompile(`^[-*+]\s+(.*)$`)
+	numberListPattern = regexp.MustCompile(`^\d+\.\s+(.*)$`)
+	quotePattern      = regexp.MustCompile(`^>\s*(.*)$`)
+)
+
+func parseMultilineMarkdown(text, baseID string) []BlockSnapshot {
+	if text == "" {
+		return []BlockSnapshot{createParagraphSnapshot(baseID, "text", "")}
 	}
 
-	return snapshot, fileId
+	lines := strings.Split(text, "\n")
+	snapshots := make([]BlockSnapshot, 0, len(lines))
+
+	for i, line := range lines {
+		blockID := baseID
+		if i > 0 {
+			blockID = utils.NewID(utils.IDTypeNone)
+		}
+
+		trimmedLine := strings.TrimSpace(line)
+		if trimmedLine == "" {
+			if len(snapshots) == 0 {
+				snapshots = append(snapshots, createParagraphSnapshot(blockID, "text", ""))
+			}
+			continue
+		}
+
+		if match := headerPattern.FindStringSubmatch(line); match != nil {
+			level := len(match[1])
+			headerType := "text"
+			if level == 1 {
+				headerType = "h1"
+			} else if level == 2 {
+				headerType = "h2"
+			} else if level >= 3 {
+				headerType = "h3"
+			}
+			snapshots = append(snapshots, createParagraphSnapshot(blockID, headerType, match[2]))
+			continue
+		}
+
+		if match := bulletListPattern.FindStringSubmatch(line); match != nil {
+			snapshot := BlockSnapshot{
+				Type:    "block",
+				ID:      blockID,
+				Flavour: "affine:list",
+				Props: map[string]interface{}{
+					"type": "bulleted",
+					"text": BlockSuiteText{
+						BlockSuiteInternalText: true,
+						Delta:                  parseTextToDelta(match[1]),
+					},
+				},
+				Children: []BlockSnapshot{},
+			}
+			snapshots = append(snapshots, snapshot)
+			continue
+		}
+
+		if match := numberListPattern.FindStringSubmatch(line); match != nil {
+			snapshot := BlockSnapshot{
+				Type:    "block",
+				ID:      blockID,
+				Flavour: "affine:list",
+				Props: map[string]interface{}{
+					"type": "numbered",
+					"text": BlockSuiteText{
+						BlockSuiteInternalText: true,
+						Delta:                  parseTextToDelta(match[1]),
+					},
+				},
+				Children: []BlockSnapshot{},
+			}
+			snapshots = append(snapshots, snapshot)
+			continue
+		}
+
+		if match := quotePattern.FindStringSubmatch(line); match != nil {
+			snapshots = append(snapshots, createParagraphSnapshot(blockID, "quote", match[1]))
+			continue
+		}
+
+		snapshots = append(snapshots, createParagraphSnapshot(blockID, "text", line))
+	}
+
+	if len(snapshots) == 0 {
+		return []BlockSnapshot{createParagraphSnapshot(baseID, "text", "")}
+	}
+
+	return snapshots
 }
 
 func getBlockSuiteFlavour(blockType string) string {
