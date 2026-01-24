@@ -162,6 +162,9 @@ type Store interface {
 	GetCardLimitTimestamp() (int64, error)
 	UpdateCardLimitTimestamp(cardLimit int) (int64, error)
 
+	GetBlockSuiteMigrationStatus() (*model.BlockSuiteMigrationStatus, error)
+	GetUnmigratedCardsWithContentBlocks(limit int, offset int) ([]*model.UnmigratedCard, int64, error)
+
 	DBType() string
 	DBVersion() string
 

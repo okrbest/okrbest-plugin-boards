@@ -122,9 +122,6 @@ func (c *Card) CheckValid() error {
 	if c.BoardID == "" {
 		return ErrInvalidCard{"BoardID is missing"}
 	}
-	if c.ContentOrder == nil {
-		return ErrInvalidCard{"ContentOrder is missing"}
-	}
 	if uniseg.GraphemeClusterCount(c.Icon) > 1 {
 		return ErrInvalidCard{"Icon can have only one grapheme"}
 	}

@@ -328,6 +328,21 @@ func (s *SQLStore) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuit
 
 }
 
+func (s *SQLStore) GetBlockSuiteDocsByBoardID(boardID string) ([]*model.BlockSuiteDoc, error) {
+	return s.getBlockSuiteDocsByBoardID(s.db, boardID)
+
+}
+
+func (s *SQLStore) GetBlockSuiteMigrationStatus() (*model.BlockSuiteMigrationStatus, error) {
+	return s.getBlockSuiteMigrationStatus(s.db)
+
+}
+
+func (s *SQLStore) GetUnmigratedCardsWithContentBlocks(limit int, offset int) ([]*model.UnmigratedCard, int64, error) {
+	return s.getUnmigratedCardsWithContentBlocks(s.db, limit, offset)
+
+}
+
 func (s *SQLStore) GetBlocks(opts model.QueryBlocksOptions) ([]*model.Block, error) {
 	return s.getBlocks(s.db, opts)
 
