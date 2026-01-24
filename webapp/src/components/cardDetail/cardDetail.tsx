@@ -234,6 +234,7 @@ const CardDetail = (props: Props): JSX.Element|null => {
                     contents={props.contents.flatMap((b) => b)}
                     readonly={props.readonly || !canEditBoardCards}
                     teamId={props.board.teamId}
+                    viewId={props.activeView.id}
                 />
             </div>}
         </>
