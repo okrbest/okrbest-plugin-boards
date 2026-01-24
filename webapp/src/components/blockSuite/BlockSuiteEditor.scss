@@ -10,7 +10,7 @@
     --affine-text-primary-color: #000000;
     --affine-text-secondary-color: #666666;
     --affine-text-disable-color: #999999;
-    --affine-editor-side-padding: 0;
+    --affine-editor-side-padding: 24px;
     --affine-editor-bottom-padding: 0;
 
     /* --- BlockSuite 에디터 컨테이너 스타일 --- */
@@ -70,7 +70,9 @@
         min-height: auto !important;
         max-height: none !important;
         overflow: visible !important;
-        padding: 0 !important; /* 상하좌우 패딩 제거 */
+        padding-left: 24px !important;
+        padding-right: 0 !important;
+        padding-bottom: 0 !important;
     }
     
     /* 노트 블록 스크롤 비활성화 */

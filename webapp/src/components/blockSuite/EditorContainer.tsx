@@ -34,7 +34,7 @@ const THEME_CSS = `
     --affine-black: #000000;
     --affine-z-index-modal: 10001 !important;
     --affine-z-index-popover: 10001 !important;
-    --affine-editor-side-padding: 0;
+    --affine-editor-side-padding: 24px;
     --affine-editor-bottom-padding: 0;
 }
 
@@ -50,7 +50,6 @@ affine-image,
 .affine-block-children-container,
 [data-block-id] {
     --affine-text-primary-color: #000000;
-    --affine-editor-side-padding: 0 !important;
     color: #000000;
 }
 
@@ -61,12 +60,9 @@ affine-image,
 
 .affine-page-root-block-container,
 div.affine-page-root-block-container {
-    --affine-editor-side-padding: 0 !important;
-    padding: 0 !important;
-    padding-left: 0 !important;
+    padding-left: 24px !important;
     padding-right: 0 !important;
     padding-bottom: 0 !important;
-    margin: 0 !important;
 }
 
 /* Drag handle widget styles */
