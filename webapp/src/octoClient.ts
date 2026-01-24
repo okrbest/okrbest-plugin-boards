@@ -653,7 +653,10 @@ class OctoClient {
         if (readToken) {
             path += `?read_token=${readToken}`
         }
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
         let fileInfo: FileInfo = {}
 
         if (response.status === 200) {
@@ -665,13 +668,21 @@ class OctoClient {
         return fileInfo
     }
 
-    async getFileAsDataUrl(boardId: string, fileId: string): Promise<FileInfo> {
-        let path = '/api/v2/files/teams/' + this.teamId + '/' + boardId + '/' + fileId
+    async getFileAsDataUrl(boardId: string, fileId: string, teamId?: string): Promise<FileInfo> {
+        // Use provided teamId, or fall back to teamPath logic (handles globalTeamId -> lastTeamId)
+        let effectiveTeamId = teamId
+        if (!effectiveTeamId) {
+            effectiveTeamId = this.teamId === Constants.globalTeamId ? UserSettings.lastTeamId || this.teamId : this.teamId
+        }
+        let path = '/api/v2/files/teams/' + effectiveTeamId + '/' + boardId + '/' + fileId
         const readToken = Utils.getReadToken()
         if (readToken) {
             path += `?read_token=${readToken}`
         }
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
         let fileInfo: FileInfo = {}
 
         if (response.status === 200) {

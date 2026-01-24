@@ -4,6 +4,7 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -143,29 +144,50 @@ func (a *App) validateFileReferencedByBoard(boardID, filename string) error {
 		}
 	}
 
-	// Check if this board has any BlockSuite documents (cards with BlockSuite content)
-	// If so, the file might be referenced by BlockSuite editor images
-	// For now, allow files for boards that have BlockSuite-enabled cards
-	cardBlocks, err := a.store.GetBlocksWithType(boardID, model.TypeCard)
-	if err != nil {
-		return err
-	}
-
-	for _, card := range cardBlocks {
-		bsDoc, err := a.store.GetBlockSuiteDocByCardID(card.ID)
-		if err == nil && bsDoc != nil && len(bsDoc.Snapshot) > 0 {
-			// This board has BlockSuite documents, allow file access
-			// The file was uploaded through the BlockSuite editor
-			a.logger.Debug("validateFileReferencedByBoard: allowing file access for BlockSuite-enabled board",
-				mlog.String("boardID", boardID),
-				mlog.String("filename", filename),
-				mlog.String("cardID", card.ID),
-			)
-			return nil
-		}
+	if a.isFileReferencedByBlockSuiteDocs(boardID, filename) {
+		return nil
 	}
 
 	return fmt.Errorf("%w: file %s is not referenced by any block in board %s", ErrFileNotReferencedByBoard, filename, boardID)
+}
+
+func (a *App) isFileReferencedByBlockSuiteDocs(boardID, filename string) bool {
+	docs, err := a.store.GetBlockSuiteDocsByBoardID(boardID)
+	if err != nil {
+		a.logger.Debug("isFileReferencedByBlockSuiteDocs: failed to get docs",
+			mlog.String("boardID", boardID),
+			mlog.Err(err))
+		return false
+	}
+
+	for _, doc := range docs {
+		if doc.Snapshot == nil {
+			continue
+		}
+
+		var snapshot map[string]interface{}
+		if err := json.Unmarshal(doc.Snapshot, &snapshot); err != nil {
+			continue
+		}
+
+		meta, ok := snapshot["meta"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		blobMap, ok := meta["blobMap"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, fileID := range blobMap {
+			if fileIDStr, ok := fileID.(string); ok && fileIDStr == filename {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (a *App) GetFile(teamID, boardID, fileName string) (*mm_model.FileInfo, filestore.ReadCloseSeeker, error) {

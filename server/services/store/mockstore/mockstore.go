@@ -460,6 +460,21 @@ func (mr *MockStoreMockRecorder) GetBlockSuiteDocInfoByCardID(arg0 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockSuiteDocInfoByCardID", reflect.TypeOf((*MockStore)(nil).GetBlockSuiteDocInfoByCardID), arg0)
 }
 
+// GetBlockSuiteDocsByBoardID mocks base method.
+func (m *MockStore) GetBlockSuiteDocsByBoardID(arg0 string) ([]*model.BlockSuiteDoc, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockSuiteDocsByBoardID", arg0)
+	ret0, _ := ret[0].([]*model.BlockSuiteDoc)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockSuiteDocsByBoardID indicates an expected call of GetBlockSuiteDocsByBoardID.
+func (mr *MockStoreMockRecorder) GetBlockSuiteDocsByBoardID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockSuiteDocsByBoardID", reflect.TypeOf((*MockStore)(nil).GetBlockSuiteDocsByBoardID), arg0)
+}
+
 // GetBlocks mocks base method.
 func (m *MockStore) GetBlocks(arg0 model.QueryBlocksOptions) ([]*model.Block, error) {
 	m.ctrl.T.Helper()

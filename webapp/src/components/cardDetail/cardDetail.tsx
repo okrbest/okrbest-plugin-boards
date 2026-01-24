@@ -8,12 +8,11 @@ import {BlockIcons} from '../../blockIcons'
 import {Card} from '../../blocks/card'
 import {BoardView} from '../../blocks/boardView'
 import {Board} from '../../blocks/board'
-import {CommentBlock} from '../../blocks/commentBlock' 
+import {CommentBlock} from '../../blocks/commentBlock'
 import {AttachmentBlock} from '../../blocks/attachmentBlock'
 import {ContentBlock} from '../../blocks/contentBlock'
 import {Block} from '../../blocks/block'
 import mutator from '../../mutator'
-// import octoClient from '../../octoClient' // 미사용
 import Button from '../../widgets/buttons/button'
 import {Focusable} from '../../widgets/editable'
 import EditableArea from '../../widgets/editableArea'
@@ -22,16 +21,20 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 
 import BlockIconSelector from '../blockIconSelector'
 
-import ErrorBoundary from '../../error_boundary'
-import {useAppDispatch} from '../../store/hooks'
+import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {setCurrent as setCurrentCard} from '../../store/cards'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
-import {BlockSuiteEditor} from '../blockSuite/BlockSuiteEditor'
+import BlockSuiteEditor from '../blockSuite/BlockSuiteEditor'
+import {ClientConfig} from '../../config/clientConfig'
+import {getClientConfig} from '../../store/clientConfig'
 
 import CardSkeleton from '../../svg/card-skeleton'
 
 import CommentsList from './commentsList'
+import {CardDetailProvider} from './cardDetailContext'
+import CardDetailContents from './cardDetailContents'
+import CardDetailContentsMenu from './cardDetailContentsMenu'
 import CardDetailProperties from './cardDetailProperties'
 import useImagePaste from './imagePaste'
 import AttachmentList from './attachment'
@@ -58,11 +61,6 @@ type Props = {
     addAttachment: () => void
 }
 
-// addBlockNewEditor 함수는 현재 사용되지 않음 (BlockSuite 에디터로 대체됨)
-// async function addBlockNewEditor(card: Card, intl: IntlShape, title: string, fields: any, contentType: ContentBlockTypes, afterBlockId: string, dispatch: any): Promise<Block> {
-//     ...
-// }
-
 const CardDetail = (props: Props): JSX.Element|null => {
     const {card, comments, attachments, onDelete, addAttachment} = props
     const {limited} = card
@@ -81,7 +79,11 @@ const CardDetail = (props: Props): JSX.Element|null => {
     saveTitleRef.current = saveTitle
     const intl = useIntl()
 
-    useImagePaste(props.board.id, card.id, card.fields.contentOrder)
+    const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
+    const newBoardsEditor = clientConfig?.featureFlags?.newBoardsEditor ?? true
+
+    // Disable legacy image paste when using BlockSuite editor (it handles its own paste)
+    useImagePaste(props.board.id, card.id, card.fields.contentOrder, !newBoardsEditor)
 
     useEffect(() => {
         if (!title) {
@@ -116,11 +118,6 @@ const CardDetail = (props: Props): JSX.Element|null => {
     if (!card) {
         return null
     }
-
-    // blocks 변수는 현재 사용되지 않음 (BlockSuite 에디터로 대체됨)
-    // const blocks = useMemo(() => props.contents.flatMap((value: Block | Block[]): BlockData<any> => {
-    //     ...
-    // }), [props.contents])
 
     return (
         <>
@@ -243,14 +240,16 @@ const CardDetail = (props: Props): JSX.Element|null => {
 
             {/* Content blocks */}
 
-            {!limited && <div className='CardDetail content-blocks'>
-                <ErrorBoundary>
+            {!limited && <div className='CardDetail CardDetail--fullwidth content-blocks'>
+                {newBoardsEditor && (
                     <BlockSuiteEditor
                         card={card}
-                        boardId={card.boardId}
-                        readOnly={props.readonly || !canEditBoardCards}
+                        contents={props.contents.flatMap((b) => b)}
+                        readonly={props.readonly || !canEditBoardCards}
+                        teamId={props.board.teamId}
                     />
-                </ErrorBoundary>
+                )}
+               
             </div>}
         </>
     )

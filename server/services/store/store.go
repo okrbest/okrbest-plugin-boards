@@ -128,6 +128,7 @@ type Store interface {
 	// BlockSuite document operations
 	GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error)
 	GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocInfo, error)
+	GetBlockSuiteDocsByBoardID(boardID string) ([]*model.BlockSuiteDoc, error)
 	// @withTransaction
 	UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error
 	DeleteBlockSuiteDocByCardID(cardID string) error
