@@ -89,8 +89,7 @@ func (a *API) handleGetCardBlockSuiteContent(w http.ResponseWriter, r *http.Requ
 		mlog.Int("snapshotSize", len(doc.Snapshot)),
 	)
 
-	// Return binary snapshot
-	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(doc.Snapshot)
 

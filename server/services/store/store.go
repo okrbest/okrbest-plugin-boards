@@ -46,7 +46,7 @@ type Store interface {
 	GetBoardAndCardByID(blockID string) (board *model.Board, card *model.Block, err error)
 	GetBoardAndCard(block *model.Block) (board *model.Board, card *model.Block, err error)
 	// @withTransaction
-	DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, error)
+	DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, map[string]string, error)
 	// @withTransaction
 	DuplicateBlock(boardID string, blockID string, userID string, asTemplate bool) ([]*model.Block, error)
 	// @withTransaction

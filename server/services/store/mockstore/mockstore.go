@@ -309,13 +309,14 @@ func (mr *MockStoreMockRecorder) DuplicateBlock(arg0, arg1, arg2, arg3 interface
 }
 
 // DuplicateBoard mocks base method.
-func (m *MockStore) DuplicateBoard(arg0, arg1, arg2 string, arg3 bool) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
+func (m *MockStore) DuplicateBoard(arg0, arg1, arg2 string, arg3 bool) (*model.BoardsAndBlocks, []*model.BoardMember, map[string]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DuplicateBoard", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*model.BoardsAndBlocks)
 	ret1, _ := ret[1].([]*model.BoardMember)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(map[string]string)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // DuplicateBoard indicates an expected call of DuplicateBoard.

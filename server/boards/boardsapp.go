@@ -170,6 +170,12 @@ func (b *BoardsApp) Start() error {
 
 	b.servicesAPI.RegisterRouter(b.server.GetRootRouter())
 
+	go func() {
+		if err := b.server.App().RunBlockSuiteMigration(); err != nil {
+			b.logger.Error("BlockSuite migration failed", mlog.Err(err))
+		}
+	}()
+
 	b.logger.Info("Boards product successfully started.")
 
 	return nil
