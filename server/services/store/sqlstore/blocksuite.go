@@ -416,7 +416,7 @@ func (s *SQLStore) getBlockSuiteMigrationStatus(db sq.BaseRunner) (*model.BlockS
 		status.MigrationPercentage = float64(status.MigratedCards) / float64(status.TotalCards) * 100
 	}
 
-	status.IsMigrationComplete = status.CardsWithContentBlocksNotMigrated == 0
+	status.IsMigrationComplete = status.MigratedCards >= status.TotalCards
 
 	return status, nil
 }

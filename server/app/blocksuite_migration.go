@@ -34,8 +34,9 @@ func (a *App) RunBlockSuiteMigration() error {
 	}
 
 	a.logger.Info("Starting BlockSuite migration",
-		mlog.Int("cardsToMigrate", int(status.CardsWithContentBlocksNotMigrated)),
-		mlog.Int("totalCards", int(status.TotalCards)))
+		mlog.Int("cardsToMigrate", int(status.TotalCards-status.MigratedCards)),
+		mlog.Int("totalCards", int(status.TotalCards)),
+		mlog.Int("alreadyMigrated", int(status.MigratedCards)))
 
 	totalMigrated := 0
 	offset := 0
