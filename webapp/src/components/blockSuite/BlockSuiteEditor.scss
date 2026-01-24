@@ -32,7 +32,7 @@
         --affine-text-primary-color: #000000;
         color: #000000;
     }
-    
+
     editor-host {
         display: block;
         height: 100%;
@@ -40,7 +40,7 @@
         overflow: visible !important;
         pointer-events: auto !important;
     }
-    
+
     affine-doc-page,
     affine-page-root {
         display: block;
@@ -54,7 +54,7 @@
         outline: none !important;
         box-shadow: none !important;
     }
-    
+
     .affine-page-viewport {
         display: block;
         position: relative;
@@ -63,7 +63,7 @@
         overflow: visible !important;
         pointer-events: auto !important;
     }
-    
+
     .affine-page-root-block-container {
         display: block;
         height: auto !important;
@@ -74,7 +74,7 @@
         padding-right: 0 !important;
         padding-bottom: 0 !important;
     }
-    
+
     /* 노트 블록 스크롤 비활성화 */
     affine-note {
         display: block;
@@ -83,7 +83,7 @@
         max-height: none !important;
         overflow: visible !important;
     }
-    
+
     .affine-note-block-container {
         display: block;
         height: auto !important;
@@ -91,7 +91,7 @@
         max-height: none !important;
         overflow: visible !important;
     }
-    
+
     /* affine-block-component opacity 강제 적용 */
     .affine-block-component.light {
         opacity: 1 !important;
@@ -100,7 +100,7 @@
     /* Hide page title and tags - we use card title instead */
     .affine-doc-page-block-title-container,
     doc-title,
-    [data-block-is-title="true"],
+    [data-block-is-title='true'],
     .doc-title-container {
         display: none !important;
     }
@@ -139,7 +139,7 @@
     &::-webkit-scrollbar-thumb:hover {
         background: rgba(0, 0, 0, 0.35);
     }
-    
+
     &::-webkit-scrollbar-track {
         background: transparent;
     }
@@ -173,7 +173,7 @@
         width: 40px;
         height: 40px;
         border: 3px solid rgba(0, 0, 0, 0.1);
-        border-top-color: var(--affine-primary-color, #1E96EB);
+        border-top-color: var(--affine-primary-color, #1e96eb);
         border-radius: 50%;
         animation: blocksuite-spin 1s linear infinite;
     }
@@ -199,7 +199,7 @@
 
         &.saving {
             background: rgba(30, 150, 235, 0.1);
-            color: #1E96EB;
+            color: #1e96eb;
             border: 1px solid rgba(30, 150, 235, 0.3);
         }
 
@@ -217,22 +217,23 @@
     }
 
     /* --- Korean Placeholder Customization --- */
-    
+
     /* 제목 플레이스홀더 숨기고 한국어로 대체 */
     .affine-doc-page-block-title::placeholder,
-    [data-block-is-title="true"]::placeholder {
+    [data-block-is-title='true']::placeholder {
         color: transparent;
     }
-    
+
     .affine-doc-page-block-title:empty::before,
-    [data-block-is-title="true"]:empty::before {
+    [data-block-is-title='true']:empty::before {
         content: '제목 없음';
         color: var(--affine-text-disable-color, #999999);
         pointer-events: none;
     }
 
     /* 빈 문단 플레이스홀더 */
-    .affine-paragraph-block-container[data-block-id] .affine-paragraph-rich-text-wrapper:empty::before,
+    .affine-paragraph-block-container[data-block-id]
+        .affine-paragraph-rich-text-wrapper:empty::before,
     .affine-paragraph-placeholder::before {
         content: '내용을 입력하세요... ("/" 입력하면 블록 추가)';
         color: var(--affine-text-disable-color, #999999);
@@ -243,17 +244,18 @@
     }
 
     /* 포커스 시 플레이스홀더 표시 */
-    .affine-paragraph-block-container:focus-within .affine-paragraph-rich-text-wrapper:empty::before,
+    .affine-paragraph-block-container:focus-within
+        .affine-paragraph-rich-text-wrapper:empty::before,
     .affine-paragraph-placeholder:focus-within::before {
         opacity: 1;
     }
 
     /* Tags 섹션 한국어화 (있다면) */
-    [data-placeholder="Tags"]::placeholder {
+    [data-placeholder='Tags']::placeholder {
         color: transparent;
     }
-    
-    [data-placeholder="Tags"]:empty::before {
+
+    [data-placeholder='Tags']:empty::before {
         content: '태그';
         color: var(--affine-text-disable-color, #999999);
     }
@@ -269,16 +271,22 @@ body {
     > affine-slash-menu,
     affine-slash-menu {
         z-index: 10001 !important;
-        background-color: var(--affine-background-primary-color, #ffffff) !important;
-        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        background-color: var(
+            --affine-background-primary-color,
+            #ffffff
+        ) !important;
+        box-shadow: var(
+            --affine-popover-shadow,
+            0px 4px 16px rgba(0, 0, 0, 0.15)
+        ) !important;
         border-radius: var(--affine-popover-radius, 12px) !important;
         border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
         color: #000000;
-        
+
         /* 슬래시 메뉴의 서브메뉴 (Other Headings 등) 위치 수정 */
-        [data-testid="sub-menu-0"],
-        [data-testid="sub-menu-1"],
-        [data-testid^="sub-menu-"] {
+        [data-testid='sub-menu-0'],
+        [data-testid='sub-menu-1'],
+        [data-testid^='sub-menu-'] {
             position: absolute !important;
             /* 메인 메뉴 오른쪽에 배치 */
             left: 100% !important;
@@ -286,20 +294,32 @@ body {
             bottom: auto !important;
             margin-left: 4px !important;
             z-index: 10002 !important;
-            background-color: var(--affine-background-primary-color, #ffffff) !important;
-            box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+            background-color: var(
+                --affine-background-primary-color,
+                #ffffff
+            ) !important;
+            box-shadow: var(
+                --affine-popover-shadow,
+                0px 4px 16px rgba(0, 0, 0, 0.15)
+            ) !important;
             border-radius: var(--affine-popover-radius, 12px) !important;
             border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
         }
     }
-    
+
     /* 슬래시 메뉴 서브메뉴 (body에 직접 렌더링되는 경우) */
-    > [data-testid="sub-menu-0"],
-    > [data-testid="sub-menu-1"],
-    > [data-testid^="sub-menu-"] {
+    > [data-testid='sub-menu-0'],
+    > [data-testid='sub-menu-1'],
+    > [data-testid^='sub-menu-'] {
         z-index: 10002 !important;
-        background-color: var(--affine-background-primary-color, #ffffff) !important;
-        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        background-color: var(
+            --affine-background-primary-color,
+            #ffffff
+        ) !important;
+        box-shadow: var(
+            --affine-popover-shadow,
+            0px 4px 16px rgba(0, 0, 0, 0.15)
+        ) !important;
         border-radius: var(--affine-popover-radius, 12px) !important;
         border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
         color: #000000;
@@ -310,8 +330,14 @@ body {
     affine-format-bar-widget,
     .affine-format-bar {
         z-index: 10001 !important;
-        background-color: var(--affine-background-primary-color, #ffffff) !important;
-        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        background-color: var(
+            --affine-background-primary-color,
+            #ffffff
+        ) !important;
+        box-shadow: var(
+            --affine-popover-shadow,
+            0px 4px 16px rgba(0, 0, 0, 0.15)
+        ) !important;
         border-radius: 8px !important;
         border: none !important;
         color: #000000;
@@ -325,8 +351,14 @@ body {
     > .blocksuite-overlay,
     .blocksuite-overlay {
         z-index: 10001 !important;
-        background-color: var(--affine-background-primary-color, #ffffff) !important;
-        box-shadow: var(--affine-popover-shadow, 0px 4px 16px rgba(0, 0, 0, 0.15)) !important;
+        background-color: var(
+            --affine-background-primary-color,
+            #ffffff
+        ) !important;
+        box-shadow: var(
+            --affine-popover-shadow,
+            0px 4px 16px rgba(0, 0, 0, 0.15)
+        ) !important;
         border-radius: var(--affine-popover-radius, 12px) !important;
         border: 1px solid var(--affine-border-color, rgb(227, 226, 228)) !important;
     }

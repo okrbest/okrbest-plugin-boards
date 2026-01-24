@@ -1,11 +1,13 @@
 .BlockSuiteEditor {
-    width: 100%;
+    width: calc(100% + 24px);
     min-height: 200px;
     position: relative;
+    margin-left: -24px;
 
     &__container {
         width: 100%;
         min-height: 200px;
+        position: relative;
 
         &.light {
             opacity: 1;
@@ -40,7 +42,8 @@
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         z-index: 1000;
-        transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+        transition: opacity 0.2s ease, background-color 0.2s ease,
+            transform 0.2s ease;
 
         &--pending {
             color: rgba(0, 0, 0, 0.5);
@@ -135,7 +138,7 @@
         line-height: var(--affine-line-height, 1.6);
 
         &:focus {
-            outline: 2px solid var(--affine-primary-color, #1e96eb);
+            outline: 1px solid #121212;
             outline-offset: -2px;
         }
 
@@ -151,7 +154,7 @@
 
     [contenteditable='true'] {
         outline: none;
-        caret-color: var(--affine-primary-color, #1e96eb);
+        caret-color: #000000;
     }
 
     [contenteditable='true']:empty::before {
@@ -238,7 +241,7 @@
     }
 
     ::selection {
-        background: var(--affine-primary-color, #1e96eb);
+        background: #121212;
         color: #ffffff;
     }
 }
@@ -268,17 +271,15 @@ affine-drag-handle-widget {
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    z-index: 100 !important;
-}
-
-affine-drag-handle-widget .affine-drag-handle-widget {
-    display: flex !important;
+    z-index: 9999 !important;
 }
 
 affine-drag-handle-widget .affine-drag-handle-container {
     pointer-events: auto !important;
     cursor: grab !important;
     visibility: visible !important;
+    min-width: 20px !important;
+    min-height: 24px !important;
 }
 
 affine-drag-handle-widget .affine-drag-handle-grabber {
@@ -303,4 +304,33 @@ affine-note {
     padding-left: 24px !important;
     padding-right: 0 !important;
     padding-bottom: 0 !important;
+}
+
+.block-caption-editor {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 60px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    color: rgba(0, 0, 0, 0.5) !important;
+    padding: 2px 8px !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    resize: none !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+
+    &::placeholder {
+        color: rgba(0, 0, 0, 0.3) !important;
+        font-size: 12px !important;
+    }
+
+    &:focus {
+        outline: none !important;
+        background: rgba(0, 0, 0, 0.03) !important;
+        border-radius: 4px !important;
+    }
 }
