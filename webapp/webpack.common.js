@@ -26,10 +26,25 @@ function makeCommonConfig() {
                     },
                 },
                 {
+                    test: /\.m?js$/,
+                    include: /node_modules\/@blocksuite/,
+                    resolve: {
+                        fullySpecified: false,
+                    },
+                },
+                {
+                    test: /\.m?js$/,
+                    include: /node_modules\/yjs/,
+                    resolve: {
+                        fullySpecified: false,
+                    },
+                },
+                {
                     test: /\.tsx?$/,
                     use: {
                         loader: 'ts-loader',
                         options: {
+                            transpileOnly: true,
                             getCustomTransformers: {
                                 before: [
                                     tsTransformer.transform({
@@ -82,10 +97,12 @@ function makeCommonConfig() {
                 'node_modules',
                 path.resolve(__dirname),
             ],
+            alias: {
+                '@blocksuite/store/src': path.resolve(__dirname, './node_modules/@blocksuite/store/dist'),
+            },
             fullySpecified: false,
             extensions: ['.js', '.jsx', '.ts', '.tsx'],
-            // BlockSuite ESM 패키지 지원을 위한 conditionNames 설정
-            conditionNames: ['import', 'require', 'module', 'browser', 'default'],
+            conditionNames: ['import', 'module', 'browser', 'default'],
         },
         plugins: [
             new CopyPlugin({

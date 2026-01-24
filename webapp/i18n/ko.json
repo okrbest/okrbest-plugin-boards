@@ -532,5 +532,11 @@
   "RHSBoardCards.no-cards": "이 보드에는 카드가 없습니다.",
   "BoardMessage.linkBoard": "@{username}님이 보드 [{boardTitle}]({boardLink})을(를) 이 채널에 연결했습니다",
   "BoardMessage.unlinkBoard": "@{username}님이 보드 [{boardTitle}]({boardLink})을(를) 이 채널에서 연결 해제했습니다",
-  "BoardMessage.cardNotify": "@{username}님이 보드 [{boardTitle}]({boardLink})의 카드 [{cardTitle}]({cardLink})에 대해 알림을 보냈습니다"
+  "BoardMessage.cardNotify": "@{username}님이 보드 [{boardTitle}]({boardLink})의 카드 [{cardTitle}]({cardLink})에 대해 알림을 보냈습니다",
+  "BlockSuiteEditor.loading": "에디터를 불러오는 중...",
+  "BlockSuiteEditor.error": "에디터를 불러오지 못했습니다",
+  "BlockSuiteEditor.saving": "저장 중...",
+  "BlockSuiteEditor.pending": "저장되지 않은 변경사항...",
+  "BlockSuiteEditor.saved": "저장됨",
+  "BlockSuiteEditor.saveError": "저장 실패"
 }

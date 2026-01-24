@@ -12,7 +12,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
-// GetBlockSuiteDocByCardID retrieves a BlockSuite document by card_id.
+// getBlockSuiteDocByCardID retrieves a BlockSuite document by card_id.
 func (s *SQLStore) getBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) (*model.BlockSuiteDoc, error) {
 	query := s.getQueryBuilder(db).
 		Select(
@@ -46,14 +46,14 @@ func (s *SQLStore) getBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) (*m
 		return nil, model.NewErrBlockSuiteDocNotFound(cardID)
 	}
 	if err != nil {
-		s.logger.Error("GetBlockSuiteDocByCardID ERROR", mlog.String("card_id", cardID), mlog.Err(err))
+		s.logger.Error("getBlockSuiteDocByCardID ERROR", mlog.String("card_id", cardID), mlog.Err(err))
 		return nil, err
 	}
 
 	return doc, nil
 }
 
-// GetBlockSuiteDocInfoByCardID retrieves metadata (without snapshot) by card_id.
+// getBlockSuiteDocInfoByCardID retrieves metadata (without snapshot) by card_id.
 func (s *SQLStore) getBlockSuiteDocInfoByCardID(db sq.BaseRunner, cardID string) (*model.BlockSuiteDocInfo, error) {
 	query := s.getQueryBuilder(db).
 		Select(
@@ -85,14 +85,14 @@ func (s *SQLStore) getBlockSuiteDocInfoByCardID(db sq.BaseRunner, cardID string)
 		return nil, model.NewErrBlockSuiteDocNotFound(cardID)
 	}
 	if err != nil {
-		s.logger.Error("GetBlockSuiteDocInfoByCardID ERROR", mlog.String("card_id", cardID), mlog.Err(err))
+		s.logger.Error("getBlockSuiteDocInfoByCardID ERROR", mlog.String("card_id", cardID), mlog.Err(err))
 		return nil, err
 	}
 
 	return info, nil
 }
 
-// UpsertBlockSuiteDoc inserts or updates a BlockSuite document.
+// upsertBlockSuiteDoc inserts or updates a BlockSuite document.
 func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDoc) error {
 	if err := doc.IsValid(); err != nil {
 		return err
@@ -114,7 +114,7 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 		return fmt.Errorf("card not found: %s", doc.CardID)
 	}
 	if err != nil {
-		s.logger.Error("UpsertBlockSuiteDoc card validation ERROR",
+		s.logger.Error("upsertBlockSuiteDoc card validation ERROR",
 			mlog.String("card_id", doc.CardID),
 			mlog.Err(err))
 		return err
@@ -123,7 +123,7 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 	// Build upsert query based on database type
 	var query sq.InsertBuilder
 	query = s.getQueryBuilder(db).
-		Insert(s.tablePrefix + "blocksuite_docs").
+		Insert(s.tablePrefix+"blocksuite_docs").
 		Columns(
 			"doc_id",
 			"card_id",
@@ -176,7 +176,7 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 
 	_, err = query.Exec()
 	if err != nil {
-		s.logger.Error("UpsertBlockSuiteDoc ERROR",
+		s.logger.Error("upsertBlockSuiteDoc ERROR",
 			mlog.String("doc_id", doc.DocID),
 			mlog.String("card_id", doc.CardID),
 			mlog.Err(err))
@@ -186,7 +186,57 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 	return nil
 }
 
-// DeleteBlockSuiteDocByCardID deletes a BlockSuite document by card_id.
+// GetBlockSuiteDocsByBoardID retrieves all BlockSuite documents for a board.
+func (s *SQLStore) GetBlockSuiteDocsByBoardID(boardID string) ([]*model.BlockSuiteDoc, error) {
+	query := s.getQueryBuilder(s.db).
+		Select(
+			"doc_id",
+			"card_id",
+			"board_id",
+			"snapshot",
+			"created_at",
+			"updated_at",
+			"created_by",
+			"updated_by",
+		).
+		From(s.tablePrefix + "blocksuite_docs").
+		Where(sq.Eq{"board_id": boardID})
+
+	rows, err := query.Query()
+	if err != nil {
+		s.logger.Error("GetBlockSuiteDocsByBoardID query ERROR", mlog.String("board_id", boardID), mlog.Err(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var docs []*model.BlockSuiteDoc
+	for rows.Next() {
+		doc := &model.BlockSuiteDoc{}
+		err := rows.Scan(
+			&doc.DocID,
+			&doc.CardID,
+			&doc.BoardID,
+			&doc.Snapshot,
+			&doc.CreatedAt,
+			&doc.UpdatedAt,
+			&doc.CreatedBy,
+			&doc.UpdatedBy,
+		)
+		if err != nil {
+			s.logger.Error("GetBlockSuiteDocsByBoardID scan ERROR", mlog.String("board_id", boardID), mlog.Err(err))
+			return nil, err
+		}
+		docs = append(docs, doc)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return docs, nil
+}
+
+// deleteBlockSuiteDocByCardID deletes a BlockSuite document by card_id.
 func (s *SQLStore) deleteBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) error {
 	query := s.getQueryBuilder(db).
 		Delete(s.tablePrefix + "blocksuite_docs").
@@ -194,7 +244,7 @@ func (s *SQLStore) deleteBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) 
 
 	result, err := query.Exec()
 	if err != nil {
-		s.logger.Error("DeleteBlockSuiteDocByCardID ERROR", mlog.String("card_id", cardID), mlog.Err(err))
+		s.logger.Error("deleteBlockSuiteDocByCardID ERROR", mlog.String("card_id", cardID), mlog.Err(err))
 		return err
 	}
 
@@ -207,4 +257,3 @@ func (s *SQLStore) deleteBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) 
 
 	return nil
 }
-

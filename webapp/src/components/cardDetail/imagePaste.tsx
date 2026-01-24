@@ -11,7 +11,7 @@ import {Block} from '../../blocks/block'
 import octoClient from '../../octoClient'
 import mutator from '../../mutator'
 
-export default function useImagePaste(boardId: string, cardId: string, contentOrder: Array<string | string[]>): void {
+export default function useImagePaste(boardId: string, cardId: string, contentOrder: Array<string | string[]>, enabled: boolean = true): void {
     const intl = useIntl()
     const uploadItems = useCallback(async (items: FileList) => {
         let newImage: File|null = null
@@ -76,11 +76,14 @@ export default function useImagePaste(boardId: string, cardId: string, contentOr
     }, [uploadItems])
 
     useEffect(() => {
+        if (!enabled) {
+            return
+        }
         document.addEventListener('paste', onPaste)
         document.addEventListener('drop', onDrop)
         return () => {
             document.removeEventListener('paste', onPaste)
             document.removeEventListener('drop', onDrop)
         }
-    }, [uploadItems, onPaste, onDrop])
+    }, [uploadItems, onPaste, onDrop, enabled])
 }
