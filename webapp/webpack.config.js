@@ -136,7 +136,7 @@ const config = {
                 type: 'asset/resource',
                 generator: {
                     filename: '[name][ext]',
-                    publicPath: TARGET_IS_PRODUCT ? undefined : '/static/',
+                    publicPath: TARGET_IS_PRODUCT ? undefined : 'static/',
                 }
             },
             {

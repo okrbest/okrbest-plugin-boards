@@ -12,4 +12,12 @@
     --affine-quote-color: rgba(0, 0, 0, 0.2);
     --affine-black-30: rgba(0, 0, 0, 0.3);
     --affine-paragraph-space: 8px;
+    --affine-editor-side-padding: 24px;
+    --affine-editor-bottom-padding: 0;
+}
+
+.affine-page-root-block-container {
+    padding-left: 24px !important;
+    padding-right: 0 !important;
+    padding-bottom: 0 !important;
 }

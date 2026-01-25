@@ -6,7 +6,6 @@
     &__container {
         width: 100%;
         min-height: 200px;
-        isolation: isolate;
 
         &.light {
             opacity: 1;
@@ -31,16 +30,17 @@
     }
 
     &__saving {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        padding: 4px 8px;
-        font-size: 12px;
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        padding: 8px 16px;
+        font-size: 13px;
         color: rgba(0, 0, 0, 0.64);
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 4px;
-        z-index: 10;
-        transition: opacity 0.2s ease, background-color 0.2s ease;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
 
         &--pending {
             color: rgba(0, 0, 0, 0.5);
@@ -260,5 +260,47 @@ blocksuite-portal,
 affine-mobile-toolbar,
 [data-blocksuite-overlay],
 [data-affine-overlay] {
-    z-index: 1001 !important;
+    z-index: 10001 !important;
+}
+
+affine-drag-handle-widget {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+}
+
+affine-drag-handle-widget .affine-drag-handle-widget {
+    display: flex !important;
+}
+
+affine-drag-handle-widget .affine-drag-handle-container {
+    pointer-events: auto !important;
+    cursor: grab !important;
+    visibility: visible !important;
+}
+
+affine-drag-handle-widget .affine-drag-handle-grabber {
+    visibility: visible !important;
+    background: var(--affine-placeholder-color, rgba(0, 0, 0, 0.3)) !important;
+}
+
+affine-drag-handle-widget .affine-drag-hover-rect {
+    pointer-events: none !important;
+}
+
+.affine-page-viewport,
+affine-page-root {
+    position: relative;
+}
+
+affine-note {
+    position: relative;
+}
+
+.affine-page-root-block-container {
+    padding-left: 24px !important;
+    padding-right: 0 !important;
+    padding-bottom: 0 !important;
 }
