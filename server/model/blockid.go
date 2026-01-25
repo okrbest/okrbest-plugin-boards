@@ -16,6 +16,13 @@ import (
 // the original IDs, so a tree of blocks can get new IDs and maintain
 // its shape.
 func GenerateBlockIDs(blocks []*Block, logger mlog.LoggerIFace) []*Block {
+	newBlocks, _ := GenerateBlockIDsWithMapping(blocks, logger)
+	return newBlocks
+}
+
+// GenerateBlockIDsWithMapping generates new IDs for all the blocks of the list
+// and returns a mapping of old IDs to new IDs for card blocks.
+func GenerateBlockIDsWithMapping(blocks []*Block, logger mlog.LoggerIFace) ([]*Block, map[string]string) {
 	blockIDs := map[string]BlockType{}
 	referenceIDs := map[string]bool{}
 	for _, block := range blocks {
@@ -96,11 +103,17 @@ func GenerateBlockIDs(blocks []*Block, logger mlog.LoggerIFace) []*Block {
 		return utils.NewID(BlockType2IDType(blockIDs[id]))
 	}
 
+	cardIDMapping := map[string]string{}
 	newBlocks := make([]*Block, len(blocks))
 	for i, block := range blocks {
+		oldID := block.ID
 		block.ID = getExistingOrNewID(block.ID)
 		block.BoardID = getExistingOrOldID(block.BoardID)
 		block.ParentID = getExistingOrOldID(block.ParentID)
+
+		if block.Type == TypeCard {
+			cardIDMapping[oldID] = block.ID
+		}
 
 		blockMod := block
 		if _, ok := blockMod.Fields["contentOrder"]; ok {
@@ -129,7 +142,7 @@ func GenerateBlockIDs(blocks []*Block, logger mlog.LoggerIFace) []*Block {
 		newBlocks[i] = blockMod
 	}
 
-	return newBlocks
+	return newBlocks, cardIDMapping
 }
 
 func fixFieldIDs(block *Block, fieldName string, getExistingOrOldID func(string) string, logger mlog.LoggerIFace) {

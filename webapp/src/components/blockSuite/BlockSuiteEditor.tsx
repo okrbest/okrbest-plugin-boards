@@ -3,6 +3,7 @@
 
 import React, {useEffect, useRef, useCallback, useState} from 'react'
 import {useIntl} from 'react-intl'
+import {useHistory} from 'react-router-dom'
 
 import {AffineSchemas, PageEditorBlockSpecs} from '@blocksuite/blocks'
 import {DocModeExtension, type DocModeProvider} from '@blocksuite/affine-shared/services'
@@ -14,10 +15,18 @@ import {effects as blocksEffects} from '@blocksuite/blocks/effects'
 
 import {Block} from '../../blocks/block'
 import {Card} from '../../blocks/card'
+import {Board} from '../../blocks/board'
 import {Utils} from '../../utils'
+import {useAppSelector, useAppDispatch} from '../../store/hooks'
+import {getSortedCards, updateCards} from '../../store/cards'
+import {getBoards, getMySortedBoards} from '../../store/boards'
+import {getViews, updateViews} from '../../store/views'
+import {BoardView} from '../../blocks/boardView'
+import octoClient from '../../octoClient'
 
 import {useBlockSuiteEditor} from './useBlockSuiteEditor'
 import {createFocalboardBlobSource} from './focalboardBlobSource'
+import {createLinkedCardExtension} from './linkedCardConfig'
 
 import './blockSuiteTheme.css'
 import './blockSuite.scss'
@@ -30,11 +39,54 @@ type Props = {
     contents: Block[]
     readonly: boolean
     teamId: string
+    viewId: string
 }
 
 function BlockSuiteEditor(props: Props): JSX.Element {
-    const {card, contents, readonly, teamId} = props
+    const {card, contents, readonly, teamId, viewId} = props
     const intl = useIntl()
+    const history = useHistory()
+    const dispatch = useAppDispatch()
+
+    const allCards = useAppSelector(getSortedCards)
+    const boards = useAppSelector(getBoards)
+    const myBoards = useAppSelector(getMySortedBoards)
+    const allCardsRef = useRef<Card[]>(allCards)
+    const boardsRef = useRef<{[key: string]: Board}>(boards)
+    allCardsRef.current = allCards
+    boardsRef.current = boards
+
+    const views = useAppSelector(getViews)
+    const viewsRef = useRef<{[key: string]: BoardView}>(views)
+    viewsRef.current = views
+
+    useEffect(() => {
+        const fetchAllBoardData = async () => {
+            const boardIds = myBoards.map((b) => b.id)
+            const loadedBoardIds = new Set(allCards.map((c) => c.boardId))
+
+            for (const boardId of boardIds) {
+                if (loadedBoardIds.has(boardId)) continue
+
+                try {
+                    const blocks = await octoClient.getAllBlocks(boardId)
+                    const cards = blocks.filter((b): b is Card => b.type === 'card')
+                    const boardViews = blocks.filter((b): b is BoardView => b.type === 'view')
+
+                    if (cards.length > 0) {
+                        dispatch(updateCards(cards))
+                    }
+                    if (boardViews.length > 0) {
+                        dispatch(updateViews(boardViews))
+                    }
+                } catch (err) {
+                    Utils.logError(`Failed to fetch data for board ${boardId}: ${err}`)
+                }
+            }
+        }
+
+        fetchAllBoardData()
+    }, [myBoards.length])
 
     const [containerMounted, setContainerMounted] = useState(false)
     const containerRef = useRef<HTMLDivElement | null>(null)
@@ -54,6 +106,36 @@ function BlockSuiteEditor(props: Props): JSX.Element {
         setContainerMounted(!!node)
     }, [])
 
+    const handleLinkClick = useCallback((e: MouseEvent) => {
+        const target = e.target as HTMLElement
+        const anchor = target.closest('a')
+        if (!anchor) return
+
+        const href = anchor.getAttribute('href')
+        if (!href) return
+
+        const frontendBase = Utils.getFrontendBaseURL()
+        const escapedBase = frontendBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+        const cardLinkWithViewPattern = new RegExp(`^(https?://[^/]+)?/${escapedBase}/team/([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$`)
+        const cardLinkWithoutViewPattern = new RegExp(`^(https?://[^/]+)?/${escapedBase}/team/([^/]+)/([^/]+)/([^/]+)/?$`)
+
+        const matchWithView = href.match(cardLinkWithViewPattern)
+        if (matchWithView) {
+            e.preventDefault()
+            e.stopPropagation()
+            history.push(`/team/${matchWithView[2]}/${matchWithView[3]}/${matchWithView[4]}/${matchWithView[5]}`)
+            return
+        }
+
+        const matchWithoutView = href.match(cardLinkWithoutViewPattern)
+        if (matchWithoutView) {
+            e.preventDefault()
+            e.stopPropagation()
+            history.push(`/team/${matchWithoutView[2]}/${matchWithoutView[3]}/${matchWithoutView[4]}`)
+        }
+    }, [history])
+
     const handleDocUpdate = useCallback(async () => {
         if (readonly || !editorDocRef.current || !jobRef.current) {
             return
@@ -68,6 +150,16 @@ function BlockSuiteEditor(props: Props): JSX.Element {
             Utils.logError(`Failed to create snapshot: ${err}`)
         }
     }, [readonly, scheduleSave])
+
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
+        container.addEventListener('click', handleLinkClick, true)
+        return () => {
+            container.removeEventListener('click', handleLinkClick, true)
+        }
+    }, [containerMounted, handleLinkClick])
 
     useEffect(() => {
         Utils.log(`BlockSuiteEditor useEffect: containerMounted=${containerMounted}, snapshot=${!!snapshot}`)
@@ -121,10 +213,20 @@ function BlockSuiteEditor(props: Props): JSX.Element {
                     setEditorMode: () => {},
                 }
 
+                const linkedCardExtension = createLinkedCardExtension({
+                    getCards: () => allCardsRef.current,
+                    getBoards: () => boardsRef.current,
+                    getViews: () => viewsRef.current,
+                    getCurrentCardId: () => card.id,
+                    teamId,
+                    viewId,
+                })
+
                 const editor = new PageEditor()
                 editor.specs = [
                     ...PageEditorBlockSpecs,
                     DocModeExtension(pageModeProvider),
+                    linkedCardExtension,
                 ]
                 editor.doc = editorDoc
 
@@ -145,39 +247,6 @@ function BlockSuiteEditor(props: Props): JSX.Element {
                 }
 
                 Utils.log('BlockSuiteEditor: Initialization complete')
-
-                setTimeout(() => {
-                    const dragWidget = document.querySelector('affine-drag-handle-widget') as any
-                    const pageRoot = document.querySelector('affine-page-root')
-                    const editorHost = document.querySelector('editor-host') as any
-                    console.log('[BlockSuiteEditor] Debug - drag-handle-widget exists:', !!dragWidget)
-                    console.log('[BlockSuiteEditor] Debug - page-root exists:', !!pageRoot)
-                    console.log('[BlockSuiteEditor] Debug - editor-host exists:', !!editorHost)
-                    console.log('[BlockSuiteEditor] Debug - doc.readonly:', editorDoc.readonly)
-                    console.log('[BlockSuiteEditor] Debug - readonly prop:', readonly)
-
-                    if (editorHost) {
-                        const hostRect = editorHost.getBoundingClientRect()
-                        console.log('[BlockSuiteEditor] Debug - host rect:', hostRect.width, 'x', hostRect.height)
-                    }
-
-                    if (dragWidget) {
-                        const container = dragWidget.dragHandleContainer
-                        console.log('[BlockSuiteEditor] Debug - container exists:', !!container)
-                        console.log('[BlockSuiteEditor] Debug - dragWidget.store:', dragWidget.store)
-                        console.log('[BlockSuiteEditor] Debug - dragWidget.store.readonly:', dragWidget.store?.readonly)
-                        console.log('[BlockSuiteEditor] Debug - dragWidget.rootComponent:', !!dragWidget.rootComponent)
-                        console.log('[BlockSuiteEditor] Debug - dragWidget.mode:', dragWidget.mode)
-                        console.log('[BlockSuiteEditor] Debug - dragWidget.pointerEventWatcher:', !!dragWidget.pointerEventWatcher)
-                        console.log('[BlockSuiteEditor] Debug - dragWidget.isConnected:', dragWidget.isConnected)
-                    }
-
-                    const noteBlocks = document.querySelectorAll('affine-note')
-                    console.log('[BlockSuiteEditor] Debug - note blocks count:', noteBlocks.length)
-
-                    const paragraphs = document.querySelectorAll('affine-paragraph')
-                    console.log('[BlockSuiteEditor] Debug - paragraph blocks count:', paragraphs.length)
-                }, 1000)
             } catch (err) {
                 Utils.logError(`BlockSuite editor initialization error: ${err}`)
                 console.error('BlockSuite init error details:', err)

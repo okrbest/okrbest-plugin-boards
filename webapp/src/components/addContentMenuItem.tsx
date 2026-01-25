@@ -46,13 +46,13 @@ const AddContentMenuItem = (props: Props): JSX.Element => {
                 const description = intl.formatMessage({id: 'ContentBlock.addElement', defaultMessage: 'add {type}'}, {type: typeName})
 
                 const afterRedo = async (nb: Block) => {
-                    const contentOrder = card.fields.contentOrder.slice()
+                    const contentOrder = (card.fields.contentOrder || []).slice()
                     contentOrder.splice(index, 0, nb.id)
                     await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
                 }
 
                 const beforeUndo = async () => {
-                    const contentOrder = card.fields.contentOrder.slice()
+                    const contentOrder = (card.fields.contentOrder || []).slice()
                     await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
                 }
 

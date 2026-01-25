@@ -23,7 +23,7 @@ function addContentMenu(intl: IntlShape, type: BlockTypes): JSX.Element {
     const cardDetail = useCardDetailContext()
     const addElement = useCallback(async () => {
         const {card} = cardDetail
-        const index = card.fields.contentOrder.length
+        const index = card.fields.contentOrder?.length ?? 0
         cardDetail.addBlock(handler, index, false)
     }, [cardDetail, handler])
 

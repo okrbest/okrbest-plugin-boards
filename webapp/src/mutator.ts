@@ -11,7 +11,6 @@ import {Block, BlockPatch, createPatchesFromBlocks} from './blocks/block'
 import {Board, BoardMember, BoardsAndBlocks, IPropertyOption, IPropertyTemplate, PropertyTypeEnum, createBoard, createPatchesFromBoards, createPatchesFromBoardsAndBlocks, createCardPropertiesPatches} from './blocks/board'
 import {BoardView, ISortOption, createBoardView, KanbanCalculationFields} from './blocks/boardView'
 import {Card, createCard} from './blocks/card'
-import {ContentBlock} from './blocks/contentBlock'
 import {CommentBlock} from './blocks/commentBlock'
 import {AttachmentBlock} from './blocks/attachmentBlock'
 import {FilterGroup} from './blocks/filterGroup'
@@ -30,7 +29,6 @@ import {updateViews} from './store/views'
 import {updateCards} from './store/cards'
 import {updateAttachments} from './store/attachments'
 import {updateComments} from './store/comments'
-import {updateContents} from './store/contents'
 import {addBoardUsers, removeBoardUsersById} from './store/users'
 
 function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
@@ -40,7 +38,6 @@ function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
         store.dispatch(updateCards(blocks.filter((b: Block) => b.type === 'card' || b.deleteAt !== 0) as Card[]))
         store.dispatch(updateAttachments(blocks.filter((b: Block) => b.type === 'attachment' || b.deleteAt !== 0) as AttachmentBlock[]))
         store.dispatch(updateComments(blocks.filter((b: Block) => b.type === 'comment' || b.deleteAt !== 0) as CommentBlock[]))
-        store.dispatch(updateContents(blocks.filter((b: Block) => b.type !== 'card' && b.type !== 'view' && b.type !== 'board' && b.type !== 'comment') as ContentBlock[]))
     })
 }
 
@@ -1160,19 +1157,6 @@ class Mutator {
                     awaits.push(octoClient.deleteBoard(board.id))
                 }
                 await Promise.all(awaits)
-            },
-            description,
-            this.undoGroupId,
-        )
-    }
-
-    async moveContentBlock(blockId: string, dstBlockId: string, where: 'after'|'before', srcBlockId: string, srcWhere: 'after'|'before', description: string): Promise<void> {
-        return undoManager.perform(
-            async () => {
-                await octoClient.moveBlockTo(blockId, where, dstBlockId)
-            },
-            async () => {
-                await octoClient.moveBlockTo(blockId, srcWhere, srcBlockId)
             },
             description,
             this.undoGroupId,

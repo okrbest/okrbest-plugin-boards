@@ -309,13 +309,14 @@ func (mr *MockStoreMockRecorder) DuplicateBlock(arg0, arg1, arg2, arg3 interface
 }
 
 // DuplicateBoard mocks base method.
-func (m *MockStore) DuplicateBoard(arg0, arg1, arg2 string, arg3 bool) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
+func (m *MockStore) DuplicateBoard(arg0, arg1, arg2 string, arg3 bool) (*model.BoardsAndBlocks, []*model.BoardMember, map[string]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DuplicateBoard", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*model.BoardsAndBlocks)
 	ret1, _ := ret[1].([]*model.BoardMember)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(map[string]string)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // DuplicateBoard indicates an expected call of DuplicateBoard.
@@ -473,6 +474,37 @@ func (m *MockStore) GetBlockSuiteDocsByBoardID(arg0 string) ([]*model.BlockSuite
 func (mr *MockStoreMockRecorder) GetBlockSuiteDocsByBoardID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockSuiteDocsByBoardID", reflect.TypeOf((*MockStore)(nil).GetBlockSuiteDocsByBoardID), arg0)
+}
+
+// GetBlockSuiteMigrationStatus mocks base method.
+func (m *MockStore) GetBlockSuiteMigrationStatus() (*model.BlockSuiteMigrationStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockSuiteMigrationStatus")
+	ret0, _ := ret[0].(*model.BlockSuiteMigrationStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockSuiteMigrationStatus indicates an expected call of GetBlockSuiteMigrationStatus.
+func (mr *MockStoreMockRecorder) GetBlockSuiteMigrationStatus() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockSuiteMigrationStatus", reflect.TypeOf((*MockStore)(nil).GetBlockSuiteMigrationStatus))
+}
+
+// GetUnmigratedCardsWithContentBlocks mocks base method.
+func (m *MockStore) GetUnmigratedCardsWithContentBlocks(arg0 int, arg1 int) ([]*model.UnmigratedCard, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnmigratedCardsWithContentBlocks", arg0, arg1)
+	ret0, _ := ret[0].([]*model.UnmigratedCard)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetUnmigratedCardsWithContentBlocks indicates an expected call of GetUnmigratedCardsWithContentBlocks.
+func (mr *MockStoreMockRecorder) GetUnmigratedCardsWithContentBlocks(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnmigratedCardsWithContentBlocks", reflect.TypeOf((*MockStore)(nil).GetUnmigratedCardsWithContentBlocks), arg0, arg1)
 }
 
 // GetBlocks mocks base method.

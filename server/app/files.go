@@ -390,7 +390,7 @@ func (a *App) MoveFile(channelID, teamID, boardID, filename string) error {
 	return nil
 }
 
-func (a *App) CopyAndUpdateCardFiles(boardID, userID string, blocks []*model.Block, asTemplate bool) error {
+func (a *App) CopyAndUpdateCardFiles(boardID, userID string, blocks []*model.Block, asTemplate bool) (map[string]string, error) {
 	newFileNames, err := a.CopyCardFiles(boardID, blocks, asTemplate)
 	if err != nil {
 		a.logger.Error("Could not copy files while duplicating board", mlog.String("BoardID", boardID), mlog.Err(err))
@@ -412,7 +412,7 @@ func (a *App) CopyAndUpdateCardFiles(boardID, userID string, blocks []*model.Blo
 					})
 				} else {
 					errMessage := fmt.Sprintf("invalid characters in block with key: %s, %s", block.Fields[model.BlockFieldFileId], err)
-					return model.NewErrBadRequest(errMessage)
+					return nil, model.NewErrBadRequest(errMessage)
 				}
 			}
 
@@ -427,7 +427,7 @@ func (a *App) CopyAndUpdateCardFiles(boardID, userID string, blocks []*model.Blo
 					})
 				} else {
 					errMessage := fmt.Sprintf("invalid characters in block with key: %s, %s", block.Fields[model.BlockFieldAttachmentId], err)
-					return model.NewErrBadRequest(errMessage)
+					return nil, model.NewErrBadRequest(errMessage)
 				}
 			}
 		}
@@ -440,11 +440,11 @@ func (a *App) CopyAndUpdateCardFiles(boardID, userID string, blocks []*model.Blo
 			BlockPatches: blockPatches,
 		}
 		if err := a.store.PatchBlocks(patches, userID); err != nil {
-			return fmt.Errorf("could not patch file IDs while duplicating board %s: %w", boardID, err)
+			return nil, fmt.Errorf("could not patch file IDs while duplicating board %s: %w", boardID, err)
 		}
 	}
 
-	return nil
+	return newFileNames, nil
 }
 
 func (a *App) CopyCardFiles(sourceBoardID string, copiedBlocks []*model.Block, asTemplate bool) (map[string]string, error) {

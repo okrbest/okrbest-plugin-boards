@@ -895,16 +895,6 @@ func (c *Client) ImportArchive(teamID string, data io.Reader) *Response {
 	return BuildResponse(r)
 }
 
-func (c *Client) MoveContentBlock(srcBlockID string, dstBlockID string, where string, userID string) (bool, *Response) {
-	r, err := c.DoAPIPost("/content-blocks/"+srcBlockID+"/moveto/"+where+"/"+dstBlockID, "")
-	if err != nil {
-		return false, BuildErrorResponse(r, err)
-	}
-	defer closeBody(r)
-
-	return true, BuildResponse(r)
-}
-
 func (c *Client) GetBoardsForCompliance(teamID string, page, perPage int) (*model.BoardsComplianceResponse, *Response) {
 	query := fmt.Sprintf("?team_id=%s&page=%d&per_page=%d", teamID, page, perPage)
 	r, err := c.DoAPIGet("/admin/boards"+query, "")

@@ -49,7 +49,7 @@ describe('Mutator', () => {
         expect(duplicatedCard.type).toBe('card')
         expect(duplicatedCard.id).toBe(newCardID)
         expect(duplicatedCard.fields.icon).toBe(card.fields.icon)
-        expect(duplicatedCard.fields.contentOrder).toHaveLength(card.fields.contentOrder.length)
+        expect(duplicatedCard.fields.contentOrder?.length ?? 0).toBe(card.fields.contentOrder?.length ?? 0)
         expect(duplicatedCard.boardId).toBe(board.id)
     })
 })

@@ -139,12 +139,12 @@ const TableRow = (props: Props) => {
         // user trying to delete a card with blank name
         // but content present cannot be deleted without
         // confirmation dialog
-        if (card?.title === '' && card?.fields.contentOrder.length === 0) {
+        if (card?.title === '' && (card?.fields.contentOrder?.length ?? 0) === 0) {
             handleDeleteCard()
             return
         }
         setShowConfirmationDialogBox(true)
-    }, [card.title, card.fields.contentOrder, handleDeleteCard])
+    }, [card?.title, card?.fields.contentOrder, handleDeleteCard])
 
     return (
         <div

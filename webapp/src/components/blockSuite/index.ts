@@ -4,8 +4,4 @@
 export {default as blockSuiteApi} from './blockSuiteApi'
 export type {BlockSuiteDocInfo} from './blockSuiteApi'
 
-export {
-    convertLegacyBlocksToDocSnapshot,
-    createEmptyDocSnapshot,
-} from './legacyConverter'
-export type {BlockSuiteFlavour} from './legacyConverter'
+export {createEmptyDocSnapshot} from './emptyDocSnapshot'

@@ -138,8 +138,13 @@ func (dbab *PatchBoardsAndBlocks) IsValid() error {
 }
 
 func GenerateBoardsAndBlocksIDs(bab *BoardsAndBlocks, logger mlog.LoggerIFace) (*BoardsAndBlocks, error) {
+	newBab, _, err := GenerateBoardsAndBlocksIDsWithMapping(bab, logger)
+	return newBab, err
+}
+
+func GenerateBoardsAndBlocksIDsWithMapping(bab *BoardsAndBlocks, logger mlog.LoggerIFace) (*BoardsAndBlocks, map[string]string, error) {
 	if err := bab.IsValid(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	blocksByBoard := map[string][]*Block{}
@@ -160,12 +165,13 @@ func GenerateBoardsAndBlocksIDs(bab *BoardsAndBlocks, logger mlog.LoggerIFace) (
 		boards = append(boards, board)
 	}
 
+	newBlocks, cardIDMapping := GenerateBlockIDsWithMapping(blocks, logger)
 	newBab := &BoardsAndBlocks{
 		Boards: boards,
-		Blocks: GenerateBlockIDs(blocks, logger),
+		Blocks: newBlocks,
 	}
 
-	return newBab, nil
+	return newBab, cardIDMapping, nil
 }
 
 func BoardsAndBlocksFromJSON(data io.Reader) *BoardsAndBlocks {

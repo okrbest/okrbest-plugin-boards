@@ -98,7 +98,9 @@ class OctoUtils {
             // Remap card content order
             if (newBlock.type === 'card') {
                 const card = newBlock as Card
-                card.fields.contentOrder = card.fields.contentOrder.map((o) => (Array.isArray(o) ? o.map((o2) => idMap[o2]) : idMap[o]))
+                if (card.fields.contentOrder) {
+                    card.fields.contentOrder = card.fields.contentOrder.map((o) => (Array.isArray(o) ? o.map((o2) => idMap[o2]) : idMap[o]))
+                }
             }
         })
 

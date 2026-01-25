@@ -4,19 +4,13 @@
 import React, { useEffect, useRef } from 'react'
 import { useIntl } from 'react-intl'
 
-
-
 import AddDescriptionTourStep from '../onboardingTour/addDescription/add_description'
 
 import { useEditor } from './editor/context'
 import './BlockSuiteEditor.scss'
 
-/**
- * BlockSuite 테마 CSS 변수 - 최소한의 커스터마이징
- * z-index만 Mattermost 모달과의 호환성을 위해 조정
- */
-const THEME_CSS = `
-:host, :root, body, html {
+const SHADOW_DOM_CSS = `
+:host {
     --affine-text-primary-color: #000000;
     --affine-text-secondary-color: #666666;
     --affine-text-disable-color: #999999;
@@ -37,177 +31,53 @@ const THEME_CSS = `
     --affine-editor-side-padding: 24px;
     --affine-editor-bottom-padding: 0;
 }
-
-affine-editor-container,
-affine-page-root,
-affine-note,
-affine-paragraph,
-affine-list,
-affine-code,
-affine-divider,
-affine-image,
-.affine-paragraph-block-container,
-.affine-block-children-container,
-[data-block-id] {
-    --affine-text-primary-color: #000000;
-    color: #000000;
-}
-
-.affine-list-block__prefix,
-.affine-list-block__suffix {
-    color: #000000;
-}
-
-.affine-page-root-block-container,
-div.affine-page-root-block-container {
-    padding-left: 24px !important;
-    padding-right: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-/* Drag handle widget styles */
-affine-drag-handle-widget {
-    display: flex !important;
-    pointer-events: auto !important;
-}
-
-.affine-drag-handle-widget {
-    display: flex !important;
-}
-
-.affine-drag-handle-container {
-    pointer-events: auto !important;
-    cursor: grab !important;
-}
-
-.affine-drag-handle-grabber {
-    visibility: visible !important;
-    background: var(--affine-placeholder-color, rgba(0, 0, 0, 0.3)) !important;
-}
+* { --affine-text-primary-color: #000000; color: inherit; }
+.affine-page-root-block-container { padding-left: 24px !important; padding-right: 0 !important; padding-bottom: 0 !important; }
+affine-drag-handle-widget { display: flex !important; pointer-events: auto !important; }
+.affine-drag-handle-container { pointer-events: auto !important; cursor: grab !important; }
+.affine-drag-handle-grabber { visibility: visible !important; background: var(--affine-placeholder-color, rgba(0, 0, 0, 0.3)) !important; }
 `
 
-// 캐시된 CSSStyleSheet (Constructable Stylesheet)
-let cachedStyleSheet: CSSStyleSheet | null = null
+let styleSheet: CSSStyleSheet | null = null
+let observer: MutationObserver | null = null
 
-/**
- * CSSStyleSheet를 생성하거나 캐시에서 반환
- * Constructable Stylesheets를 지원하지 않는 브라우저에서는 null 반환
- */
-function getStyleSheet(): CSSStyleSheet | null {
-    if (cachedStyleSheet) return cachedStyleSheet
-    
-    try {
-        cachedStyleSheet = new CSSStyleSheet()
-        cachedStyleSheet.replaceSync(THEME_CSS)
-        return cachedStyleSheet
-    } catch {
-        // Constructable Stylesheets 미지원 브라우저
-        return null
-    }
-}
-
-/**
- * Shadow DOM에 스타일을 효율적으로 주입
- * - Constructable Stylesheets 사용 (지원 시)
- * - 폴백: <style> 태그 주입
- */
-function injectStyleToShadowRoot(shadowRoot: ShadowRoot): void {
-    const styleId = 'bs-theme'
-    
-    // 이미 주입된 경우 스킵
-    if (shadowRoot.getElementById(styleId)) return
-    
-    const sheet = getStyleSheet()
-    
-    if (sheet) {
-        // Constructable Stylesheets 사용 (성능 최적화)
+function injectToShadowRoot(root: ShadowRoot): void {
+    if (!styleSheet) {
         try {
-            shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, sheet]
-            return
+            styleSheet = new CSSStyleSheet()
+            styleSheet.replaceSync(SHADOW_DOM_CSS)
         } catch {
-            // adoptedStyleSheets 실패 시 폴백
+            if (!root.getElementById('bs-theme')) {
+                const style = document.createElement('style')
+                style.id = 'bs-theme'
+                style.textContent = SHADOW_DOM_CSS
+                root.appendChild(style)
+            }
+            return
         }
     }
-    
-    // 폴백: <style> 태그 주입
-    const style = document.createElement('style')
-    style.id = styleId
-    style.textContent = THEME_CSS
-    shadowRoot.appendChild(style)
-}
-
-/**
- * 요소와 그 하위 Shadow DOM에 스타일 주입
- * WeakSet으로 이미 처리된 요소 추적하여 중복 방지
- */
-const processedElements = new WeakSet<Element>()
-
-function injectStyles(element: Element): void {
-    if (processedElements.has(element)) return
-    processedElements.add(element)
-    
-    // 현재 요소의 Shadow DOM에 스타일 주입
-    if (element.shadowRoot) {
-        injectStyleToShadowRoot(element.shadowRoot)
-        
-        // Shadow DOM 내부 요소들도 처리
-        element.shadowRoot.querySelectorAll('*').forEach(injectStyles)
+    if (!root.adoptedStyleSheets.includes(styleSheet)) {
+        root.adoptedStyleSheets = [...root.adoptedStyleSheets, styleSheet]
     }
-    
-    // 자식 요소들 처리
-    element.querySelectorAll('*').forEach(injectStyles)
 }
 
-/**
- * 전역 :root 스타일 주입 (한 번만)
- */
-let globalStyleInjected = false
-
-function injectGlobalStyle(): void {
-    if (globalStyleInjected) return
-    
-    const styleId = 'bs-global-theme'
-    if (document.getElementById(styleId)) {
-        globalStyleInjected = true
-        return
-    }
-    
-    const style = document.createElement('style')
-    style.id = styleId
-    // 전체 THEME_CSS를 주입 (:host를 :root로 대체)
-    style.textContent = THEME_CSS.replace(/:host/g, ':root')
-    document.head.appendChild(style)
-    globalStyleInjected = true
+function processElement(el: Element): void {
+    if (el.shadowRoot) injectToShadowRoot(el.shadowRoot)
+    el.querySelectorAll('*').forEach(child => {
+        if (child.shadowRoot) injectToShadowRoot(child.shadowRoot)
+    })
 }
 
-/**
- * Body 포털 요소 감시 (슬래시 메뉴, 포맷 바 등)
- * BlockSuite의 기본 동작을 유지하되, z-index만 조정
- */
-let bodyObserver: MutationObserver | null = null
-
-function setupBodyObserver(): void {
-    if (bodyObserver) return
-
-    bodyObserver = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            for (const node of mutation.addedNodes) {
-                if (!(node instanceof Element)) continue
-
-                const tag = node.tagName.toLowerCase()
-
-                // BlockSuite 포털 요소 감지 - z-index 스타일만 주입
-                if (tag.startsWith('affine-') ||
-                    node.classList.contains('blocksuite-overlay') ||
-                    node.classList.contains('blocksuite-portal')) {
-                    injectStyles(node)
-                }
+function initStyleInjection(): void {
+    if (observer) return
+    observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+                if (node instanceof Element) processElement(node)
             }
         }
     })
-
-    // body와 그 모든 자손 요소 감시
-    bodyObserver.observe(document.body, { childList: true, subtree: true })
+    observer.observe(document.body, { childList: true, subtree: true })
 }
 
 interface EditorContainerProps {
@@ -224,10 +94,8 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
     const wrapperRef = useRef<HTMLDivElement>(null)
     const editorMountRef = useRef<HTMLDivElement>(null)
 
-    // 전역 테마 스타일 및 Body Observer 초기화
     useEffect(() => {
-        injectGlobalStyle()
-        setupBodyObserver()
+        initStyleInjection()
     }, [])
 
     // 에디터 외부 클릭 시 selection 해제
@@ -271,32 +139,13 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
         if (!editor.doc) return
         
         mountPoint.appendChild(editor)
-        
-        // 초기 스타일 주입 (z-index만)
-        injectStyles(editor)
-
-        // 동적 변경 감시 - 새로 추가되는 요소에도 스타일 주입
-        const observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) {
-                    if (node instanceof Element) {
-                        injectStyles(node)
-                    }
-                }
-            }
-        })
-
-        observer.observe(mountPoint, { childList: true, subtree: true })
+        processElement(editor)
 
         return () => {
-            observer.disconnect()
-            
             if (mountPoint.contains(editor)) {
                 try {
                     mountPoint.removeChild(editor)
-                } catch {
-                    // cleanup 오류 무시
-                }
+                } catch {}
             }
         }
     }, [editor])

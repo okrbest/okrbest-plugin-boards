@@ -13,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/services/audit"
 	"github.com/mattermost/mattermost-plugin-boards/server/utils"
 
+	mmModel "github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
@@ -88,8 +89,7 @@ func (a *API) handleGetCardBlockSuiteContent(w http.ResponseWriter, r *http.Requ
 		mlog.Int("snapshotSize", len(doc.Snapshot)),
 	)
 
-	// Return binary snapshot
-	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(doc.Snapshot)
 
@@ -145,7 +145,11 @@ func (a *API) handleSaveCardBlockSuiteContent(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if !a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionManageBoardCards) {
+	// Check permissions: board card management permission OR system admin (for batch migration)
+	hasBoardPermission := a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionManageBoardCards)
+	isSystemAdmin := a.permissions.HasPermissionTo(userID, mmModel.PermissionGetAnalytics)
+
+	if !hasBoardPermission && !isSystemAdmin {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to modify card"))
 		return
 	}
@@ -329,4 +333,3 @@ func (a *API) handleDeleteCardBlockSuiteDoc(w http.ResponseWriter, r *http.Reque
 	jsonStringResponse(w, http.StatusOK, "{}")
 	auditRec.Success()
 }
-

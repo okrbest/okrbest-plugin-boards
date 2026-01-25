@@ -53,7 +53,7 @@ async function addTextBlock(
     })
 
     const afterRedo = async (newBlock: Block) => {
-        const contentOrder = card.fields.contentOrder.slice()
+        const contentOrder = (card.fields.contentOrder || []).slice()
         contentOrder.push(newBlock.id)
         await octoClient.patchBlock(card.boardId, card.id, {
             updatedFields: { contentOrder },
@@ -61,7 +61,7 @@ async function addTextBlock(
     }
 
     const beforeUndo = async () => {
-        const contentOrder = card.fields.contentOrder.slice()
+        const contentOrder = (card.fields.contentOrder || []).slice()
         await octoClient.patchBlock(card.boardId, card.id, {
             updatedFields: { contentOrder },
         })
@@ -132,7 +132,7 @@ function moveBlock(
         await mutator.changeCardContentOrder(
             card.boardId,
             card.id,
-            card.fields.contentOrder,
+            card.fields.contentOrder || [],
             newContentOrder,
             description
         )

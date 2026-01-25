@@ -259,27 +259,27 @@ func (s *SQLStore) DuplicateBlock(boardID string, blockID string, userID string,
 
 }
 
-func (s *SQLStore) DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
+func (s *SQLStore) DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, map[string]string, error) {
 	if s.dbType == model.SqliteDBType {
 		return s.duplicateBoard(s.db, boardID, userID, toTeam, asTemplate)
 	}
 	tx, txErr := s.db.BeginTx(context.Background(), nil)
 	if txErr != nil {
-		return nil, nil, txErr
+		return nil, nil, nil, txErr
 	}
-	result, resultVar1, err := s.duplicateBoard(tx, boardID, userID, toTeam, asTemplate)
+	result, members, cardIDMapping, err := s.duplicateBoard(tx, boardID, userID, toTeam, asTemplate)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			s.logger.Error("transaction rollback error", mlog.Err(rollbackErr), mlog.String("methodName", "DuplicateBoard"))
 		}
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return result, resultVar1, nil
+	return result, members, cardIDMapping, nil
 
 }
 
@@ -325,6 +325,21 @@ func (s *SQLStore) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc
 
 func (s *SQLStore) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocInfo, error) {
 	return s.getBlockSuiteDocInfoByCardID(s.db, cardID)
+
+}
+
+func (s *SQLStore) GetBlockSuiteDocsByBoardID(boardID string) ([]*model.BlockSuiteDoc, error) {
+	return s.getBlockSuiteDocsByBoardID(s.db, boardID)
+
+}
+
+func (s *SQLStore) GetBlockSuiteMigrationStatus() (*model.BlockSuiteMigrationStatus, error) {
+	return s.getBlockSuiteMigrationStatus(s.db)
+
+}
+
+func (s *SQLStore) GetUnmigratedCardsWithContentBlocks(limit int, offset int) ([]*model.UnmigratedCard, int64, error) {
+	return s.getUnmigratedCardsWithContentBlocks(s.db, limit, offset)
 
 }
 

@@ -26,17 +26,11 @@ import {setCurrent as setCurrentCard} from '../../store/cards'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import BlockSuiteEditor from '../blockSuite/BlockSuiteEditor'
-import {ClientConfig} from '../../config/clientConfig'
-import {getClientConfig} from '../../store/clientConfig'
 
 import CardSkeleton from '../../svg/card-skeleton'
 
 import CommentsList from './commentsList'
-import {CardDetailProvider} from './cardDetailContext'
-import CardDetailContents from './cardDetailContents'
-import CardDetailContentsMenu from './cardDetailContentsMenu'
 import CardDetailProperties from './cardDetailProperties'
-import useImagePaste from './imagePaste'
 import AttachmentList from './attachment'
 
 import './cardDetail.scss'
@@ -78,12 +72,6 @@ const CardDetail = (props: Props): JSX.Element|null => {
     const saveTitleRef = useRef<() => void>(saveTitle)
     saveTitleRef.current = saveTitle
     const intl = useIntl()
-
-    const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
-    const newBoardsEditor = clientConfig?.featureFlags?.newBoardsEditor ?? true
-
-    // Disable legacy image paste when using BlockSuite editor (it handles its own paste)
-    useImagePaste(props.board.id, card.id, card.fields.contentOrder, !newBoardsEditor)
 
     useEffect(() => {
         if (!title) {
@@ -241,15 +229,13 @@ const CardDetail = (props: Props): JSX.Element|null => {
             {/* Content blocks */}
 
             {!limited && <div className='CardDetail CardDetail--fullwidth content-blocks'>
-                {newBoardsEditor && (
-                    <BlockSuiteEditor
-                        card={card}
-                        contents={props.contents.flatMap((b) => b)}
-                        readonly={props.readonly || !canEditBoardCards}
-                        teamId={props.board.teamId}
-                    />
-                )}
-               
+                <BlockSuiteEditor
+                    card={card}
+                    contents={props.contents.flatMap((b) => b)}
+                    readonly={props.readonly || !canEditBoardCards}
+                    teamId={props.board.teamId}
+                    viewId={props.activeView.id}
+                />
             </div>}
         </>
     )
