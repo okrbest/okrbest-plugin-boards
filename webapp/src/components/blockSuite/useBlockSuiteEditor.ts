@@ -7,6 +7,9 @@ import type {DocSnapshot} from '@blocksuite/store'
 import {Block} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import {Utils} from '../../utils'
+import {extractTextFromSnapshot, formatDiffSummary} from '../../utils/blockSuiteUtils'
+import {markCardModified} from '../../store/cards'
+import {useAppDispatch} from '../../store/hooks'
 
 import blockSuiteApi from './blockSuiteApi'
 import {createEmptyDocSnapshot} from './emptyDocSnapshot'
@@ -35,6 +38,7 @@ interface UseBlockSuiteEditorReturn {
 export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSuiteEditorReturn {
     const {card, contents, readonly} = props
     const cardId = card.id
+    const dispatch = useAppDispatch()
 
     const [snapshot, setSnapshot] = useState<DocSnapshot | null>(null)
     const [loading, setLoading] = useState(true)
@@ -45,6 +49,7 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const pendingSnapshotRef = useRef<DocSnapshot | null>(null)
     const savingRef = useRef(false)
+    const initialTextRef = useRef<string>('')
 
     const saveSnapshot = useCallback(async (snapshotToSave: DocSnapshot) => {
         if (readonly || !ENABLE_API_SYNC) {
@@ -63,9 +68,18 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
             const preparedSnapshot = prepareSnapshotForSave(snapshotToSave, card.boardId)
             const blobMapSize = (preparedSnapshot as {meta?: {blobMap?: Record<string, string>}}).meta?.blobMap
             Utils.log(`BlockSuite saving snapshot, blobMap entries: ${blobMapSize ? Object.keys(blobMapSize).length : 0}`)
-            await blockSuiteApi.saveDocContent(cardId, preparedSnapshot)
+
+            // Extract plain text for search and diff
+            const currentText = extractTextFromSnapshot(snapshotToSave)
+            const diffSummary = formatDiffSummary(initialTextRef.current, currentText)
+            Utils.log(`BlockSuite diff summary: ${diffSummary.substring(0, 100)}...`)
+
+            await blockSuiteApi.saveDocContent(cardId, preparedSnapshot, currentText, diffSummary)
             Utils.log(`BlockSuite snapshot saved for card: ${cardId}`)
             setSaveStatus('saved')
+
+            // 저장 후 초기 텍스트 업데이트
+            initialTextRef.current = currentText
 
             setTimeout(() => {
                 setSaveStatus((current) => (current === 'saved' ? 'idle' : current))
@@ -94,11 +108,12 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
         }
 
         setSaveStatus('pending')
+        dispatch(markCardModified(cardId))
         saveTimeoutRef.current = setTimeout(() => {
             saveSnapshot(snapshotToSave)
             saveTimeoutRef.current = null
         }, AUTO_SAVE_DELAY_MS)
-    }, [readonly, saveSnapshot])
+    }, [readonly, saveSnapshot, dispatch, cardId])
 
     useEffect(() => {
         if (initializedRef.current) {
@@ -127,6 +142,8 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
 
                         if (loadedSnapshot) {
                             restoreSnapshotBlobMappings(loadedSnapshot, card.boardId)
+                            // 초기 텍스트 저장 (diff 계산용)
+                            initialTextRef.current = extractTextFromSnapshot(loadedSnapshot)
                         }
                     }
                 }
@@ -137,6 +154,8 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
                     }
                     loadedSnapshot = createEmptyDocSnapshot(card)
                     Utils.log('Created empty DocSnapshot')
+                    // 빈 문서 텍스트 초기화
+                    initialTextRef.current = extractTextFromSnapshot(loadedSnapshot)
                 }
 
                 Utils.log(`useBlockSuiteEditor: Setting snapshot, type=${loadedSnapshot?.type}`)

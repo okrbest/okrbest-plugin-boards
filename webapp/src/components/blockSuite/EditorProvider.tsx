@@ -10,6 +10,8 @@ import { Card } from '../../blocks/card'
 import octoClient from '../../octoClient'
 import { sendFlashMessage } from '../flashMessages'
 import { saveSnapshot } from '../../utils/blockSuiteUtils'
+import { useAppDispatch } from '../../store/hooks'
+import { markCardModified } from '../../store/cards'
 
 import { EditorContext, EditorContextValue } from './editor/context'
 import { initEditor } from './editor/editor'
@@ -27,6 +29,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
     children 
 }) => {
     const intl = useIntl()
+    const dispatch = useAppDispatch()
     const [editor, setEditor] = useState<PageEditor | null>(null)
     const [doc, setDoc] = useState<Doc | null>(null)
     const [collection, setCollection] = useState<DocCollection | null>(null)
@@ -114,6 +117,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
         let timeout: NodeJS.Timeout
         const handleUpdate = () => {
             console.log('[AutoSave] Document updated, scheduling save...')
+            dispatch(markCardModified(card.id))
             clearTimeout(timeout)
             setSaveStatus('saving')
 
@@ -172,7 +176,7 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({
             }
             clearTimeout(timeout)
         }
-    }, [doc, card.id, readOnly, isLoading, intl])
+    }, [doc, card.id, readOnly, isLoading, intl, dispatch])
 
     const contextValue: EditorContextValue = {
         editor,

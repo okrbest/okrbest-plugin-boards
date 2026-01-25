@@ -116,17 +116,31 @@ class BlockSuiteApiClient {
      * BlockSuite 문서 DocSnapshot JSON 저장
      * @param cardId 카드 ID
      * @param snapshot DocSnapshot JSON
+     * @param contentText 검색/diff용 plain text (optional)
+     * @param diffSummary 변경 사항 요약 (optional)
      * @returns 저장된 문서 정보
      */
-    async saveDocContent(cardId: string, snapshot: DocSnapshot): Promise<SaveDocResponse> {
+    async saveDocContent(
+        cardId: string,
+        snapshot: DocSnapshot,
+        contentText?: string,
+        diffSummary?: string,
+    ): Promise<SaveDocResponse> {
         const url = `${this.getBaseURL()}/api/v2/cards/${encodeURIComponent(cardId)}/blocksuite/content`
 
         try {
+            // 새 형식: { snapshot, contentText, diffSummary } 또는 하위호환: snapshot만
+            const body = {
+                snapshot,
+                ...(contentText !== undefined && {contentText}),
+                ...(diffSummary !== undefined && {diffSummary}),
+            }
+
             const response = await fetch(url, {
                 method: 'PUT',
                 credentials: 'include',
                 headers: this.getJsonHeaders(),
-                body: JSON.stringify(snapshot),
+                body: JSON.stringify(body),
             })
 
             if (!response.ok) {
