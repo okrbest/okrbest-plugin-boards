@@ -221,3 +221,29 @@ func (b *Backend) OnMention(userID string, evt notify.BlockChangeEvent) {
 		mlog.String("card_id", evt.Card.ID),
 	)
 }
+
+func (b *Backend) ForceNotifyBlock(blockID, modifiedByID string, blockType model.BlockType) error {
+	hint := &model.NotificationHint{
+		BlockType:    blockType,
+		BlockID:      blockID,
+		ModifiedByID: modifiedByID,
+	}
+
+	if err := hint.IsValid(); err != nil {
+		return err
+	}
+
+	if err := b.notifier.NotifyBlockNow(hint); err != nil {
+		return err
+	}
+
+	// Delete any pending notification hints for this block to avoid duplicates
+	if err := b.appAPI.DeleteNotificationHint(blockID); err != nil {
+		b.logger.Warn("Failed to delete pending notification hint after force notify",
+			mlog.String("block_id", blockID),
+			mlog.Err(err),
+		)
+	}
+
+	return nil
+}

@@ -22,4 +22,8 @@ type AppAPI interface {
 
 	UpsertNotificationHint(hint *model.NotificationHint, notificationFreq time.Duration) (*model.NotificationHint, error)
 	GetNextNotificationHint(remove bool) (*model.NotificationHint, error)
+	DeleteNotificationHint(blockID string) error
+
+	// BlockSuite document access
+	GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error)
 }

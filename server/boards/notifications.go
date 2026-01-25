@@ -156,3 +156,11 @@ func (a *appAPI) GetMemberForBoard(boardID, userID string) (*model.BoardMember, 
 func (a *appAPI) AddMemberToBoard(member *model.BoardMember) (*model.BoardMember, error) {
 	return a.app.AddMemberToBoard(member)
 }
+
+func (a *appAPI) DeleteNotificationHint(blockID string) error {
+	return a.store.DeleteNotificationHint(blockID)
+}
+
+func (a *appAPI) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error) {
+	return a.store.GetBlockSuiteDocByCardID(cardID)
+}

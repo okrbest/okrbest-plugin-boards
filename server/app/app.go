@@ -12,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/services/config"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/metrics"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/notify"
+	"github.com/mattermost/mattermost-plugin-boards/server/services/notify/notifysubscriptions"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/permissions"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/store"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/webhook"
@@ -45,31 +46,33 @@ type fileBackend interface {
 }
 
 type Services struct {
-	Auth             *auth.Auth
-	Store            store.Store
-	FilesBackend     fileBackend
-	Webhook          *webhook.Client
-	Metrics          *metrics.Metrics
-	Notifications    *notify.Service
-	Logger           mlog.LoggerIFace
-	Permissions      permissions.PermissionsService
-	SkipTemplateInit bool
-	ServicesAPI      servicesAPI
+	Auth                 *auth.Auth
+	Store                store.Store
+	FilesBackend         fileBackend
+	Webhook              *webhook.Client
+	Metrics              *metrics.Metrics
+	Notifications        *notify.Service
+	SubscriptionsBackend *notifysubscriptions.Backend
+	Logger               mlog.LoggerIFace
+	Permissions          permissions.PermissionsService
+	SkipTemplateInit     bool
+	ServicesAPI          servicesAPI
 }
 
 type App struct {
-	config              *config.Configuration
-	store               store.Store
-	auth                *auth.Auth
-	wsAdapter           ws.Adapter
-	filesBackend        fileBackend
-	webhook             *webhook.Client
-	metrics             *metrics.Metrics
-	notifications       *notify.Service
-	logger              mlog.LoggerIFace
-	permissions         permissions.PermissionsService
-	blockChangeNotifier *utils.CallbackQueue
-	servicesAPI         servicesAPI
+	config               *config.Configuration
+	store                store.Store
+	auth                 *auth.Auth
+	wsAdapter            ws.Adapter
+	filesBackend         fileBackend
+	webhook              *webhook.Client
+	metrics              *metrics.Metrics
+	notifications        *notify.Service
+	subscriptionsBackend *notifysubscriptions.Backend
+	logger               mlog.LoggerIFace
+	permissions          permissions.PermissionsService
+	blockChangeNotifier  *utils.CallbackQueue
+	servicesAPI          servicesAPI
 
 	cardLimitMux sync.RWMutex
 	cardLimit    int
@@ -85,18 +88,19 @@ func (a *App) GetConfig() *config.Configuration {
 
 func New(config *config.Configuration, wsAdapter ws.Adapter, services Services) *App {
 	app := &App{
-		config:              config,
-		store:               services.Store,
-		auth:                services.Auth,
-		wsAdapter:           wsAdapter,
-		filesBackend:        services.FilesBackend,
-		webhook:             services.Webhook,
-		metrics:             services.Metrics,
-		notifications:       services.Notifications,
-		logger:              services.Logger,
-		permissions:         services.Permissions,
-		blockChangeNotifier: utils.NewCallbackQueue("blockChangeNotifier", blockChangeNotifierQueueSize, blockChangeNotifierPoolSize, services.Logger),
-		servicesAPI:         services.ServicesAPI,
+		config:               config,
+		store:                services.Store,
+		auth:                 services.Auth,
+		wsAdapter:            wsAdapter,
+		filesBackend:         services.FilesBackend,
+		webhook:              services.Webhook,
+		metrics:              services.Metrics,
+		notifications:        services.Notifications,
+		subscriptionsBackend: services.SubscriptionsBackend,
+		logger:               services.Logger,
+		permissions:          services.Permissions,
+		blockChangeNotifier:  utils.NewCallbackQueue("blockChangeNotifier", blockChangeNotifierQueueSize, blockChangeNotifierPoolSize, services.Logger),
+		servicesAPI:          services.ServicesAPI,
 	}
 	app.initialize(services.SkipTemplateInit)
 	return app
