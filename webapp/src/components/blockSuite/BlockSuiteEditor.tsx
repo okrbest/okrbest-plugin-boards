@@ -4,13 +4,12 @@
 import React, {useEffect, useRef, useCallback, useState} from 'react'
 import {useIntl} from 'react-intl'
 
-import {AffineSchemas} from '@blocksuite/blocks'
+import {AffineSchemas, PageEditorBlockSpecs} from '@blocksuite/blocks'
+import {DocModeExtension, type DocModeProvider} from '@blocksuite/affine-shared/services'
 import {Schema, DocCollection, Job, type Doc} from '@blocksuite/store'
 import {PageEditor} from '@blocksuite/presets'
 
-// @ts-expect-error - effects module has no type declarations
 import {effects as presetsEffects} from '@blocksuite/presets/effects'
-// @ts-expect-error - effects module has no type declarations
 import {effects as blocksEffects} from '@blocksuite/blocks/effects'
 
 import {Block} from '../../blocks/block'
@@ -113,7 +112,20 @@ function BlockSuiteEditor(props: Props): JSX.Element {
                 editorDoc.load()
                 Utils.log('BlockSuiteEditor: Doc loaded')
 
+                const pageModeProvider: DocModeProvider = {
+                    getEditorMode: () => 'page',
+                    getPrimaryMode: () => 'page',
+                    setPrimaryMode: () => {},
+                    togglePrimaryMode: () => 'page',
+                    onPrimaryModeChange: () => ({dispose: () => {}}),
+                    setEditorMode: () => {},
+                }
+
                 const editor = new PageEditor()
+                editor.specs = [
+                    ...PageEditorBlockSpecs,
+                    DocModeExtension(pageModeProvider),
+                ]
                 editor.doc = editorDoc
 
                 if (readonly) {
@@ -133,6 +145,39 @@ function BlockSuiteEditor(props: Props): JSX.Element {
                 }
 
                 Utils.log('BlockSuiteEditor: Initialization complete')
+
+                setTimeout(() => {
+                    const dragWidget = document.querySelector('affine-drag-handle-widget') as any
+                    const pageRoot = document.querySelector('affine-page-root')
+                    const editorHost = document.querySelector('editor-host') as any
+                    console.log('[BlockSuiteEditor] Debug - drag-handle-widget exists:', !!dragWidget)
+                    console.log('[BlockSuiteEditor] Debug - page-root exists:', !!pageRoot)
+                    console.log('[BlockSuiteEditor] Debug - editor-host exists:', !!editorHost)
+                    console.log('[BlockSuiteEditor] Debug - doc.readonly:', editorDoc.readonly)
+                    console.log('[BlockSuiteEditor] Debug - readonly prop:', readonly)
+
+                    if (editorHost) {
+                        const hostRect = editorHost.getBoundingClientRect()
+                        console.log('[BlockSuiteEditor] Debug - host rect:', hostRect.width, 'x', hostRect.height)
+                    }
+
+                    if (dragWidget) {
+                        const container = dragWidget.dragHandleContainer
+                        console.log('[BlockSuiteEditor] Debug - container exists:', !!container)
+                        console.log('[BlockSuiteEditor] Debug - dragWidget.store:', dragWidget.store)
+                        console.log('[BlockSuiteEditor] Debug - dragWidget.store.readonly:', dragWidget.store?.readonly)
+                        console.log('[BlockSuiteEditor] Debug - dragWidget.rootComponent:', !!dragWidget.rootComponent)
+                        console.log('[BlockSuiteEditor] Debug - dragWidget.mode:', dragWidget.mode)
+                        console.log('[BlockSuiteEditor] Debug - dragWidget.pointerEventWatcher:', !!dragWidget.pointerEventWatcher)
+                        console.log('[BlockSuiteEditor] Debug - dragWidget.isConnected:', dragWidget.isConnected)
+                    }
+
+                    const noteBlocks = document.querySelectorAll('affine-note')
+                    console.log('[BlockSuiteEditor] Debug - note blocks count:', noteBlocks.length)
+
+                    const paragraphs = document.querySelectorAll('affine-paragraph')
+                    console.log('[BlockSuiteEditor] Debug - paragraph blocks count:', paragraphs.length)
+                }, 1000)
             } catch (err) {
                 Utils.logError(`BlockSuite editor initialization error: ${err}`)
                 console.error('BlockSuite init error details:', err)

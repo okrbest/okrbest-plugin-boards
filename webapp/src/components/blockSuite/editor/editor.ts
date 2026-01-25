@@ -9,6 +9,12 @@ import { effects as presetsEffects } from '@blocksuite/presets/effects'
 blocksEffects()
 presetsEffects()
 
+// Debug: Verify drag handle widget is registered
+if (typeof window !== 'undefined') {
+    const isRegistered = customElements.get('affine-drag-handle-widget')
+    console.log('[Editor] affine-drag-handle-widget registered:', !!isRegistered)
+}
+
 import { PageEditor } from '@blocksuite/presets'
 import { AffineSchemas } from '@blocksuite/blocks/schemas'
 import { Doc, DocCollection, Schema } from '@blocksuite/store'

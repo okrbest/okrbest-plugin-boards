@@ -34,9 +34,10 @@ const THEME_CSS = `
     --affine-black: #000000;
     --affine-z-index-modal: 10001 !important;
     --affine-z-index-popover: 10001 !important;
+    --affine-editor-side-padding: 24px;
+    --affine-editor-bottom-padding: 0;
 }
 
-/* Force text color directly on BlockSuite elements */
 affine-editor-container,
 affine-page-root,
 affine-note,
@@ -55,6 +56,33 @@ affine-image,
 .affine-list-block__prefix,
 .affine-list-block__suffix {
     color: #000000;
+}
+
+.affine-page-root-block-container,
+div.affine-page-root-block-container {
+    padding-left: 24px !important;
+    padding-right: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Drag handle widget styles */
+affine-drag-handle-widget {
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+.affine-drag-handle-widget {
+    display: flex !important;
+}
+
+.affine-drag-handle-container {
+    pointer-events: auto !important;
+    cursor: grab !important;
+}
+
+.affine-drag-handle-grabber {
+    visibility: visible !important;
+    background: var(--affine-placeholder-color, rgba(0, 0, 0, 0.3)) !important;
 }
 `
 
@@ -208,9 +236,11 @@ export const EditorContainer: React.FC<EditorContainerProps> = ({
             const target = event.target as Element
             const wrapper = wrapperRef.current
 
-            // BlockSuite 포털 요소(슬래시 메뉴, 포맷 바 등)인 경우 무시
             if (target.closest('affine-slash-menu') ||
                 target.closest('affine-format-bar-widget') ||
+                target.closest('affine-drag-handle-widget') ||
+                target.closest('.affine-drag-handle-container') ||
+                target.closest('.affine-drag-handle-grabber') ||
                 target.closest('.blocksuite-overlay') ||
                 target.closest('.blocksuite-portal')) {
                 return
