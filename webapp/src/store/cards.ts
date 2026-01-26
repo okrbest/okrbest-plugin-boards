@@ -33,6 +33,7 @@ type CardsState = {
     cards: {[key: string]: Card}
     templates: {[key: string]: Card}
     cardHiddenWarning: boolean
+    modifiedCardIds: string[]
 }
 
 export const refreshCards = createAsyncThunk<Block[], number, {state: RootState}>(
@@ -78,6 +79,7 @@ const cardsSlice = createSlice({
         cards: {},
         templates: {},
         cardHiddenWarning: false,
+        modifiedCardIds: [],
     } as CardsState,
     reducers: {
         setCurrent: (state, action: PayloadAction<string>) => {
@@ -109,6 +111,14 @@ const cardsSlice = createSlice({
                     state.cards[card.id] = card
                 }
             }
+        },
+        markCardModified: (state, action: PayloadAction<string>) => {
+            if (!state.modifiedCardIds.includes(action.payload)) {
+                state.modifiedCardIds.push(action.payload)
+            }
+        },
+        clearCardModified: (state, action: PayloadAction<string>) => {
+            state.modifiedCardIds = state.modifiedCardIds.filter((id) => id !== action.payload)
         },
     },
     extraReducers: (builder) => {
@@ -145,10 +155,12 @@ const cardsSlice = createSlice({
     },
 })
 
-export const {updateCards, addCard, addTemplate, setCurrent, setLimitTimestamp, showCardHiddenWarning} = cardsSlice.actions
+export const {updateCards, addCard, addTemplate, setCurrent, setLimitTimestamp, showCardHiddenWarning, markCardModified, clearCardModified} = cardsSlice.actions
 export const {reducer} = cardsSlice
 
 export const getCards = (state: RootState): {[key: string]: Card} => state.cards.cards
+
+export const getCardIsDirty = (cardId: string) => (state: RootState): boolean => state.cards.modifiedCardIds.includes(cardId)
 
 export const getSortedCards = createSelector(
     getCards,
@@ -379,7 +391,8 @@ function searchFilterCards(cards: Card[], board: Board, searchTextRaw: string): 
         }
 
         for (const [propertyId, propertyValue] of Object.entries(card.fields.properties)) {
-            // TODO: Refactor to a shared function that returns the display value of a property
+            // Note: Property display value logic - consider extracting to a shared utility function
+            // See: properties/*/property.tsx for property-specific displayValue implementations
             const propertyTemplate = board.cardProperties.find((o) => o.id === propertyId)
             if (propertyTemplate && propertyValue) {
                 if (propertyTemplate.type === 'select') {

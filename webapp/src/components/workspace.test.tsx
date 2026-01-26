@@ -19,6 +19,8 @@ import {Constants} from '../constants'
 import {Utils} from '../utils'
 
 import Workspace from './workspace'
+import {OnboardingBoardTitle, OnboardingCardTitle} from './cardDetail/cardDetail'
+import {TOUR_BASE} from './onboardingTour'
 
 Object.defineProperty(Constants, 'versionString', {value: '1.0.0'})
 jest.useFakeTimers()
@@ -310,11 +312,11 @@ describe('src/components/workspace', () => {
         mockedUtils.isFocalboardPlugin.mockReturnValue(true)
 
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = OnboardingBoardTitle
 
         const onboardingCard = TestBlockFactory.createCard(welcomeBoard)
         onboardingCard.id = 'card1'
-        onboardingCard.title = 'Create a new card'
+        onboardingCard.title = OnboardingCardTitle
         onboardingCard.boardId = welcomeBoard.id
 
         const localState = {
@@ -339,7 +341,7 @@ describe('src/components/workspace', () => {
                 myConfig: {
                     welcomePageViewed: {value: '1'},
                     onboardingTourStarted: {value: true},
-                    tourCategory: {value: 'onboarding'},
+                    tourCategory: {value: TOUR_BASE},
                     onboardingTourStep: {value: '0'},
                 },
             },
@@ -414,11 +416,11 @@ describe('src/components/workspace', () => {
 
     test('show add new view tooltip', async () => {
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = OnboardingBoardTitle
 
         const onboardingCard = TestBlockFactory.createCard(welcomeBoard)
         onboardingCard.id = 'card1'
-        onboardingCard.title = 'Create a new card'
+        onboardingCard.title = OnboardingCardTitle
         onboardingCard.boardId = welcomeBoard.id
 
         const localState = {
@@ -523,11 +525,11 @@ describe('src/components/workspace', () => {
         mockedUtils.isFocalboardPlugin.mockReturnValue(true)
 
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = OnboardingBoardTitle
 
         const onboardingCard = TestBlockFactory.createCard(welcomeBoard)
         onboardingCard.id = 'card1'
-        onboardingCard.title = 'Create a new card'
+        onboardingCard.title = OnboardingCardTitle
         onboardingCard.boardId = welcomeBoard.id
 
         const localState = {

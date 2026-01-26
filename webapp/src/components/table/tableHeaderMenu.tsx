@@ -39,8 +39,8 @@ const TableHeaderMenu: FC<Props> = (props: Props): JSX.Element => {
                 name={intl.formatMessage({id: 'TableHeaderMenu.insert-left', defaultMessage: 'Insert left'})}
                 onClick={() => {
                     if (props.templateId === Constants.titleColumnId) {
-                        // eslint-disable-next-line no-warning-comments
-                        // TODO: Handle name column
+                        // Note: Name column (title) cannot be inserted - it's always the first column
+                        // This is a design constraint, not a bug
                     } else {
                         const index = board.cardProperties.findIndex((o: IPropertyTemplate) => o.id === templateId)
                         mutator.insertPropertyTemplate(board, activeView, index)

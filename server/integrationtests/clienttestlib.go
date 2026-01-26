@@ -21,6 +21,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/services/store/sqlstore"
 	"github.com/mattermost/mattermost-plugin-boards/server/utils"
 
+	_ "github.com/mattn/go-sqlite3" // sqlite driver
+
 	mmModel "github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 

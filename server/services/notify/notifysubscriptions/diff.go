@@ -148,6 +148,9 @@ func (dg *diffGenerator) generateDiffsForCard(card *model.Block, schema model.Pr
 		return nil, fmt.Errorf("could not generate diff for card %s: %w", card.ID, err)
 	}
 
+	// Check for BlockSuite content changes by comparing blocksuite_updated_at
+	blocksuiteChanged := dg.hasBlockSuiteContentChanged(card)
+
 	// fetch all card content blocks that were updated after last notify
 	opts := model.QueryBlockHistoryChildOptions{
 		AfterUpdateAt: dg.lastNotifyAt,
@@ -178,10 +181,45 @@ func (dg *diffGenerator) generateDiffsForCard(card *model.Block, schema model.Pr
 
 	dg.logger.Debug("generateDiffsForCard",
 		mlog.Bool("has_top_changes", cardDiff != nil),
+		mlog.Bool("blocksuite_changed", blocksuiteChanged),
 		mlog.Int("subtree", len(blocks)),
 		mlog.Array("author_names", authors.Values()),
 		mlog.Int("child_diffs", len(childDiffs)),
 	)
+
+	// If BlockSuite content changed, ensure we have a cardDiff to report it
+	if blocksuiteChanged {
+		if cardDiff == nil {
+			cardDiff = &Diff{
+				Board:       dg.board,
+				Card:        card,
+				Authors:     make(StringMap),
+				BlockType:   card.Type,
+				OldBlock:    card,
+				NewBlock:    card,
+				UpdateAt:    card.UpdateAt,
+				PropDiffs:   nil,
+				schemaDiffs: nil,
+			}
+		}
+
+		contentSummary := dg.getBlockSuiteContentSummary(card.ID)
+
+		// Add a special PropDiff to indicate content was updated
+		cardDiff.PropDiffs = append(cardDiff.PropDiffs, PropDiff{
+			ID:       "blocksuite_content",
+			Index:    9999, // High index to appear last
+			Name:     "내용", // "Content" in Korean
+			OldValue: "",
+			NewValue: contentSummary,
+		})
+
+		// Add author from card's ModifiedBy
+		user, err := dg.store.GetUserByID(card.ModifiedBy)
+		if err == nil && user != nil {
+			cardDiff.Authors.Add(user.ID, user.Username)
+		}
+	}
 
 	if len(childDiffs) != 0 {
 		if cardDiff == nil { // will be nil if the card has no other changes besides child diffs
@@ -361,4 +399,95 @@ func sortPropDiffs(propDiffs []PropDiff) []PropDiff {
 		return propDiffs[i].Index < propDiffs[j].Index
 	})
 	return propDiffs
+}
+
+// hasBlockSuiteContentChanged checks if the card's BlockSuite content was updated
+// after the last notification by comparing blocksuite_updated_at field values.
+func (dg *diffGenerator) hasBlockSuiteContentChanged(card *model.Block) bool {
+	// Get the current blocksuite_updated_at from the new block
+	newBlocksuiteUpdatedAt, hasNew := card.Fields["blocksuite_updated_at"]
+	if !hasNew {
+		return false
+	}
+
+	// Get the old version of the card to compare
+	opts := model.QueryBlockHistoryOptions{
+		BeforeUpdateAt: dg.lastNotifyAt + 1,
+		Limit:          1,
+		Descending:     true,
+	}
+	history, err := dg.store.GetBlockHistory(card.ID, opts)
+	if err != nil || len(history) == 0 {
+		// No history means this is a new card, check if blocksuite_updated_at exists
+		return hasNew
+	}
+
+	oldBlock := history[0]
+	oldBlocksuiteUpdatedAt, hasOld := oldBlock.Fields["blocksuite_updated_at"]
+
+	// If old block didn't have blocksuite_updated_at but new one does, content was added
+	if !hasOld && hasNew {
+		return true
+	}
+
+	// Compare timestamps
+	newTS, newOK := toInt64(newBlocksuiteUpdatedAt)
+	oldTS, oldOK := toInt64(oldBlocksuiteUpdatedAt)
+
+	if newOK && oldOK {
+		return newTS > oldTS
+	}
+
+	return false
+}
+
+// toInt64 converts an interface{} to int64, handling both int64 and float64 types
+// (JSON unmarshaling produces float64 for numbers)
+func toInt64(v interface{}) (int64, bool) {
+	switch val := v.(type) {
+	case int64:
+		return val, true
+	case float64:
+		return int64(val), true
+	case int:
+		return int64(val), true
+	default:
+		return 0, false
+	}
+}
+
+const maxContentSummaryLength = 200
+
+func (dg *diffGenerator) getBlockSuiteContentSummary(cardID string) string {
+	doc, err := dg.store.GetBlockSuiteDocByCardID(cardID)
+	if err != nil {
+		dg.logger.Debug("Failed to get BlockSuite doc for content summary",
+			mlog.String("card_id", cardID),
+			mlog.Err(err),
+		)
+		return "수정됨"
+	}
+
+	if doc == nil {
+		return "수정됨"
+	}
+
+	// Prefer LastDiffSummary if available, fallback to ContentText
+	if doc.LastDiffSummary != "" {
+		return truncateText(doc.LastDiffSummary, maxContentSummaryLength)
+	}
+
+	if doc.ContentText == "" {
+		return "수정됨"
+	}
+
+	return truncateText(doc.ContentText, maxContentSummaryLength)
+}
+
+func truncateText(text string, maxLen int) string {
+	runes := []rune(text)
+	if len(runes) <= maxLen {
+		return text
+	}
+	return string(runes[:maxLen]) + "..."
 }

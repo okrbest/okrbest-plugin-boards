@@ -25,6 +25,8 @@ import client from '../../octoClient'
 import TelemetryClient from '../../telemetry/telemetryClient'
 
 import BoardTemplateSelector from './boardTemplateSelector'
+import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
+import {TOUR_BASE} from '../onboardingTour'
 
 jest.mock('react-router-dom', () => {
     const originalModule = jest.requireActual('react-router-dom')
@@ -115,7 +117,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     {
                         id: '2',
                         teamId: '0',
-                        title: 'Welcome to Boards!',
+                        title: OnboardingBoardTitle,
                         icon: '❄️',
                         cardProperties: [
                             {id: 'id-5'},
@@ -385,7 +387,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                 </ReduxProvider>
                 ,
             ), {wrapper: MemoryRouter})
-            const divBoardToSelect = screen.getByText('Welcome to Boards!').parentElement
+            const divBoardToSelect = screen.getByText(OnboardingBoardTitle).parentElement
             expect(divBoardToSelect).not.toBeNull()
 
             act(() => {
@@ -406,7 +408,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                 updatedFields: {
                     onboardingTourStarted: '1',
                     onboardingTourStep: '0',
-                    tourCategory: 'onboarding',
+                    tourCategory: TOUR_BASE,
                 },
             })
         })

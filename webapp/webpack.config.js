@@ -63,16 +63,35 @@ const config = {
         ],
         alias: {
             moment: path.resolve(__dirname, './node_modules/moment/'),
+            '@blocksuite/store/src': path.resolve(__dirname, './node_modules/@blocksuite/store/dist'),
         },
         extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
+        fullySpecified: false,
+        conditionNames: ['import', 'module', 'browser', 'default'],
     },
     module: {
         rules: [
+            {
+                test: /\.m?js$/,
+                include: /node_modules\/@blocksuite/,
+                resolve: {
+                    fullySpecified: false,
+                },
+            },
+            {
+                test: /\.m?js$/,
+                include: /node_modules\/yjs/,
+                resolve: {
+                    fullySpecified: false,
+                },
+            },
+            
             {
                 test: /\.tsx?$/,
                 use: {
                     loader: 'ts-loader',
                     options: {
+                        transpileOnly: true,
                         getCustomTransformers: {
                             before: [
                                 tsTransformer.transform({
@@ -117,7 +136,7 @@ const config = {
                 type: 'asset/resource',
                 generator: {
                     filename: '[name][ext]',
-                    publicPath: TARGET_IS_PRODUCT ? undefined : '/static/',
+                    publicPath: TARGET_IS_PRODUCT ? undefined : 'static/',
                 }
             },
             {
@@ -206,9 +225,17 @@ if (TARGET_IS_PRODUCT) {
     config.output = {
         devtoolNamespace: PLUGIN_ID,
         path: path.join(__dirname, '/dist'),
-        publicPath: '/',
+        publicPath: '/static/plugins/focalboard/',
         filename: 'main.js',
     };
+
+    // Disable code splitting for plugin environment
+    // BlockSuite uses dynamic imports which cause chunk loading issues in Mattermost plugin context
+    config.plugins.push(
+        new webpack.optimize.LimitChunkCountPlugin({
+            maxChunks: 1,
+        }),
+    );
 }
 
 const env = {};

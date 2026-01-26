@@ -11,8 +11,8 @@ import {useCardDetailContext} from '../cardDetail/cardDetailContext'
 
 import {contentRegistry} from './contentRegistry'
 
-// Need to require here to prevent webpack from tree-shaking these away
-// TODO: Update webpack to avoid this
+// Need to import here to ensure these modules are loaded
+// Note: Vite handles tree-shaking automatically, but explicit imports ensure proper registration
 import './textElement'
 import './imageElement'
 import './dividerElement'

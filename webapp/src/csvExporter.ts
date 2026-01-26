@@ -40,13 +40,18 @@ class CsvExporter {
         document.body.appendChild(link)						// FireFox support
 
         link.click()
-
-        // TODO: Review if this is needed in the future, this is to fix the problem with linux webview links
+        
+        // Linux webview workaround: use openInNewBrowser if available
         if (window.openInNewBrowser) {
             window.openInNewBrowser(encodedUri)
         }
-
-        // TODO: Remove or reuse link
+        
+        // Clean up: remove link element after download
+        setTimeout(() => {
+            if (link.parentNode) {
+                link.parentNode.removeChild(link)
+            }
+        }, 100)
     }
 
     private static encodeText(text: string): string {

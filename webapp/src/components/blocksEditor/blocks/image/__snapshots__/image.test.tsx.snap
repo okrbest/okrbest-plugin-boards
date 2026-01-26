@@ -6,6 +6,7 @@ exports[`components/blocksEditor/blocks/image should match Display snapshot 1`] 
     class="ImageView"
     data-testid="image"
     src="test.jpg"
+    style="cursor: pointer;"
   />
 </div>
 `;

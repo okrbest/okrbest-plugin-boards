@@ -127,15 +127,16 @@ func NewBoardsApp(api model.ServicesAPI, manifest *mm_model.Manifest) (*BoardsAp
 	notifyBackends = append(notifyBackends, assigneesBackend)
 
 	params := server.Params{
-		Cfg:                cfg,
-		SingleUserToken:    "",
-		DBStore:            db,
-		Logger:             logger,
-		ServerID:           serverID,
-		WSAdapter:          wsPluginAdapter,
-		NotifyBackends:     notifyBackends,
-		PermissionsService: permissionsService,
-		IsPlugin:           true,
+		Cfg:                  cfg,
+		SingleUserToken:      "",
+		DBStore:              db,
+		Logger:               logger,
+		ServerID:             serverID,
+		WSAdapter:            wsPluginAdapter,
+		NotifyBackends:       notifyBackends,
+		SubscriptionsBackend: subscriptionsBackend,
+		PermissionsService:   permissionsService,
+		IsPlugin:             true,
 	}
 
 	server, err := server.New(params)
@@ -175,6 +176,12 @@ func (b *BoardsApp) Start() error {
 	}
 
 	b.servicesAPI.RegisterRouter(b.server.GetRootRouter())
+
+	go func() {
+		if err := b.server.App().RunBlockSuiteMigration(); err != nil {
+			b.logger.Error("BlockSuite migration failed", mlog.Err(err))
+		}
+	}()
 
 	b.logger.Info("Boards product successfully started.")
 

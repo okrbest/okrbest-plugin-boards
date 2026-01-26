@@ -92,8 +92,8 @@ export const BoardsUnfurl = (props: Props): JSX.Element => {
             setCard(firstCard)
             setBoard(fetchedBoard)
 
-            if (firstCard.fields.contentOrder.length) {
-                let [firstContentBlockID] = firstCard.fields?.contentOrder
+            if (firstCard.fields.contentOrder?.length) {
+                let [firstContentBlockID] = firstCard.fields.contentOrder
 
                 if (Array.isArray(firstContentBlockID)) {
                     [firstContentBlockID] = firstContentBlockID

@@ -9,7 +9,7 @@ import {BoardView} from '../blocks/boardView'
 import {Card} from '../blocks/card'
 import octoClient from '../octoClient'
 import mutator from '../mutator'
-import {getCard} from '../store/cards'
+import {getCard, getCardIsDirty, clearCardModified} from '../store/cards'
 import {getCardComments} from '../store/comments'
 import {getCardContents} from '../store/contents'
 import {useAppDispatch, useAppSelector} from '../store/hooks'
@@ -54,7 +54,8 @@ type Props = {
 
 const CardDialog = (props: Props): JSX.Element => {
     const {board, activeView, cards, views} = props
-    const card = useAppSelector(getCard(props.cardId))
+    const cardFromStore = useAppSelector(getCard(props.cardId))
+    const card = cardFromStore || cards.find((c) => c.id === props.cardId)
     const contents = useAppSelector(getCardContents(props.cardId))
     const comments = useAppSelector(getCardComments(props.cardId))
     const attachments = useAppSelector(getCardAttachments(props.cardId))
@@ -63,6 +64,20 @@ const CardDialog = (props: Props): JSX.Element => {
     const dispatch = useAppDispatch()
     const me = useAppSelector<IUser|null>(getMe)
     const isTemplate = card && card.fields.isTemplate
+    const isDirty = useAppSelector(getCardIsDirty(props.cardId))
+
+    const handleClose = useCallback(async () => {
+        if (isDirty && board.channelId) {
+            try {
+                await octoClient.sendBoardNotification(props.board.id, props.cardId)
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.error('Failed to send card notification on close', error)
+            }
+        }
+        dispatch(clearCardModified(props.cardId))
+        props.onClose()
+    }, [isDirty, board.channelId, props.board.id, props.cardId, props.onClose, dispatch])
 
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = useState<boolean>(false)
     const makeTemplateClicked = async () => {
@@ -110,7 +125,7 @@ const CardDialog = (props: Props): JSX.Element => {
         // use may be renaming a card title
         // and accidently delete the card
         // so adding des
-        if (card?.title === '' && card?.fields.contentOrder.length === 0) {
+        if (card?.title === '' && (card?.fields.contentOrder?.length ?? 0) === 0) {
             handleDeleteCard()
             return
         }
@@ -219,7 +234,7 @@ const CardDialog = (props: Props): JSX.Element => {
         const description = intl.formatMessage({id: 'AttachmentBlock.DeleteAction', defaultMessage: 'delete'})
         await mutator.deleteBlock(block, description)
         sendFlashMessage({content: intl.formatMessage({id: 'AttachmentBlock.delete', defaultMessage: 'Attachment Deleted Successfully.'}), severity: 'normal'})
-    }, [card?.boardId, card?.id, card?.fields.contentOrder])
+    }, [card?.boardId, card?.id])
 
     const attachBtn = (): React.ReactNode => {
         return (
@@ -305,7 +320,7 @@ const CardDialog = (props: Props): JSX.Element => {
             <Dialog
                 title={<div/>}
                 className='cardDialog'
-                onClose={props.onClose}
+                onClose={handleClose}
                 toolsMenu={!props.readonly && !card?.limited && menu}
                 toolbar={toolbar}
             >
@@ -328,7 +343,7 @@ const CardDialog = (props: Props): JSX.Element => {
                         comments={comments}
                         attachments={attachments}
                         readonly={props.readonly}
-                        onClose={props.onClose}
+                        onClose={handleClose}
                         onDelete={deleteBlock}
                         addAttachment={addElement}
                     />}

@@ -1,4 +1,5 @@
 {
+  "A JavaScript error has occurred. Please use the JavaScript console to capture and report the error": "A JavaScript error has occurred. Please use the JavaScript console to capture and report the error",
   "AdminBadge.SystemAdmin": "Admin",
   "AdminBadge.TeamAdmin": "Team Admin",
   "AppBar.Tooltip": "Toggle Linked Boards",
@@ -532,5 +533,11 @@
   "RHSBoardCards.no-cards": "No cards in this board.",
   "BoardMessage.linkBoard": "@{username} linked the board [{boardTitle}]({boardLink}) with this channel",
   "BoardMessage.unlinkBoard": "@{username} unlinked the board [{boardTitle}]({boardLink}) with this channel",
-  "BoardMessage.cardNotify": "@{username} notified about card [{cardTitle}]({cardLink}) in board [{boardTitle}]({boardLink})"
+  "BoardMessage.cardNotify": "@{username} notified about card [{cardTitle}]({cardLink}) in board [{boardTitle}]({boardLink})",
+  "BlockSuiteEditor.loading": "Loading editor...",
+  "BlockSuiteEditor.error": "Failed to load editor",
+  "BlockSuiteEditor.saving": "Saving...",
+  "BlockSuiteEditor.pending": "Unsaved changes...",
+  "BlockSuiteEditor.saved": "Saved",
+  "BlockSuiteEditor.saveError": "Save failed"
 }

@@ -2,7 +2,7 @@
     "compilerOptions": {
         "jsx": "react",
         "target": "es2019",
-        "module": "commonjs",
+        "module": "ESNext",
         "esModuleInterop": true,
         "noImplicitAny": true,
         "strict": true,
@@ -14,9 +14,9 @@
         "incremental": false,
         "baseUrl": "src",
         "outDir": "./dist",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "skipLibCheck": true,
-        "types": ["jest", "node"],
+        "typeRoots": ["./node_modules/@types"]
     },
     "include": [
 		"src/**/*"

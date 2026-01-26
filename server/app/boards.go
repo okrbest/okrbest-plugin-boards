@@ -180,19 +180,25 @@ func (a *App) setBoardCategoryFromSource(sourceBoardID, destinationBoardID, user
 }
 
 func (a *App) DuplicateBoard(boardID, userID, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
-	bab, members, err := a.store.DuplicateBoard(boardID, userID, toTeam, asTemplate)
+	bab, members, cardIDMapping, err := a.store.DuplicateBoard(boardID, userID, toTeam, asTemplate)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// copy any file attachments from the duplicated blocks.
-	err = a.CopyAndUpdateCardFiles(boardID, userID, bab.Blocks, asTemplate)
+	fileIDMapping, err := a.CopyAndUpdateCardFiles(boardID, userID, bab.Blocks, asTemplate)
 	if err != nil {
 		dbab := model.NewDeleteBoardsAndBlocksFromBabs(bab)
 		if dErr := a.store.DeleteBoardsAndBlocks(dbab, userID); dErr != nil {
 			a.logger.Error("Cannot delete board after duplication error when updating block's file info", mlog.String("boardID", bab.Boards[0].ID), mlog.Err(dErr))
 		}
 		return nil, nil, fmt.Errorf("could not patch file IDs while duplicating board %s: %w", boardID, err)
+	}
+
+	if len(cardIDMapping) > 0 {
+		if copyErr := a.CopyBlockSuiteDocs(cardIDMapping, fileIDMapping); copyErr != nil {
+			a.logger.Warn("Failed to copy BlockSuite docs during board duplication", mlog.String("boardID", boardID), mlog.Err(copyErr))
+		}
 	}
 
 	if !asTemplate {
@@ -426,33 +432,12 @@ func (a *App) SendCardNotification(boardID, userID, cardID string) error {
 		return fmt.Errorf("board is not linked to any channel")
 	}
 
-	// 카드 정보 가져오기
-	card, err := a.GetBlockByID(cardID)
-	if err != nil {
-		return err
+	if a.subscriptionsBackend != nil {
+		if err := a.subscriptionsBackend.ForceNotifyBlock(cardID, userID, model.TypeCard); err != nil {
+			a.logger.Error("Failed to force notify block", mlog.Err(err))
+		}
 	}
 
-	user, err := a.store.GetUserByID(userID)
-	if err != nil {
-		return err
-	}
-
-	boardLink := utils.MakeBoardLink(a.config.ServerRoot, board.TeamID, board.ID)
-	cardLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, cardID)
-	title := board.Title
-	if title == "" {
-		title = "Untitled board"
-	}
-
-	cardTitle := card.Title
-	if cardTitle == "" {
-		cardTitle = "Untitled card"
-	}
-
-	// 기존 방식과 동일하게 메시지 전송
-	message := fmt.Sprintf(cardNotifyMessage, user.Username, cardTitle, cardLink, title, boardLink)
-	a.postChannelMessage(message, board.ChannelID)
-	
 	return nil
 }
 

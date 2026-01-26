@@ -13,7 +13,7 @@ import IconButton from '../widgets/buttons/iconButton'
 import OptionsIcon from '../widgets/icons/options'
 import Menu from '../widgets/menu'
 import MenuWrapper from '../widgets/menuWrapper'
-import {SuiteWindow} from '../types/index'
+// import {SuiteWindow} from '../types/index' // 미사용
 import CompassIcon from '../widgets/icons/compassIcon'
 
 import {Permission} from '../constants'
@@ -24,7 +24,7 @@ import {showBoardCards} from '../store/rhs'
 
 import './rhsChannelBoardItem.scss'
 
-const windowAny = (window as SuiteWindow)
+// const windowAny = (window as SuiteWindow) // 미사용
 
 type Props = {
     board: Board
@@ -46,7 +46,7 @@ const RHSChannelBoardItem = (props: Props) => {
         TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.ClickChannelsRHSBoard, extraData)
         // 카드 목록을 보여주는 RHS로 변경
         dispatch(showBoardCards(board))
-}
+    }
 
     const onUnlinkBoard = async (board: Board) => {
         const newBoard = createBoard(board)

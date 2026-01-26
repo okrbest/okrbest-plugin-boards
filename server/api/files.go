@@ -125,8 +125,21 @@ func (a *API) handleServeFile(w http.ResponseWriter, r *http.Request) {
 	filename := vars["filename"]
 	userID := getUserID(r)
 
+	// 디버그 로깅
+	a.logger.Debug("handleServeFile",
+		mlog.String("boardID", boardID),
+		mlog.String("filename", filename),
+		mlog.String("userID", userID),
+		mlog.String("Mattermost-User-Id", r.Header.Get("Mattermost-User-Id")),
+		mlog.String("X-Requested-With", r.Header.Get("X-Requested-With")),
+	)
+
 	hasValidReadToken := a.hasValidReadTokenForBoard(r, boardID)
 	if userID == "" && !hasValidReadToken {
+		a.logger.Warn("handleServeFile: access denied - no userID and no valid read token",
+			mlog.String("boardID", boardID),
+			mlog.String("filename", filename),
+		)
 		a.errorResponse(w, r, model.NewErrUnauthorized("access denied to board"))
 		return
 	}

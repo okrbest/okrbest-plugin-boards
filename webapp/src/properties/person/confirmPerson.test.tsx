@@ -164,7 +164,7 @@ describe('properties/person', () => {
             })
             expect(container).toMatchSnapshot()
 
-            const option = renderResult.getByText('username-4')
+            const option = await renderResult.findByText('username-4')
             expect(option).not.toBeNull()
             act(() => {
                 userEvent.click(option as Element)
@@ -218,7 +218,7 @@ describe('properties/person', () => {
             })
             expect(container).toMatchSnapshot()
 
-            const option = renderResult.getByText('username-4')
+            const option = await renderResult.findByText('username-4')
             expect(option).not.toBeNull()
             act(() => {
                 userEvent.click(option as Element)

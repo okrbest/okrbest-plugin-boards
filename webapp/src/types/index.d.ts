@@ -28,4 +28,8 @@ export type SuiteWindow = Window & {
     isFocalboardPlugin?: boolean
     WebappUtils?: any
     desktopAPI?: Partial<DesktopAPI>
+    boardsMigration?: {
+        runBatchMigration: typeof import('../components/blockSuite/batchMigration').runBatchMigration
+        getMigrationPreview: typeof import('../components/blockSuite/batchMigration').getMigrationPreview
+    }
 }

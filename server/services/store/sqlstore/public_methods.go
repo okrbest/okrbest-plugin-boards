@@ -157,6 +157,11 @@ func (s *SQLStore) DeleteBlockRecord(blockID string, modifiedBy string) error {
 
 }
 
+func (s *SQLStore) DeleteBlockSuiteDocByCardID(cardID string) error {
+	return s.deleteBlockSuiteDocByCardID(s.db, cardID)
+
+}
+
 func (s *SQLStore) DeleteBoard(boardID string, userID string) error {
 	if s.dbType == model.SqliteDBType {
 		return s.deleteBoard(s.db, boardID, userID)
@@ -254,27 +259,27 @@ func (s *SQLStore) DuplicateBlock(boardID string, blockID string, userID string,
 
 }
 
-func (s *SQLStore) DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
+func (s *SQLStore) DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, map[string]string, error) {
 	if s.dbType == model.SqliteDBType {
 		return s.duplicateBoard(s.db, boardID, userID, toTeam, asTemplate)
 	}
 	tx, txErr := s.db.BeginTx(context.Background(), nil)
 	if txErr != nil {
-		return nil, nil, txErr
+		return nil, nil, nil, txErr
 	}
-	result, resultVar1, err := s.duplicateBoard(tx, boardID, userID, toTeam, asTemplate)
+	result, members, cardIDMapping, err := s.duplicateBoard(tx, boardID, userID, toTeam, asTemplate)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			s.logger.Error("transaction rollback error", mlog.Err(rollbackErr), mlog.String("methodName", "DuplicateBoard"))
 		}
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return result, resultVar1, nil
+	return result, members, cardIDMapping, nil
 
 }
 
@@ -310,6 +315,31 @@ func (s *SQLStore) GetBlockHistoryDescendants(boardID string, opts model.QueryBl
 
 func (s *SQLStore) GetBlockHistoryNewestChildren(parentID string, opts model.QueryBlockHistoryChildOptions) ([]*model.Block, bool, error) {
 	return s.getBlockHistoryNewestChildren(s.db, parentID, opts)
+
+}
+
+func (s *SQLStore) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error) {
+	return s.getBlockSuiteDocByCardID(s.db, cardID)
+
+}
+
+func (s *SQLStore) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocInfo, error) {
+	return s.getBlockSuiteDocInfoByCardID(s.db, cardID)
+
+}
+
+func (s *SQLStore) GetBlockSuiteDocsByBoardID(boardID string) ([]*model.BlockSuiteDoc, error) {
+	return s.getBlockSuiteDocsByBoardID(s.db, boardID)
+
+}
+
+func (s *SQLStore) GetBlockSuiteMigrationStatus() (*model.BlockSuiteMigrationStatus, error) {
+	return s.getBlockSuiteMigrationStatus(s.db)
+
+}
+
+func (s *SQLStore) GetUnmigratedCardsWithContentBlocks(limit int, offset int) ([]*model.UnmigratedCard, int64, error) {
+	return s.getUnmigratedCardsWithContentBlocks(s.db, limit, offset)
 
 }
 
@@ -766,6 +796,11 @@ func (s *SQLStore) ReorderCategoryBoards(categoryID string, newBoardsOrder []str
 
 }
 
+func (s *SQLStore) RestoreFiles(fileIDs []string) error {
+	return s.restoreFiles(s.db, fileIDs)
+
+}
+
 func (s *SQLStore) RunDataRetention(globalRetentionDate int64, batchSize int64) (int64, error) {
 	if s.dbType == model.SqliteDBType {
 		return s.runDataRetention(s.db, globalRetentionDate, batchSize)
@@ -792,11 +827,6 @@ func (s *SQLStore) RunDataRetention(globalRetentionDate int64, batchSize int64) 
 
 func (s *SQLStore) SaveFileInfo(fileInfo *mmModel.FileInfo) error {
 	return s.saveFileInfo(s.db, fileInfo)
-
-}
-
-func (s *SQLStore) RestoreFiles(fileIDs []string) error {
-	return s.restoreFiles(s.db, fileIDs)
 
 }
 
@@ -900,6 +930,30 @@ func (s *SQLStore) UpdateCategory(category model.Category) error {
 
 func (s *SQLStore) UpdateSubscribersNotifiedAt(blockID string, notifiedAt int64) error {
 	return s.updateSubscribersNotifiedAt(s.db, blockID, notifiedAt)
+
+}
+
+func (s *SQLStore) UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error {
+	if s.dbType == model.SqliteDBType {
+		return s.upsertBlockSuiteDoc(s.db, doc)
+	}
+	tx, txErr := s.db.BeginTx(context.Background(), nil)
+	if txErr != nil {
+		return txErr
+	}
+	err := s.upsertBlockSuiteDoc(tx, doc)
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			s.logger.Error("transaction rollback error", mlog.Err(rollbackErr), mlog.String("methodName", "UpsertBlockSuiteDoc"))
+		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 
 }
 

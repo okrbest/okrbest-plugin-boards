@@ -1,4 +1,4 @@
-@import '../styles/z-index';
+@use '../styles/z-index' as *;
 
 .ContentBlock {
     // HACK: Fixes Chrome drag and drop preview

@@ -107,7 +107,7 @@ func ReadConfigFile(configFilePath string) (*Configuration, error) {
 	viper.SetDefault("NotifyFreqCardSeconds", 120)    // 2 minutes after last card edit
 	viper.SetDefault("NotifyFreqBoardSeconds", 86400) // 1 day after last card edit
 	viper.SetDefault("EnableDataRetention", false)
-	viper.SetDefault("FeatureFlags", map[string]string{})
+	viper.SetDefault("FeatureFlags", map[string]string{"newBoardsEditor": "true"})
 	viper.SetDefault("DataRetentionDays", 365) // 1 year is default
 	viper.SetDefault("PrometheusAddress", "")
 	viper.SetDefault("TeammateNameDisplay", "username")

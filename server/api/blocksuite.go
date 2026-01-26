@@ -13,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/services/audit"
 	"github.com/mattermost/mattermost-plugin-boards/server/utils"
 
+	mmModel "github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
@@ -88,8 +89,7 @@ func (a *API) handleGetCardBlockSuiteContent(w http.ResponseWriter, r *http.Requ
 		mlog.Int("snapshotSize", len(doc.Snapshot)),
 	)
 
-	// Return binary snapshot
-	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(doc.Snapshot)
 
@@ -145,29 +145,36 @@ func (a *API) handleSaveCardBlockSuiteContent(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if !a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionManageBoardCards) {
+	// Check permissions: board card management permission OR system admin (for batch migration)
+	hasBoardPermission := a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionManageBoardCards)
+	isSystemAdmin := a.permissions.HasPermissionTo(userID, mmModel.PermissionGetAnalytics)
+
+	if !hasBoardPermission && !isSystemAdmin {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to modify card"))
 		return
 	}
 
-	// Read binary snapshot from request body
-	snapshot, err := io.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		a.errorResponse(w, r, model.NewErrBadRequest("failed to read request body"))
 		return
 	}
 
+	reqData := parseBlockSuiteRequestBody(bodyBytes)
+
 	// Create/Update BlockSuite document
 	now := utils.GetMillis()
 	doc := &model.BlockSuiteDoc{
-		DocID:     cardID, // Use cardID as docID for simplicity
-		CardID:    cardID,
-		BoardID:   card.BoardID,
-		Snapshot:  snapshot,
-		CreatedAt: now,
-		UpdatedAt: now,
-		CreatedBy: userID,
-		UpdatedBy: userID,
+		DocID:           cardID, // Use cardID as docID for simplicity
+		CardID:          cardID,
+		BoardID:         card.BoardID,
+		Snapshot:        reqData.snapshot,
+		ContentText:     reqData.contentText,
+		LastDiffSummary: reqData.diffSummary,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		CreatedBy:       userID,
+		UpdatedBy:       userID,
 	}
 
 	err = a.app.UpsertBlockSuiteDoc(doc)
@@ -180,7 +187,7 @@ func (a *API) handleSaveCardBlockSuiteContent(w http.ResponseWriter, r *http.Req
 		mlog.String("cardID", cardID),
 		mlog.String("docID", doc.DocID),
 		mlog.String("userID", userID),
-		mlog.Int("snapshotSize", len(snapshot)),
+		mlog.Int("snapshotSize", len(reqData.snapshot)),
 	)
 
 	// Return document info
@@ -330,3 +337,41 @@ func (a *API) handleDeleteCardBlockSuiteDoc(w http.ResponseWriter, r *http.Reque
 	auditRec.Success()
 }
 
+// blockSuiteRequestData holds the parsed fields from a BlockSuite save request.
+type blockSuiteRequestData struct {
+	snapshot    []byte
+	contentText string
+	diffSummary string
+}
+
+// parseBlockSuiteRequestBody handles both new format {snapshot, contentText, diffSummary} and legacy format (raw snapshot).
+// Returns the parsed request data including snapshot bytes, optional contentText for search indexing,
+// and optional diffSummary describing the last change.
+func parseBlockSuiteRequestBody(bodyBytes []byte) blockSuiteRequestData {
+	var bodyMap map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &bodyMap); err != nil {
+		return blockSuiteRequestData{snapshot: bodyBytes}
+	}
+
+	snapshotVal, hasSnapshot := bodyMap["snapshot"]
+	if !hasSnapshot {
+		return blockSuiteRequestData{snapshot: bodyBytes}
+	}
+
+	snapshotBytes, err := json.Marshal(snapshotVal)
+	if err != nil {
+		return blockSuiteRequestData{snapshot: bodyBytes}
+	}
+
+	result := blockSuiteRequestData{snapshot: snapshotBytes}
+
+	if ct, ok := bodyMap["contentText"].(string); ok {
+		result.contentText = ct
+	}
+
+	if ds, ok := bodyMap["diffSummary"].(string); ok {
+		result.diffSummary = ds
+	}
+
+	return result
+}

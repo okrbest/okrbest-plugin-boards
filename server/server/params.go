@@ -9,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/config"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/notify"
+	"github.com/mattermost/mattermost-plugin-boards/server/services/notify/notifysubscriptions"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/permissions"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/store"
 	"github.com/mattermost/mattermost-plugin-boards/server/ws"
@@ -17,16 +18,17 @@ import (
 )
 
 type Params struct {
-	Cfg                *config.Configuration
-	SingleUserToken    string
-	DBStore            store.Store
-	Logger             mlog.LoggerIFace
-	ServerID           string
-	WSAdapter          ws.Adapter
-	NotifyBackends     []notify.Backend
-	PermissionsService permissions.PermissionsService
-	ServicesAPI        model.ServicesAPI
-	IsPlugin           bool
+	Cfg                  *config.Configuration
+	SingleUserToken      string
+	DBStore              store.Store
+	Logger               mlog.LoggerIFace
+	ServerID             string
+	WSAdapter            ws.Adapter
+	NotifyBackends       []notify.Backend
+	SubscriptionsBackend *notifysubscriptions.Backend
+	PermissionsService   permissions.PermissionsService
+	ServicesAPI          model.ServicesAPI
+	IsPlugin             bool
 }
 
 func (p Params) CheckValid() error {

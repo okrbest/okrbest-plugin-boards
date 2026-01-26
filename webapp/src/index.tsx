@@ -1,6 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// Polyfill for global which is expected by some libraries (like Yjs/BlockSuite)
+if (typeof (window as any).global === 'undefined') {
+    (window as any).global = window
+}
+
 import React, {useEffect} from 'react'
 import {createIntl, createIntlCache} from 'react-intl'
 import {Store, Action} from 'redux'
@@ -389,6 +394,7 @@ export default class Plugin {
             // @ts-ignore
             return mmStore.getState().entities.teams.currentTeamId
         }
+
     }
 
     uninitialize(): void {

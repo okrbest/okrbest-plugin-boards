@@ -45,6 +45,10 @@ describe('components/boardSelector', () => {
         },
     }
 
+    beforeEach(() => {
+        mockedOctoClient.searchLinkableBoards.mockResolvedValue([])
+    })
+
     it('renders without start searching', async () => {
         const store = mockStateStore([], state)
         const {container} = render(wrapIntl(

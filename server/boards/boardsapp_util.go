@@ -118,6 +118,10 @@ func createBoardsConfig(mmconfig mm_model.Config, baseURL string, serverID strin
 
 func parseFeatureFlags(configFeatureFlags map[string]string) map[string]string {
 	featureFlags := make(map[string]string)
+
+	// Default feature flags for plugin mode
+	featureFlags["newBoardsEditor"] = "true"
+
 	for key, value := range configFeatureFlags {
 		// Break out FeatureFlags and pass remaining
 		if key == boardsFeatureFlagName {
