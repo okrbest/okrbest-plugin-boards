@@ -9,6 +9,8 @@ import { effects as presetsEffects } from '@blocksuite/presets/effects'
 blocksEffects()
 presetsEffects()
 
+// Initialize Toggle List in Slash Menu
+
 // Debug: Verify drag handle widget is registered
 if (typeof window !== 'undefined') {
     const isRegistered = customElements.get('affine-drag-handle-widget')
