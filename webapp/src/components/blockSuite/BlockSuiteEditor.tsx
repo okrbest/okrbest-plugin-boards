@@ -275,8 +275,8 @@ function BlockSuiteEditor(props: Props): JSX.Element {
                                         
                                         editor.std.selection.set([selection])
                                         
-                                        if (editor.std.event) {
-                                            editor.std.event.active = true
+                                        if (editor.std.event && editor.host) {
+                                            editor.host.focus()
                                         }
                                         
                                         if (containerRef.current) {
