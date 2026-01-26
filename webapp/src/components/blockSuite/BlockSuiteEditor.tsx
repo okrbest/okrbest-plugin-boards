@@ -17,6 +17,7 @@ import {Block} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import {Board} from '../../blocks/board'
 import {Utils} from '../../utils'
+import {checkSnapshotHasContent} from '../../utils/blockSuiteUtils'
 import {useAppSelector, useAppDispatch} from '../../store/hooks'
 import {getSortedCards, updateCards} from '../../store/cards'
 import {getBoards, getMySortedBoards} from '../../store/boards'
@@ -236,6 +237,66 @@ function BlockSuiteEditor(props: Props): JSX.Element {
 
                 containerRef.current.innerHTML = ''
                 containerRef.current.appendChild(editor)
+
+                if (!readonly) {
+                    try {
+                        const hasContent = checkSnapshotHasContent(snapshot)
+                        if (!hasContent) {
+                            Utils.log('BlockSuiteEditor: Document is empty, attempting to auto-focus first block')
+                            
+                            const blocks = editorDoc.getBlocks()
+                            let targetBlockId = ''
+
+                            const firstParagraph = blocks.find((b) => b.flavour === 'affine:paragraph')
+                            if (firstParagraph) {
+                                targetBlockId = firstParagraph.id
+                            }
+
+                            if (!targetBlockId && blocks.length > 0) {
+                                const paragraphs = blocks.filter((b) => b.flavour === 'affine:paragraph')
+                                if (paragraphs.length > 0) {
+                                    targetBlockId = paragraphs[0].id
+                                }
+                            }
+
+                            if (targetBlockId && editor.std) {
+                                Utils.log(`BlockSuiteEditor: Focusing block ${targetBlockId}`)
+                                
+                                setTimeout(() => {
+                                    try {
+                                        const selection = editor.std.selection.create('text', {
+                                            from: {
+                                                blockId: targetBlockId,
+                                                index: 0,
+                                                length: 0,
+                                            },
+                                            to: null,
+                                        })
+                                        
+                                        editor.std.selection.set([selection])
+                                        
+                                        if (editor.std.event) {
+                                            editor.std.event.active = true
+                                        }
+                                        
+                                        if (containerRef.current) {
+                                            const editableElement = containerRef.current.querySelector('[contenteditable="true"]') as HTMLElement
+                                            if (editableElement) {
+                                                editableElement.focus()
+                                            }
+                                        }
+                                    } catch (err) {
+                                        Utils.logError(`BlockSuiteEditor: Delayed focus failed: ${err}`)
+                                    }
+                                }, 100)
+                            } else {
+                                Utils.log('BlockSuiteEditor: Could not find suitable block to focus')
+                            }
+                        }
+                    } catch (e) {
+                        Utils.logError(`BlockSuiteEditor: Auto-focus failed: ${e}`)
+                    }
+                }
 
                 editorRef.current = editor
                 collectionRef.current = collection

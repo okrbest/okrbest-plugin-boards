@@ -595,7 +595,7 @@ async function addBlockFromSnapshot(doc: Doc, blockData: any, parentId: string):
  * 스냅샷에 실제 콘텐츠가 있는지 확인
  * 기본 구조(빈 paragraph)만 있으면 false 반환
  */
-function checkSnapshotHasContent(snapshot: any): boolean {
+export function checkSnapshotHasContent(snapshot: any): boolean {
     console.log('[Content Check] Checking snapshot for real content...')
     console.log('[Content Check] Snapshot structure:', snapshot)
     try {
