@@ -268,6 +268,50 @@ function BlockSuiteEditor(props: Props): JSX.Element {
         }
     }, [containerMounted, snapshot, readonly, card.boardId, teamId, handleDocUpdate])
 
+    useEffect(() => {
+        const handleSelectionChange = () => {
+            requestAnimationFrame(() => {
+                const selection = document.getSelection()
+                if (!selection || selection.rangeCount === 0) {
+                    return
+                }
+
+                if (!containerRef.current || !containerRef.current.contains(selection.anchorNode)) {
+                    return
+                }
+
+                const range = selection.getRangeAt(0)
+                const rect = range.getBoundingClientRect()
+
+                let scrollParent = containerRef.current.parentElement
+                while (scrollParent) {
+                    const style = window.getComputedStyle(scrollParent)
+                    const isScrollable = style.overflowY === 'auto' || style.overflowY === 'scroll' || scrollParent.classList.contains('dialog')
+
+                    if (isScrollable) {
+                        break
+                    }
+                    scrollParent = scrollParent.parentElement
+                }
+
+                if (scrollParent) {
+                    const parentRect = scrollParent.getBoundingClientRect()
+                    const bottomPadding = 40
+
+                    if (rect.bottom > parentRect.bottom - bottomPadding) {
+                        const diff = rect.bottom - (parentRect.bottom - bottomPadding)
+                        scrollParent.scrollTop += diff
+                    }
+                }
+            })
+        }
+
+        document.addEventListener('selectionchange', handleSelectionChange)
+        return () => {
+            document.removeEventListener('selectionchange', handleSelectionChange)
+        }
+    }, [containerMounted])
+
     if (loading) {
         return (
             <div className='BlockSuiteEditor BlockSuiteEditor--loading'>
