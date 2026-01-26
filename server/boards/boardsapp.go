@@ -127,15 +127,16 @@ func NewBoardsApp(api model.ServicesAPI, manifest *mm_model.Manifest) (*BoardsAp
 	notifyBackends = append(notifyBackends, assigneesBackend)
 
 	params := server.Params{
-		Cfg:                cfg,
-		SingleUserToken:    "",
-		DBStore:            db,
-		Logger:             logger,
-		ServerID:           serverID,
-		WSAdapter:          wsPluginAdapter,
-		NotifyBackends:     notifyBackends,
-		PermissionsService: permissionsService,
-		IsPlugin:           true,
+		Cfg:                  cfg,
+		SingleUserToken:      "",
+		DBStore:              db,
+		Logger:               logger,
+		ServerID:             serverID,
+		WSAdapter:            wsPluginAdapter,
+		NotifyBackends:       notifyBackends,
+		SubscriptionsBackend: subscriptionsBackend,
+		PermissionsService:   permissionsService,
+		IsPlugin:             true,
 	}
 
 	server, err := server.New(params)

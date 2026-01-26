@@ -36,8 +36,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/ws"
 	"github.com/oklog/run"
 
-	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	mmModel "github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 	"github.com/mattermost/mattermost/server/v8/platform/shared/filestore"
 )
@@ -140,16 +140,17 @@ func New(params Params) (*Server, error) {
 	}
 
 	appServices := app.Services{
-		Auth:             authenticator,
-		Store:            params.DBStore,
-		FilesBackend:     filesBackend,
-		Webhook:          webhookClient,
-		Metrics:          metricsService,
-		Notifications:    notificationService,
-		Logger:           params.Logger,
-		Permissions:      params.PermissionsService,
-		ServicesAPI:      params.ServicesAPI,
-		SkipTemplateInit: utils.IsRunningUnitTests(),
+		Auth:                 authenticator,
+		Store:                params.DBStore,
+		FilesBackend:         filesBackend,
+		Webhook:              webhookClient,
+		Metrics:              metricsService,
+		Notifications:        notificationService,
+		SubscriptionsBackend: params.SubscriptionsBackend,
+		Logger:               params.Logger,
+		Permissions:          params.PermissionsService,
+		ServicesAPI:          params.ServicesAPI,
+		SkipTemplateInit:     utils.IsRunningUnitTests(),
 	}
 	app := app.New(params.Cfg, wsAdapter, appServices)
 

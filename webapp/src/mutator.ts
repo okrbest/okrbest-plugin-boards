@@ -26,7 +26,7 @@ import {UserConfigPatch, UserPreference} from './user'
 import store from './store'
 import {updateBoards} from './store/boards'
 import {updateViews} from './store/views'
-import {updateCards} from './store/cards'
+import {updateCards, markCardModified} from './store/cards'
 import {updateAttachments} from './store/attachments'
 import {updateComments} from './store/comments'
 import {addBoardUsers, removeBoardUsersById} from './store/users'
@@ -130,6 +130,9 @@ class Mutator {
                 const jsonres = await res.json()
                 const newBlock = jsonres[0] as Block
                 await afterRedo?.(newBlock)
+                if (newBlock.parentId) {
+                    store.dispatch(markCardModified(newBlock.parentId))
+                }
                 return newBlock
             },
             async (newBlock: Block) => {
@@ -171,6 +174,9 @@ class Mutator {
             async () => {
                 await beforeRedo?.()
                 await octoClient.deleteBlock(block.boardId, block.id)
+                if (block.parentId) {
+                    store.dispatch(markCardModified(block.parentId))
+                }
             },
             async () => {
                 await octoClient.undeleteBlock(block.boardId, block.id)
@@ -233,9 +239,13 @@ class Mutator {
     }
 
     async changeBlockTitle(boardId: string, blockId: string, oldTitle: string, newTitle: string, description = 'change block title') {
+        if (oldTitle === newTitle) {
+            return
+        }
         await undoManager.perform(
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {title: newTitle})
+                store.dispatch(markCardModified(blockId))
             },
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {title: oldTitle})
@@ -301,6 +311,7 @@ class Mutator {
         await undoManager.perform(
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {updatedFields: {icon}})
+                store.dispatch(markCardModified(blockId))
             },
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {updatedFields: {icon: oldIcon}})
@@ -345,6 +356,7 @@ class Mutator {
         await undoManager.perform(
             async () => {
                 await octoClient.patchBlock(boardId, cardId, {updatedFields: {contentOrder}})
+                store.dispatch(markCardModified(cardId))
             },
             async () => {
                 await octoClient.patchBlock(boardId, cardId, {updatedFields: {contentOrder: oldContentOrder}})
@@ -661,6 +673,7 @@ class Mutator {
             delete newCard.fields.properties[propertyId]
         }
         await this.updateBlock(boardId, newCard, card, description)
+        store.dispatch(markCardModified(card.id))
         TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.EditCardProperty, {board: card.boardId, card: card.id})
     }
 

@@ -70,6 +70,14 @@ type BlockSuiteDoc struct {
 	// The user ID who last updated this document
 	// required: false
 	UpdatedBy string `json:"updatedBy,omitempty"`
+
+	// Plaintext content extracted from the document for search/indexing
+	// required: false
+	ContentText string `json:"contentText,omitempty"`
+
+	// Summary of the last diff/change made to the document
+	// required: false
+	LastDiffSummary string `json:"last_diff_summary,omitempty"`
 }
 
 // BlockSuiteDocInfo represents metadata about a BlockSuite document (without the snapshot).
@@ -181,4 +189,3 @@ func BlockSuiteDocInfoFromJSON(data io.Reader) (*BlockSuiteDocInfo, error) {
 	}
 	return &info, nil
 }
-

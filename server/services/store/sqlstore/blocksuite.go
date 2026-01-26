@@ -23,6 +23,8 @@ func (s *SQLStore) getBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) (*m
 			"updated_at",
 			"created_by",
 			"updated_by",
+			"COALESCE(content_text, '')",
+			"COALESCE(last_diff_summary, '')",
 		).
 		From(s.tablePrefix + "blocksuite_docs").
 		Where(sq.Eq{"card_id": cardID})
@@ -39,6 +41,8 @@ func (s *SQLStore) getBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) (*m
 		&doc.UpdatedAt,
 		&doc.CreatedBy,
 		&doc.UpdatedBy,
+		&doc.ContentText,
+		&doc.LastDiffSummary,
 	)
 
 	if err == sql.ErrNoRows {
@@ -128,6 +132,8 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 			"updated_at",
 			"created_by",
 			"updated_by",
+			"content_text",
+			"last_diff_summary",
 		).
 		Values(
 			doc.DocID,
@@ -138,6 +144,8 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 			doc.UpdatedAt,
 			doc.CreatedBy,
 			doc.UpdatedBy,
+			doc.ContentText,
+			doc.LastDiffSummary,
 		)
 
 	switch s.dbType {
@@ -147,14 +155,18 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 			DO UPDATE SET 
 				snapshot = EXCLUDED.snapshot,
 				updated_at = EXCLUDED.updated_at,
-				updated_by = EXCLUDED.updated_by
+				updated_by = EXCLUDED.updated_by,
+				content_text = EXCLUDED.content_text,
+				last_diff_summary = EXCLUDED.last_diff_summary
 		`)
 	case model.MysqlDBType:
 		query = query.Suffix(`
 			ON DUPLICATE KEY UPDATE
 				snapshot = VALUES(snapshot),
 				updated_at = VALUES(updated_at),
-				updated_by = VALUES(updated_by)
+				updated_by = VALUES(updated_by),
+				content_text = VALUES(content_text),
+				last_diff_summary = VALUES(last_diff_summary)
 		`)
 	case model.SqliteDBType:
 		query = query.Suffix(`
@@ -162,7 +174,9 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 			DO UPDATE SET
 				snapshot = excluded.snapshot,
 				updated_at = excluded.updated_at,
-				updated_by = excluded.updated_by
+				updated_by = excluded.updated_by,
+				content_text = excluded.content_text,
+				last_diff_summary = excluded.last_diff_summary
 		`)
 	default:
 		return fmt.Errorf("unsupported database type: %s", s.dbType)
@@ -191,6 +205,8 @@ func (s *SQLStore) getBlockSuiteDocsByBoardID(db sq.BaseRunner, boardID string) 
 			"updated_at",
 			"created_by",
 			"updated_by",
+			"COALESCE(content_text, '')",
+			"COALESCE(last_diff_summary, '')",
 		).
 		From(s.tablePrefix + "blocksuite_docs").
 		Where(sq.Eq{"board_id": boardID})
@@ -214,6 +230,8 @@ func (s *SQLStore) getBlockSuiteDocsByBoardID(db sq.BaseRunner, boardID string) 
 			&doc.UpdatedAt,
 			&doc.CreatedBy,
 			&doc.UpdatedBy,
+			&doc.ContentText,
+			&doc.LastDiffSummary,
 		)
 		if err != nil {
 			s.logger.Error("getBlockSuiteDocsByBoardID scan ERROR", mlog.String("board_id", boardID), mlog.Err(err))

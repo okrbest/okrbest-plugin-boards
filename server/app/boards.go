@@ -432,32 +432,11 @@ func (a *App) SendCardNotification(boardID, userID, cardID string) error {
 		return fmt.Errorf("board is not linked to any channel")
 	}
 
-	// 카드 정보 가져오기
-	card, err := a.GetBlockByID(cardID)
-	if err != nil {
-		return err
+	if a.subscriptionsBackend != nil {
+		if err := a.subscriptionsBackend.ForceNotifyBlock(cardID, userID, model.TypeCard); err != nil {
+			a.logger.Error("Failed to force notify block", mlog.Err(err))
+		}
 	}
-
-	user, err := a.store.GetUserByID(userID)
-	if err != nil {
-		return err
-	}
-
-	boardLink := utils.MakeBoardLink(a.config.ServerRoot, board.TeamID, board.ID)
-	cardLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, cardID)
-	title := board.Title
-	if title == "" {
-		title = "Untitled board"
-	}
-
-	cardTitle := card.Title
-	if cardTitle == "" {
-		cardTitle = "Untitled card"
-	}
-
-	// 기존 방식과 동일하게 메시지 전송
-	message := fmt.Sprintf(cardNotifyMessage, user.Username, cardTitle, cardLink, title, boardLink)
-	a.postChannelMessage(message, board.ChannelID)
 
 	return nil
 }

@@ -125,6 +125,11 @@ func (n *notifier) onNotifyHint(hint *model.NotificationHint) error {
 	return nil
 }
 
+func (n *notifier) NotifyBlockNow(hint *model.NotificationHint) error {
+	n.logger.Debug("NotifyBlockNow - immediate notification", mlog.Any("hint", hint))
+	return n.notifySubscribers(hint)
+}
+
 func (n *notifier) notify() {
 	var hint *model.NotificationHint
 	var err error

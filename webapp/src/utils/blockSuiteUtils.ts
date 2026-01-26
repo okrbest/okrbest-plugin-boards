@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import { Doc, DocCollection, Job, Text } from '@blocksuite/store'
+import { diffLines } from 'diff'
 
 import octoClient from '../octoClient'
 import { Block } from '../blocks/block'
@@ -209,6 +210,165 @@ function createEmptyDoc(cardId: string, collection: DocCollection): Doc {
     })
     console.log('[BlockSuite] Empty doc created')
     return doc
+}
+
+/**
+ * DocSnapshot에서 검색용 plain text 추출
+ * @param snapshot BlockSuite DocSnapshot
+ * @returns 추출된 plain text (줄바꿈으로 구분)
+ */
+export function extractTextFromSnapshot(snapshot: any): string {
+    const texts: string[] = []
+
+    function extractFromBlock(block: any): void {
+        // affine:paragraph, affine:list 등의 텍스트 추출
+        if (block.props?.text) {
+            const textProp = block.props.text
+            if (textProp.delta && Array.isArray(textProp.delta)) {
+                const blockTexts: string[] = []
+                for (const op of textProp.delta) {
+                    let text = op.insert || ''
+                    if (typeof text !== 'string') {
+                        continue
+                    }
+
+                    if (op.attributes) {
+                        if (op.attributes.bold) text = `*${text}*`
+                        if (op.attributes.italic) text = `_${text}_`
+                        if (op.attributes.strike) text = `~${text}~`
+                        if (op.attributes.code) text = `\`${text}\``
+                        if (op.attributes.link) text = `[${text}](${op.attributes.link})`
+                    }
+                    blockTexts.push(text)
+                }
+                const fullText = blockTexts.join('')
+                if (fullText.trim()) {
+                    texts.push(fullText)
+                }
+            }
+        }
+
+        // children 재귀 처리
+        // 1. blocks.children 배열 (Job-style snapshot)
+        if (block.blocks && block.blocks.children && Array.isArray(block.blocks.children)) {
+            for (const child of block.blocks.children) {
+                extractFromBlock(child)
+            }
+        }
+        // 2. 직접 children 배열 (BlockSnapshot)
+        else if (block.children && Array.isArray(block.children)) {
+            for (const child of block.children) {
+                extractFromBlock(child)
+            }
+        }
+        // 3. blocks 배열 (루트)
+        else if (block.blocks && Array.isArray(block.blocks)) {
+            for (const child of block.blocks) {
+                extractFromBlock(child)
+            }
+        }
+
+        // 이미지 블록 처리
+        if (block.flavour === 'affine:image') {
+            const filename = block.props?.filename || block.props?.name || ''
+            texts.push(filename ? `[이미지: ${filename}]` : '[이미지]')
+        }
+        // 첨부파일 블록 처리
+        else if (block.flavour === 'affine:attachment') {
+            const filename = block.props?.name || block.props?.filename || ''
+            texts.push(filename ? `[파일: ${filename}]` : '[파일]')
+        }
+        // 링크/유튜브/북마크 처리
+        else if (block.flavour === 'affine:embed' || block.flavour === 'affine:bookmark') {
+            const url = block.props?.url || ''
+            const title = block.props?.title || ''
+            const type = block.props?.type || 'link' // video, link, etc.
+            
+            // title이 객체(Y.Text)인 경우 처리
+            let titleStr = ''
+            if (typeof title === 'string') {
+                titleStr = title
+            } else if (title && typeof title === 'object') {
+                // Y.Text 객체인 경우 toString() 사용
+                // 또는 BlockSuite Text 객체라면 .toString()이 텍스트 반환
+                titleStr = title.toString()
+            }
+
+            if (type === 'video' || url.includes('youtube') || url.includes('youtu.be')) {
+                texts.push(`[동영상: ${titleStr || url}]`)
+            } else {
+                texts.push(`[링크: ${titleStr || url}]`)
+            }
+        }
+        // 테이블/칸반 등 데이터베이스 뷰
+        else if (block.flavour === 'affine:database' || block.flavour === 'affine:kanban') {
+            const title = block.props?.title
+            let titleStr = '데이터베이스'
+            
+            if (typeof title === 'string' && title) {
+                titleStr = title
+            } else if (title && typeof title === 'object') {
+                // Y.Text 객체 처리
+                titleStr = title.toString() || '데이터베이스'
+            }
+            
+            if (titleStr === '[object Object]') {
+                titleStr = '데이터베이스'
+            }
+
+            texts.push(`[${titleStr}]`)
+        }
+        // 단순 테이블
+        else if (block.flavour === 'affine:table') {
+            texts.push('[표]')
+        }
+    }
+
+    if (snapshot) {
+        extractFromBlock(snapshot)
+    }
+
+    return texts.join('\n')
+}
+
+/**
+ * 두 텍스트 간의 변경 사항을 요약하여 반환
+ * @param oldText 변경 전 텍스트
+ * @param newText 변경 후 텍스트
+ * @param maxLength 최대 길이 (기본값 300)
+ * @returns 변경 요약 문자열 (변경 없으면 빈 문자열)
+ */
+export function formatDiffSummary(oldText: string, newText: string, maxLength = 300): string {
+    if (oldText === newText) {
+        return ''
+    }
+
+    const changes = diffLines(oldText, newText)
+    const parts: string[] = []
+
+    for (const change of changes) {
+        // 공백만 있는 변경은 무시할 수도 있지만, 일단은 포함
+        const lines = change.value.trim()
+        if (!lines) {
+            continue
+        }
+
+        if (change.added) {
+            parts.push(`[추가] ${lines}`)
+        } else if (change.removed) {
+            parts.push(`[삭제] ${lines}`)
+        }
+    }
+
+    if (parts.length === 0) {
+        return ''
+    }
+
+    const summary = parts.join('\n')
+    if (summary.length > maxLength) {
+        return summary.substring(0, maxLength) + '...'
+    }
+    return summary
 }
 
 // 이전 loadData 함수는 하위 호환성을 위해 유지 (deprecated)
