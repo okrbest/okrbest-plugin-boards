@@ -28,6 +28,7 @@ import octoClient from '../../octoClient'
 import {useBlockSuiteEditor} from './useBlockSuiteEditor'
 import {createFocalboardBlobSource} from './focalboardBlobSource'
 import {createLinkedCardExtension} from './linkedCardConfig'
+import {patchImageDragOption, createImageDraggableObserver} from './imageDragPatch'
 
 import './blockSuiteTheme.css'
 import './blockSuite.scss'
@@ -163,6 +164,14 @@ function BlockSuiteEditor(props: Props): JSX.Element {
     }, [containerMounted, handleLinkClick])
 
     useEffect(() => {
+        const container = containerRef.current
+        if (!container || !editorRef.current || readonly) return
+
+        const observer = createImageDraggableObserver(container)
+        return () => observer.disconnect()
+    }, [containerMounted, readonly])
+
+    useEffect(() => {
         Utils.log(`BlockSuiteEditor useEffect: containerMounted=${containerMounted}, snapshot=${!!snapshot}`)
 
         if (!containerMounted || !containerRef.current || !snapshot) {
@@ -237,6 +246,10 @@ function BlockSuiteEditor(props: Props): JSX.Element {
 
                 containerRef.current.innerHTML = ''
                 containerRef.current.appendChild(editor)
+
+                setTimeout(() => {
+                    patchImageDragOption(editor)
+                }, 100)
 
                 if (!readonly) {
                     try {

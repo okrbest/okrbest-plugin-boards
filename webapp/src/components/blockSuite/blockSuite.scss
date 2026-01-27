@@ -341,13 +341,22 @@ affine-note {
     }
 }
 
-// Ensure the remaining toggle icon behaves correctly
 .affine-list-block__prefix {
     cursor: pointer;
     user-select: none;
-
-    // Make sure it aligns correctly
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+affine-image {
+    cursor: grab;
+
+    &:active {
+        cursor: grabbing;
+    }
+
+    .resize {
+        cursor: nwse-resize;
+    }
 }
