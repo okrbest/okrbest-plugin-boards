@@ -29,6 +29,47 @@ import {updateBoards} from '../../store/boards'
 import {updateViews} from '../../store/views'
 import {getCurrentBoardCards} from '../../store/cards'
 
+// 속성 값이 비어있는지 확인하는 헬퍼 함수
+export function isPropertyValueEmpty(value: string | string[] | undefined, propertyType?: string): boolean {
+    if (value === undefined || value === null) {
+        return true
+    }
+    if (Array.isArray(value)) {
+        return value.length === 0
+    }
+
+    // 문자열인 경우
+    if (typeof value === 'string') {
+        // 빈 문자열 체크
+        if (value.trim() === '') {
+            return true
+        }
+
+        // 카드 타입: JSON 형식으로 저장되며, cards 배열이 비어있으면 "비어있음"
+        if (propertyType === 'card') {
+            try {
+                const parsed = JSON.parse(value)
+                return !parsed.cards || parsed.cards.length === 0
+            } catch {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+// 필수 속성 중 비어있는 속성 목록 반환
+export function getMissingRequiredProperties(board: Board, card: Card): IPropertyTemplate[] {
+    return board.cardProperties.filter((prop) => {
+        if (!prop.required) {
+            return false
+        }
+        const value = card.fields.properties[prop.id]
+        return isPropertyValueEmpty(value, prop.type)
+    })
+}
+
 type Props = {
     board: Board
     card: Card
@@ -295,20 +336,50 @@ const CardDetailProperties = (props: Props) => {
     return (
         <div className='octo-propertylist CardDetailProperties'>
             {board.cardProperties.map((propertyTemplate: IPropertyTemplate, index: number) => {
+                const propertyValue = card.fields.properties[propertyTemplate.id]
+                const isRequiredEmpty = propertyTemplate.required && isPropertyValueEmpty(propertyValue, propertyTemplate.type)
+
+                // 디버깅: required 속성의 값 확인
+                if (propertyTemplate.required) {
+                    console.log('[Required Property Debug]', {
+                        name: propertyTemplate.name,
+                        type: propertyTemplate.type,
+                        propertyId: propertyTemplate.id,
+                        value: propertyValue,
+                        valueType: typeof propertyValue,
+                        isEmpty: isPropertyValueEmpty(propertyValue, propertyTemplate.type),
+                        isRequiredEmpty,
+                    })
+                }
+
                 return (
                     <div
                         key={propertyTemplate.id + '-' + propertyTemplate.type}
-                        className='octo-propertyrow'
+                        className={`octo-propertyrow${isRequiredEmpty ? ' octo-propertyrow--required-empty' : ''}`}
                     >
-                        {(props.readonly || !canEditBoardProperties) && <div className='octo-propertyname octo-propertyname--readonly'>{propertyTemplate.name}</div>}
+                        {(props.readonly || !canEditBoardProperties) && (
+                            <div className='octo-propertyname octo-propertyname--readonly'>
+                                {propertyTemplate.name}
+                                {propertyTemplate.required && <span className='octo-propertyname--required'>*</span>}
+                            </div>
+                        )}
                         {!props.readonly && canEditBoardProperties &&
                             <MenuWrapper isOpen={propertyTemplate.id === newTemplateId}>
-                                <div className='octo-propertyname'><Button>{propertyTemplate.name}</Button></div>
+                                <div className='octo-propertyname'>
+                                    <Button>
+                                        {propertyTemplate.name}
+                                        {propertyTemplate.required && <span className='octo-propertyname--required'>*</span>}
+                                    </Button>
+                                </div>
                                 <PropertyMenu
                                     propertyId={propertyTemplate.id}
                                     propertyName={propertyTemplate.name}
                                     propertyType={propRegistry.get(propertyTemplate.type)}
+                                    required={propertyTemplate.required}
                                     onTypeAndNameChanged={(newType: PropertyType, newName: string) => onPropertyChangeSetAndOpenConfirmationDialog(newType, newName, propertyTemplate)}
+                                    onRequiredChanged={(required: boolean) => {
+                                        mutator.changePropertyRequired(board, propertyTemplate, required)
+                                    }}
                                     onDelete={() => onPropertyDeleteSetAndOpenConfirmationDialog(propertyTemplate)}
                                     onMoveUp={() => moveProperty(propertyTemplate, 'up')}
                                     onMoveDown={() => moveProperty(propertyTemplate, 'down')}

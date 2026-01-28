@@ -20,6 +20,7 @@ var ErrInvalidProperty = errors.New("invalid property")
 var ErrInvalidPropertyValue = errors.New("invalid property value")
 var ErrInvalidPropertyValueType = errors.New("invalid property value type")
 var ErrInvalidDate = errors.New("invalid date property")
+var ErrRequiredPropertyMissing = errors.New("required property is missing")
 
 // PropValueResolver allows PropDef.GetValue to further decode property values, such as
 // looking up usernames from ids.
@@ -51,11 +52,12 @@ type PropDefOption struct {
 
 // PropDef represents a property definition as defined in a board's Fields member.
 type PropDef struct {
-	ID      string                   `json:"id"`
-	Index   int                      `json:"index"`
-	Name    string                   `json:"name"`
-	Type    string                   `json:"type"`
-	Options map[string]PropDefOption `json:"options"`
+	ID       string                   `json:"id"`
+	Index    int                      `json:"index"`
+	Name     string                   `json:"name"`
+	Type     string                   `json:"type"`
+	Options  map[string]PropDefOption `json:"options"`
+	Required bool                     `json:"required"`
 }
 
 // GetValue resolves the value of a property if the passed value is an ID for an option,
@@ -257,11 +259,12 @@ func ParsePropertySchema(board *Board) (PropSchema, error) {
 
 	for i, prop := range board.CardProperties {
 		pd := PropDef{
-			ID:      getMapString("id", prop),
-			Index:   i,
-			Name:    getMapString("name", prop),
-			Type:    getMapString("type", prop),
-			Options: make(map[string]PropDefOption),
+			ID:       getMapString("id", prop),
+			Index:    i,
+			Name:     getMapString("name", prop),
+			Type:     getMapString("type", prop),
+			Options:  make(map[string]PropDefOption),
+			Required: getMapBool("required", prop),
 		}
 		optsIface, ok := prop["options"]
 		if ok {
@@ -299,6 +302,82 @@ func getMapString(key string, m map[string]interface{}) string {
 		return ""
 	}
 	return s
+}
+
+func getMapBool(key string, m map[string]interface{}) bool {
+	iface, ok := m[key]
+	if !ok {
+		return false
+	}
+
+	b, ok := iface.(bool)
+	if !ok {
+		return false
+	}
+	return b
+}
+
+// IsPropertyValueEmpty checks if a property value is considered empty.
+func IsPropertyValueEmpty(value interface{}) bool {
+	if value == nil {
+		return true
+	}
+
+	switch v := value.(type) {
+	case string:
+		return v == ""
+	case []interface{}:
+		return len(v) == 0
+	case []string:
+		return len(v) == 0
+	default:
+		return false
+	}
+}
+
+// ValidateRequiredProperties checks if all required properties have values.
+// Returns a list of missing required property names.
+func ValidateRequiredProperties(block *Block, schema PropSchema) []string {
+	var missing []string
+
+	if block == nil {
+		return missing
+	}
+
+	propsIface, ok := block.Fields["properties"]
+	if !ok {
+		// No properties at all - check if any required properties exist
+		for _, def := range schema {
+			if def.Required {
+				missing = append(missing, def.Name)
+			}
+		}
+		return missing
+	}
+
+	blockProps, ok := propsIface.(map[string]interface{})
+	if !ok {
+		// Properties field is wrong type - consider all required as missing
+		for _, def := range schema {
+			if def.Required {
+				missing = append(missing, def.Name)
+			}
+		}
+		return missing
+	}
+
+	for _, def := range schema {
+		if !def.Required {
+			continue
+		}
+
+		value, exists := blockProps[def.ID]
+		if !exists || IsPropertyValueEmpty(value) {
+			missing = append(missing, def.Name)
+		}
+	}
+
+	return missing
 }
 
 // ParseProperties parses a block's `Fields` to extract the properties. Properties typically exist on
