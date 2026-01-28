@@ -686,22 +686,10 @@ class Mutator {
             delete newCard.fields.properties[propertyId]
         }
 
-        console.log('[changePropertyValue] Before updateBlock:', {
-            cardId: card.id,
-            propertyId,
-            oldValue,
-            newValue: value,
-            newCardProperties: newCard.fields.properties,
-        })
-
         await this.updateBlock(boardId, newCard, card, description)
-
-        console.log('[changePropertyValue] After updateBlock, dispatching updateCards')
 
         // Redux store 즉시 업데이트 (UI 반영을 위해)
         store.dispatch(updateCards([newCard]))
-
-        console.log('[changePropertyValue] updateCards dispatched')
 
         store.dispatch(markCardModified(card.id))
         TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.EditCardProperty, {board: card.boardId, card: card.id})

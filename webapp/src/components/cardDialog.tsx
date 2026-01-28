@@ -93,7 +93,7 @@ const CardDialog = (props: Props): JSX.Element => {
         }
         dispatch(clearCardModified(props.cardId))
         props.onClose()
-    }, [card, board, isDirty, props.board.id, props.cardId, props.onClose, dispatch, intl])
+    }, [card, board, isDirty, props.board.id, props.cardId, props.onClose, dispatch, intl, sendFlashMessage])
 
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = useState<boolean>(false)
     const makeTemplateClicked = async () => {

@@ -339,19 +339,6 @@ const CardDetailProperties = (props: Props) => {
                 const propertyValue = card.fields.properties[propertyTemplate.id]
                 const isRequiredEmpty = propertyTemplate.required && isPropertyValueEmpty(propertyValue, propertyTemplate.type)
 
-                // 디버깅: required 속성의 값 확인
-                if (propertyTemplate.required) {
-                    console.log('[Required Property Debug]', {
-                        name: propertyTemplate.name,
-                        type: propertyTemplate.type,
-                        propertyId: propertyTemplate.id,
-                        value: propertyValue,
-                        valueType: typeof propertyValue,
-                        isEmpty: isPropertyValueEmpty(propertyValue, propertyTemplate.type),
-                        isRequiredEmpty,
-                    })
-                }
-
                 return (
                     <div
                         key={propertyTemplate.id + '-' + propertyTemplate.type}
