@@ -11,7 +11,7 @@ const Phone = (props: PropertyProps): JSX.Element => {
     return (
         <BaseTextEditor
             {...props}
-            validator={() => true}
+            validator={(_value: string) => true}
         />
     )
 }

@@ -115,6 +115,14 @@
         .Label {
             margin: 0 4px 0 0;
         }
+
+        &--required-empty {
+            .octo-propertyvalue {
+                border: 1px solid var(--error-text);
+                border-radius: 4px;
+                background-color: rgba(var(--error-text-color-rgb, 210, 75, 78), 0.08);
+            }
+        }
     }
 
     .Person {
@@ -150,6 +158,12 @@
             margin: 8px 0 0;
             color: rgba(var(--center-channel-color-rgb), 0.4);
             position: relative;
+        }
+
+        &--required {
+            color: var(--error-text);
+            margin-left: 2px;
+            font-weight: bold;
         }
     }
 

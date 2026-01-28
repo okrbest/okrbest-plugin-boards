@@ -36,6 +36,7 @@ import {AttachmentBlock, createAttachmentBlock} from '../blocks/attachmentBlock'
 import BoardPermissionGate from './permissions/boardPermissionGate'
 
 import CardDetail from './cardDetail/cardDetail'
+import {getMissingRequiredProperties} from './cardDetail/cardDetailProperties'
 import Dialog from './dialog'
 
 import './cardDialog.scss'
@@ -67,6 +68,21 @@ const CardDialog = (props: Props): JSX.Element => {
     const isDirty = useAppSelector(getCardIsDirty(props.cardId))
 
     const handleClose = useCallback(async () => {
+        // 필수 속성 유효성 검사
+        if (card) {
+            const missingRequired = getMissingRequiredProperties(board, card)
+            if (missingRequired.length > 0) {
+                const propertyNames = missingRequired.map((p) => p.name).join(', ')
+                sendFlashMessage({
+                    content: intl.formatMessage(
+                        {id: 'CardDialog.required-properties-missing', defaultMessage: 'Required properties are empty: {propertyNames}'},
+                        {propertyNames},
+                    ),
+                    severity: 'high',
+                })
+            }
+        }
+
         if (isDirty && board.channelId) {
             try {
                 await octoClient.sendBoardNotification(props.board.id, props.cardId)
@@ -77,7 +93,7 @@ const CardDialog = (props: Props): JSX.Element => {
         }
         dispatch(clearCardModified(props.cardId))
         props.onClose()
-    }, [isDirty, board.channelId, props.board.id, props.cardId, props.onClose, dispatch])
+    }, [card, board, isDirty, props.board.id, props.cardId, props.onClose, dispatch, intl, sendFlashMessage])
 
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = useState<boolean>(false)
     const makeTemplateClicked = async () => {

@@ -492,6 +492,7 @@ class Mutator {
             name: `${srcTemplate.name} copy`,
             type: srcTemplate.type,
             options: srcTemplate.options.slice(),
+            required: srcTemplate.required,
         }
         newBoard.cardProperties.splice(index + 1, 0, newTemplate)
 
@@ -594,6 +595,18 @@ class Mutator {
         )
     }
 
+    async changePropertyRequired(board: Board, template: IPropertyTemplate, required: boolean) {
+        const newBoard = createBoard(board)
+        const newTemplate = newBoard.cardProperties.find((o: IPropertyTemplate) => o.id === template.id)
+        if (!newTemplate) {
+            Utils.assertFailure(`changePropertyRequired: template not found: ${template.id}`)
+            return
+        }
+        newTemplate.required = required
+
+        await this.updateBoard(newBoard, board, required ? 'set property required' : 'set property optional')
+    }
+
     // Properties
 
     async updateBoardCardProperties(boardId: string, oldProperties: IPropertyTemplate[], newProperties: IPropertyTemplate[], description = 'update card properties') {
@@ -672,7 +685,12 @@ class Mutator {
         } else {
             delete newCard.fields.properties[propertyId]
         }
+
         await this.updateBlock(boardId, newCard, card, description)
+
+        // Redux store 즉시 업데이트 (UI 반영을 위해)
+        store.dispatch(updateCards([newCard]))
+
         store.dispatch(markCardModified(card.id))
         TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.EditCardProperty, {board: card.boardId, card: card.id})
     }

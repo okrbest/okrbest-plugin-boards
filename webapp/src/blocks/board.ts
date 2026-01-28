@@ -99,6 +99,7 @@ interface IPropertyTemplate {
     type: PropertyTypeEnum
     options: IPropertyOption[]
     index?: number
+    required?: boolean
 }
 
 function createBoard(board?: Board): Board {
@@ -123,6 +124,7 @@ function createBoard(board?: Board): Board {
                 name: o.name,
                 type: o.type,
                 options: o.options ? o.options.map((option) => ({...option})) : [],
+                required: o.required,
             }
         })
     }
