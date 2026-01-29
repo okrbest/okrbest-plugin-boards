@@ -81,6 +81,52 @@ const Kanban = (props: Props) => {
         await mutator.changePropertyOptionValue(board.id, board.cardProperties, groupByProperty!, option, text)
     }, [board, groupByProperty])
 
+    const getGroupValue = useCallback((optionId?: string | string[]): string | string[] | undefined => {
+        if (!groupByProperty || !optionId || optionId === 'undefined') {
+            return undefined
+        }
+
+        if (Array.isArray(optionId)) {
+            if (optionId.length === 0) {
+                return undefined
+            }
+            if (groupByProperty.type === 'multiSelect' || groupByProperty.type === 'multiPerson') {
+                return [...optionId].sort()
+            }
+            return optionId[0]
+        }
+
+        if (groupByProperty.type === 'multiSelect' || groupByProperty.type === 'multiPerson') {
+            const ids = optionId.split(',').map((id) => id.trim()).filter((id) => id)
+            if (ids.length === 0) {
+                return undefined
+            }
+            return ids.sort()
+        }
+
+        return optionId
+    }, [groupByProperty])
+
+    const isSameGroupValue = (a?: string | string[], b?: string | string[]): boolean => {
+        if (a === b) {
+            return true
+        }
+
+        if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length !== b.length) {
+                return false
+            }
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] !== b[i]) {
+                    return false
+                }
+            }
+            return true
+        }
+
+        return false
+    }
+
     const addGroupClicked = useCallback(async () => {
         Utils.log('onAddGroupClicked')
 
@@ -129,8 +175,9 @@ const Kanban = (props: Props) => {
                 for (const draggedCard of draggedCards) {
                     Utils.log(`ondrop. Card: ${draggedCard.title}, column: ${optionId}`)
                     const oldValue = draggedCard.fields.properties[groupByProperty!.id]
-                    if (optionId !== oldValue) {
-                        awaits.push(mutator.changePropertyValue(props.board.id, draggedCard, groupByProperty!.id, optionId, description))
+                    const newValue = getGroupValue(optionId)
+                    if (!isSameGroupValue(oldValue, newValue)) {
+                        awaits.push(mutator.changePropertyValue(props.board.id, draggedCard, groupByProperty!.id, newValue, description))
                     }
                 }
                 const newOrder = orderAfterMoveToColumn(draggedCardIds, optionId)
@@ -160,7 +207,7 @@ const Kanban = (props: Props) => {
 
             await mutator.changeViewVisibleOptionIds(props.board.id, activeView.id, activeView.fields.visibleOptionIds, visibleOptionIdsRearranged)
         }
-    }, [cards, visibleGroups, activeView.id, activeView.fields.cardOrder, groupByProperty, props.selectedCardIds])
+    }, [cards, visibleGroups, activeView.id, activeView.fields.cardOrder, groupByProperty, props.selectedCardIds, getGroupValue])
 
     const onDropToCard = useCallback(async (srcCard: Card, dstCard: Card) => {
         if (srcCard.id === dstCard.id || !groupByProperty) {
@@ -196,7 +243,7 @@ const Kanban = (props: Props) => {
             for (const draggedCard of draggedCards) {
                 Utils.log(`draggedCard: ${draggedCard.title}, column: ${optionId}`)
                 const oldOptionId = draggedCard.fields.properties[groupByProperty!.id]
-                if (optionId !== oldOptionId) {
+                if (!isSameGroupValue(oldOptionId, optionId)) {
                     awaits.push(mutator.changePropertyValue(props.board.id, draggedCard, groupByProperty!.id, optionId, description))
                 }
             }

@@ -136,9 +136,9 @@ function getMultiPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate,
         let personIds: string[] = []
 
         if (Array.isArray(propertyValue)) {
-            personIds = [...propertyValue].map((id) => id.trim()).filter((id) => id).sort()
-        } else if (typeof propertyValue === 'string' && propertyValue) {
-            personIds = propertyValue.split(',').map((id) => id.trim()).filter((id) => id).sort()
+            personIds = propertyValue.filter((id) => id).sort()
+        } else if (typeof propertyValue === 'string' && propertyValue && !propertyValue.includes(',')) {
+            personIds = [propertyValue]
         }
 
         // 정렬된 ID 배열을 문자열로 직렬화하여 그룹 키로 사용
@@ -181,9 +181,7 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
         let optionIds: string[] = []
 
         if (Array.isArray(propertyValue)) {
-            optionIds = [...propertyValue].map((id) => id.trim()).filter((id) => id).sort()
-        } else if (typeof propertyValue === 'string' && propertyValue) {
-            optionIds = propertyValue.split(',').map((id) => id.trim()).filter((id) => id).sort()
+            optionIds = propertyValue.filter((id) => id).sort()
         }
 
         // 정렬된 옵션 ID 배열을 문자열로 직렬화하여 그룹 키로 사용

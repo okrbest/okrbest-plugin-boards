@@ -171,13 +171,40 @@ const CenterPanel = (props: Props) => {
         props.showCard(cardId)
     }, [props.showCard, selectedCardIds])
 
+    const getGroupByValue = useCallback((template?: IPropertyTemplate, optionId?: string | string[]): string | string[] | undefined => {
+        if (!template || !optionId || optionId === 'undefined') {
+            return undefined
+        }
+
+        if (Array.isArray(optionId)) {
+            if (optionId.length === 0) {
+                return undefined
+            }
+            if (template.type === 'multiSelect' || template.type === 'multiPerson') {
+                return [...optionId].sort()
+            }
+            return optionId[0]
+        }
+
+        if (template.type === 'multiSelect' || template.type === 'multiPerson') {
+            const ids = optionId.split(',').map((id) => id.trim()).filter((id) => id)
+            if (ids.length === 0) {
+                return undefined
+            }
+            return ids.sort()
+        }
+
+        return optionId
+    }, [])
+
     const addCardFromTemplate = useCallback(async (cardTemplateId: string, groupByOptionId?: string) => {
         const {activeView, board, groupByProperty} = props
 
-        const propertiesThatMeetFilters = CardFilter.propertiesThatMeetFilterGroup(activeView.fields.filter, board.cardProperties)
+        const propertiesThatMeetFilters = CardFilter.propertiesThatMeetFilterGroup(activeView.fields.filter, board.cardProperties) as Record<string, string | string[]>
         if ((activeView.fields.viewType === 'board' || activeView.fields.viewType === 'table') && groupByProperty) {
-            if (groupByOptionId) {
-                propertiesThatMeetFilters[groupByProperty.id] = groupByOptionId
+            const groupValue = getGroupByValue(groupByProperty, groupByOptionId)
+            if (groupValue !== undefined) {
+                propertiesThatMeetFilters[groupByProperty.id] = groupValue
             }
         }
 
@@ -191,7 +218,7 @@ const CenterPanel = (props: Props) => {
                 if (!existingValue) {
                     // 값이 없으면 빈 JSON 상태로 설정
                     propertiesThatMeetFilters[propertyTemplate.id] = JSON.stringify({boardId: linkedBoardId, cards: []})
-                } else if (!existingValue.startsWith('{')) {
+                } else if (typeof existingValue === 'string' && !existingValue.startsWith('{')) {
                     // 필터/그룹화에서 설정된 값 ("cardId:title,cardId2:title2" 형식)을 JSON으로 변환
                     const cards = existingValue.split(',').map((cardStr) => {
                         const colonIndex = cardStr.indexOf(':')
@@ -229,9 +256,9 @@ const CenterPanel = (props: Props) => {
                 await mutator.changeViewCardOrder(props.board.id, activeView.id, activeView.fields.cardOrder, [...activeView.fields.cardOrder, newCardId], 'add-card')
             }
         })
-    }, [props.board, props.activeView, showCard, props.cards, intl, dispatch])
+    }, [props.board, props.activeView, showCard, props.cards, intl, dispatch, getGroupByValue])
 
-    const addCard = useCallback(async (groupByOptionId?: string, show = false, properties: Record<string, string> = {}): Promise<void> => {
+    const addCard = useCallback(async (groupByOptionId?: string, show = false, properties: Record<string, string | string[]> = {}): Promise<void> => {
         const {activeView, board, groupByProperty} = props
         
         // 기본 템플릿이 설정되어 있고 실제로 템플릿 카드가 존재하는지 확인
@@ -249,10 +276,11 @@ const CenterPanel = (props: Props) => {
 
         card.parentId = board.id
         card.boardId = board.id
-        const propertiesThatMeetFilters = CardFilter.propertiesThatMeetFilterGroup(activeView.fields.filter, board.cardProperties)
+        const propertiesThatMeetFilters = CardFilter.propertiesThatMeetFilterGroup(activeView.fields.filter, board.cardProperties) as Record<string, string | string[]>
         if ((activeView.fields.viewType === 'board' || activeView.fields.viewType === 'table') && groupByProperty) {
-            if (groupByOptionId) {
-                propertiesThatMeetFilters[groupByProperty.id] = groupByOptionId
+            const groupValue = getGroupByValue(groupByProperty, groupByOptionId)
+            if (groupValue !== undefined) {
+                propertiesThatMeetFilters[groupByProperty.id] = groupValue
             }
         }
 
@@ -266,7 +294,7 @@ const CenterPanel = (props: Props) => {
                 if (!existingValue) {
                     // 값이 없으면 빈 JSON 상태로 설정
                     propertiesThatMeetFilters[propertyTemplate.id] = JSON.stringify({boardId: linkedBoardId, cards: []})
-                } else if (!existingValue.startsWith('{')) {
+                } else if (typeof existingValue === 'string' && !existingValue.startsWith('{')) {
                     // 필터/그룹화에서 설정된 값 ("cardId:title,cardId2:title2" 형식)을 JSON으로 변환
                     const cards = existingValue.split(',').map((cardStr) => {
                         const colonIndex = cardStr.indexOf(':')
@@ -310,7 +338,7 @@ const CenterPanel = (props: Props) => {
             dispatch(showCardHiddenWarning(cardLimitTimestamp > 0))
             await mutator.changeViewCardOrder(board.id, activeView.id, activeView.fields.cardOrder, [...activeView.fields.cardOrder, newCard.id], 'add-card')
         })
-    }, [props.activeView, props.board.id, props.board.cardProperties, props.groupByProperty, showCard, addCardFromTemplate, dispatch, cardLimitTimestamp, setCardIdToFocusOnRender])
+    }, [props.activeView, props.board.id, props.board.cardProperties, props.groupByProperty, showCard, addCardFromTemplate, dispatch, cardLimitTimestamp, setCardIdToFocusOnRender, getGroupByValue])
 
     const addEmptyCardAndShow = useCallback(() => addCard('', true), [addCard])
 
