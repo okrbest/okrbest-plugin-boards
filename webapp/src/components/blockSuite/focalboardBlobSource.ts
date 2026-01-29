@@ -7,6 +7,45 @@ import type {DocSnapshot, BlockSnapshot} from '@blocksuite/store'
 import octoClient from '../../octoClient'
 import {Utils} from '../../utils'
 
+// MIME type mapping for common image extensions
+const extensionToMimeType: Record<string, string> = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.svg': 'image/svg+xml',
+    '.bmp': 'image/bmp',
+    '.ico': 'image/x-icon',
+    '.tiff': 'image/tiff',
+    '.tif': 'image/tiff',
+    '.avif': 'image/avif',
+}
+
+/**
+ * BlockSuite의 getImageBlob()은 blob.type.startsWith('image/')를 검사합니다.
+ * 서버가 application/octet-stream으로 응답하면 다운로드가 실패하므로,
+ * 파일 확장자에서 올바른 MIME 타입을 추론하여 blob을 재생성합니다.
+ */
+function ensureImageMimeType(blob: Blob, filename: string): Blob {
+    if (blob.type && blob.type.startsWith('image/')) {
+        return blob
+    }
+
+    const lastDotIndex = filename.lastIndexOf('.')
+    if (lastDotIndex !== -1) {
+        const extension = filename.substring(lastDotIndex).toLowerCase()
+        const mimeType = extensionToMimeType[extension]
+        if (mimeType) {
+            Utils.log(`ensureImageMimeType: inferred type ${mimeType} from extension ${extension}`)
+            return new Blob([blob], {type: mimeType})
+        }
+    }
+
+    Utils.log(`ensureImageMimeType: defaulting to image/png for ${filename}`)
+    return new Blob([blob], {type: 'image/png'})
+}
+
 // Module-level maps persist across BlobSource instances
 // Key format: `${boardId}:${blobKey}` -> fileId
 const globalKeyToFileIdMap = new Map<string, string>()
@@ -120,8 +159,10 @@ export function createFocalboardBlobSource(boardId: string, teamId: string): Blo
                     return null
                 }
 
-                const blob = await response.blob()
-                Utils.log(`BlobSource.get: successfully fetched blob, size=${blob.size}`)
+                let blob = await response.blob()
+                Utils.log(`BlobSource.get: successfully fetched blob, size=${blob.size}, type=${blob.type}`)
+
+                blob = ensureImageMimeType(blob, fileId)
 
                 globalBlobCache.set(globalKey, blob)
 
