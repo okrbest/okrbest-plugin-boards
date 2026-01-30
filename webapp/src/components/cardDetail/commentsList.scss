@@ -18,6 +18,7 @@
         align-items: flex-start;
         padding: 8px 0;
         min-height: 48px;
+        flex-wrap: wrap;
     }
 
     .newcomment {
@@ -29,8 +30,50 @@
             margin: -4px 0 0 8px;
         }
     }
+
+    .CommentsList__actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: -4px 0 0 8px;
+    }
+
+    .CommentsList__schedule-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        span {
+            font-size: 16px;
+        }
+    }
 }
 
 .CommentsList__divider {
     margin-top: 8px;
+}
+
+.CommentsList__scheduled {
+    margin: 8px 0 16px;
+    padding: 12px;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    border-radius: 8px;
+
+    .CommentsList__scheduled-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        font-size: 12px;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        margin-bottom: 8px;
+
+        .CompassIcon {
+            font-size: 14px;
+        }
+    }
 }

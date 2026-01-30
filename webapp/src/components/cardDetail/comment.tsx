@@ -33,14 +33,16 @@ type Props = {
     userId: string
     userImageUrl: string
     readonly: boolean
+    scheduledAt?: number
 }
 
 const Comment: FC<Props> = (props: Props) => {
-    const {comment, userId, userImageUrl} = props
+    const {comment, userId, userImageUrl, scheduledAt} = props
     const intl = useIntl()
     const user = useAppSelector(getUser(userId))
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
     const date = new Date(comment.createAt)
+    const isScheduled = Boolean(scheduledAt)
 
     const selectedTeam = useAppSelector(getCurrentTeam)
     const channelNamesMap =  getChannelsNameMapInTeam((window as any).store.getState(), selectedTeam!.id)
@@ -56,10 +58,29 @@ const Comment: FC<Props> = (props: Props) => {
         })}
     </Provider>
 
+    const formatScheduledTime = (timestamp: number): string => {
+        const scheduledDate = new Date(timestamp)
+        const now = new Date()
+        const isToday = scheduledDate.toDateString() === now.toDateString()
+        const tomorrow = new Date(now)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        const isTomorrow = scheduledDate.toDateString() === tomorrow.toDateString()
+        const timeStr = scheduledDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+
+        if (isToday) {
+            return intl.formatMessage({id: 'Comment.scheduledToday', defaultMessage: 'Scheduled for today at {time}'}, {time: timeStr})
+        }
+        if (isTomorrow) {
+            return intl.formatMessage({id: 'Comment.scheduledTomorrow', defaultMessage: 'Scheduled for tomorrow at {time}'}, {time: timeStr})
+        }
+        const dateStr = scheduledDate.toLocaleDateString([], {month: 'short', day: 'numeric'})
+        return intl.formatMessage({id: 'Comment.scheduledFor', defaultMessage: 'Scheduled for {date} at {time}'}, {date: dateStr, time: timeStr})
+    }
+
     return (
         <div
             key={comment.id}
-            className='Comment comment'
+            className={`Comment comment${isScheduled ? ' Comment--scheduled' : ''}`}
         >
             <div className='comment-header'>
                 <img
@@ -69,11 +90,20 @@ const Comment: FC<Props> = (props: Props) => {
                 <div className='comment-username'>{user ? Utils.getUserDisplayName(user, clientConfig.teammateNameDisplay) : ''}</div>
                 <GuestBadge show={user?.is_guest}/>
 
-                <Tooltip title={Utils.displayDateTime(date, intl)}>
-                    <div className='comment-date'>
-                        {Utils.relativeDisplayDateTime(date, intl)}
-                    </div>
-                </Tooltip>
+                {isScheduled ? (
+                    <Tooltip title={scheduledAt ? Utils.displayDateTime(new Date(scheduledAt), intl) : ''}>
+                        <div className='comment-date comment-scheduled-badge'>
+                            <span className='comment-scheduled-icon'>🕐</span>
+                            {scheduledAt && formatScheduledTime(scheduledAt)}
+                        </div>
+                    </Tooltip>
+                ) : (
+                    <Tooltip title={Utils.displayDateTime(date, intl)}>
+                        <div className='comment-date'>
+                            {Utils.relativeDisplayDateTime(date, intl)}
+                        </div>
+                    </Tooltip>
+                )}
 
                 {!props.readonly && (
                     <MenuWrapper>
