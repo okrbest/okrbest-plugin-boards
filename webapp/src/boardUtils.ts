@@ -63,11 +63,11 @@ export function getVisibleAndHiddenGroups(cards: Card[], visibleOptionIds: strin
     }
 
     if (groupByProperty?.type === 'card') {
-        return getCardGroups(cards, groupByProperty, hiddenOptionIds)
+        return getCardGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
     if (groupByProperty?.type === 'multiSelect') {
-        return getMultiSelectGroups(cards, groupByProperty, hiddenOptionIds)
+        return getMultiSelectGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
     return getOptionGroups(cards, visibleOptionIds, hiddenOptionIds, groupByProperty)
@@ -173,8 +173,9 @@ function getMultiPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate,
 }
 
 // MultiSelect 프로퍼티로 그룹화 (선택된 모든 옵션이 동일한 경우 같은 그룹)
-function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
+function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[], visibleOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
     const groups: {[key: string]: {cards: Card[], optionIds: string[]}} = {}
+    const order: string[] = []
 
     cards.forEach((card) => {
         const propertyValue = card.fields.properties[groupByProperty.id]
@@ -189,6 +190,7 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
 
         if (!groups[key]) {
             groups[key] = {cards: [], optionIds}
+            order.push(key)
         }
         groups[key].cards.push(card)
     })
@@ -196,7 +198,9 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
     const hiddenGroups: BoardGroup[] = []
     const visibleGroups: BoardGroup[] = []
 
-    Object.entries(groups).forEach(([key, {cards: groupCards, optionIds}]) => {
+    const orderedKeys = orderGroupKeys(order, visibleOptionIds, hiddenOptionIds)
+    orderedKeys.visible.forEach((key) => {
+        const {cards: groupCards, optionIds} = groups[key]
         // 옵션 ID를 옵션 이름으로 변환
         const optionNames = optionIds.map((optionId) => {
             const option = groupByProperty.options.find((o) => o.id === optionId)
@@ -209,11 +213,19 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
         const color = firstOption?.color || ''
 
         const propertyOption = {id: key, value: displayValue, color} as IPropertyOption
-        if (hiddenOptionIds.find((e) => e === key)) {
-            hiddenGroups.push({option: propertyOption, cards: groupCards})
-        } else {
-            visibleGroups.push({option: propertyOption, cards: groupCards})
-        }
+        visibleGroups.push({option: propertyOption, cards: groupCards})
+    })
+    orderedKeys.hidden.forEach((key) => {
+        const {cards: groupCards, optionIds} = groups[key]
+        const optionNames = optionIds.map((optionId) => {
+            const option = groupByProperty.options.find((o) => o.id === optionId)
+            return option?.value || optionId
+        })
+        const displayValue = optionNames.length > 0 ? optionNames.join(', ') : `No ${groupByProperty.name}`
+        const firstOption = optionIds.length > 0 ? groupByProperty.options.find((o) => o.id === optionIds[0]) : undefined
+        const color = firstOption?.color || ''
+        const propertyOption = {id: key, value: displayValue, color} as IPropertyOption
+        hiddenGroups.push({option: propertyOption, cards: groupCards})
     })
 
     return {visible: visibleGroups, hidden: hiddenGroups}
@@ -272,8 +284,9 @@ function parseAllCardPropertyValues(propertyValue: string | undefined): {cardId:
 }
 
 // Card 프로퍼티로 그룹화 (연결된 모든 카드가 동일한 경우 같은 그룹)
-function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
+function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[], visibleOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
     const groups: {[key: string]: {cards: Card[], linkedCards: {cardId: string, cardTitle: string}[]}} = {}
+    const order: string[] = []
 
     // 연결된 보드 ID 가져오기
     const linkedBoardId = groupByProperty.options?.[0]?.id || ''
@@ -293,6 +306,7 @@ function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hidden
 
         if (!groups[key]) {
             groups[key] = {cards: [], linkedCards}
+            order.push(key)
         }
         groups[key].cards.push(card)
     })
@@ -300,17 +314,23 @@ function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hidden
     const hiddenGroups: BoardGroup[] = []
     const visibleGroups: BoardGroup[] = []
 
-    Object.entries(groups).forEach(([key, {cards: groupCards, linkedCards}]) => {
+    const orderedKeys = orderGroupKeys(order, visibleOptionIds, hiddenOptionIds)
+    orderedKeys.visible.forEach((key) => {
+        const {cards: groupCards, linkedCards} = groups[key]
         // 표시 값은 연결된 카드 타이틀들 (없으면 "No {프로퍼티명}")
         const displayValue = linkedCards.length > 0
             ? linkedCards.map((c) => c.cardTitle).join(', ')
             : `No ${groupByProperty.name}`
         const propertyOption = {id: key, value: displayValue, color: ''} as IPropertyOption
-        if (hiddenOptionIds.find((e) => e === key)) {
-            hiddenGroups.push({option: propertyOption, cards: groupCards})
-        } else {
-            visibleGroups.push({option: propertyOption, cards: groupCards})
-        }
+        visibleGroups.push({option: propertyOption, cards: groupCards})
+    })
+    orderedKeys.hidden.forEach((key) => {
+        const {cards: groupCards, linkedCards} = groups[key]
+        const displayValue = linkedCards.length > 0
+            ? linkedCards.map((c) => c.cardTitle).join(', ')
+            : `No ${groupByProperty.name}`
+        const propertyOption = {id: key, value: displayValue, color: ''} as IPropertyOption
+        hiddenGroups.push({option: propertyOption, cards: groupCards})
     })
 
     return {visible: visibleGroups, hidden: hiddenGroups}
