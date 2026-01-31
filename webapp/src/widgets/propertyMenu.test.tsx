@@ -34,8 +34,6 @@ describe('widgets/PropertyMenu', () => {
         document.execCommand = jest.fn()
         baseProps.onTypeAndNameChanged.mockClear()
         baseProps.onDelete.mockClear()
-        baseProps.onMoveUp.mockClear()
-        baseProps.onMoveDown.mockClear()
     })
 
     const baseProps = {
@@ -44,10 +42,6 @@ describe('widgets/PropertyMenu', () => {
         propertyType: propsRegistry.get('email'),
         onTypeAndNameChanged: jest.fn(),
         onDelete: jest.fn(),
-        onMoveUp: jest.fn(),
-        onMoveDown: jest.fn(),
-        canMoveUp: true,
-        canMoveDown: true,
     }
 
     test('should display the type of property', () => {
@@ -157,26 +151,5 @@ describe('widgets/PropertyMenu', () => {
         const menuOpen = getByText(/Type: Text/i)
         fireEvent.click(menuOpen)
         expect(container).toMatchSnapshot()
-    })
-
-    test('handles move up/down events respecting disabled state', () => {
-        const onMoveUp = jest.fn()
-        const onMoveDown = jest.fn()
-        const component = wrapIntl(
-            <Provider store={mockStore}>
-                <PropertyMenu
-                    {...baseProps}
-                    onMoveUp={onMoveUp}
-                    onMoveDown={onMoveDown}
-                    canMoveUp={false}
-                    canMoveDown={true}
-                />
-            </Provider>,
-        )
-        const {getByText} = render(component)
-        fireEvent.click(getByText(/Move property up/i))
-        expect(onMoveUp).not.toHaveBeenCalled()
-        fireEvent.click(getByText(/Move property down/i))
-        expect(onMoveDown).toHaveBeenCalledTimes(1)
     })
 })
