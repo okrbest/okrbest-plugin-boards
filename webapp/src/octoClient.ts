@@ -1297,6 +1297,124 @@ class OctoClient {
 
         console.log('[API] ✅ Save successful')
     }
+
+    // ========================================
+    // Scheduled Comments API
+    // ========================================
+
+    /**
+     * Get all scheduled comments for the current user
+     */
+    async getMyScheduledComments(): Promise<Block[]> {
+        const path = '/api/v2/me/scheduled-comments'
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as Block[]
+    }
+
+    /**
+     * Create a scheduled comment
+     */
+    async createScheduledComment(
+        boardId: string,
+        cardId: string,
+        title: string,
+        scheduledAt: number,
+    ): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments`
+        const body = JSON.stringify({
+            cardId,
+            title,
+            scheduledAt,
+        })
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    /**
+     * Get scheduled comments for a specific card
+     */
+    async getScheduledCommentsForCard(boardId: string, cardId: string): Promise<Block[]> {
+        const path = `/api/v2/boards/${boardId}/cards/${cardId}/scheduled-comments`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as Block[]
+    }
+
+    /**
+     * Update a scheduled comment
+     */
+    async updateScheduledComment(
+        boardId: string,
+        blockId: string,
+        title?: string,
+        scheduledAt?: number,
+    ): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments/${blockId}`
+        const body: Record<string, any> = {}
+        if (title !== undefined) {
+            body.title = title
+        }
+        if (scheduledAt !== undefined) {
+            body.scheduledAt = scheduledAt
+        }
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'PATCH',
+            headers: this.headers(),
+            body: JSON.stringify(body),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    /**
+     * Cancel a scheduled comment
+     */
+    async cancelScheduledComment(boardId: string, blockId: string): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments/${blockId}/cancel`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    /**
+     * Immediately send a scheduled comment
+     */
+    async sendScheduledCommentNow(boardId: string, blockId: string): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments/${blockId}/send-now`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
 }
 
 const octoClient = new OctoClient()

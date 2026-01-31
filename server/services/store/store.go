@@ -184,6 +184,12 @@ type Store interface {
 	// For unit testing only
 	DeleteBoardRecord(boardID, modifiedBy string) error
 	DeleteBlockRecord(blockID, modifiedBy string) error
+
+	// Scheduled comments
+	GetScheduledComments(beforeTime int64) ([]*model.Block, error)
+	GetScheduledCommentsByUser(userID string) ([]*model.Block, error)
+	GetScheduledCommentsForCard(cardID string) ([]*model.Block, error)
+	GetScheduledCommentsCountByUser(userID string) (int, error)
 }
 
 type NotSupportedError struct {

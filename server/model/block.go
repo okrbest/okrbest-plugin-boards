@@ -23,6 +23,19 @@ const (
 	BlockFieldsMaxRunes    = 800000
 	BlockFieldFileId       = "fileId"
 	BlockFieldAttachmentId = "attachmentId"
+
+	// Scheduled comment fields
+	BlockFieldScheduledAt     = "scheduledAt"
+	BlockFieldScheduledStatus = "scheduledStatus"
+
+	// Scheduled status values
+	ScheduledStatusPending   = "pending"
+	ScheduledStatusSent      = "sent"
+	ScheduledStatusCancelled = "cancelled"
+
+	// Scheduled comment limits
+	MaxScheduledCommentsPerUser = 100
+	MaxScheduleDays             = 30
 )
 
 var (

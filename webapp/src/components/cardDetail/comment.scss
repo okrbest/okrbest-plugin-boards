@@ -3,6 +3,13 @@
     flex-direction: column;
     margin: 5px 0;
 
+    &--scheduled {
+        opacity: 0.6;
+        border-left: 3px solid var(--button-bg, #166de0);
+        padding-left: 8px;
+        margin-left: -11px;
+    }
+
     &:hover {
         .MenuWrapper {
             display: block;
@@ -38,6 +45,18 @@
     .comment-date {
         color: #ccc;
         font-size: 12px;
+    }
+
+    .comment-scheduled-badge {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--button-bg, #166de0);
+        font-weight: 500;
+    }
+
+    .comment-scheduled-icon {
+        font-size: 14px;
     }
 
     .comment-text {
