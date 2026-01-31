@@ -12,6 +12,7 @@ import mutator from '../../mutator'
 
 import Label from '../../widgets/label'
 import ValueSelector from '../../widgets/valueSelector'
+import RenameOptionDialog from '../../widgets/renameOptionDialog'
 
 import {PropertyProps} from '../types'
 
@@ -19,6 +20,7 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
     const {propertyTemplate, propertyValue, board, card} = props
     const isEditable = !props.readOnly && Boolean(board)
     const [open, setOpen] = useState(false)
+    const [renameOption, setRenameOption] = useState<IPropertyOption | null>(null)
     const intl = useIntl()
 
     const emptyDisplayValue = props.showEmptyPlaceholder ? intl.formatMessage({id: 'PropertyValueElement.empty', defaultMessage: 'Empty'}) : ''
@@ -26,6 +28,7 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
     const onChange = useCallback((newValue) => mutator.changePropertyValue(board.id, card, propertyTemplate.id, newValue), [board.id, card, propertyTemplate])
     const onChangeColor = useCallback((option: IPropertyOption, colorId: string) => mutator.changePropertyOptionColor(board.id, board.cardProperties, propertyTemplate, option, colorId), [board, propertyTemplate])
     const onDeleteOption = useCallback((option: IPropertyOption) => mutator.deletePropertyOption(board.id, board.cardProperties, propertyTemplate, option), [board, propertyTemplate])
+    const onRenameOption = useCallback((option: IPropertyOption, newValue: string) => mutator.changePropertyOptionValue(board.id, board.cardProperties, propertyTemplate, option, newValue), [board, propertyTemplate])
 
     const onDeleteValue = useCallback((valueToDelete: IPropertyOption, currentValues: IPropertyOption[]) => {
         const newValues = currentValues.
@@ -48,44 +51,59 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
 
     const values = Array.isArray(propertyValue) && propertyValue.length > 0 ? propertyValue.map((v) => propertyTemplate.options.find((o) => o!.id === v)).filter((v): v is IPropertyOption => Boolean(v)) : []
 
+    const renameDialog = renameOption && (
+        <RenameOptionDialog
+            option={renameOption}
+            onClose={() => setRenameOption(null)}
+            onRename={onRenameOption}
+        />
+    )
+
     if (!isEditable || !open) {
         return (
-            <div
-                className={props.property.valueClassName(!isEditable)}
-                tabIndex={0}
-                data-testid='multiselect-non-editable'
-                onClick={() => setOpen(true)}
-            >
-                {values.map((v) => (
-                    <Label
-                        key={v.id}
-                        color={v.color}
-                    >
-                        {v.value}
-                    </Label>
-                ))}
-                {values.length === 0 && (
-                    <Label
-                        color='empty'
-                    >{emptyDisplayValue}</Label>
-                )}
-            </div>
+            <>
+                <div
+                    className={props.property.valueClassName(!isEditable)}
+                    tabIndex={0}
+                    data-testid='multiselect-non-editable'
+                    onClick={() => setOpen(true)}
+                >
+                    {values.map((v) => (
+                        <Label
+                            key={v.id}
+                            color={v.color}
+                        >
+                            {v.value}
+                        </Label>
+                    ))}
+                    {values.length === 0 && (
+                        <Label
+                            color='empty'
+                        >{emptyDisplayValue}</Label>
+                    )}
+                </div>
+                {renameDialog}
+            </>
         )
     }
 
     return (
-        <ValueSelector
-            isMulti={true}
-            emptyValue={emptyDisplayValue}
-            options={propertyTemplate.options}
-            value={values}
-            onChange={onChange}
-            onChangeColor={onChangeColor}
-            onDeleteOption={onDeleteOption}
-            onDeleteValue={(valueToRemove) => onDeleteValue(valueToRemove, values)}
-            onCreate={(newValue) => onCreateValue(newValue, values)}
-            onBlur={() => setOpen(false)}
-        />
+        <>
+            <ValueSelector
+                isMulti={true}
+                emptyValue={emptyDisplayValue}
+                options={propertyTemplate.options}
+                value={values}
+                onChange={onChange}
+                onChangeColor={onChangeColor}
+                onDeleteOption={onDeleteOption}
+                onStartRename={setRenameOption}
+                onDeleteValue={(valueToRemove) => onDeleteValue(valueToRemove, values)}
+                onCreate={(newValue) => onCreateValue(newValue, values)}
+                onBlur={() => setOpen(false)}
+            />
+            {renameDialog}
+        </>
     )
 }
 

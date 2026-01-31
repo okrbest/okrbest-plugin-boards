@@ -1,0 +1,31 @@
+.RenameOptionDialog {
+    .dialog {
+        width: 400px;
+    }
+
+    &__content {
+        padding: 16px;
+    }
+
+    &__input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-radius: var(--default-rad);
+        font-size: 14px;
+        background: rgb(var(--center-channel-bg-rgb));
+        color: rgb(var(--center-channel-color-rgb));
+
+        &:focus {
+            border-color: var(--button-bg);
+            outline: none;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+    }
+}
