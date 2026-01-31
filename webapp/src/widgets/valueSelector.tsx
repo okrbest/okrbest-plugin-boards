@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useState, useEffect} from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import {
     ActionMeta,
@@ -13,11 +13,19 @@ import {
 import { FormatOptionLabelMeta } from 'react-select/base'
 import CreatableSelect from 'react-select/creatable'
 import {
-    DragDropContext,
-    Droppable,
-    Draggable,
-    DropResult,
-} from 'react-beautiful-dnd'
+    DndContext,
+    closestCenter,
+    DragEndEvent,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core'
+import {
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 import { CSSObject } from '@emotion/serialize'
 
@@ -202,6 +210,44 @@ const valueSelectorStyle = {
     }),
 }
 
+type SortableOptionWrapperProps = {
+    id: string
+    children: React.ReactNode
+}
+
+const SortableOptionWrapper = ({
+    id,
+    children,
+}: SortableOptionWrapperProps): JSX.Element => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id })
+
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 1,
+    }
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={isDragging ? 'value-selector-option--dragging' : ''}
+            {...attributes}
+            {...listeners}
+        >
+            {children}
+        </div>
+    )
+}
+
 function ValueSelector(props: Props): JSX.Element {
     const intl = useIntl()
     const [localOptions, setLocalOptions] = useState(props.options)
@@ -210,24 +256,34 @@ function ValueSelector(props: Props): JSX.Element {
         setLocalOptions(props.options)
     }, [props.options])
 
-    const onDragEnd = useCallback(
-        (result: DropResult) => {
-            if (!result.destination || !props.onReorderOption) {
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        })
+    )
+
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            const { active, over } = event
+            if (!over || !props.onReorderOption) {
                 return
             }
-            const srcIndex = result.source.index
-            const destIndex = result.destination.index
-            if (srcIndex === destIndex) {
+            if (active.id === over.id) {
+                return
+            }
+            const srcIndex = localOptions.findIndex((o) => o.id === active.id)
+            const destIndex = localOptions.findIndex((o) => o.id === over.id)
+            if (srcIndex === -1 || destIndex === -1) {
                 return
             }
             const option = localOptions[srcIndex]
-            if (option) {
-                const newOptions = [...localOptions]
-                newOptions.splice(srcIndex, 1)
-                newOptions.splice(destIndex, 0, option)
-                setLocalOptions(newOptions)
-                props.onReorderOption(option, destIndex)
-            }
+            const newOptions = [...localOptions]
+            newOptions.splice(srcIndex, 1)
+            newOptions.splice(destIndex, 0, option)
+            setLocalOptions(newOptions)
+            props.onReorderOption(option, destIndex)
         },
         [localOptions, props.onReorderOption]
     )
@@ -238,20 +294,17 @@ function ValueSelector(props: Props): JSX.Element {
                 return <components.MenuList {...menuListProps} />
             }
             return (
-                <Droppable droppableId="value-selector-options">
-                    {(provided) => (
-                        <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                        >
-                            <components.MenuList {...menuListProps} />
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
+                <SortableContext
+                    items={localOptions.map((o) => o.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <div className="value-selector-menu-list">
+                        {menuListProps.children}
+                    </div>
+                </SortableContext>
             )
         },
-        [props.onReorderOption]
+        [props.onReorderOption, localOptions]
     )
 
     const CustomOption = useCallback(
@@ -259,32 +312,13 @@ function ValueSelector(props: Props): JSX.Element {
             if (!props.onReorderOption) {
                 return <components.Option {...optionProps} />
             }
-            const index = localOptions.findIndex(
-                (o) => o.id === optionProps.data.id
-            )
-            if (index === -1) {
-                return <components.Option {...optionProps} />
-            }
             return (
-                <Draggable draggableId={optionProps.data.id} index={index}>
-                    {(provided, snapshot) => (
-                        <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={
-                                snapshot.isDragging
-                                    ? 'value-selector-option--dragging'
-                                    : ''
-                            }
-                        >
-                            <components.Option {...optionProps} />
-                        </div>
-                    )}
-                </Draggable>
+                <SortableOptionWrapper id={optionProps.data.id}>
+                    <components.Option {...optionProps} />
+                </SortableOptionWrapper>
             )
         },
-        [localOptions, props.onReorderOption]
+        [props.onReorderOption]
     )
 
     const selectComponent = (
@@ -377,9 +411,13 @@ function ValueSelector(props: Props): JSX.Element {
     }
 
     return (
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+        >
             {selectComponent}
-        </DragDropContext>
+        </DndContext>
     )
 }
 

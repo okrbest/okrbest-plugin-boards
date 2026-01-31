@@ -33,6 +33,9 @@
 	"dependencies": {
 		"@blocksuite/blocks": "^0.17.33",
 		"@blocksuite/presets": "^0.17.33",
+		"@dnd-kit/core": "^6.3.1",
+		"@dnd-kit/sortable": "^10.0.0",
+		"@dnd-kit/utilities": "^3.2.2",
 		"@draft-js-plugins/editor": "^4.1.2",
 		"@draft-js-plugins/emoji": "^4.6.0",
 		"@draft-js-plugins/mention": "^5.1.2",

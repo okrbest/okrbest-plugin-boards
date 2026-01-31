@@ -642,12 +642,23 @@ class Mutator {
     }
 
     async changePropertyOptionOrder(boardId: string, oldCardProperties: IPropertyTemplate[], template: IPropertyTemplate, option: IPropertyOption, destIndex: number) {
-        const srcIndex = template.options.indexOf(option)
+        const srcIndex = template.options.findIndex((o) => o.id === option.id)
         Utils.log(`srcIndex: ${srcIndex}, destIndex: ${destIndex}`)
+        if (srcIndex === -1) {
+            Utils.log('Option not found in template.options')
+            return
+        }
 
         const newCardProperties: IPropertyTemplate[] = cloneDeep(oldCardProperties)
         const newTemplate = newCardProperties.find((o: IPropertyTemplate) => o.id === template.id)!
         newTemplate.options.splice(destIndex, 0, newTemplate.options.splice(srcIndex, 1)[0])
+
+        // Optimistic update: immediately update Redux store for instant UI feedback
+        const currentBoard = store.getState().boards.boards[boardId]
+        if (currentBoard) {
+            const updatedBoard = {...currentBoard, cardProperties: newCardProperties}
+            store.dispatch(updateBoards([updatedBoard as Board]))
+        }
 
         await this.updateBoardCardProperties(boardId, oldCardProperties, newCardProperties, 'reorder option')
     }
