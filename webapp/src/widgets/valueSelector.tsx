@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, { useCallback } from 'react'
+import React, {useCallback, useState, useEffect} from 'react'
 import { useIntl } from 'react-intl'
 import {
     ActionMeta,
@@ -204,6 +204,11 @@ const valueSelectorStyle = {
 
 function ValueSelector(props: Props): JSX.Element {
     const intl = useIntl()
+    const [localOptions, setLocalOptions] = useState(props.options)
+
+    useEffect(() => {
+        setLocalOptions(props.options)
+    }, [props.options])
 
     const onDragEnd = useCallback(
         (result: DropResult) => {
@@ -215,12 +220,16 @@ function ValueSelector(props: Props): JSX.Element {
             if (srcIndex === destIndex) {
                 return
             }
-            const option = props.options[srcIndex]
+            const option = localOptions[srcIndex]
             if (option) {
+                const newOptions = [...localOptions]
+                newOptions.splice(srcIndex, 1)
+                newOptions.splice(destIndex, 0, option)
+                setLocalOptions(newOptions)
                 props.onReorderOption(option, destIndex)
             }
         },
-        [props.options, props.onReorderOption]
+        [localOptions, props.onReorderOption]
     )
 
     const CustomMenuList = useCallback(
@@ -250,7 +259,7 @@ function ValueSelector(props: Props): JSX.Element {
             if (!props.onReorderOption) {
                 return <components.Option {...optionProps} />
             }
-            const index = props.options.findIndex(
+            const index = localOptions.findIndex(
                 (o) => o.id === optionProps.data.id
             )
             if (index === -1) {
@@ -275,7 +284,7 @@ function ValueSelector(props: Props): JSX.Element {
                 </Draggable>
             )
         },
-        [props.options, props.onReorderOption]
+        [localOptions, props.onReorderOption]
     )
 
     const selectComponent = (
@@ -320,7 +329,7 @@ function ValueSelector(props: Props): JSX.Element {
             )}
             className="ValueSelector"
             classNamePrefix="ValueSelector"
-            options={props.options}
+            options={localOptions}
             getOptionLabel={(o: IPropertyOption) => o.value}
             getOptionValue={(o: IPropertyOption) => o.id}
             onChange={(
