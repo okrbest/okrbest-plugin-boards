@@ -1,11 +1,23 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useIntl } from 'react-intl'
-import { ActionMeta, OnChangeValue } from 'react-select'
+import {
+    ActionMeta,
+    OnChangeValue,
+    components,
+    MenuListProps,
+    OptionProps,
+} from 'react-select'
 import { FormatOptionLabelMeta } from 'react-select/base'
 import CreatableSelect from 'react-select/creatable'
+import {
+    DragDropContext,
+    Droppable,
+    Draggable,
+    DropResult,
+} from 'react-beautiful-dnd'
 
 import { CSSObject } from '@emotion/serialize'
 
@@ -21,6 +33,7 @@ import OptionsIcon from './icons/options'
 import DeleteIcon from './icons/delete'
 import EditIcon from './icons/edit'
 import CloseIcon from './icons/close'
+import GripIcon from './icons/grip'
 import Label from './label'
 
 import './valueSelector.scss'
@@ -34,6 +47,7 @@ type Props = {
     onChangeColor: (option: IPropertyOption, color: string) => void
     onDeleteOption: (option: IPropertyOption) => void
     onStartRename?: (option: IPropertyOption) => void
+    onReorderOption?: (option: IPropertyOption, destIndex: number) => void
     isMulti?: boolean
     onDeleteValue?: (value: IPropertyOption) => void
     onBlur?: () => void
@@ -47,10 +61,11 @@ type LabelProps = {
     onStartRename?: (option: IPropertyOption) => void
     onDeleteValue?: (value: IPropertyOption) => void
     isMulti?: boolean
+    showDragHandle?: boolean
 }
 
 const ValueSelectorLabel = (props: LabelProps): JSX.Element => {
-    const { option, onDeleteValue, meta, isMulti } = props
+    const { option, onDeleteValue, meta, isMulti, showDragHandle } = props
     const intl = useIntl()
     if (meta.context === 'value') {
         let className = onDeleteValue
@@ -75,6 +90,11 @@ const ValueSelectorLabel = (props: LabelProps): JSX.Element => {
     }
     return (
         <div className="value-menu-option" role="menuitem">
+            {showDragHandle && (
+                <div className="value-menu-option__drag-handle">
+                    <GripIcon />
+                </div>
+            )}
             <div className="label-container">
                 <Label color={option.color}>{option.value}</Label>
             </div>
@@ -184,7 +204,81 @@ const valueSelectorStyle = {
 
 function ValueSelector(props: Props): JSX.Element {
     const intl = useIntl()
-    return (
+
+    const onDragEnd = useCallback(
+        (result: DropResult) => {
+            if (!result.destination || !props.onReorderOption) {
+                return
+            }
+            const srcIndex = result.source.index
+            const destIndex = result.destination.index
+            if (srcIndex === destIndex) {
+                return
+            }
+            const option = props.options[srcIndex]
+            if (option) {
+                props.onReorderOption(option, destIndex)
+            }
+        },
+        [props.options, props.onReorderOption]
+    )
+
+    const CustomMenuList = useCallback(
+        (menuListProps: MenuListProps<IPropertyOption, boolean>) => {
+            if (!props.onReorderOption) {
+                return <components.MenuList {...menuListProps} />
+            }
+            return (
+                <Droppable droppableId="value-selector-options">
+                    {(provided) => (
+                        <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                        >
+                            <components.MenuList {...menuListProps} />
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            )
+        },
+        [props.onReorderOption]
+    )
+
+    const CustomOption = useCallback(
+        (optionProps: OptionProps<IPropertyOption, boolean>) => {
+            if (!props.onReorderOption) {
+                return <components.Option {...optionProps} />
+            }
+            const index = props.options.findIndex(
+                (o) => o.id === optionProps.data.id
+            )
+            if (index === -1) {
+                return <components.Option {...optionProps} />
+            }
+            return (
+                <Draggable draggableId={optionProps.data.id} index={index}>
+                    {(provided, snapshot) => (
+                        <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={
+                                snapshot.isDragging
+                                    ? 'value-selector-option--dragging'
+                                    : ''
+                            }
+                        >
+                            <components.Option {...optionProps} />
+                        </div>
+                    )}
+                </Draggable>
+            )
+        },
+        [props.options, props.onReorderOption]
+    )
+
+    const selectComponent = (
         <CreatableSelect
             noOptionsMessage={() =>
                 intl.formatMessage({
@@ -202,6 +296,10 @@ function ValueSelector(props: Props): JSX.Element {
             isMulti={props.isMulti}
             isClearable={true}
             styles={valueSelectorStyle}
+            components={{
+                MenuList: CustomMenuList,
+                Option: CustomOption,
+            }}
             formatOptionLabel={(
                 option: IPropertyOption,
                 meta: FormatOptionLabelMeta<IPropertyOption>
@@ -214,6 +312,10 @@ function ValueSelector(props: Props): JSX.Element {
                     onDeleteOption={props.onDeleteOption}
                     onStartRename={props.onStartRename}
                     onDeleteValue={props.onDeleteValue}
+                    showDragHandle={
+                        Boolean(props.onReorderOption) &&
+                        meta.context === 'menu'
+                    }
                 />
             )}
             className="ValueSelector"
@@ -259,6 +361,16 @@ function ValueSelector(props: Props): JSX.Element {
             menuIsOpen={props.isMulti}
             blurInputOnSelect={!props.isMulti}
         />
+    )
+
+    if (!props.onReorderOption) {
+        return selectComponent
+    }
+
+    return (
+        <DragDropContext onDragEnd={onDragEnd}>
+            {selectComponent}
+        </DragDropContext>
     )
 }
 

@@ -40,6 +40,7 @@ const SelectProperty = (props: PropertyProps) => {
     const onChangeColor = useCallback((option: IPropertyOption, colorId: string) => mutator.changePropertyOptionColor(board.id, board.cardProperties, propertyTemplate, option, colorId), [board, propertyTemplate])
     const onDeleteOption = useCallback((option: IPropertyOption) => mutator.deletePropertyOption(board.id, board.cardProperties, propertyTemplate, option), [board, propertyTemplate])
     const onRenameOption = useCallback((option: IPropertyOption, newValue: string) => mutator.changePropertyOptionValue(board.id, board.cardProperties, propertyTemplate, option, newValue), [board, propertyTemplate])
+    const onReorderOption = useCallback((option: IPropertyOption, destIndex: number) => mutator.changePropertyOptionOrder(board.id, board.cardProperties, propertyTemplate, option, destIndex), [board, propertyTemplate])
     const onDeleteValue = useCallback(() => mutator.changePropertyValue(board.id, card, propertyTemplate.id, ''), [card, propertyTemplate.id])
 
     const option = propertyTemplate.options.find((o: IPropertyOption) => o.id === propertyValue)
@@ -83,6 +84,7 @@ const SelectProperty = (props: PropertyProps) => {
                 onChangeColor={onChangeColor}
                 onDeleteOption={onDeleteOption}
                 onStartRename={setRenameOption}
+                onReorderOption={onReorderOption}
                 onDeleteValue={onDeleteValue}
                 onBlur={() => setOpen(false)}
             />

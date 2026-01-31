@@ -1,12 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import React, { useState, useCallback } from 'react'
+import { useIntl } from 'react-intl'
 
-import React, {useState, useCallback} from 'react'
-import {useIntl} from 'react-intl'
-
-import {IPropertyOption} from '../../blocks/board'
-import {Utils, IDType} from '../../utils'
+import { IPropertyOption } from '../../blocks/board'
+import { Utils, IDType } from '../../utils'
 
 import mutator from '../../mutator'
 
@@ -14,42 +13,127 @@ import Label from '../../widgets/label'
 import ValueSelector from '../../widgets/valueSelector'
 import RenameOptionDialog from '../../widgets/renameOptionDialog'
 
-import {PropertyProps} from '../types'
+import { PropertyProps } from '../types'
 
 const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
-    const {propertyTemplate, propertyValue, board, card} = props
+    const { propertyTemplate, propertyValue, board, card } = props
     const isEditable = !props.readOnly && Boolean(board)
     const [open, setOpen] = useState(false)
-    const [renameOption, setRenameOption] = useState<IPropertyOption | null>(null)
+    const [renameOption, setRenameOption] = useState<IPropertyOption | null>(
+        null
+    )
     const intl = useIntl()
 
-    const emptyDisplayValue = props.showEmptyPlaceholder ? intl.formatMessage({id: 'PropertyValueElement.empty', defaultMessage: 'Empty'}) : ''
+    const emptyDisplayValue = props.showEmptyPlaceholder
+        ? intl.formatMessage({
+              id: 'PropertyValueElement.empty',
+              defaultMessage: 'Empty',
+          })
+        : ''
 
-    const onChange = useCallback((newValue) => mutator.changePropertyValue(board.id, card, propertyTemplate.id, newValue), [board.id, card, propertyTemplate])
-    const onChangeColor = useCallback((option: IPropertyOption, colorId: string) => mutator.changePropertyOptionColor(board.id, board.cardProperties, propertyTemplate, option, colorId), [board, propertyTemplate])
-    const onDeleteOption = useCallback((option: IPropertyOption) => mutator.deletePropertyOption(board.id, board.cardProperties, propertyTemplate, option), [board, propertyTemplate])
-    const onRenameOption = useCallback((option: IPropertyOption, newValue: string) => mutator.changePropertyOptionValue(board.id, board.cardProperties, propertyTemplate, option, newValue), [board, propertyTemplate])
+    const onChange = useCallback(
+        (newValue) =>
+            mutator.changePropertyValue(
+                board.id,
+                card,
+                propertyTemplate.id,
+                newValue
+            ),
+        [board.id, card, propertyTemplate]
+    )
+    const onChangeColor = useCallback(
+        (option: IPropertyOption, colorId: string) =>
+            mutator.changePropertyOptionColor(
+                board.id,
+                board.cardProperties,
+                propertyTemplate,
+                option,
+                colorId
+            ),
+        [board, propertyTemplate]
+    )
+    const onDeleteOption = useCallback(
+        (option: IPropertyOption) =>
+            mutator.deletePropertyOption(
+                board.id,
+                board.cardProperties,
+                propertyTemplate,
+                option
+            ),
+        [board, propertyTemplate]
+    )
+    const onRenameOption = useCallback(
+        (option: IPropertyOption, newValue: string) =>
+            mutator.changePropertyOptionValue(
+                board.id,
+                board.cardProperties,
+                propertyTemplate,
+                option,
+                newValue
+            ),
+        [board, propertyTemplate]
+    )
+    const onReorderOption = useCallback(
+        (option: IPropertyOption, destIndex: number) =>
+            mutator.changePropertyOptionOrder(
+                board.id,
+                board.cardProperties,
+                propertyTemplate,
+                option,
+                destIndex
+            ),
+        [board, propertyTemplate]
+    )
 
-    const onDeleteValue = useCallback((valueToDelete: IPropertyOption, currentValues: IPropertyOption[]) => {
-        const newValues = currentValues.
-            filter((currentValue) => currentValue.id !== valueToDelete.id).
-            map((currentValue) => currentValue.id)
-        mutator.changePropertyValue(board.id, card, propertyTemplate.id, newValues)
-    }, [board.id, card, propertyTemplate.id])
+    const onDeleteValue = useCallback(
+        (valueToDelete: IPropertyOption, currentValues: IPropertyOption[]) => {
+            const newValues = currentValues
+                .filter((currentValue) => currentValue.id !== valueToDelete.id)
+                .map((currentValue) => currentValue.id)
+            mutator.changePropertyValue(
+                board.id,
+                card,
+                propertyTemplate.id,
+                newValues
+            )
+        },
+        [board.id, card, propertyTemplate.id]
+    )
 
-    const onCreateValue = useCallback((newValue: string, currentValues: IPropertyOption[]) => {
-        const option: IPropertyOption = {
-            id: Utils.createGuid(IDType.BlockID),
-            value: newValue,
-            color: 'propColorDefault',
-        }
-        currentValues.push(option)
-        mutator.insertPropertyOption(board.id, board.cardProperties, propertyTemplate, option, 'add property option').then(() => {
-            mutator.changePropertyValue(board.id, card, propertyTemplate.id, currentValues.map((v: IPropertyOption) => v.id))
-        })
-    }, [board, board.id, card, propertyTemplate])
+    const onCreateValue = useCallback(
+        (newValue: string, currentValues: IPropertyOption[]) => {
+            const option: IPropertyOption = {
+                id: Utils.createGuid(IDType.BlockID),
+                value: newValue,
+                color: 'propColorDefault',
+            }
+            currentValues.push(option)
+            mutator
+                .insertPropertyOption(
+                    board.id,
+                    board.cardProperties,
+                    propertyTemplate,
+                    option,
+                    'add property option'
+                )
+                .then(() => {
+                    mutator.changePropertyValue(
+                        board.id,
+                        card,
+                        propertyTemplate.id,
+                        currentValues.map((v: IPropertyOption) => v.id)
+                    )
+                })
+        },
+        [board, board.id, card, propertyTemplate]
+    )
 
-    const values = Array.isArray(propertyValue) && propertyValue.length > 0 ? propertyValue.map((v) => propertyTemplate.options.find((o) => o!.id === v)).filter((v): v is IPropertyOption => Boolean(v)) : []
+    const values =
+        Array.isArray(propertyValue) && propertyValue.length > 0
+            ? propertyValue
+                  .map((v) => propertyTemplate.options.find((o) => o!.id === v))
+                  .filter((v): v is IPropertyOption => Boolean(v))
+            : []
 
     const renameDialog = renameOption && (
         <RenameOptionDialog
@@ -65,21 +149,16 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
                 <div
                     className={props.property.valueClassName(!isEditable)}
                     tabIndex={0}
-                    data-testid='multiselect-non-editable'
+                    data-testid="multiselect-non-editable"
                     onClick={() => setOpen(true)}
                 >
                     {values.map((v) => (
-                        <Label
-                            key={v.id}
-                            color={v.color}
-                        >
+                        <Label key={v.id} color={v.color}>
                             {v.value}
                         </Label>
                     ))}
                     {values.length === 0 && (
-                        <Label
-                            color='empty'
-                        >{emptyDisplayValue}</Label>
+                        <Label color="empty">{emptyDisplayValue}</Label>
                     )}
                 </div>
                 {renameDialog}
@@ -98,7 +177,10 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
                 onChangeColor={onChangeColor}
                 onDeleteOption={onDeleteOption}
                 onStartRename={setRenameOption}
-                onDeleteValue={(valueToRemove) => onDeleteValue(valueToRemove, values)}
+                onReorderOption={onReorderOption}
+                onDeleteValue={(valueToRemove) =>
+                    onDeleteValue(valueToRemove, values)
+                }
                 onCreate={(newValue) => onCreateValue(newValue, values)}
                 onBlur={() => setOpen(false)}
             />
