@@ -1303,6 +1303,83 @@ class Mutator {
     async redo() {
         await undoManager.redo()
     }
+
+    // ========================================
+    // Scheduled Comments
+    // ========================================
+
+    /**
+     * Create a scheduled comment
+     * Note: Scheduled comments are not undoable since they're time-sensitive
+     */
+    async createScheduledComment(
+        boardId: string,
+        cardId: string,
+        title: string,
+        scheduledAt: number,
+    ): Promise<Block | undefined> {
+        const comment = await octoClient.createScheduledComment(boardId, cardId, title, scheduledAt)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Cancel a scheduled comment
+     */
+    async cancelScheduledComment(boardId: string, blockId: string): Promise<Block | undefined> {
+        const comment = await octoClient.cancelScheduledComment(boardId, blockId)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Send a scheduled comment immediately
+     */
+    async sendScheduledCommentNow(boardId: string, blockId: string): Promise<Block | undefined> {
+        const comment = await octoClient.sendScheduledCommentNow(boardId, blockId)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Update a scheduled comment's content or scheduled time
+     */
+    async updateScheduledComment(
+        boardId: string,
+        blockId: string,
+        title?: string,
+        scheduledAt?: number,
+    ): Promise<Block | undefined> {
+        const comment = await octoClient.updateScheduledComment(boardId, blockId, title, scheduledAt)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Fetch scheduled comments for a card
+     */
+    async fetchScheduledCommentsForCard(boardId: string, cardId: string): Promise<Block[]> {
+        const comments = await octoClient.getScheduledCommentsForCard(boardId, cardId)
+        if (comments.length > 0) {
+            store.dispatch(updateComments(comments as CommentBlock[]))
+        }
+        return comments
+    }
+
+    /**
+     * Fetch all scheduled comments for the current user
+     */
+    async fetchMyScheduledComments(): Promise<Block[]> {
+        return octoClient.getMyScheduledComments()
+    }
 }
 
 const mutator = new Mutator()

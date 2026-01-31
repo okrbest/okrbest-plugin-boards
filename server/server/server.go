@@ -43,8 +43,9 @@ import (
 )
 
 const (
-	cleanupSessionTaskFrequency = 10 * time.Minute
-	updateMetricsTaskFrequency  = 15 * time.Minute
+	cleanupSessionTaskFrequency         = 10 * time.Minute
+	updateMetricsTaskFrequency          = 15 * time.Minute
+	processScheduledCommentsFrequency   = 1 * time.Minute
 )
 
 type noOpMutexAPIAdapter struct{}
@@ -68,6 +69,7 @@ type Server struct {
 	metricsServer          *metrics.Service
 	metricsService         *metrics.Metrics
 	metricsUpdaterTask     *scheduler.ScheduledTask
+	scheduledCommentsTask  *scheduler.ScheduledTask
 	auditService           *audit.Audit
 	notificationService    *notify.Service
 	servicesStartStopMutex sync.Mutex
@@ -291,6 +293,14 @@ func (s *Server) Start() error {
 	// metricsUpdater()   Calling this immediately causes integration unit tests to fail.
 	s.metricsUpdaterTask = scheduler.CreateRecurringTask("updateMetrics", metricsUpdater, updateMetricsTaskFrequency)
 
+	// Start scheduled comments processor
+	scheduledCommentsProcessor := func() {
+		if err := s.app.ProcessScheduledComments(); err != nil {
+			s.logger.Error("Error processing scheduled comments", mlog.Err(err))
+		}
+	}
+	s.scheduledCommentsTask = scheduler.CreateRecurringTask("processScheduledComments", scheduledCommentsProcessor, processScheduledCommentsFrequency)
+
 	if s.config.Telemetry {
 		firstRun := utils.GetMillis()
 		s.telemetry.RunTelemetryJob(firstRun)
@@ -330,6 +340,10 @@ func (s *Server) Shutdown() error {
 
 	if s.metricsUpdaterTask != nil {
 		s.metricsUpdaterTask.Cancel()
+	}
+
+	if s.scheduledCommentsTask != nil {
+		s.scheduledCommentsTask.Cancel()
 	}
 
 	if err := s.telemetry.Shutdown(); err != nil {
