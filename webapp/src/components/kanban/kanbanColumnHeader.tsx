@@ -51,7 +51,8 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
     const {board, activeView, intl, group, groupByProperty} = props
     const [groupTitle, setGroupTitle] = useState(group.option.value)
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
-    const canEditOption = groupByProperty?.type !== 'person' && group.option.id
+    const canEditOption = groupByProperty?.type === 'select' && group.option.id
+    const isPersonGroup = groupByProperty?.type === 'person' || groupByProperty?.type === 'multiPerson' || groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy'
 
     const headerRef = useRef<HTMLDivElement>(null)
 
@@ -111,28 +112,32 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
                         }}
                     />
                 </Label>}
-            {groupByProperty?.type === 'person' &&
+            {group.option.id && isPersonGroup &&
                 <Label>
                     {groupTitle}
                 </Label>}
-            {canEditOption &&
+            {group.option.id && !isPersonGroup &&
                 <Label color={group.option.color}>
-                    <Editable
-                        value={groupTitle}
-                        placeholderText='New Select'
-                        onChange={setGroupTitle}
-                        onSave={() => {
-                            if (groupTitle.trim() === '') {
+                    {canEditOption ? (
+                        <Editable
+                            value={groupTitle}
+                            placeholderText='New Select'
+                            onChange={setGroupTitle}
+                            onSave={() => {
+                                if (groupTitle.trim() === '') {
+                                    setGroupTitle(group.option.value)
+                                }
+                                props.propertyNameChanged(group.option, groupTitle)
+                            }}
+                            onCancel={() => {
                                 setGroupTitle(group.option.value)
-                            }
-                            props.propertyNameChanged(group.option, groupTitle)
-                        }}
-                        onCancel={() => {
-                            setGroupTitle(group.option.value)
-                        }}
-                        readonly={props.readonly || !canEditBoardProperties}
-                        spellCheck={true}
-                    />
+                            }}
+                            readonly={props.readonly || !canEditBoardProperties}
+                            spellCheck={true}
+                        />
+                    ) : (
+                        groupTitle
+                    )}
                 </Label>}
             <KanbanCalculation
                 cards={group.cards}

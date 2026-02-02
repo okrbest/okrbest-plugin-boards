@@ -124,14 +124,60 @@ const Table = (props: Props): JSX.Element => {
             mutator.performAsUndoGroup(async () => {
                 // Update properties of dragged cards
                 const awaits = []
+                const getGroupValue = (optionId?: string | string[]): string | string[] | undefined => {
+                    if (!groupByProperty || !optionId || optionId === 'undefined') {
+                        return undefined
+                    }
+
+                    if (Array.isArray(optionId)) {
+                        if (optionId.length === 0) {
+                            return undefined
+                        }
+                        if (groupByProperty.type === 'multiSelect' || groupByProperty.type === 'multiPerson') {
+                            return [...optionId].sort()
+                        }
+                        return optionId[0]
+                    }
+
+                    if (groupByProperty.type === 'multiSelect' || groupByProperty.type === 'multiPerson') {
+                        const ids = optionId.split(',').map((id) => id.trim()).filter((id) => id)
+                        if (ids.length === 0) {
+                            return undefined
+                        }
+                        return ids.sort()
+                    }
+
+                    return optionId
+                }
+                const isSameGroupValue = (a?: string | string[], b?: string | string[]): boolean => {
+                    if (a === b) {
+                        return true
+                    }
+
+                    if (Array.isArray(a) && Array.isArray(b)) {
+                        if (a.length !== b.length) {
+                            return false
+                        }
+                        for (let i = 0; i < a.length; i++) {
+                            if (a[i] !== b[i]) {
+                                return false
+                            }
+                        }
+                        return true
+                    }
+
+                    return false
+                }
+
                 for (const draggedCard of draggedCards) {
                     Utils.log(`draggedCard: ${draggedCard.title}, column: ${draggedCard.fields.properties}`)
                     Utils.log(`droppedColumn:  ${groupID}`)
                     const oldOptionId = draggedCard.fields.properties[groupByProperty!.id]
                     Utils.log(`ondrop. oldValue: ${oldOptionId}`)
 
-                    if (groupID !== oldOptionId) {
-                        awaits.push(mutator.changePropertyValue(board.id, draggedCard, groupByProperty!.id, groupID, description))
+                    const newValue = getGroupValue(groupID)
+                    if (!isSameGroupValue(oldOptionId, newValue)) {
+                        awaits.push(mutator.changePropertyValue(board.id, draggedCard, groupByProperty!.id, newValue, description))
                     }
                 }
                 await Promise.all(awaits)

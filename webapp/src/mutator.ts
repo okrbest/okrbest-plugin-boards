@@ -1118,7 +1118,7 @@ class Mutator {
         fromTemplate = false,
         description = 'duplicate card',
         asTemplate = false,
-        propertyOverrides?: Record<string, string>,
+        propertyOverrides?: Record<string, string | string[]>,
         afterRedo?: (newCardId: string) => Promise<void>,
         beforeUndo?: () => Promise<void>,
     ): Promise<[Block[], string]> {

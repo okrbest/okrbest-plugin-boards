@@ -55,26 +55,46 @@ function getOptionGroups(cards: Card[], visibleOptionIds: string[], hiddenOption
 }
 export function getVisibleAndHiddenGroups(cards: Card[], visibleOptionIds: string[], hiddenOptionIds: string[], groupByProperty?: IPropertyTemplate): {visible: BoardGroup[], hidden: BoardGroup[]} {
     if (groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy' || groupByProperty?.type === 'person') {
-        return getPersonGroups(cards, groupByProperty, hiddenOptionIds)
+        return getPersonGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
     if (groupByProperty?.type === 'multiPerson') {
-        return getMultiPersonGroups(cards, groupByProperty, hiddenOptionIds)
+        return getMultiPersonGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
     if (groupByProperty?.type === 'card') {
-        return getCardGroups(cards, groupByProperty, hiddenOptionIds)
+        return getCardGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
     if (groupByProperty?.type === 'multiSelect') {
-        return getMultiSelectGroups(cards, groupByProperty, hiddenOptionIds)
+        return getMultiSelectGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
     return getOptionGroups(cards, visibleOptionIds, hiddenOptionIds, groupByProperty)
 }
 
-function getPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
-    const groups = cards.reduce((unique: {[key: string]: Card[]}, item: Card): {[key: string]: Card[]} => {
+function orderGroupKeys(groupOrder: string[], visibleOptionIds: string[], hiddenOptionIds: string[]): {visible: string[], hidden: string[]} {
+    const hiddenSet = new Set(hiddenOptionIds)
+    const groupSet = new Set(groupOrder)
+    const visibleOrdered = visibleOptionIds.filter((id) => groupSet.has(id) && !hiddenSet.has(id))
+    const visibleSet = new Set(visibleOrdered)
+    const visible: string[] = [...visibleOrdered]
+    const hidden: string[] = hiddenOptionIds.filter((id) => groupSet.has(id))
+
+    groupOrder.forEach((id) => {
+        if (!hiddenSet.has(id) && !visibleSet.has(id)) {
+            visible.push(id)
+        }
+    })
+
+    return {visible, hidden}
+}
+
+function getPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[], visibleOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
+    const groups: {[key: string]: Card[]} = {}
+    const order: string[] = []
+
+    cards.forEach((item) => {
         let key = item.fields.properties[groupByProperty.id] as string
         if (groupByProperty?.type === 'createdBy') {
             key = item.createdBy
@@ -82,35 +102,42 @@ function getPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate, hidd
             key = item.modifiedBy
         }
 
-        const curGroup = unique[key] ?? []
-        return {...unique, [key]: [...curGroup, item]}
-    }, {})
+        if (!groups[key]) {
+            groups[key] = []
+            order.push(key)
+        }
+        groups[key].push(item)
+    })
 
     const hiddenGroups: BoardGroup[] = []
     const visibleGroups: BoardGroup[] = []
-    Object.entries(groups).forEach(([key, value]) => {
+    const orderedKeys = orderGroupKeys(order, visibleOptionIds, hiddenOptionIds)
+    orderedKeys.visible.forEach((key) => {
+        const value = groups[key]
         const propertyOption = {id: key, value: key, color: ''} as IPropertyOption
-        if (hiddenOptionIds.find((e) => e === key)) {
-            hiddenGroups.push({option: propertyOption, cards: value})
-        } else {
-            visibleGroups.push({option: propertyOption, cards: value})
-        }
+        visibleGroups.push({option: propertyOption, cards: value})
+    })
+    orderedKeys.hidden.forEach((key) => {
+        const value = groups[key]
+        const propertyOption = {id: key, value: key, color: ''} as IPropertyOption
+        hiddenGroups.push({option: propertyOption, cards: value})
     })
 
     return {visible: visibleGroups, hidden: hiddenGroups}
 }
 
 // MultiPerson 프로퍼티로 그룹화 (선택된 모든 사람이 동일한 경우 같은 그룹)
-function getMultiPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
+function getMultiPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[], visibleOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
     const groups: {[key: string]: {cards: Card[], personIds: string[]}} = {}
+    const order: string[] = []
 
     cards.forEach((card) => {
         const propertyValue = card.fields.properties[groupByProperty.id]
         let personIds: string[] = []
 
         if (Array.isArray(propertyValue)) {
-            personIds = [...propertyValue].sort() // 정렬하여 순서 무관하게 비교
-        } else if (typeof propertyValue === 'string' && propertyValue) {
+            personIds = propertyValue.filter((id) => id).sort()
+        } else if (typeof propertyValue === 'string' && propertyValue && !propertyValue.includes(',')) {
             personIds = [propertyValue]
         }
 
@@ -119,6 +146,7 @@ function getMultiPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate,
 
         if (!groups[key]) {
             groups[key] = {cards: [], personIds}
+            order.push(key)
         }
         groups[key].cards.push(card)
     })
@@ -126,32 +154,35 @@ function getMultiPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate,
     const hiddenGroups: BoardGroup[] = []
     const visibleGroups: BoardGroup[] = []
 
-    Object.entries(groups).forEach(([key, {cards: groupCards, personIds}]) => {
+    const orderedKeys = orderGroupKeys(order, visibleOptionIds, hiddenOptionIds)
+    orderedKeys.visible.forEach((key) => {
+        const {cards: groupCards, personIds} = groups[key]
         // 표시 값은 personIds를 쉼표로 구분 (빈 경우 "No {프로퍼티명}")
         const displayValue = personIds.length > 0 ? personIds.join(', ') : `No ${groupByProperty.name}`
         const propertyOption = {id: key, value: displayValue, color: ''} as IPropertyOption
-        if (hiddenOptionIds.find((e) => e === key)) {
-            hiddenGroups.push({option: propertyOption, cards: groupCards})
-        } else {
-            visibleGroups.push({option: propertyOption, cards: groupCards})
-        }
+        visibleGroups.push({option: propertyOption, cards: groupCards})
+    })
+    orderedKeys.hidden.forEach((key) => {
+        const {cards: groupCards, personIds} = groups[key]
+        const displayValue = personIds.length > 0 ? personIds.join(', ') : `No ${groupByProperty.name}`
+        const propertyOption = {id: key, value: displayValue, color: ''} as IPropertyOption
+        hiddenGroups.push({option: propertyOption, cards: groupCards})
     })
 
     return {visible: visibleGroups, hidden: hiddenGroups}
 }
 
 // MultiSelect 프로퍼티로 그룹화 (선택된 모든 옵션이 동일한 경우 같은 그룹)
-function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
+function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[], visibleOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
     const groups: {[key: string]: {cards: Card[], optionIds: string[]}} = {}
+    const order: string[] = []
 
     cards.forEach((card) => {
         const propertyValue = card.fields.properties[groupByProperty.id]
         let optionIds: string[] = []
 
         if (Array.isArray(propertyValue)) {
-            optionIds = [...propertyValue].sort() // 정렬하여 순서 무관하게 비교
-        } else if (typeof propertyValue === 'string' && propertyValue) {
-            optionIds = [propertyValue]
+            optionIds = propertyValue.filter((id) => id).sort()
         }
 
         // 정렬된 옵션 ID 배열을 문자열로 직렬화하여 그룹 키로 사용
@@ -159,6 +190,7 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
 
         if (!groups[key]) {
             groups[key] = {cards: [], optionIds}
+            order.push(key)
         }
         groups[key].cards.push(card)
     })
@@ -166,7 +198,9 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
     const hiddenGroups: BoardGroup[] = []
     const visibleGroups: BoardGroup[] = []
 
-    Object.entries(groups).forEach(([key, {cards: groupCards, optionIds}]) => {
+    const orderedKeys = orderGroupKeys(order, visibleOptionIds, hiddenOptionIds)
+    orderedKeys.visible.forEach((key) => {
+        const {cards: groupCards, optionIds} = groups[key]
         // 옵션 ID를 옵션 이름으로 변환
         const optionNames = optionIds.map((optionId) => {
             const option = groupByProperty.options.find((o) => o.id === optionId)
@@ -179,11 +213,19 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
         const color = firstOption?.color || ''
 
         const propertyOption = {id: key, value: displayValue, color} as IPropertyOption
-        if (hiddenOptionIds.find((e) => e === key)) {
-            hiddenGroups.push({option: propertyOption, cards: groupCards})
-        } else {
-            visibleGroups.push({option: propertyOption, cards: groupCards})
-        }
+        visibleGroups.push({option: propertyOption, cards: groupCards})
+    })
+    orderedKeys.hidden.forEach((key) => {
+        const {cards: groupCards, optionIds} = groups[key]
+        const optionNames = optionIds.map((optionId) => {
+            const option = groupByProperty.options.find((o) => o.id === optionId)
+            return option?.value || optionId
+        })
+        const displayValue = optionNames.length > 0 ? optionNames.join(', ') : `No ${groupByProperty.name}`
+        const firstOption = optionIds.length > 0 ? groupByProperty.options.find((o) => o.id === optionIds[0]) : undefined
+        const color = firstOption?.color || ''
+        const propertyOption = {id: key, value: displayValue, color} as IPropertyOption
+        hiddenGroups.push({option: propertyOption, cards: groupCards})
     })
 
     return {visible: visibleGroups, hidden: hiddenGroups}
@@ -242,8 +284,9 @@ function parseAllCardPropertyValues(propertyValue: string | undefined): {cardId:
 }
 
 // Card 프로퍼티로 그룹화 (연결된 모든 카드가 동일한 경우 같은 그룹)
-function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
+function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hiddenOptionIds: string[], visibleOptionIds: string[]): {visible: BoardGroup[], hidden: BoardGroup[]} {
     const groups: {[key: string]: {cards: Card[], linkedCards: {cardId: string, cardTitle: string}[]}} = {}
+    const order: string[] = []
 
     // 연결된 보드 ID 가져오기
     const linkedBoardId = groupByProperty.options?.[0]?.id || ''
@@ -263,6 +306,7 @@ function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hidden
 
         if (!groups[key]) {
             groups[key] = {cards: [], linkedCards}
+            order.push(key)
         }
         groups[key].cards.push(card)
     })
@@ -270,17 +314,23 @@ function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hidden
     const hiddenGroups: BoardGroup[] = []
     const visibleGroups: BoardGroup[] = []
 
-    Object.entries(groups).forEach(([key, {cards: groupCards, linkedCards}]) => {
+    const orderedKeys = orderGroupKeys(order, visibleOptionIds, hiddenOptionIds)
+    orderedKeys.visible.forEach((key) => {
+        const {cards: groupCards, linkedCards} = groups[key]
         // 표시 값은 연결된 카드 타이틀들 (없으면 "No {프로퍼티명}")
         const displayValue = linkedCards.length > 0
             ? linkedCards.map((c) => c.cardTitle).join(', ')
             : `No ${groupByProperty.name}`
         const propertyOption = {id: key, value: displayValue, color: ''} as IPropertyOption
-        if (hiddenOptionIds.find((e) => e === key)) {
-            hiddenGroups.push({option: propertyOption, cards: groupCards})
-        } else {
-            visibleGroups.push({option: propertyOption, cards: groupCards})
-        }
+        visibleGroups.push({option: propertyOption, cards: groupCards})
+    })
+    orderedKeys.hidden.forEach((key) => {
+        const {cards: groupCards, linkedCards} = groups[key]
+        const displayValue = linkedCards.length > 0
+            ? linkedCards.map((c) => c.cardTitle).join(', ')
+            : `No ${groupByProperty.name}`
+        const propertyOption = {id: key, value: displayValue, color: ''} as IPropertyOption
+        hiddenGroups.push({option: propertyOption, cards: groupCards})
     })
 
     return {visible: visibleGroups, hidden: hiddenGroups}

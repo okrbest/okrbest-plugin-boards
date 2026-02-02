@@ -54,7 +54,8 @@ const TableGroupHeaderRow = (props: Props): JSX.Element => {
         className += ' expanded'
     }
 
-    const canEditOption = groupByProperty?.type !== 'person' && group.option.id
+    const canEditOption = groupByProperty?.type === 'select' && group.option.id
+    const isPersonGroup = groupByProperty?.type === 'person' || groupByProperty?.type === 'multiPerson' || groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy'
 
     return (
         <div
@@ -92,28 +93,32 @@ const TableGroupHeaderRow = (props: Props): JSX.Element => {
                             }}
                         />
                     </Label>}
-                {groupByProperty?.type === 'person' &&
+                {group.option.id && isPersonGroup &&
                     <Label>
                         {groupTitle}
                     </Label>}
-                {canEditOption &&
+                {group.option.id && !isPersonGroup &&
                     <Label color={group.option.color}>
-                        <Editable
-                            value={groupTitle}
-                            placeholderText='New Select'
-                            onChange={setGroupTitle}
-                            onSave={() => {
-                                if (groupTitle.trim() === '') {
+                        {canEditOption ? (
+                            <Editable
+                                value={groupTitle}
+                                placeholderText='New Select'
+                                onChange={setGroupTitle}
+                                onSave={() => {
+                                    if (groupTitle.trim() === '') {
+                                        setGroupTitle(group.option.value)
+                                    }
+                                    props.propertyNameChanged(group.option, groupTitle)
+                                }}
+                                onCancel={() => {
                                     setGroupTitle(group.option.value)
-                                }
-                                props.propertyNameChanged(group.option, groupTitle)
-                            }}
-                            onCancel={() => {
-                                setGroupTitle(group.option.value)
-                            }}
-                            readonly={props.readonly || !group.option.id}
-                            spellCheck={true}
-                        />
+                                }}
+                                readonly={props.readonly || !group.option.id}
+                                spellCheck={true}
+                            />
+                        ) : (
+                            groupTitle
+                        )}
                     </Label>}
             </div>
             <Button>{`${group.cards.length}`}</Button>
