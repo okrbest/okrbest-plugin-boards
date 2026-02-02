@@ -1078,29 +1078,35 @@ func (s *SQLStore) searchBoardsForUser(db sq.BaseRunner, term string, searchFiel
 		Select(boardFields("b.")...).
 		From(s.tablePrefix + "boards as b").
 		Join(s.tablePrefix + "board_members as bm on b.id=bm.board_id").
+		Join("Teams as t on t.Id=b.team_id").
 		Where(sq.Eq{
 			"b.is_template": false,
 			"bm.user_id":    userID,
+			"t.DeleteAt":    0,
 		})
 
 	teamMembersQ := builder.
 		Select(boardFields("b.")...).
 		From(s.tablePrefix + "boards as b").
 		Join("TeamMembers as tm on tm.teamid=b.team_id").
+		Join("Teams as t on t.Id=b.team_id").
 		Where(sq.Eq{
 			"b.is_template": false,
 			"tm.userID":     userID,
 			"tm.deleteAt":   0,
 			"b.type":        model.BoardTypeOpen,
+			"t.DeleteAt":    0,
 		})
 
 	channelMembersQ := builder.
 		Select(boardFields("b.")...).
 		From(s.tablePrefix + "boards as b").
 		Join("ChannelMembers as cm on cm.channelId=b.channel_id").
+		Join("Teams as t on t.Id=b.team_id").
 		Where(sq.Eq{
 			"b.is_template": false,
 			"cm.userId":     userID,
+			"t.DeleteAt":    0,
 		})
 
 	if term != "" {
