@@ -34,10 +34,6 @@ type Props = {
     onTypeAndNameChanged: (newType: PropertyType, newName: string) => void
     onRequiredChanged?: (required: boolean) => void
     onDelete: (id: string) => void
-    onMoveUp: () => void
-    onMoveDown: () => void
-    canMoveUp: boolean
-    canMoveDown: boolean
     onBoardSelected?: (selectedBoard: Board) => void
 }
 
@@ -122,14 +118,6 @@ const PropertyMenu = (props: Props) => {
     const deleteText = intl.formatMessage({
         id: 'PropertyMenu.Delete',
         defaultMessage: 'Delete',
-    })
-    const moveUpText = intl.formatMessage({
-        id: 'PropertyMenu.MoveUp',
-        defaultMessage: 'Move property up',
-    })
-    const moveDownText = intl.formatMessage({
-        id: 'PropertyMenu.MoveDown',
-        defaultMessage: 'Move property down',
     })
     const requiredText = intl.formatMessage({
         id: 'PropertyMenu.Required',
@@ -256,26 +244,6 @@ const PropertyMenu = (props: Props) => {
                     )}
                 </Menu.SubMenu>
             )}
-            <Menu.Text
-                id='move-up'
-                name={moveUpText}
-                disabled={!props.canMoveUp}
-                onClick={() => {
-                    if (props.canMoveUp) {
-                        props.onMoveUp()
-                    }
-                }}
-            />
-            <Menu.Text
-                id='move-down'
-                name={moveDownText}
-                disabled={!props.canMoveDown}
-                onClick={() => {
-                    if (props.canMoveDown) {
-                        props.onMoveDown()
-                    }
-                }}
-            />
             {props.onRequiredChanged && !NON_REQUIRED_PROPERTY_TYPES.includes(props.propertyType.type) && (
                 <Menu.Switch
                     id='required'

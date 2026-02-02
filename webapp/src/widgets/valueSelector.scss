@@ -65,6 +65,25 @@
         justify-content: center;
         align-items: center;
 
+        &__drag-handle {
+            display: flex;
+            align-items: center;
+            cursor: grab;
+            color: rgba(var(--center-channel-color-rgb), 0.4);
+            margin-right: 4px;
+
+            i,
+            svg {
+                font-size: 14px;
+                width: 14px;
+                height: 14px;
+            }
+
+            &:hover {
+                color: rgba(var(--center-channel-color-rgb), 0.7);
+            }
+        }
+
         .label-container {
             flex-grow: 1;
             display: flex;
@@ -84,9 +103,19 @@
         }
     }
 
+    .value-selector-option--dragging {
+        background: rgb(var(--center-channel-bg-rgb));
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        border-radius: var(--default-rad);
+    }
+
     .ValueSelector__menu-list {
         overflow-y: unset;
         overflow-x: unset;
+    }
+
+    .value-selector-menu-list {
+        padding: 4px 0;
     }
 }
 
