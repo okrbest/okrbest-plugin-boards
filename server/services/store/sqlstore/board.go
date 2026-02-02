@@ -1052,7 +1052,13 @@ func (s *SQLStore) searchBoardsForUserInTeam(db sq.BaseRunner, teamID, term, use
 		}
 	}
 
-	rows, err := db.Query(unionSQL, unionArgs...)
+	orderBy := "CASE WHEN title IS NULL OR title = '' THEN 1 ELSE 0 END ASC, title ASC, id ASC"
+	if s.dbType == model.PostgresDBType {
+		orderBy = "CASE WHEN title IS NULL OR title = '' THEN 1 ELSE 0 END ASC, title COLLATE \"ko-x-icu\" ASC, id ASC"
+	}
+	finalSQL := "SELECT * FROM (" + unionSQL + ") AS union_boards ORDER BY " + orderBy
+
+	rows, err := db.Query(finalSQL, unionArgs...)
 	if err != nil {
 		s.logger.Error(`searchBoardsForUserInTeam ERROR`, mlog.Err(err))
 		return nil, err
@@ -1177,7 +1183,13 @@ func (s *SQLStore) searchBoardsForUser(db sq.BaseRunner, term string, searchFiel
 		}
 	}
 
-	rows, err := db.Query(unionSQL, unionArgs...)
+	orderBy := "CASE WHEN title IS NULL OR title = '' THEN 1 ELSE 0 END ASC, title ASC, id ASC"
+	if s.dbType == model.PostgresDBType {
+		orderBy = "CASE WHEN title IS NULL OR title = '' THEN 1 ELSE 0 END ASC, title COLLATE \"ko-x-icu\" ASC, id ASC"
+	}
+	finalSQL := "SELECT * FROM (" + unionSQL + ") AS union_boards ORDER BY " + orderBy
+
+	rows, err := db.Query(finalSQL, unionArgs...)
 	if err != nil {
 		s.logger.Error(`searchBoardsForUser ERROR`, mlog.Err(err))
 		return nil, err
