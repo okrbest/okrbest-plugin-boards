@@ -1,8 +1,9 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState, useCallback} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
+import {DragDropContext, Droppable, Draggable, DropResult} from 'react-beautiful-dnd'
 
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {Card} from '../../blocks/card'
@@ -28,6 +29,8 @@ import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {updateBoards} from '../../store/boards'
 import {updateViews} from '../../store/views'
 import {getCurrentBoardCards} from '../../store/cards'
+import GripIcon from '../../widgets/icons/grip'
+import './cardDetailProperties.scss'
 
 // 속성 값이 비어있는지 확인하는 헬퍼 함수
 export function isPropertyValueEmpty(value: string | string[] | undefined, propertyType?: string): boolean {
@@ -284,36 +287,37 @@ const CardDetailProperties = (props: Props) => {
         }
     }
 
-    const moveProperty = (propertyTemplate: IPropertyTemplate, direction: 'up' | 'down') => {
-        const currentIndex = board.cardProperties.findIndex((template) => template.id === propertyTemplate.id)
-        if (currentIndex === -1) {
+    const onDragEnd = useCallback((result: DropResult) => {
+        const {source, destination} = result
+        
+        if (!destination || source.index === destination.index) {
             return
         }
-
-        const destIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-        if (destIndex < 0 || destIndex >= board.cardProperties.length) {
+        
+        const propertyTemplate = board.cardProperties[source.index]
+        if (!propertyTemplate) {
             return
         }
-
+        
         const reorderedTemplates = board.cardProperties.slice()
-        Utils.arrayMove(reorderedTemplates, currentIndex, destIndex)
+        Utils.arrayMove(reorderedTemplates, source.index, destination.index)
         const reorderedIds = reorderedTemplates.map((template) => template.id)
-
+        
         const updatedBoard = {
             ...board,
             cardProperties: reorderedTemplates,
         }
         dispatch(updateBoards([updatedBoard]))
-
-        void mutator.changePropertyTemplateOrder(board, propertyTemplate, destIndex)
-
+        
+        void mutator.changePropertyTemplateOrder(board, propertyTemplate, destination.index)
+        
         const updatedViews: BoardView[] = []
         views.forEach((view) => {
             const oldVisiblePropertyIds = view.fields.visiblePropertyIds
             if (!oldVisiblePropertyIds.includes(propertyTemplate.id)) {
                 return
             }
-
+            
             const newVisiblePropertyIds = reorderedIds.filter((id) => oldVisiblePropertyIds.includes(id))
             if (!Utils.arraysEqual(oldVisiblePropertyIds, newVisiblePropertyIds)) {
                 const newView = {
@@ -327,72 +331,99 @@ const CardDetailProperties = (props: Props) => {
                 void mutator.changeViewVisibleProperties(board.id, view.id, oldVisiblePropertyIds, newVisiblePropertyIds, 'reorder properties')
             }
         })
-
+        
         if (updatedViews.length) {
             dispatch(updateViews(updatedViews))
         }
-    }
+    }, [board, views, dispatch])
+
+    const isDragDisabled = props.readonly || !canEditBoardProperties
 
     return (
         <div className='octo-propertylist CardDetailProperties'>
-            {board.cardProperties.map((propertyTemplate: IPropertyTemplate, index: number) => {
-                const propertyValue = card.fields.properties[propertyTemplate.id]
-                const isRequiredEmpty = propertyTemplate.required && isPropertyValueEmpty(propertyValue, propertyTemplate.type)
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId='property-list' type='property'>
+                    {(droppableProvided) => (
+                        <div
+                            ref={droppableProvided.innerRef}
+                            {...droppableProvided.droppableProps}
+                        >
+                            {board.cardProperties.map((propertyTemplate: IPropertyTemplate, index: number) => {
+                                const propertyValue = card.fields.properties[propertyTemplate.id]
+                                const isRequiredEmpty = propertyTemplate.required && isPropertyValueEmpty(propertyValue, propertyTemplate.type)
 
-                return (
-                    <div
-                        key={propertyTemplate.id + '-' + propertyTemplate.type}
-                        className={`octo-propertyrow${isRequiredEmpty ? ' octo-propertyrow--required-empty' : ''}`}
-                    >
-                        {(props.readonly || !canEditBoardProperties) && (
-                            <div className='octo-propertyname octo-propertyname--readonly'>
-                                {propertyTemplate.name}
-                                {propertyTemplate.required && <span className='octo-propertyname--required'>*</span>}
-                            </div>
-                        )}
-                        {!props.readonly && canEditBoardProperties &&
-                            <MenuWrapper isOpen={propertyTemplate.id === newTemplateId}>
-                                <div className='octo-propertyname'>
-                                    <Button>
-                                        {propertyTemplate.name}
-                                        {propertyTemplate.required && <span className='octo-propertyname--required'>*</span>}
-                                    </Button>
-                                </div>
-                                <PropertyMenu
-                                    propertyId={propertyTemplate.id}
-                                    propertyName={propertyTemplate.name}
-                                    propertyType={propRegistry.get(propertyTemplate.type)}
-                                    required={propertyTemplate.required}
-                                    onTypeAndNameChanged={(newType: PropertyType, newName: string) => onPropertyChangeSetAndOpenConfirmationDialog(newType, newName, propertyTemplate)}
-                                    onRequiredChanged={(required: boolean) => {
-                                        mutator.changePropertyRequired(board, propertyTemplate, required)
-                                    }}
-                                    onDelete={() => onPropertyDeleteSetAndOpenConfirmationDialog(propertyTemplate)}
-                                    onMoveUp={() => moveProperty(propertyTemplate, 'up')}
-                                    onMoveDown={() => moveProperty(propertyTemplate, 'down')}
-                                    canMoveUp={index > 0}
-                                    canMoveDown={index < board.cardProperties.length - 1}
-                                    onBoardSelected={(selectedBoard: Board) => {
-                                        // 메뉴가 닫힌 후에 확인 다이얼로그 표시
-                                        console.log('onBoardSelected called:', selectedBoard.title)
-                                        setTimeout(() => {
-                                            console.log('setTimeout triggered, calling onBoardChangeSetAndOpenConfirmationDialog')
-                                            onBoardChangeSetAndOpenConfirmationDialog(selectedBoard, propertyTemplate)
-                                        }, 100)
-                                    }}
-                                />
-                            </MenuWrapper>
-                        }
-                        <PropertyValueElement
-                            readOnly={props.readonly || !canEditBoardCards}
-                            card={card}
-                            board={board}
-                            propertyTemplate={propertyTemplate}
-                            showEmptyPlaceholder={true}
-                        />
-                    </div>
-                )
-            })}
+                                return (
+                                    <Draggable
+                                        key={propertyTemplate.id}
+                                        draggableId={propertyTemplate.id}
+                                        index={index}
+                                        isDragDisabled={isDragDisabled}
+                                    >
+                                        {(draggableProvided, snapshot) => (
+                                            <div
+                                                ref={draggableProvided.innerRef}
+                                                {...draggableProvided.draggableProps}
+                                                className={`octo-propertyrow${isRequiredEmpty ? ' octo-propertyrow--required-empty' : ''}${snapshot.isDragging ? ' octo-propertyrow--dragging' : ''}`}
+                                            >
+                                                {!isDragDisabled && (
+                                                    <div
+                                                        className='drag-handle'
+                                                        {...draggableProvided.dragHandleProps}
+                                                    >
+                                                        <GripIcon/>
+                                                    </div>
+                                                )}
+                                                {(props.readonly || !canEditBoardProperties) && (
+                                                    <div className='octo-propertyname octo-propertyname--readonly'>
+                                                        {propertyTemplate.name}
+                                                        {propertyTemplate.required && <span className='octo-propertyname--required'>*</span>}
+                                                    </div>
+                                                )}
+                                                {!props.readonly && canEditBoardProperties &&
+                                                    <MenuWrapper isOpen={propertyTemplate.id === newTemplateId}>
+                                                        <div className='octo-propertyname'>
+                                                            <Button>
+                                                                {propertyTemplate.name}
+                                                                {propertyTemplate.required && <span className='octo-propertyname--required'>*</span>}
+                                                            </Button>
+                                                        </div>
+                                                        <PropertyMenu
+                                                            propertyId={propertyTemplate.id}
+                                                            propertyName={propertyTemplate.name}
+                                                            propertyType={propRegistry.get(propertyTemplate.type)}
+                                                            required={propertyTemplate.required}
+                                                            onTypeAndNameChanged={(newType: PropertyType, newName: string) => onPropertyChangeSetAndOpenConfirmationDialog(newType, newName, propertyTemplate)}
+                                                            onRequiredChanged={(required: boolean) => {
+                                                                mutator.changePropertyRequired(board, propertyTemplate, required)
+                                                            }}
+                                                            onDelete={() => onPropertyDeleteSetAndOpenConfirmationDialog(propertyTemplate)}
+                                                            onBoardSelected={(selectedBoard: Board) => {
+                                                                console.log('onBoardSelected called:', selectedBoard.title)
+                                                                setTimeout(() => {
+                                                                    console.log('setTimeout triggered, calling onBoardChangeSetAndOpenConfirmationDialog')
+                                                                    onBoardChangeSetAndOpenConfirmationDialog(selectedBoard, propertyTemplate)
+                                                                }, 100)
+                                                            }}
+                                                        />
+                                                    </MenuWrapper>
+                                                }
+                                                <PropertyValueElement
+                                                    readOnly={props.readonly || !canEditBoardCards}
+                                                    card={card}
+                                                    board={board}
+                                                    propertyTemplate={propertyTemplate}
+                                                    showEmptyPlaceholder={true}
+                                                />
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                )
+                            })}
+                            {droppableProvided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
 
             {showConfirmationDialog && (
                 <ConfirmationDialogBox

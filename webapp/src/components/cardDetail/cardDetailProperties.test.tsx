@@ -12,7 +12,7 @@ import {createIntl} from 'react-intl'
 import configureStore from 'redux-mock-store'
 import {Provider as ReduxProvider} from 'react-redux'
 
-import {wrapIntl} from '../../testUtils'
+import {wrapIntl, wrapRBDNDContext} from '../../testUtils'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import mutator from '../../mutator'
 import propsRegistry from '../../properties'
@@ -113,17 +113,19 @@ describe('components/cardDetail/CardDetailProperties', () => {
     })
 
     function renderComponent() {
-        const component = wrapIntl(
-            <ReduxProvider store={store}>
-                <CardDetailProperties
-                    board={board!}
-                    card={card}
-                    cards={[card]}
-                    activeView={view}
-                    views={views}
-                    readonly={false}
-                />
-            </ReduxProvider>,
+        const component = wrapRBDNDContext(
+            wrapIntl(
+                <ReduxProvider store={store}>
+                    <CardDetailProperties
+                        board={board!}
+                        card={card}
+                        cards={[card]}
+                        activeView={view}
+                        views={views}
+                        readonly={false}
+                    />
+                </ReduxProvider>,
+            ),
         )
 
         return render(component)

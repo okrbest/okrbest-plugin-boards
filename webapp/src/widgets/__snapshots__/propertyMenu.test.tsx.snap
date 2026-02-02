@@ -504,60 +504,7 @@ exports[`widgets/PropertyMenu should match snapshot 1`] = `
           </div>
         </div>
         <div />
-        <div>
-          <div
-            aria-label="Move property up"
-            class="MenuOption TextOption menu-option"
-            role="button"
-          >
-            <div
-              class="d-flex"
-            >
-              <div
-                class="noicon"
-              />
-            </div>
-            <div
-              class="menu-option__content"
-            >
-              <div
-                class="menu-name"
-              >
-                Move property up
-              </div>
-            </div>
-            <div
-              class="noicon"
-            />
-          </div>
-        </div>
-        <div>
-          <div
-            aria-label="Move property down"
-            class="MenuOption TextOption menu-option"
-            role="button"
-          >
-            <div
-              class="d-flex"
-            >
-              <div
-                class="noicon"
-              />
-            </div>
-            <div
-              class="menu-option__content"
-            >
-              <div
-                class="menu-name"
-              >
-                Move property down
-              </div>
-            </div>
-            <div
-              class="noicon"
-            />
-          </div>
-        </div>
+        <div />
         <div>
           <div
             class="MenuOption MenuSeparator menu-separator"

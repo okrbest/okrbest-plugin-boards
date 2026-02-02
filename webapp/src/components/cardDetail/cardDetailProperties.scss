@@ -1,0 +1,58 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+.CardDetailProperties {
+    // Drag handle - hidden by default, visible on hover
+    .drag-handle {
+        position: absolute;
+        left: -24px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        transition: opacity 0.15s ease;
+
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        .GripIcon {
+            width: 16px;
+            height: 16px;
+            fill: rgba(var(--center-channel-color-rgb), 0.56);
+        }
+    }
+
+    // Property row - needs relative positioning for drag handle
+    .octo-propertyrow {
+        position: relative;
+
+        &:hover {
+            .drag-handle {
+                opacity: 1;
+            }
+        }
+
+        // Dragging state
+        &--dragging {
+            background: rgba(var(--center-channel-color-rgb), 0.04);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+
+            .drag-handle {
+                opacity: 1;
+                cursor: grabbing;
+            }
+        }
+    }
+}
