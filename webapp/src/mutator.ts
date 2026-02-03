@@ -1421,8 +1421,8 @@ class Mutator {
     }
 
     async fetchSubCards(parentCardId: string): Promise<Card[]> {
-        const cards = await octoClient.getSubCards(parentCardId)
-        return cards as Card[]
+        const blocks = await octoClient.getSubCards(parentCardId)
+        return blocks.map((block) => createCard(block))
     }
 
     async fetchSubCardCount(parentCardId: string): Promise<number> {

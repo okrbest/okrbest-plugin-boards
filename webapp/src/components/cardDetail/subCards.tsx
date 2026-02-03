@@ -7,9 +7,8 @@ import {FormattedMessage, useIntl} from 'react-intl'
 import {Card} from '../../blocks/card'
 import {Board} from '../../blocks/board'
 import mutator from '../../mutator'
-import {useAppDispatch, useAppSelector} from '../../store/hooks'
-import {setSubCards, addSubCard, setSubCardCount, getSubCards, getSubCardCount} from '../../store/cards'
-import Button from '../../widgets/buttons/button'
+import {useAppDispatch} from '../../store/hooks'
+import {setSubCards, addSubCard, setSubCardCount} from '../../store/cards'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import {Permission} from '../../constants'
@@ -27,9 +26,8 @@ const SubCards = (props: Props): JSX.Element => {
     const {board, card, readonly, onCardClick} = props
     const [isLoading, setIsLoading] = useState(true)
     const [isAdding, setIsAdding] = useState(false)
+    const [subCards, setLocalSubCards] = useState<Card[]>([])
     const dispatch = useAppDispatch()
-    const subCards = useAppSelector(getSubCards(card.id))
-    const subCardCount = useAppSelector(getSubCardCount(card.id))
     const canEditBoardCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
     const intl = useIntl()
 
@@ -41,6 +39,7 @@ const SubCards = (props: Props): JSX.Element => {
             setIsLoading(true)
             try {
                 const cards = await mutator.fetchSubCards(card.id)
+                setLocalSubCards(cards)
                 dispatch(setSubCards({parentCardId: card.id, subCards: cards}))
                 dispatch(setSubCardCount({parentCardId: card.id, count: cards.length}))
             } finally {
@@ -61,6 +60,7 @@ const SubCards = (props: Props): JSX.Element => {
                 card.id,
                 '',
                 async (createdCard) => {
+                    setLocalSubCards((prev) => [...prev, createdCard])
                     dispatch(addSubCard({parentCardId: card.id, subCard: createdCard}))
                     onCardClick(createdCard.id)
                 },
@@ -81,18 +81,18 @@ const SubCards = (props: Props): JSX.Element => {
         return (
             <div className='SubCards'>
                 <div className='SubCards__header'>
-                    <CompassIcon icon='card-multiple-outline'/>
-                    <span>
+                    <CompassIcon icon='format-list-bulleted'/>
+                    <span className='SubCards__header-title'>
                         <FormattedMessage
                             id='SubCards.title'
-                            defaultMessage='Sub-cards'
+                            defaultMessage='하위 작업'
                         />
                     </span>
                 </div>
                 <div className='SubCards__loading'>
                     <FormattedMessage
                         id='SubCards.loading'
-                        defaultMessage='Loading...'
+                        defaultMessage='로딩 중...'
                     />
                 </div>
             </div>
@@ -102,68 +102,73 @@ const SubCards = (props: Props): JSX.Element => {
     return (
         <div className='SubCards'>
             <div className='SubCards__header'>
-                <CompassIcon icon='card-multiple-outline'/>
-                <span>
+                <CompassIcon icon='format-list-bulleted'/>
+                <span className='SubCards__header-title'>
                     <FormattedMessage
                         id='SubCards.title'
-                        defaultMessage='Sub-cards'
+                        defaultMessage='Sub-tasks'
                     />
                 </span>
-                {subCardCount > 0 && (
-                    <span className='SubCards__count'>{subCardCount}</span>
-                )}
             </div>
 
-            {subCards.length > 0 && (
-                <div className='SubCards__list'>
-                    {subCards.map((subCard) => (
-                        <div
-                            key={subCard.id}
-                            className='SubCards__item'
-                            onClick={() => handleCardClick(subCard.id)}
-                            role='button'
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    handleCardClick(subCard.id)
-                                }
-                            }}
-                        >
-                            {subCard.fields.icon && (
-                                <span className='SubCards__item-icon'>{subCard.fields.icon}</span>
-                            )}
-                            <span className='SubCards__item-title'>
-                                {subCard.title || intl.formatMessage({id: 'SubCards.untitled', defaultMessage: 'Untitled'})}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            )}
+            <div className='SubCards__content'>
+                {subCards.length > 0 && (
+                    <div className='SubCards__list'>
+                        {subCards.map((subCard) => (
+                            <div
+                                key={subCard.id}
+                                className='SubCards__item'
+                                onClick={() => handleCardClick(subCard.id)}
+                                role='button'
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleCardClick(subCard.id)
+                                    }
+                                }}
+                            >
+                                <span className='SubCards__item-icon'>
+                                    {subCard.fields.icon || '📄'}
+                                </span>
+                                <span className='SubCards__item-title'>
+                                    {subCard.title || intl.formatMessage({id: 'SubCards.untitled', defaultMessage: '제목 없음'})}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-            {!readonly && canEditBoardCards && canAddSubCard && (
-                <Button
-                    className='SubCards__add'
-                    emphasis='tertiary'
-                    size='small'
-                    onClick={handleAddSubCard}
-                    disabled={isAdding}
-                    icon={<CompassIcon icon='plus'/>}
-                >
-                    <FormattedMessage
-                        id='SubCards.add'
-                        defaultMessage='Add sub-card'
-                    />
-                </Button>
-            )}
+                {!readonly && canEditBoardCards && canAddSubCard && (
+                    <div
+                        className='SubCards__add'
+                        onClick={handleAddSubCard}
+                        role='button'
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                handleAddSubCard()
+                            }
+                        }}
+                    >
+                        <CompassIcon icon='plus'/>
+                        <span>
+                        <FormattedMessage
+                            id='SubCards.addNew'
+                            defaultMessage='새 페이지 추가하기'
+                        />
+                        </span>
+                    </div>
+                )}
 
-            {subCards.length === 0 && (readonly || !canEditBoardCards || !canAddSubCard) && (
-                <div className='SubCards__empty'>
+                {subCards.length === 0 && (readonly || !canEditBoardCards || !canAddSubCard) && (
+                    <div className='SubCards__empty'>
                     <FormattedMessage
                         id='SubCards.empty'
-                        defaultMessage='No sub-cards'
+                        defaultMessage='하위 작업 없음'
                     />
-                </div>
-            )}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

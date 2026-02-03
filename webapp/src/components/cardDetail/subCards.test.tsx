@@ -138,7 +138,7 @@ describe('components/cardDetail/SubCards', () => {
             )
         })
 
-        expect(screen.getByText('Loading...')).toBeInTheDocument()
+        expect(screen.getByText('로딩 중...')).toBeInTheDocument()
     })
 
     test('renders sub-cards after loading', async () => {
@@ -163,7 +163,7 @@ describe('components/cardDetail/SubCards', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
         })
 
         expect(screen.getByText('Sub Card 1')).toBeInTheDocument()
@@ -192,10 +192,10 @@ describe('components/cardDetail/SubCards', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
         })
 
-        expect(screen.getByText('No sub-cards')).toBeInTheDocument()
+        expect(screen.getByText('하위 작업 없음')).toBeInTheDocument()
     })
 
     test('shows add button when not readonly', async () => {
@@ -220,10 +220,10 @@ describe('components/cardDetail/SubCards', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
         })
 
-        expect(screen.getByText('Add sub-card')).toBeInTheDocument()
+        expect(screen.getByText('새 페이지 추가하기')).toBeInTheDocument()
     })
 
     test('hides add button in readonly mode', async () => {
@@ -248,10 +248,10 @@ describe('components/cardDetail/SubCards', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
         })
 
-        expect(screen.queryByText('Add sub-card')).not.toBeInTheDocument()
+        expect(screen.queryByText('새 페이지 추가하기')).not.toBeInTheDocument()
     })
 
     test('hides add button at max depth', async () => {
@@ -284,10 +284,10 @@ describe('components/cardDetail/SubCards', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
         })
 
-        expect(screen.queryByText('Add sub-card')).not.toBeInTheDocument()
+        expect(screen.queryByText('새 페이지 추가하기')).not.toBeInTheDocument()
     })
 
     test('calls onCardClick when sub-card is clicked', async () => {
@@ -312,7 +312,7 @@ describe('components/cardDetail/SubCards', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
         })
 
         fireEvent.click(screen.getByText('Sub Card 1'))
@@ -355,11 +355,11 @@ describe('components/cardDetail/SubCards', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
         })
 
         await act(async () => {
-            fireEvent.click(screen.getByText('Add sub-card'))
+            fireEvent.click(screen.getByText('새 페이지 추가하기'))
         })
 
         expect(mockedMutator.createSubCard).toHaveBeenCalledWith(
