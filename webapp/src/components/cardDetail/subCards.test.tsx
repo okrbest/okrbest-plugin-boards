@@ -370,4 +370,118 @@ describe('components/cardDetail/SubCards', () => {
         )
         expect(onCardClick).toHaveBeenCalledWith('new-subcard-id')
     })
+
+    test('shows link existing button when not readonly', async () => {
+        mockedMutator.fetchSubCards.mockResolvedValue([])
+
+        const store = createMockStore([], 0)
+        const onCardClick = jest.fn()
+
+        await act(async () => {
+            render(
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <SubCards
+                            board={board}
+                            card={parentCard}
+                            readonly={false}
+                            onCardClick={onCardClick}
+                        />,
+                    )}
+                </ReduxProvider>,
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+        })
+
+        expect(screen.getByText('기존 항목 연결')).toBeInTheDocument()
+    })
+
+    test('hides link existing button in readonly mode', async () => {
+        mockedMutator.fetchSubCards.mockResolvedValue([])
+
+        const store = createMockStore([], 0)
+        const onCardClick = jest.fn()
+
+        await act(async () => {
+            render(
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <SubCards
+                            board={board}
+                            card={parentCard}
+                            readonly={true}
+                            onCardClick={onCardClick}
+                        />,
+                    )}
+                </ReduxProvider>,
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+        })
+
+        expect(screen.queryByText('기존 항목 연결')).not.toBeInTheDocument()
+    })
+
+    test('shows unlink button on hover for sub-cards', async () => {
+        mockedMutator.fetchSubCards.mockResolvedValue([subCard1])
+
+        const store = createMockStore([subCard1], 1)
+        const onCardClick = jest.fn()
+
+        await act(async () => {
+            render(
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <SubCards
+                            board={board}
+                            card={parentCard}
+                            readonly={false}
+                            onCardClick={onCardClick}
+                        />,
+                    )}
+                </ReduxProvider>,
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+        })
+
+        const unlinkButton = document.querySelector('.SubCards__item-unlink')
+        expect(unlinkButton).toBeInTheDocument()
+    })
+
+    test('unlink button not shown in readonly mode', async () => {
+        mockedMutator.fetchSubCards.mockResolvedValue([subCard1])
+
+        const store = createMockStore([subCard1], 1)
+        const onCardClick = jest.fn()
+
+        await act(async () => {
+            render(
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <SubCards
+                            board={board}
+                            card={parentCard}
+                            readonly={true}
+                            onCardClick={onCardClick}
+                        />,
+                    )}
+                </ReduxProvider>,
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+        })
+
+        const unlinkButton = document.querySelector('.SubCards__item-unlink')
+        expect(unlinkButton).not.toBeInTheDocument()
+    })
 })

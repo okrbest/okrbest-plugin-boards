@@ -166,6 +166,10 @@ type CardPatch struct {
 	// required: false
 	Icon *string `json:"icon"`
 
+	// The parent card ID for sub-card hierarchy
+	// required: false
+	ParentCardID *string `json:"parentCardId"`
+
 	// A map of property ids to property option ids to be updated
 	// required: false
 	UpdatedProperties map[string]any `json:"updatedProperties"`
@@ -183,6 +187,10 @@ func (p *CardPatch) Patch(card *Card) *Card {
 
 	if p.Icon != nil {
 		card.Icon = *p.Icon
+	}
+
+	if p.ParentCardID != nil {
+		card.ParentCardID = *p.ParentCardID
 	}
 
 	if card.Properties == nil {
@@ -335,7 +343,8 @@ func CardPatch2BlockPatch(cardPatch *CardPatch) (*BlockPatch, error) {
 	}
 
 	blockPatch := &BlockPatch{
-		Title: cardPatch.Title,
+		Title:    cardPatch.Title,
+		ParentID: cardPatch.ParentCardID,
 	}
 
 	updatedFields := make(map[string]any, 0)

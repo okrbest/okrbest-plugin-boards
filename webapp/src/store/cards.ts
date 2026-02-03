@@ -138,6 +138,14 @@ const cardsSlice = createSlice({
             delete state.subCardsByParent[action.payload]
             delete state.subCardCountByParent[action.payload]
         },
+        removeSubCard: (state, action: PayloadAction<{parentCardId: string, cardId: string}>) => {
+            const existing = state.subCardsByParent[action.payload.parentCardId] || []
+            state.subCardsByParent[action.payload.parentCardId] = existing.filter((card) => card.id !== action.payload.cardId)
+            const currentCount = state.subCardCountByParent[action.payload.parentCardId] || 0
+            if (currentCount > 0) {
+                state.subCardCountByParent[action.payload.parentCardId] = currentCount - 1
+            }
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(refreshCards.fulfilled, (state, action) => {
@@ -173,7 +181,7 @@ const cardsSlice = createSlice({
     },
 })
 
-export const {updateCards, addCard, addTemplate, setCurrent, setLimitTimestamp, showCardHiddenWarning, markCardModified, clearCardModified, setSubCards, addSubCard, setSubCardCount, clearSubCards} = cardsSlice.actions
+export const {updateCards, addCard, addTemplate, setCurrent, setLimitTimestamp, showCardHiddenWarning, markCardModified, clearCardModified, setSubCards, addSubCard, setSubCardCount, clearSubCards, removeSubCard} = cardsSlice.actions
 export const {reducer} = cardsSlice
 
 export const getCards = (state: RootState): {[key: string]: Card} => state.cards.cards

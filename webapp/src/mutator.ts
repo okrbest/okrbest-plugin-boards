@@ -1405,11 +1405,13 @@ class Mutator {
 
         return undoManager.perform(
             async () => {
-                const newCard = await octoClient.createSubCard(boardId, parentCardId, card)
-                if (newCard) {
-                    await afterRedo?.(newCard as Card)
+                const apiCard = await octoClient.createSubCard(boardId, parentCardId, card)
+                if (apiCard) {
+                    const newCard = this.apiCardToCard(apiCard)
+                    await afterRedo?.(newCard)
+                    return newCard
                 }
-                return newCard as Card
+                return undefined
             },
             async (newCard: Card) => {
                 await beforeUndo?.(newCard)
@@ -1421,12 +1423,85 @@ class Mutator {
     }
 
     async fetchSubCards(parentCardId: string): Promise<Card[]> {
-        const blocks = await octoClient.getSubCards(parentCardId)
-        return blocks.map((block) => createCard(block))
+        const apiCards = await octoClient.getSubCards(parentCardId)
+        return apiCards.map((apiCard: any) => this.apiCardToCard(apiCard))
+    }
+
+    private apiCardToCard(apiCard: any): Card {
+        return {
+            id: apiCard.id || '',
+            parentId: apiCard.parentCardId || apiCard.boardId || '',
+            boardId: apiCard.boardId || '',
+            createdBy: apiCard.createdBy || '',
+            modifiedBy: apiCard.modifiedBy || '',
+            schema: 1,
+            type: 'card',
+            title: apiCard.title || '',
+            createAt: apiCard.createAt || 0,
+            updateAt: apiCard.updateAt || 0,
+            deleteAt: apiCard.deleteAt || 0,
+            fields: {
+                icon: apiCard.icon || '',
+                properties: apiCard.properties || {},
+                contentOrder: apiCard.contentOrder || [],
+                isTemplate: apiCard.isTemplate || false,
+                parentCardId: apiCard.parentCardId || '',
+                depth: apiCard.depth || 0,
+            },
+            limited: false,
+        }
     }
 
     async fetchSubCardCount(parentCardId: string): Promise<number> {
         return octoClient.getSubCardCount(parentCardId)
+    }
+
+    async linkCardAsSubCard(
+        cardId: string,
+        parentCardId: string,
+        afterRedo?: (card: Card) => Promise<void>,
+    ): Promise<Card | undefined> {
+        return undoManager.perform(
+            async () => {
+                const apiCard = await octoClient.linkCardAsSubCard(cardId, parentCardId)
+                if (apiCard) {
+                    const linkedCard = this.apiCardToCard(apiCard)
+                    await afterRedo?.(linkedCard)
+                    return linkedCard
+                }
+                return undefined
+            },
+            async () => {
+                await octoClient.unlinkSubCard(cardId)
+            },
+            'link card as sub-card',
+            this.undoGroupId,
+        )
+    }
+
+    async unlinkSubCard(
+        cardId: string,
+        originalParentCardId: string,
+        afterRedo?: (card: Card) => Promise<void>,
+    ): Promise<Card | undefined> {
+        return undoManager.perform(
+            async () => {
+                const apiCard = await octoClient.unlinkSubCard(cardId)
+                if (apiCard) {
+                    const unlinkedCard = this.apiCardToCard(apiCard)
+                    await afterRedo?.(unlinkedCard)
+                    return unlinkedCard
+                }
+                return undefined
+            },
+            async () => {
+                if (originalParentCardId) {
+                    await octoClient.linkCardAsSubCard(cardId, originalParentCardId)
+                }
+            },
+            'unlink sub-card',
+            this.undoGroupId,
+        )
     }
 }
 

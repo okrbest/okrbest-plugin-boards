@@ -182,6 +182,102 @@ func (a *App) GetSubCardCount(parentCardID string) (int, error) {
 	return len(blocks), nil
 }
 
+func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Card, error) {
+	if cardID == parentCardID {
+		return nil, model.NewErrBadRequest("cannot link card to itself")
+	}
+
+	card, err := a.GetCardByID(cardID)
+	if err != nil {
+		return nil, model.NewErrNotFound("card not found: " + cardID)
+	}
+
+	parentCard, err := a.GetCardByID(parentCardID)
+	if err != nil {
+		return nil, model.NewErrNotFound("parent card not found: " + parentCardID)
+	}
+
+	if card.BoardID != parentCard.BoardID {
+		return nil, model.NewErrBadRequest("card and parent card must be in the same board")
+	}
+
+	if card.Depth > 0 {
+		return nil, model.NewErrBadRequest("card is already a sub-card")
+	}
+
+	newDepth := parentCard.Depth + 1
+	if newDepth > model.MaxCardDepth {
+		return nil, model.NewErrBadRequest(fmt.Sprintf("maximum card depth (%d) exceeded", model.MaxCardDepth))
+	}
+
+	if err := a.checkCircularReference(cardID, parentCardID); err != nil {
+		return nil, err
+	}
+
+	cardPatch := &model.CardPatch{
+		ParentCardID: &parentCardID,
+	}
+
+	updatedCard, err := a.PatchCard(cardPatch, cardID, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to link card: %w", err)
+	}
+
+	updatedCard.Depth = newDepth
+	updatedCard.ParentCardID = parentCardID
+
+	return updatedCard, nil
+}
+
+func (a *App) checkCircularReference(cardID, parentCardID string) error {
+	visited := make(map[string]bool)
+	current := parentCardID
+
+	for current != "" {
+		if current == cardID {
+			return model.NewErrBadRequest("circular reference detected")
+		}
+		if visited[current] {
+			break
+		}
+		visited[current] = true
+
+		parentCard, err := a.GetCardByID(current)
+		if err != nil {
+			break
+		}
+		current = parentCard.ParentCardID
+	}
+
+	return nil
+}
+
+func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
+	card, err := a.GetCardByID(cardID)
+	if err != nil {
+		return nil, model.NewErrNotFound("card not found: " + cardID)
+	}
+
+	if card.ParentCardID == "" {
+		return nil, model.NewErrBadRequest("card is not a sub-card")
+	}
+
+	emptyParent := ""
+	cardPatch := &model.CardPatch{
+		ParentCardID: &emptyParent,
+	}
+
+	updatedCard, err := a.PatchCard(cardPatch, cardID, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unlink card: %w", err)
+	}
+
+	updatedCard.Depth = 0
+	updatedCard.ParentCardID = ""
+
+	return updatedCard, nil
+}
+
 func deepCopyProperties(props map[string]any) map[string]any {
 	if props == nil {
 		return make(map[string]any)

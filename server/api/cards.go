@@ -33,6 +33,9 @@ func (a *API) registerCardsRoutes(r *mux.Router) {
 	r.HandleFunc("/boards/{boardID}/cards/{parentCardID}/subcards", a.sessionRequired(a.handleCreateSubCard)).Methods("POST")
 	r.HandleFunc("/cards/{cardID}/subcards", a.sessionRequired(a.handleGetSubCards)).Methods("GET")
 	r.HandleFunc("/cards/{cardID}/subcards/count", a.sessionRequired(a.handleGetSubCardCount)).Methods("GET")
+
+	r.HandleFunc("/cards/{cardID}/link", a.sessionRequired(a.handleLinkCardAsSubCard)).Methods("POST")
+	r.HandleFunc("/cards/{cardID}/link", a.sessionRequired(a.handleUnlinkSubCard)).Methods("DELETE")
 }
 
 func (a *API) handleCreateCard(w http.ResponseWriter, r *http.Request) {
@@ -681,5 +684,165 @@ func (a *API) handleGetSubCardCount(w http.ResponseWriter, r *http.Request) {
 	// response
 	jsonBytesResponse(w, http.StatusOK, data)
 
+	auditRec.Success()
+}
+
+func (a *API) handleLinkCardAsSubCard(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation POST /cards/{cardID}/link linkCardAsSubCard
+	//
+	// Links an existing card as a sub-card of the specified parent card.
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: cardID
+	//   in: path
+	//   description: Card ID to link as sub-card
+	//   required: true
+	//   type: string
+	// - name: Body
+	//   in: body
+	//   description: the parent card ID
+	//   required: true
+	//   schema:
+	//     type: object
+	//     properties:
+	//       parentCardId:
+	//         type: string
+	// security:
+	// - BearerAuth: []
+	// responses:
+	//   '200':
+	//     description: success
+	//     schema:
+	//       $ref: '#/definitions/Card'
+	//   default:
+	//     description: internal error
+	//     schema:
+	//       "$ref": "#/definitions/ErrorResponse"
+
+	userID := getUserID(r)
+	cardID := mux.Vars(r)["cardID"]
+
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	var linkRequest struct {
+		ParentCardID string `json:"parentCardId"`
+	}
+	if err = json.Unmarshal(requestBody, &linkRequest); err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
+		return
+	}
+
+	if linkRequest.ParentCardID == "" {
+		a.errorResponse(w, r, model.NewErrBadRequest("parentCardId is required"))
+		return
+	}
+
+	card, err := a.app.GetCardByID(cardID)
+	if err != nil {
+		a.errorResponse(w, r, model.NewErrNotFound("card not found"))
+		return
+	}
+
+	if !a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionManageBoardCards) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to link card"))
+		return
+	}
+
+	auditRec := a.makeAuditRecord(r, "linkCardAsSubCard", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelModify, auditRec)
+	auditRec.AddMeta("cardID", cardID)
+	auditRec.AddMeta("parentCardID", linkRequest.ParentCardID)
+
+	linkedCard, err := a.app.LinkCardAsSubCard(cardID, linkRequest.ParentCardID, userID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	a.logger.Debug("LinkCardAsSubCard",
+		mlog.String("cardID", cardID),
+		mlog.String("parentCardID", linkRequest.ParentCardID),
+		mlog.String("userID", userID),
+	)
+
+	data, err := json.Marshal(linkedCard)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+	auditRec.Success()
+}
+
+func (a *API) handleUnlinkSubCard(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation DELETE /cards/{cardID}/link unlinkSubCard
+	//
+	// Unlinks a sub-card and makes it a top-level card.
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: cardID
+	//   in: path
+	//   description: Card ID to unlink
+	//   required: true
+	//   type: string
+	// security:
+	// - BearerAuth: []
+	// responses:
+	//   '200':
+	//     description: success
+	//     schema:
+	//       $ref: '#/definitions/Card'
+	//   default:
+	//     description: internal error
+	//     schema:
+	//       "$ref": "#/definitions/ErrorResponse"
+
+	userID := getUserID(r)
+	cardID := mux.Vars(r)["cardID"]
+
+	card, err := a.app.GetCardByID(cardID)
+	if err != nil {
+		a.errorResponse(w, r, model.NewErrNotFound("card not found"))
+		return
+	}
+
+	if !a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionManageBoardCards) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to unlink card"))
+		return
+	}
+
+	auditRec := a.makeAuditRecord(r, "unlinkSubCard", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelModify, auditRec)
+	auditRec.AddMeta("cardID", cardID)
+
+	unlinkedCard, err := a.app.UnlinkSubCard(cardID, userID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	a.logger.Debug("UnlinkSubCard",
+		mlog.String("cardID", cardID),
+		mlog.String("userID", userID),
+	)
+
+	data, err := json.Marshal(unlinkedCard)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
 	auditRec.Success()
 }

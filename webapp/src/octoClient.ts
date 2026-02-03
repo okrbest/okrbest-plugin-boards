@@ -1452,6 +1452,32 @@ class OctoClient {
         const result = (await this.getJson(response, {count: 0})) as {count: number}
         return result.count
     }
+
+    async linkCardAsSubCard(cardId: string, parentCardId: string): Promise<Block | undefined> {
+        const path = `/api/v2/cards/${cardId}/link`
+        const body = JSON.stringify({parentCardId})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    async unlinkSubCard(cardId: string): Promise<Block | undefined> {
+        const path = `/api/v2/cards/${cardId}/link`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'DELETE',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
 }
 
 const octoClient = new OctoClient()
