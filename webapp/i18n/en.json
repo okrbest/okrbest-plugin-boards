@@ -561,5 +561,7 @@
   "CardLinkSelector.cannotLinkSelf": "Cannot link self",
   "CardLinkSelector.alreadySubCard": "Already a sub-card",
   "CardLinkSelector.depthExceeded": "Depth limit exceeded",
-  "CardLinkSelector.untitled": "Untitled"
+  "CardLinkSelector.untitled": "Untitled",
+  "app.subcard.link_message": "@%s linked card [%s](%s) as a sub-task of card [%s](%s)",
+  "app.subcard.unlink_message": "@%s unlinked card [%s](%s) from sub-tasks"
 }

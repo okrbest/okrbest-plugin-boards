@@ -10,6 +10,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/utils"
 )
 
+const (
+	linkSubCardMessage   = "@%s님이 카드 [%s](%s)를 카드 [%s](%s)의 하위 작업으로 연결했습니다"
+	unlinkSubCardMessage = "@%s님이 카드 [%s](%s)를 하위 작업에서 연결 해제했습니다"
+)
+
 func (a *App) CreateCard(card *model.Card, boardID string, userID string, disableNotify bool) (*model.Card, error) {
 	// Convert the card struct to a block and insert the block.
 	now := utils.GetMillis()
@@ -226,6 +231,32 @@ func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Car
 	updatedCard.Depth = newDepth
 	updatedCard.ParentCardID = parentCardID
 
+	// Send channel notification if board is linked to a channel
+	board, boardErr := a.GetBoard(card.BoardID)
+	if boardErr == nil && board.ChannelID != "" {
+		var username string
+		user, userErr := a.store.GetUserByID(userID)
+		if userErr != nil {
+			username = "unknown"
+		} else {
+			username = user.Username
+		}
+
+		childTitle := card.Title
+		if childTitle == "" {
+			childTitle = "제목 없음"
+		}
+		parentTitle := parentCard.Title
+		if parentTitle == "" {
+			parentTitle = "제목 없음"
+		}
+
+		childLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, cardID)
+		parentLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, parentCardID)
+
+		a.postChannelMessage(fmt.Sprintf(linkSubCardMessage, username, childTitle, childLink, parentTitle, parentLink), board.ChannelID)
+	}
+
 	return updatedCard, nil
 }
 
@@ -274,6 +305,27 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 
 	updatedCard.Depth = 0
 	updatedCard.ParentCardID = ""
+
+	// Send channel notification if board is linked to a channel
+	board, boardErr := a.GetBoard(card.BoardID)
+	if boardErr == nil && board.ChannelID != "" {
+		var username string
+		user, userErr := a.store.GetUserByID(userID)
+		if userErr != nil {
+			username = "unknown"
+		} else {
+			username = user.Username
+		}
+
+		childTitle := card.Title
+		if childTitle == "" {
+			childTitle = "제목 없음"
+		}
+
+		childLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, cardID)
+
+		a.postChannelMessage(fmt.Sprintf(unlinkSubCardMessage, username, childTitle, childLink), board.ChannelID)
+	}
 
 	return updatedCard, nil
 }

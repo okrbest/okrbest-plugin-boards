@@ -561,5 +561,7 @@
   "CardLinkSelector.cannotLinkSelf": "자기 자신",
   "CardLinkSelector.alreadySubCard": "이미 하위 카드",
   "CardLinkSelector.depthExceeded": "깊이 제한 초과",
-  "CardLinkSelector.untitled": "제목 없음"
+  "CardLinkSelector.untitled": "제목 없음",
+  "app.subcard.link_message": "@%s님이 카드 [%s](%s)를 카드 [%s](%s)의 하위 작업으로 연결했습니다",
+  "app.subcard.unlink_message": "@%s님이 카드 [%s](%s)를 하위 작업에서 연결 해제했습니다"
 }
