@@ -37,6 +37,9 @@ func (e ErrInvalidFieldType) Error() string {
 	return fmt.Sprintf("invalid type for field '%s'", e.field)
 }
 
+// MaxCardDepth is the maximum nesting depth for sub-cards (0, 1, 2)
+const MaxCardDepth = 2
+
 // Card represents a group of content blocks and properties.
 // swagger:model
 type Card struct {
@@ -47,6 +50,14 @@ type Card struct {
 	// The id for board this card belongs to.
 	// required: false
 	BoardID string `json:"boardId"`
+
+	// The id for the parent card (empty for top-level cards)
+	// required: false
+	ParentCardID string `json:"parentCardId,omitempty"`
+
+	// The nesting depth (0 = top-level, max 2)
+	// required: false
+	Depth int `json:"depth"`
 
 	// The id for user who created this card
 	// required: false
@@ -121,6 +132,9 @@ func (c *Card) CheckValid() error {
 	}
 	if c.BoardID == "" {
 		return ErrInvalidCard{"BoardID is missing"}
+	}
+	if c.Depth < 0 || c.Depth > MaxCardDepth {
+		return ErrInvalidCard{fmt.Sprintf("Depth must be between 0 and %d", MaxCardDepth)}
 	}
 	if uniseg.GraphemeClusterCount(c.Icon) > 1 {
 		return ErrInvalidCard{"Icon can have only one grapheme"}
@@ -200,10 +214,16 @@ func Card2Block(card *Card) *Block {
 	fields["icon"] = card.Icon
 	fields["isTemplate"] = card.IsTemplate
 	fields["properties"] = card.Properties
+	fields["depth"] = card.Depth
+
+	parentID := card.BoardID
+	if card.ParentCardID != "" {
+		parentID = card.ParentCardID
+	}
 
 	return &Block{
 		ID:         card.ID,
-		ParentID:   card.BoardID,
+		ParentID:   parentID,
 		CreatedBy:  card.CreatedBy,
 		ModifiedBy: card.ModifiedBy,
 		Schema:     1,
@@ -227,6 +247,8 @@ func Block2Card(block *Block) (*Card, error) {
 	icon := ""
 	isTemplate := false
 	properties := make(map[string]any)
+	depth := 0
+	parentCardID := ""
 
 	if co, ok := block.Fields["contentOrder"]; ok {
 		switch arr := co.(type) {
@@ -271,9 +293,26 @@ func Block2Card(block *Block) (*Card, error) {
 		}
 	}
 
+	if depthAny, ok := block.Fields["depth"]; ok {
+		switch d := depthAny.(type) {
+		case int:
+			depth = d
+		case float64:
+			depth = int(d)
+		case int64:
+			depth = int(d)
+		}
+	}
+
+	if block.ParentID != "" && block.ParentID != block.BoardID {
+		parentCardID = block.ParentID
+	}
+
 	card := &Card{
 		ID:           block.ID,
 		BoardID:      block.BoardID,
+		ParentCardID: parentCardID,
+		Depth:        depth,
 		CreatedBy:    block.CreatedBy,
 		ModifiedBy:   block.ModifiedBy,
 		Title:        block.Title,

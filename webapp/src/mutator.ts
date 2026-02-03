@@ -1391,6 +1391,43 @@ class Mutator {
     async fetchMyScheduledComments(): Promise<Block[]> {
         return octoClient.getMyScheduledComments()
     }
+
+    async createSubCard(
+        boardId: string,
+        parentCardId: string,
+        title = '',
+        afterRedo?: (card: Card) => Promise<void>,
+        beforeUndo?: (card: Card) => Promise<void>,
+    ): Promise<Card | undefined> {
+        const card = createCard()
+        card.boardId = boardId
+        card.title = title
+
+        return undoManager.perform(
+            async () => {
+                const newCard = await octoClient.createSubCard(boardId, parentCardId, card)
+                if (newCard) {
+                    await afterRedo?.(newCard as Card)
+                }
+                return newCard as Card
+            },
+            async (newCard: Card) => {
+                await beforeUndo?.(newCard)
+                await octoClient.deleteBlock(boardId, newCard.id)
+            },
+            'add sub-card',
+            this.undoGroupId,
+        )
+    }
+
+    async fetchSubCards(parentCardId: string): Promise<Card[]> {
+        const cards = await octoClient.getSubCards(parentCardId)
+        return cards as Card[]
+    }
+
+    async fetchSubCardCount(parentCardId: string): Promise<number> {
+        return octoClient.getSubCardCount(parentCardId)
+    }
 }
 
 const mutator = new Mutator()

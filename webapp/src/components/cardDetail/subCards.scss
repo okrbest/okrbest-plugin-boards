@@ -1,0 +1,80 @@
+.SubCards {
+    margin-top: 16px;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: rgba(var(--center-channel-color-rgb), 0.75);
+        margin-bottom: 8px;
+
+        .CompassIcon {
+            font-size: 16px;
+        }
+    }
+
+    &__count {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        border-radius: 10px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    &__loading {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-size: 14px;
+        padding: 8px 0;
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 100ms ease-out;
+
+        &:hover {
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        &:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--button-bg);
+        }
+    }
+
+    &__item-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    &__item-title {
+        font-size: 14px;
+        color: var(--center-channel-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__add {
+        margin-top: 4px;
+    }
+
+    &__empty {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-size: 14px;
+        padding: 8px 0;
+    }
+}

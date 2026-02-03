@@ -32,6 +32,7 @@ import CardSkeleton from '../../svg/card-skeleton'
 import CommentsList from './commentsList'
 import CardDetailProperties from './cardDetailProperties'
 import AttachmentList from './attachment'
+import SubCards from './subCards'
 
 import './cardDetail.scss'
 
@@ -53,6 +54,7 @@ type Props = {
     onClose: () => void
     onDelete: (block: Block) => void
     addAttachment: () => void
+    onCardClick?: (cardId: string) => void
 }
 
 const CardDetail = (props: Props): JSX.Element|null => {
@@ -203,6 +205,15 @@ const CardDetail = (props: Props): JSX.Element|null => {
                     views={props.views}
                     readonly={props.readonly}
                 />}
+
+                {!limited && props.onCardClick && (card.fields.depth === undefined || card.fields.depth < 2) && (
+                    <SubCards
+                        board={props.board}
+                        card={card}
+                        readonly={props.readonly}
+                        onCardClick={props.onCardClick}
+                    />
+                )}
 
                 {attachments.length !== 0 && <Fragment>
                     <hr/>

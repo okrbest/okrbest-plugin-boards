@@ -73,7 +73,6 @@ func TestGetCards(t *testing.T) {
 
 	const cardCount = 25
 
-	// make some cards
 	blocks := make([]*model.Block, 0, cardCount)
 	for i := 0; i < cardCount; i++ {
 		card := &model.Block{
@@ -90,6 +89,7 @@ func TestGetCards(t *testing.T) {
 	t.Run("success scenario", func(t *testing.T) {
 		opts := model.QueryBlocksOptions{
 			BoardID:   board.ID,
+			ParentID:  board.ID,
 			BlockType: model.TypeCard,
 		}
 
@@ -103,6 +103,7 @@ func TestGetCards(t *testing.T) {
 	t.Run("error scenario", func(t *testing.T) {
 		opts := model.QueryBlocksOptions{
 			BoardID:   board.ID,
+			ParentID:  board.ID,
 			BlockType: model.TypeCard,
 		}
 
@@ -268,4 +269,221 @@ func modifyProps(m map[string]any) map[string]any {
 		out[k] = utils.NewID(utils.IDTypeBlock)
 	}
 	return out
+}
+
+func TestCreateSubCard(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	board := &model.Board{
+		ID: utils.NewID(utils.IDTypeBoard),
+	}
+	userID := utils.NewID(utils.IDTypeUser)
+
+	parentCard := &model.Card{
+		ID:         utils.NewID(utils.IDTypeCard),
+		BoardID:    board.ID,
+		Title:      "parent card",
+		Depth:      0,
+		Properties: makeProps(2),
+	}
+	parentBlock := model.Card2Block(parentCard)
+
+	subCard := &model.Card{
+		BoardID: board.ID,
+		Title:   "sub card",
+	}
+
+	t.Run("success scenario", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(parentBlock, nil)
+		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil)
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block"))
+		th.Store.EXPECT().InsertBlock(gomock.Any(), userID).Return(nil)
+		th.Store.EXPECT().GetMembersForBoard(board.ID).Return([]*model.BoardMember{}, nil)
+
+		newCard, err := th.App.CreateSubCard(subCard, parentCard.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.NotNil(t, newCard)
+		require.Equal(t, board.ID, newCard.BoardID)
+		require.Equal(t, parentCard.ID, newCard.ParentCardID)
+		require.Equal(t, 1, newCard.Depth)
+	})
+
+	t.Run("parent not found", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(nil, model.NewErrNotFound("not found"))
+
+		newCard, err := th.App.CreateSubCard(subCard, parentCard.ID, board.ID, userID, false)
+
+		require.Error(t, err)
+		require.Nil(t, newCard)
+		require.True(t, model.IsErrNotFound(err))
+	})
+
+	t.Run("max depth exceeded", func(t *testing.T) {
+		deepParentCard := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Title:   "deep parent",
+			Depth:   model.MaxCardDepth,
+		}
+		deepParentBlock := model.Card2Block(deepParentCard)
+
+		th.Store.EXPECT().GetBlock(deepParentCard.ID).Return(deepParentBlock, nil)
+
+		newCard, err := th.App.CreateSubCard(subCard, deepParentCard.ID, board.ID, userID, false)
+
+		require.Error(t, err)
+		require.Nil(t, newCard)
+	})
+
+	t.Run("board mismatch", func(t *testing.T) {
+		differentBoardID := utils.NewID(utils.IDTypeBoard)
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(parentBlock, nil)
+
+		newCard, err := th.App.CreateSubCard(subCard, parentCard.ID, differentBoardID, userID, false)
+
+		require.Error(t, err)
+		require.Nil(t, newCard)
+	})
+}
+
+func TestGetSubCards(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	parentCardID := utils.NewID(utils.IDTypeCard)
+	boardID := utils.NewID(utils.IDTypeBoard)
+
+	const subCardCount = 5
+	blocks := make([]*model.Block, 0, subCardCount)
+	for i := 0; i < subCardCount; i++ {
+		fields := map[string]any{
+			"depth":        1,
+			"properties":   map[string]any{},
+			"contentOrder": []string{},
+		}
+		block := &model.Block{
+			ID:       utils.NewID(utils.IDTypeCard),
+			ParentID: parentCardID,
+			BoardID:  boardID,
+			Type:     model.TypeCard,
+			Title:    fmt.Sprintf("sub card %d", i),
+			Fields:   fields,
+		}
+		blocks = append(blocks, block)
+	}
+
+	t.Run("success scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			Page:      0,
+			PerPage:   100,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(blocks, nil)
+
+		cards, err := th.App.GetSubCards(parentCardID, 0, 100)
+		require.NoError(t, err)
+		assert.Len(t, cards, subCardCount)
+	})
+
+	t.Run("empty result", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			Page:      0,
+			PerPage:   100,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return([]*model.Block{}, nil)
+
+		cards, err := th.App.GetSubCards(parentCardID, 0, 100)
+		require.NoError(t, err)
+		assert.Len(t, cards, 0)
+	})
+
+	t.Run("error scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			Page:      0,
+			PerPage:   100,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(nil, blockError{"error"})
+
+		cards, err := th.App.GetSubCards(parentCardID, 0, 100)
+		require.Error(t, err)
+		require.Nil(t, cards)
+	})
+}
+
+func TestGetSubCardCount(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	parentCardID := utils.NewID(utils.IDTypeCard)
+	boardID := utils.NewID(utils.IDTypeBoard)
+
+	const subCardCount = 3
+	blocks := make([]*model.Block, 0, subCardCount)
+	for i := 0; i < subCardCount; i++ {
+		fields := map[string]any{
+			"depth":        1,
+			"properties":   map[string]any{},
+			"contentOrder": []string{},
+		}
+		block := &model.Block{
+			ID:       utils.NewID(utils.IDTypeCard),
+			ParentID: parentCardID,
+			BoardID:  boardID,
+			Type:     model.TypeCard,
+			Fields:   fields,
+		}
+		blocks = append(blocks, block)
+	}
+
+	t.Run("success scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			PerPage:   -1,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(blocks, nil)
+
+		count, err := th.App.GetSubCardCount(parentCardID)
+		require.NoError(t, err)
+		assert.Equal(t, subCardCount, count)
+	})
+
+	t.Run("zero count", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			PerPage:   -1,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return([]*model.Block{}, nil)
+
+		count, err := th.App.GetSubCardCount(parentCardID)
+		require.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("error scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			PerPage:   -1,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(nil, blockError{"error"})
+
+		count, err := th.App.GetSubCardCount(parentCardID)
+		require.Error(t, err)
+		assert.Equal(t, 0, count)
+	})
 }
