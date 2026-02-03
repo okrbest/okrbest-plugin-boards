@@ -24,7 +24,6 @@ import {getSearchText} from './searchText'
 
 import {RootState} from './index'
 
-// 빈 배열을 재사용하여 불필요한 리렌더링 방지
 const EMPTY_CARDS: Card[] = []
 
 type CardsState = {
@@ -34,6 +33,8 @@ type CardsState = {
     templates: {[key: string]: Card}
     cardHiddenWarning: boolean
     modifiedCardIds: string[]
+    subCardsByParent: {[parentCardId: string]: Card[]}
+    subCardCountByParent: {[parentCardId: string]: number}
 }
 
 export const refreshCards = createAsyncThunk<Block[], number, {state: RootState}>(
@@ -80,6 +81,8 @@ const cardsSlice = createSlice({
         templates: {},
         cardHiddenWarning: false,
         modifiedCardIds: [],
+        subCardsByParent: {},
+        subCardCountByParent: {},
     } as CardsState,
     reducers: {
         setCurrent: (state, action: PayloadAction<string>) => {
@@ -120,6 +123,29 @@ const cardsSlice = createSlice({
         clearCardModified: (state, action: PayloadAction<string>) => {
             state.modifiedCardIds = state.modifiedCardIds.filter((id) => id !== action.payload)
         },
+        setSubCards: (state, action: PayloadAction<{parentCardId: string, subCards: Card[]}>) => {
+            state.subCardsByParent[action.payload.parentCardId] = action.payload.subCards
+        },
+        addSubCard: (state, action: PayloadAction<{parentCardId: string, subCard: Card}>) => {
+            const existing = state.subCardsByParent[action.payload.parentCardId] || []
+            state.subCardsByParent[action.payload.parentCardId] = [...existing, action.payload.subCard]
+            state.subCardCountByParent[action.payload.parentCardId] = (state.subCardCountByParent[action.payload.parentCardId] || 0) + 1
+        },
+        setSubCardCount: (state, action: PayloadAction<{parentCardId: string, count: number}>) => {
+            state.subCardCountByParent[action.payload.parentCardId] = action.payload.count
+        },
+        clearSubCards: (state, action: PayloadAction<string>) => {
+            delete state.subCardsByParent[action.payload]
+            delete state.subCardCountByParent[action.payload]
+        },
+        removeSubCard: (state, action: PayloadAction<{parentCardId: string, cardId: string}>) => {
+            const existing = state.subCardsByParent[action.payload.parentCardId] || []
+            state.subCardsByParent[action.payload.parentCardId] = existing.filter((card) => card.id !== action.payload.cardId)
+            const currentCount = state.subCardCountByParent[action.payload.parentCardId] || 0
+            if (currentCount > 0) {
+                state.subCardCountByParent[action.payload.parentCardId] = currentCount - 1
+            }
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(refreshCards.fulfilled, (state, action) => {
@@ -155,7 +181,7 @@ const cardsSlice = createSlice({
     },
 })
 
-export const {updateCards, addCard, addTemplate, setCurrent, setLimitTimestamp, showCardHiddenWarning, markCardModified, clearCardModified} = cardsSlice.actions
+export const {updateCards, addCard, addTemplate, setCurrent, setLimitTimestamp, showCardHiddenWarning, markCardModified, clearCardModified, setSubCards, addSubCard, setSubCardCount, clearSubCards, removeSubCard} = cardsSlice.actions
 export const {reducer} = cardsSlice
 
 export const getCards = (state: RootState): {[key: string]: Card} => state.cards.cards
@@ -477,3 +503,9 @@ export const getCurrentCard = createSelector(
 
 export const getCardLimitTimestamp = (state: RootState): number => state.cards.limitTimestamp
 export const getCardHiddenWarning = (state: RootState): boolean => state.cards.cardHiddenWarning
+
+export const getSubCards = (parentCardId: string) => (state: RootState): Card[] =>
+    state.cards.subCardsByParent[parentCardId] || EMPTY_CARDS
+
+export const getSubCardCount = (parentCardId: string) => (state: RootState): number =>
+    state.cards.subCardCountByParent[parentCardId] || 0

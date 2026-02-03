@@ -267,7 +267,7 @@ func (s *SQLStore) DuplicateBoard(boardID string, userID string, toTeam string, 
 	if txErr != nil {
 		return nil, nil, nil, txErr
 	}
-	result, members, cardIDMapping, err := s.duplicateBoard(tx, boardID, userID, toTeam, asTemplate)
+	result, resultVar1, resultVar2, err := s.duplicateBoard(tx, boardID, userID, toTeam, asTemplate)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			s.logger.Error("transaction rollback error", mlog.Err(rollbackErr), mlog.String("methodName", "DuplicateBoard"))
@@ -279,7 +279,7 @@ func (s *SQLStore) DuplicateBoard(boardID string, userID string, toTeam string, 
 		return nil, nil, nil, err
 	}
 
-	return result, members, cardIDMapping, nil
+	return result, resultVar1, resultVar2, nil
 
 }
 
@@ -335,11 +335,6 @@ func (s *SQLStore) GetBlockSuiteDocsByBoardID(boardID string) ([]*model.BlockSui
 
 func (s *SQLStore) GetBlockSuiteMigrationStatus() (*model.BlockSuiteMigrationStatus, error) {
 	return s.getBlockSuiteMigrationStatus(s.db)
-
-}
-
-func (s *SQLStore) GetUnmigratedCardsWithContentBlocks(limit int, offset int) ([]*model.UnmigratedCard, int64, error) {
-	return s.getUnmigratedCardsWithContentBlocks(s.db, limit, offset)
 
 }
 
@@ -488,6 +483,26 @@ func (s *SQLStore) GetRegisteredUserCount() (int, error) {
 
 }
 
+func (s *SQLStore) GetScheduledComments(beforeTime int64) ([]*model.Block, error) {
+	return s.getScheduledComments(s.db, beforeTime)
+
+}
+
+func (s *SQLStore) GetScheduledCommentsByUser(userID string) ([]*model.Block, error) {
+	return s.getScheduledCommentsByUser(s.db, userID)
+
+}
+
+func (s *SQLStore) GetScheduledCommentsCountByUser(userID string) (int, error) {
+	return s.getScheduledCommentsCountByUser(s.db, userID)
+
+}
+
+func (s *SQLStore) GetScheduledCommentsForCard(cardID string) ([]*model.Block, error) {
+	return s.getScheduledCommentsForCard(s.db, cardID)
+
+}
+
 func (s *SQLStore) GetSharing(rootID string) (*model.Sharing, error) {
 	return s.getSharing(s.db, rootID)
 
@@ -545,6 +560,11 @@ func (s *SQLStore) GetTeamsForUser(userID string) ([]*model.Team, error) {
 
 func (s *SQLStore) GetTemplateBoards(teamID string, userID string) ([]*model.Board, error) {
 	return s.getTemplateBoards(s.db, teamID, userID)
+
+}
+
+func (s *SQLStore) GetUnmigratedCardsWithContentBlocks(limit int, offset int) ([]*model.UnmigratedCard, int64, error) {
+	return s.getUnmigratedCardsWithContentBlocks(s.db, limit, offset)
 
 }
 

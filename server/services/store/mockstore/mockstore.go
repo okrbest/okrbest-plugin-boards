@@ -491,22 +491,6 @@ func (mr *MockStoreMockRecorder) GetBlockSuiteMigrationStatus() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockSuiteMigrationStatus", reflect.TypeOf((*MockStore)(nil).GetBlockSuiteMigrationStatus))
 }
 
-// GetUnmigratedCardsWithContentBlocks mocks base method.
-func (m *MockStore) GetUnmigratedCardsWithContentBlocks(arg0 int, arg1 int) ([]*model.UnmigratedCard, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUnmigratedCardsWithContentBlocks", arg0, arg1)
-	ret0, _ := ret[0].([]*model.UnmigratedCard)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetUnmigratedCardsWithContentBlocks indicates an expected call of GetUnmigratedCardsWithContentBlocks.
-func (mr *MockStoreMockRecorder) GetUnmigratedCardsWithContentBlocks(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnmigratedCardsWithContentBlocks", reflect.TypeOf((*MockStore)(nil).GetUnmigratedCardsWithContentBlocks), arg0, arg1)
-}
-
 // GetBlocks mocks base method.
 func (m *MockStore) GetBlocks(arg0 model.QueryBlocksOptions) ([]*model.Block, error) {
 	m.ctrl.T.Helper()
@@ -946,6 +930,66 @@ func (mr *MockStoreMockRecorder) GetRegisteredUserCount() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegisteredUserCount", reflect.TypeOf((*MockStore)(nil).GetRegisteredUserCount))
 }
 
+// GetScheduledComments mocks base method.
+func (m *MockStore) GetScheduledComments(arg0 int64) ([]*model.Block, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScheduledComments", arg0)
+	ret0, _ := ret[0].([]*model.Block)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScheduledComments indicates an expected call of GetScheduledComments.
+func (mr *MockStoreMockRecorder) GetScheduledComments(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledComments", reflect.TypeOf((*MockStore)(nil).GetScheduledComments), arg0)
+}
+
+// GetScheduledCommentsByUser mocks base method.
+func (m *MockStore) GetScheduledCommentsByUser(arg0 string) ([]*model.Block, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScheduledCommentsByUser", arg0)
+	ret0, _ := ret[0].([]*model.Block)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScheduledCommentsByUser indicates an expected call of GetScheduledCommentsByUser.
+func (mr *MockStoreMockRecorder) GetScheduledCommentsByUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledCommentsByUser", reflect.TypeOf((*MockStore)(nil).GetScheduledCommentsByUser), arg0)
+}
+
+// GetScheduledCommentsCountByUser mocks base method.
+func (m *MockStore) GetScheduledCommentsCountByUser(arg0 string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScheduledCommentsCountByUser", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScheduledCommentsCountByUser indicates an expected call of GetScheduledCommentsCountByUser.
+func (mr *MockStoreMockRecorder) GetScheduledCommentsCountByUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledCommentsCountByUser", reflect.TypeOf((*MockStore)(nil).GetScheduledCommentsCountByUser), arg0)
+}
+
+// GetScheduledCommentsForCard mocks base method.
+func (m *MockStore) GetScheduledCommentsForCard(arg0 string) ([]*model.Block, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScheduledCommentsForCard", arg0)
+	ret0, _ := ret[0].([]*model.Block)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScheduledCommentsForCard indicates an expected call of GetScheduledCommentsForCard.
+func (mr *MockStoreMockRecorder) GetScheduledCommentsForCard(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledCommentsForCard", reflect.TypeOf((*MockStore)(nil).GetScheduledCommentsForCard), arg0)
+}
+
 // GetSharing mocks base method.
 func (m *MockStore) GetSharing(arg0 string) (*model.Sharing, error) {
 	m.ctrl.T.Helper()
@@ -1124,6 +1168,22 @@ func (m *MockStore) GetTemplateBoards(arg0, arg1 string) ([]*model.Board, error)
 func (mr *MockStoreMockRecorder) GetTemplateBoards(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTemplateBoards", reflect.TypeOf((*MockStore)(nil).GetTemplateBoards), arg0, arg1)
+}
+
+// GetUnmigratedCardsWithContentBlocks mocks base method.
+func (m *MockStore) GetUnmigratedCardsWithContentBlocks(arg0, arg1 int) ([]*model.UnmigratedCard, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnmigratedCardsWithContentBlocks", arg0, arg1)
+	ret0, _ := ret[0].([]*model.UnmigratedCard)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetUnmigratedCardsWithContentBlocks indicates an expected call of GetUnmigratedCardsWithContentBlocks.
+func (mr *MockStoreMockRecorder) GetUnmigratedCardsWithContentBlocks(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnmigratedCardsWithContentBlocks", reflect.TypeOf((*MockStore)(nil).GetUnmigratedCardsWithContentBlocks), arg0, arg1)
 }
 
 // GetUsedCardsCount mocks base method.

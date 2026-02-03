@@ -32,8 +32,6 @@
         width: 100%;
     }
 
-
-
     .octo-propertyvalue {
         font-size: 14px;
         padding: 4px 8px;
@@ -120,7 +118,10 @@
             .octo-propertyvalue {
                 border: 1px solid var(--error-text);
                 border-radius: 4px;
-                background-color: rgba(var(--error-text-color-rgb, 210, 75, 78), 0.08);
+                background-color: rgba(
+                    var(--error-text-color-rgb, 210, 75, 78),
+                    0.08
+                );
             }
         }
     }
@@ -155,6 +156,7 @@
         }
 
         &.add-property {
+            padding-left: 0;
             margin: 8px 0 0;
             color: rgba(var(--center-channel-color-rgb), 0.4);
             position: relative;
@@ -244,7 +246,7 @@
         width: 100%;
         min-height: 300px;
     }
-    
+
     /* BlockSuite 에디터 - 스크롤 비활성화 (카드 디테일에서 스크롤) */
     .blocksuite-editor-wrapper {
         min-height: 300px;

@@ -38,11 +38,6 @@ func (s *SQLStore) jsonFieldExtractInt(column, key string) string {
 	}
 }
 
-// GetScheduledComments returns all scheduled comments that are due to be sent.
-func (s *SQLStore) GetScheduledComments(beforeTime int64) ([]*model.Block, error) {
-	return s.getScheduledComments(s.db, beforeTime)
-}
-
 func (s *SQLStore) getScheduledComments(db sq.BaseRunner, beforeTime int64) ([]*model.Block, error) {
 	scheduledAtExpr := s.jsonFieldExtractInt("fields", model.BlockFieldScheduledAt)
 	scheduledStatusExpr := s.jsonFieldExtract("fields", model.BlockFieldScheduledStatus)
@@ -64,11 +59,6 @@ func (s *SQLStore) getScheduledComments(db sq.BaseRunner, beforeTime int64) ([]*
 	defer s.CloseRows(rows)
 
 	return s.blocksFromRows(rows)
-}
-
-// GetScheduledCommentsByUser returns all pending scheduled comments for a specific user.
-func (s *SQLStore) GetScheduledCommentsByUser(userID string) ([]*model.Block, error) {
-	return s.getScheduledCommentsByUser(s.db, userID)
 }
 
 func (s *SQLStore) getScheduledCommentsByUser(db sq.BaseRunner, userID string) ([]*model.Block, error) {
@@ -94,11 +84,6 @@ func (s *SQLStore) getScheduledCommentsByUser(db sq.BaseRunner, userID string) (
 	return s.blocksFromRows(rows)
 }
 
-// GetScheduledCommentsForCard returns all pending scheduled comments for a specific card.
-func (s *SQLStore) GetScheduledCommentsForCard(cardID string) ([]*model.Block, error) {
-	return s.getScheduledCommentsForCard(s.db, cardID)
-}
-
 func (s *SQLStore) getScheduledCommentsForCard(db sq.BaseRunner, cardID string) ([]*model.Block, error) {
 	scheduledAtExpr := s.jsonFieldExtractInt("fields", model.BlockFieldScheduledAt)
 	scheduledStatusExpr := s.jsonFieldExtract("fields", model.BlockFieldScheduledStatus)
@@ -120,11 +105,6 @@ func (s *SQLStore) getScheduledCommentsForCard(db sq.BaseRunner, cardID string) 
 	defer s.CloseRows(rows)
 
 	return s.blocksFromRows(rows)
-}
-
-// GetScheduledCommentsCountByUser returns the count of pending scheduled comments for a specific user.
-func (s *SQLStore) GetScheduledCommentsCountByUser(userID string) (int, error) {
-	return s.getScheduledCommentsCountByUser(s.db, userID)
 }
 
 func (s *SQLStore) getScheduledCommentsCountByUser(db sq.BaseRunner, userID string) (int, error) {

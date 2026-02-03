@@ -1415,6 +1415,69 @@ class OctoClient {
         }
         return (await this.getJson(response, undefined)) as Block | undefined
     }
+
+    // ========================================
+    // Sub-Cards API
+    // ========================================
+
+    async createSubCard(boardId: string, parentCardId: string, card: Partial<Block>, disableNotify = false): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/cards/${parentCardId}/subcards${disableNotify ? '?disable_notify=true' : ''}`
+        const body = JSON.stringify(card)
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    async getSubCards(parentCardId: string, page = 0, perPage = 100): Promise<Block[]> {
+        const path = `/api/v2/cards/${parentCardId}/subcards?page=${page}&per_page=${perPage}`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as Block[]
+    }
+
+    async getSubCardCount(parentCardId: string): Promise<number> {
+        const path = `/api/v2/cards/${parentCardId}/subcards/count`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return 0
+        }
+        const result = (await this.getJson(response, {count: 0})) as {count: number}
+        return result.count
+    }
+
+    async linkCardAsSubCard(cardId: string, parentCardId: string): Promise<Block | undefined> {
+        const path = `/api/v2/cards/${cardId}/link`
+        const body = JSON.stringify({parentCardId})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    async unlinkSubCard(cardId: string): Promise<Block | undefined> {
+        const path = `/api/v2/cards/${cardId}/link`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'DELETE',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
 }
 
 const octoClient = new OctoClient()
