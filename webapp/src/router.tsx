@@ -150,12 +150,16 @@ const FocalboardRouter = (props: Props): JSX.Element => {
         }
     }, [browserHistory])
 
-    const basename = Utils.getFrontendBaseURL()
+    const basename = Utils.isFocalboardPlugin() ? '' : Utils.getFrontendBaseURL()
 
     return (
         <HistoryRouter history={browserHistory as unknown as RouterHistory} basename={basename}>
             <GlobalErrorRedirect/>
             <Routes>
+                <Route
+                    path='/boards'
+                    element={<Navigate to='/' replace/>}
+                />
                 <Route
                     path='/'
                     element={

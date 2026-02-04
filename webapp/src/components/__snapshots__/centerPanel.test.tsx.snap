@@ -303,8 +303,6 @@ exports[`components/centerPanel Clicking on the Hidden card count should open a 
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -939,8 +937,6 @@ exports[`components/centerPanel return centerPanel and click on card to show car
           >
             No name
           </span>
-          
-          
           <div
             class="KanbanCalculation"
           >
@@ -1508,8 +1504,6 @@ exports[`components/centerPanel return centerPanel and click on new card to edit
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -2000,8 +1994,6 @@ exports[`components/centerPanel return centerPanel and press touch 1 with readon
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -2506,8 +2498,6 @@ exports[`components/centerPanel return centerPanel and press touch ctrl+d for on
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -3136,8 +3126,6 @@ exports[`components/centerPanel return centerPanel and press touch del for one c
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -3766,8 +3754,6 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -4396,8 +4382,6 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -5026,8 +5010,6 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -5656,8 +5638,6 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -6286,8 +6266,6 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -6916,8 +6894,6 @@ exports[`components/centerPanel return centerPanel and select one card and click
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -7546,8 +7522,6 @@ exports[`components/centerPanel return centerPanel and select one card and click
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"
@@ -8389,8 +8363,6 @@ exports[`components/centerPanel should match snapshot for Kanban 1`] = `
           >
             No name
           </span>
-          
-          
           <div
             class="KanbanCalculation"
           >
@@ -8880,8 +8852,6 @@ exports[`components/centerPanel should match snapshot for Kanban, not shared 1`]
           >
             No name
           </span>
-          
-          
           <div
             class="KanbanCalculation"
           >
@@ -9415,8 +9385,6 @@ exports[`components/centerPanel should match snapshot for Table 1`] = `
                 >
                   No name
                 </span>
-                
-                
               </div>
               <button
                 class="Button"

@@ -39,9 +39,7 @@ exports[`components/boardsUnfurl/BoardsUnfurl renders normally 1`] = `
     >
       <div
         class="avatar"
-      >
-        
-      </div>
+      />
       <div
         class="timestamp_properties"
       >

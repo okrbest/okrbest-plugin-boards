@@ -131,7 +131,7 @@ exports[`components/cardDialog already following card 1`] = `
             class="octo-propertylist CardDetailProperties"
           >
             <div
-              data-rfd-droppable-context-id=":r27:"
+              data-rfd-droppable-context-id=":rr:"
               data-rfd-droppable-id="property-list"
             />
             <div
@@ -222,7 +222,6 @@ exports[`components/cardDialog already following card 1`] = `
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"
@@ -968,7 +967,7 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
             class="octo-propertylist CardDetailProperties"
           >
             <div
-              data-rfd-droppable-context-id=":r12:"
+              data-rfd-droppable-context-id=":rc:"
               data-rfd-droppable-id="property-list"
             />
             <div
@@ -1059,7 +1058,6 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"
@@ -1217,7 +1215,7 @@ exports[`components/cardDialog return cardDialog menu content and cancel delete 
             class="octo-propertylist CardDetailProperties"
           >
             <div
-              data-rfd-droppable-context-id=":r18:"
+              data-rfd-droppable-context-id=":ri:"
               data-rfd-droppable-id="property-list"
             />
             <div
@@ -1308,7 +1306,6 @@ exports[`components/cardDialog return cardDialog menu content and cancel delete 
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"
@@ -1557,7 +1554,6 @@ exports[`components/cardDialog should match snapshot 1`] = `
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"

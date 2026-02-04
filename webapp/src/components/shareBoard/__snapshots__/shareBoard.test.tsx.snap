@@ -3093,7 +3093,7 @@ exports[`src/components/shareBoard/shareBoard return shareBoard, and click switc
 </div>
 `;
 
-exports[`src/components/shareBoard/shareBoard return shareBoardComponent and click Switch without sharing 1`] = `
+exports[`src/components/shareBoard/shareBoard return shareBoardComponent and click Switch without sharing (null sharing) 1`] = `
 <div>
   <div
     class="Dialog dialog-back ShareBoardDialog size--medium"
