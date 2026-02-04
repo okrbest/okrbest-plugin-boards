@@ -12,7 +12,9 @@ import {DragDropContext, Droppable} from '@hello-pangea/dnd'
 
 import {Block} from './blocks/block'
 
-export const wrapIntl = (children?: React.ReactNode): JSX.Element => <IntlProvider locale='en'>{children}</IntlProvider>
+export const wrapIntl = (children?: React.ReactNode): JSX.Element => {
+    return <IntlProvider locale='en'><>{children}</></IntlProvider>
+}
 export const wrapDNDIntl = (children?: React.ReactNode): JSX.Element => {
     return (
         <DndProvider backend={HTML5Backend}>

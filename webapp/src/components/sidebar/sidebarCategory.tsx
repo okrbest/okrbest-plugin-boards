@@ -104,7 +104,7 @@ const SidebarCategory = (props: Props) => {
         }
     }, [shouldViewManageCatergoriesTour])
 
-    const showBoard = useCallback((boardId) => {
+    const showBoard = useCallback((boardId: string) => {
         if (boardId === props.activeBoardID && props.onBoardTemplateSelectorClose) {
             props.onBoardTemplateSelectorClose()
         }
@@ -112,7 +112,7 @@ const SidebarCategory = (props: Props) => {
         props.hideSidebar()
     }, [match, history])
 
-    const showView = useCallback((viewId, boardId) => {
+    const showView = useCallback((viewId: string, boardId: string) => {
         if (viewId === props.activeViewID && props.onBoardTemplateSelectorClose) {
             props.onBoardTemplateSelectorClose()
         }

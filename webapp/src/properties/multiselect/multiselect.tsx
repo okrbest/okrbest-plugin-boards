@@ -32,7 +32,7 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
         : ''
 
     const onChange = useCallback(
-        (newValue) =>
+        (newValue: string | string[]) =>
             mutator.changePropertyValue(
                 board.id,
                 card,

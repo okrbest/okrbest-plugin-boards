@@ -119,7 +119,7 @@ export function useEditable(
 
 const Editable = (props: EditableProps, ref: React.Ref<Focusable>): JSX.Element => {
     const elementRef = useRef<HTMLInputElement>(null)
-    const elementProps = useEditable(props, ref, elementRef)
+    const elementProps = useEditable(props, ref, elementRef as React.RefObject<ElementType>)
 
     useLayoutEffect(() => {
         if (props.autoExpand && elementRef.current) {

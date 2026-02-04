@@ -108,11 +108,11 @@ const BoardPage = (props: Props): JSX.Element => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [teamId])
 
-    const loadAction: (boardId: string) => any = useMemo(() => {
+    const loadAction = useMemo(() => {
         if (props.readonly) {
-            return initialReadOnlyLoad
+            return initialReadOnlyLoad as (boardId?: string) => any
         }
-        return initialLoad
+        return initialLoad as (boardId?: string) => any
     }, [props.readonly])
 
     useWebsockets(teamId, (wsClient) => {

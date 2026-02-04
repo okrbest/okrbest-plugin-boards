@@ -49,7 +49,7 @@ type WrapperProps = {
 }
 
 const Wrapper = ({children}: WrapperProps) => {
-    return <IntlProvider locale='en'>{children}</IntlProvider>
+    return <IntlProvider locale='en'><>{children}</></IntlProvider>
 }
 
 describe('properties/multiSelect', () => {

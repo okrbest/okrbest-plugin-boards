@@ -31,7 +31,7 @@ function FBRoute(props: RouteProps) {
     const myConfig = useAppSelector(getMyConfig)
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
 
-    let redirect: React.ReactNode = null
+    let redirect: React.ReactNode | ((props: any) => JSX.Element) = null
 
     // No FTUE for guests
     const disableTour = me?.is_guest || clientConfig?.featureFlags?.disableTour || false
@@ -44,42 +44,42 @@ function FBRoute(props: RouteProps) {
         !myConfig[UserSettingKey.WelcomePageViewed]
 
     if (showWelcomePage) {
-        const WelcomeRedirect = ({match}: any) => {
-            if (props.getOriginalPath) {
-                return <Redirect to={`/welcome?r=${props.getOriginalPath!(match)}`}/>
-            }
-            return <Redirect to='/welcome'/>
-        }
-        WelcomeRedirect.displayName = "WelcomeRedirect"
-        redirect = WelcomeRedirect
-    }
+         const WelcomeRedirect = ({match}: any) => {
+             if (props.getOriginalPath) {
+                 return <Redirect to={`/welcome?r=${props.getOriginalPath!(match)}`}/>
+             }
+             return <Redirect to='/welcome'/>
+         }
+         WelcomeRedirect.displayName = "WelcomeRedirect"
+         redirect = (props: any) => <WelcomeRedirect {...props}/>
+     }
 
     if (redirect === null && loggedIn === false && props.loginRequired) {
-        const LoginRedirect = ({match}: any) => {
-            if (props.getOriginalPath) {
-                let redirectUrl = '/' + Utils.buildURL(props.getOriginalPath!(match))
-                if (redirectUrl.indexOf('//') === 0) {
-                    redirectUrl = redirectUrl.slice(1)
-                }
-                const loginUrl = `/error?id=not-logged-in&r=${encodeURIComponent(redirectUrl)}`
-                return <Redirect to={loginUrl}/>
-            }
-            return <Redirect to='/error?id=not-logged-in'/>
-        }
-        LoginRedirect.displayName = "LoginRedirect"
-        redirect = LoginRedirect
-    }
+         const LoginRedirect = ({match}: any) => {
+             if (props.getOriginalPath) {
+                 let redirectUrl = '/' + Utils.buildURL(props.getOriginalPath!(match))
+                 if (redirectUrl.indexOf('//') === 0) {
+                     redirectUrl = redirectUrl.slice(1)
+                 }
+                 const loginUrl = `/error?id=not-logged-in&r=${encodeURIComponent(redirectUrl)}`
+                 return <Redirect to={loginUrl}/>
+             }
+             return <Redirect to='/error?id=not-logged-in'/>
+         }
+         LoginRedirect.displayName = "LoginRedirect"
+         redirect = (props: any) => <LoginRedirect {...props}/>
+     }
 
     return (
-        <Route
-            path={props.path}
-            render={props.render}
-            component={props.component}
-            exact={props.exact}
-        >
-            {redirect || props.children}
-        </Route>
-    )
+         <Route
+             path={props.path}
+             render={props.render}
+             component={props.component}
+             exact={props.exact}
+         >
+             {redirect || props.children}
+         </Route>
+     )
 }
 
 export default React.memo(FBRoute)

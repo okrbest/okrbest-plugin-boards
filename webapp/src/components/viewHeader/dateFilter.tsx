@@ -53,7 +53,7 @@ function DateFilter(props: Props): JSX.Element {
     const [value, setValue] = useState(dateValue)
     const intl = useIntl()
 
-    const onChange = useCallback((newValue) => {
+    const onChange = useCallback((newValue: Date | undefined) => {
         if (value !== newValue) {
             const adjustedValue = newValue ? new Date(newValue.getTime() - timeZoneOffset(newValue.getTime())) : undefined
             setValue(adjustedValue)

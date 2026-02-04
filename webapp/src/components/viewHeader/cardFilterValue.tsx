@@ -274,7 +274,7 @@ const CardFilterValue = (props: Props): JSX.Element => {
                         name={card.title}
                         isOn={filterCardIds.includes(card.id)}
                         suppressItemClicked={true}
-                        onClick={(cardId) => {
+                        onClick={(cardId: string) => {
                             const filterIndex = view.fields.filter.filters.indexOf(filter)
                             Utils.assert(filterIndex >= 0, "Can't find filter")
 

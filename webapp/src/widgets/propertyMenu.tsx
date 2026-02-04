@@ -151,11 +151,11 @@ const PropertyMenu = (props: Props) => {
         <Menu>
             <Menu.TextInput
                 initialValue={props.propertyName}
-                onConfirmValue={(n) => {
+                onConfirmValue={(n: string) => {
                     props.onTypeAndNameChanged(props.propertyType, n)
                     currentPropertyName = n
                 }}
-                onValueChanged={(n) => {
+                onValueChanged={(n: string) => {
                     currentPropertyName = n
                 }}
             />

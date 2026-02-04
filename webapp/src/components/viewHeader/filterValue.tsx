@@ -128,7 +128,7 @@ const filterValue = (props: Props): JSX.Element|null => {
                         name={o.value}
                         isOn={filter.values.includes(o.id)}
                         suppressItemClicked={true}
-                        onClick={(optionId) => {
+                        onClick={(optionId: string) => {
                             const filterIndex = view.fields.filter.filters.indexOf(filter)
                             Utils.assert(filterIndex >= 0, "Can't find filter")
 
