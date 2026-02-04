@@ -7,7 +7,7 @@ import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
 
 import {debounce} from 'lodash'
 
-import {Draggable, Droppable} from 'react-beautiful-dnd'
+import {Draggable, Droppable} from '@hello-pangea/dnd'
 
 import {HandRightIcon} from '@mattermost/compass-icons/components'
 

@@ -8,7 +8,7 @@ import {HTML5Backend} from 'react-dnd-html5-backend'
 import configureStore, {MockStoreEnhanced} from 'redux-mock-store'
 import {Middleware} from 'redux'
 
-import {DragDropContext, Droppable} from 'react-beautiful-dnd'
+import {DragDropContext, Droppable} from '@hello-pangea/dnd'
 
 import {Block} from './blocks/block'
 

@@ -4,7 +4,7 @@
 import React, {useCallback, useRef, useState} from 'react'
 import {useIntl} from 'react-intl'
 import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
-import {Draggable} from 'react-beautiful-dnd'
+import {Draggable} from '@hello-pangea/dnd'
 
 import {BaseEmoji} from 'emoji-mart'
 
