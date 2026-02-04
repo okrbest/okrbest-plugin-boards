@@ -15,6 +15,7 @@ exports[`components/viewHeader/viewHeaderGroupByMenu For viewType table render o
         Group by: 
         <span
           id="groupByLabel"
+          style="color: rgb(var(--center-channel-color-rgb));"
         >
           Status
         </span>
@@ -258,6 +259,7 @@ exports[`components/viewHeader/viewHeaderGroupByMenu For viewType table render o
         Group by: 
         <span
           id="groupByLabel"
+          style="color: rgb(var(--center-channel-color-rgb));"
         >
           Status
         </span>
@@ -501,6 +503,7 @@ exports[`components/viewHeader/viewHeaderGroupByMenu return groupBy menu 1`] = `
         Group by: 
         <span
           id="groupByLabel"
+          style="color: rgb(var(--center-channel-color-rgb));"
         >
           Status
         </span>
@@ -684,6 +687,7 @@ exports[`components/viewHeader/viewHeaderGroupByMenu return groupBy menu and gro
         Group by: 
         <span
           id="groupByLabel"
+          style="color: rgb(var(--center-channel-color-rgb));"
         >
           Status
         </span>
@@ -708,6 +712,7 @@ exports[`components/viewHeader/viewHeaderGroupByMenu return groupBy menu, hideEm
         Group by: 
         <span
           id="groupByLabel"
+          style="color: rgb(var(--center-channel-color-rgb));"
         >
           Status
         </span>

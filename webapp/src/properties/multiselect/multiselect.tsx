@@ -26,9 +26,9 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
 
     const emptyDisplayValue = props.showEmptyPlaceholder
         ? intl.formatMessage({
-              id: 'PropertyValueElement.empty',
-              defaultMessage: 'Empty',
-          })
+            id: 'PropertyValueElement.empty',
+            defaultMessage: 'Empty',
+        })
         : ''
 
     const onChange = useCallback(
@@ -131,8 +131,8 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
     const values =
         Array.isArray(propertyValue) && propertyValue.length > 0
             ? propertyValue
-                  .map((v) => propertyTemplate.options.find((o) => o!.id === v))
-                  .filter((v): v is IPropertyOption => Boolean(v))
+                .map((v) => propertyTemplate.options.find((o) => o!.id === v))
+                .filter((v): v is IPropertyOption => Boolean(v))
             : []
 
     const renameDialog = renameOption && (

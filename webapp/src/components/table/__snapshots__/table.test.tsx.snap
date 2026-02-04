@@ -2925,6 +2925,7 @@ exports[`components/table/Table should match snapshot with GroupBy 1`] = `
                 No Property 1
               </span>
               
+              
             </div>
             <button
               type="button"

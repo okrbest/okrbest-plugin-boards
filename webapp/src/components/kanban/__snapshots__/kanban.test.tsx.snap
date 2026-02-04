@@ -309,13 +309,7 @@ exports[`src/component/kanban/kanban return kanban and click on KanbanCalculatio
         <span
           class="Label propColorOrange "
         >
-          <input
-            class="Editable "
-            placeholder="New Select"
-            spellcheck="true"
-            title="Q1"
-            value="Q1"
-          />
+          Q1
         </span>
         <div
           class="KanbanCalculation"
@@ -525,13 +519,7 @@ exports[`src/component/kanban/kanban return kanban and click on KanbanCalculatio
         <span
           class="Label propColorBlue "
         >
-          <input
-            class="Editable "
-            placeholder="New Select"
-            spellcheck="true"
-            title="Q2"
-            value="Q2"
-          />
+          Q2
         </span>
         <div
           class="KanbanCalculation"
@@ -759,13 +747,7 @@ exports[`src/component/kanban/kanban should match snapshot 1`] = `
         <span
           class="Label propColorOrange "
         >
-          <input
-            class="Editable "
-            placeholder="New Select"
-            spellcheck="true"
-            title="Q1"
-            value="Q1"
-          />
+          Q1
         </span>
         <div
           class="KanbanCalculation"
@@ -811,13 +793,7 @@ exports[`src/component/kanban/kanban should match snapshot 1`] = `
         <span
           class="Label propColorBlue "
         >
-          <input
-            class="Editable "
-            placeholder="New Select"
-            spellcheck="true"
-            title="Q2"
-            value="Q2"
-          />
+          Q2
         </span>
         <div
           class="KanbanCalculation"
@@ -1045,14 +1021,7 @@ exports[`src/component/kanban/kanban should match snapshot without permissions 1
         <span
           class="Label propColorOrange "
         >
-          <input
-            class="Editable readonly "
-            placeholder="New Select"
-            readonly=""
-            spellcheck="true"
-            title="Q1"
-            value="Q1"
-          />
+          Q1
         </span>
         <div
           class="KanbanCalculation"
@@ -1078,14 +1047,7 @@ exports[`src/component/kanban/kanban should match snapshot without permissions 1
         <span
           class="Label propColorBlue "
         >
-          <input
-            class="Editable readonly "
-            placeholder="New Select"
-            readonly=""
-            spellcheck="true"
-            title="Q2"
-            value="Q2"
-          />
+          Q2
         </span>
         <div
           class="KanbanCalculation"

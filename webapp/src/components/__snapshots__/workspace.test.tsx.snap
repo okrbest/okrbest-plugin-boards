@@ -904,6 +904,7 @@ exports[`src/components/workspace return workspace readonly and showcard 1`] = `
                 No Property 2
               </span>
               
+              
               <div
                 class="KanbanCalculation"
               >
@@ -1978,6 +1979,7 @@ exports[`src/components/workspace should match snapshot with readonly 1`] = `
               >
                 No Property 2
               </span>
+              
               
               <div
                 class="KanbanCalculation"

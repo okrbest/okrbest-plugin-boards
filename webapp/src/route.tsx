@@ -5,6 +5,7 @@ import React from 'react'
 import {
     Redirect,
     Route,
+    RouteComponentProps,
 } from 'react-router-dom'
 
 import {Utils} from './utils'
@@ -15,13 +16,15 @@ import {IUser} from './user'
 import {getClientConfig} from './store/clientConfig'
 import {ClientConfig} from './config/clientConfig'
 
+type RouteRenderProps = RouteComponentProps<Record<string, string | undefined>>
+
 type RouteProps = {
     path: string|string[]
     exact?: boolean
-    render?: (props: any) => React.ReactElement
+    render?: (props: RouteRenderProps) => React.ReactElement
     component?: React.ComponentType<React.PropsWithChildren<unknown>>
     children?: React.ReactElement
-    getOriginalPath?: (match: any) => string
+    getOriginalPath?: (match: RouteRenderProps['match']) => string
     loginRequired?: boolean
 }
 
@@ -31,9 +34,6 @@ function FBRoute(props: RouteProps) {
     const myConfig = useAppSelector(getMyConfig)
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
 
-    let redirect: React.ReactNode | ((props: any) => JSX.Element) = null
-
-    // No FTUE for guests
     const disableTour = me?.is_guest || clientConfig?.featureFlags?.disableTour || false
 
     const showWelcomePage = !disableTour &&
@@ -43,43 +43,57 @@ function FBRoute(props: RouteProps) {
         loggedIn === true &&
         !myConfig[UserSettingKey.WelcomePageViewed]
 
-    if (showWelcomePage) {
-         const WelcomeRedirect = ({match}: any) => {
-             if (props.getOriginalPath) {
-                 return <Redirect to={`/welcome?r=${props.getOriginalPath!(match)}`}/>
-             }
-             return <Redirect to='/welcome'/>
-         }
-         WelcomeRedirect.displayName = "WelcomeRedirect"
-         redirect = (props: any) => <WelcomeRedirect {...props}/>
-     }
+    const getRedirectRender = (): ((routeProps: RouteRenderProps) => React.ReactElement) | undefined => {
+        if (showWelcomePage) {
+            const WelcomeRedirect = ({match}: RouteRenderProps): React.ReactElement => {
+                if (props.getOriginalPath) {
+                    return <Redirect to={`/welcome?r=${props.getOriginalPath(match)}`}/>
+                }
+                return <Redirect to='/welcome'/>
+            }
+            return WelcomeRedirect
+        }
 
-    if (redirect === null && loggedIn === false && props.loginRequired) {
-         const LoginRedirect = ({match}: any) => {
-             if (props.getOriginalPath) {
-                 let redirectUrl = '/' + Utils.buildURL(props.getOriginalPath!(match))
-                 if (redirectUrl.indexOf('//') === 0) {
-                     redirectUrl = redirectUrl.slice(1)
-                 }
-                 const loginUrl = `/error?id=not-logged-in&r=${encodeURIComponent(redirectUrl)}`
-                 return <Redirect to={loginUrl}/>
-             }
-             return <Redirect to='/error?id=not-logged-in'/>
-         }
-         LoginRedirect.displayName = "LoginRedirect"
-         redirect = (props: any) => <LoginRedirect {...props}/>
-     }
+        if (loggedIn === false && props.loginRequired) {
+            const LoginRedirect = ({match}: RouteRenderProps): React.ReactElement => {
+                if (props.getOriginalPath) {
+                    let redirectUrl = '/' + Utils.buildURL(props.getOriginalPath(match))
+                    if (redirectUrl.indexOf('//') === 0) {
+                        redirectUrl = redirectUrl.slice(1)
+                    }
+                    const loginUrl = `/error?id=not-logged-in&r=${encodeURIComponent(redirectUrl)}`
+                    return <Redirect to={loginUrl}/>
+                }
+                return <Redirect to='/error?id=not-logged-in'/>
+            }
+            return LoginRedirect
+        }
+
+        return undefined
+    }
+
+    const redirectRender = getRedirectRender()
+
+    if (redirectRender) {
+        return (
+            <Route
+                path={props.path}
+                exact={props.exact}
+                render={redirectRender}
+            />
+        )
+    }
 
     return (
-         <Route
-             path={props.path}
-             render={props.render}
-             component={props.component}
-             exact={props.exact}
-         >
-             {redirect || props.children}
-         </Route>
-     )
+        <Route
+            path={props.path}
+            render={props.render}
+            component={props.component}
+            exact={props.exact}
+        >
+            {props.children}
+        </Route>
+    )
 }
 
 export default React.memo(FBRoute)

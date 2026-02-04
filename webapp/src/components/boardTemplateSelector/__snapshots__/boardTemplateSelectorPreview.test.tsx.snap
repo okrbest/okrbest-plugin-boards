@@ -97,6 +97,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview should ma
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -200,6 +201,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview should ma
             No name
           </span>
           
+          
           <div
             class="KanbanCalculation"
           >
@@ -244,13 +246,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview should ma
           <span
             class="Label propColorOrange "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q1"
-              value="Q1"
-            />
+            Q1
           </span>
           <div
             class="KanbanCalculation"
@@ -296,13 +292,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview should ma
           <span
             class="Label propColorBlue "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q2"
-              value="Q2"
-            />
+            Q2
           </span>
           <div
             class="KanbanCalculation"
