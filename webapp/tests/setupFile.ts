@@ -2,32 +2,15 @@
 // See LICENSE.txt for license information.
 
 import crypto from 'crypto'
-import {TextEncoder, TextDecoder} from 'util'
 import 'isomorphic-fetch'
 
 import React from 'react'
 import { jest } from '@jest/globals'
 import {useSyncExternalStore} from 'use-sync-external-store/shim'
 
-if (typeof global.TextEncoder === 'undefined') {
-    (global as any).TextEncoder = TextEncoder
-}
-if (typeof global.TextDecoder === 'undefined') {
-    (global as any).TextDecoder = TextDecoder
-}
-
 // Polyfill useSyncExternalStore for React 17
 if (!React.useSyncExternalStore) {
     (React as Record<string, unknown>).useSyncExternalStore = useSyncExternalStore
-}
-
-// Polyfill useId for React 17 (required by @hello-pangea/dnd)
-let useIdCounter = 0
-if (!React.useId) {
-    (React as Record<string, unknown>).useId = () => {
-        const [id] = React.useState(() => `:r${useIdCounter++}:`)
-        return id
-    }
 }
 
 Object.defineProperty(global, 'crypto', {
@@ -102,20 +85,6 @@ if (typeof ResizeObserver === 'undefined') {
 }
 
 Element.prototype.scrollIntoView = jest.fn()
-
-Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: jest.fn().mockImplementation((query: string) => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-    })),
-})
 
 jest.mock('../src/webapp_globals', () =>
     Object.assign({}, jest.requireActual('../src/webapp_globals'), {
