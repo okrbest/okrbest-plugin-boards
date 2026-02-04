@@ -3,31 +3,26 @@
 
 import React, {FC} from 'react'
 
-import data from '@emoji-mart/data'
-import Picker from '@emoji-mart/react'
+import 'emoji-mart/css/emoji-mart.css'
+import {Picker, BaseEmoji} from 'emoji-mart'
 
+import {Utils} from '../utils'
 import './emojiPicker.scss'
+
+import emojiSpirit from '../../static/emoji_spirit.png'
 
 type Props = {
     onSelect: (emoji: string) => void
 }
 
-type EmojiSelectData = {
-    native: string
-    id: string
-    name: string
-    unified: string
-    shortcodes: string
-}
-
-const EmojiPicker: FC<React.PropsWithChildren<Props>> = (props: Props): React.JSX.Element => (
+const EmojiPicker: FC<React.PropsWithChildren<Props>> = (props: Props): JSX.Element => (
     <div
         className='EmojiPicker'
         onClick={(e) => e.stopPropagation()}
     >
         <Picker
-            data={data}
-            onEmojiSelect={(emoji: EmojiSelectData) => props.onSelect(emoji.native)}
+            onSelect={(emoji: BaseEmoji) => props.onSelect(emoji.native)}
+            backgroundImageFn={() => Utils.buildURL(emojiSpirit, true)}
         />
     </div>
 )

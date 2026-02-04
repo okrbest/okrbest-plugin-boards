@@ -19,7 +19,7 @@ type Props = {
     cards: Card[]
 }
 
-const TableHeaderMenu: FC<React.PropsWithChildren<Props>> = (props: Props): React.JSX.Element => {
+const TableHeaderMenu: FC<React.PropsWithChildren<Props>> = (props: Props): JSX.Element => {
     const {board, activeView, templateId, views, cards} = props
     const intl = useIntl()
     return (

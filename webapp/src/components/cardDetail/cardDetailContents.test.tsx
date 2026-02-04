@@ -4,7 +4,9 @@
 import React, {ReactElement, ReactNode} from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
 
-import {fireEvent, render, act} from '@testing-library/react'
+import {fireEvent, render} from '@testing-library/react'
+
+import {act} from 'react'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
@@ -14,6 +16,7 @@ import CardDetailContents from './cardDetailContents'
 import {CardDetailProvider} from './cardDetailContext'
 
 global.fetch = jest.fn()
+jest.mock('draft-js/lib/generateRandomKey', () => () => '123')
 
 beforeAll(() => {
     mockDOM()
