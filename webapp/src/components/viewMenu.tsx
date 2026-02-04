@@ -3,7 +3,7 @@
 
 import React, {useCallback} from 'react'
 import {injectIntl, IntlShape} from 'react-intl'
-import {useNavigate, useParams, useLocation} from 'react-router-dom'
+import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
 
 import {Board, IPropertyTemplate} from '../blocks/board'
 import {BoardView, createBoardView, IViewType} from '../blocks/boardView'
@@ -33,17 +33,16 @@ type Props = {
 }
 
 const ViewMenu = (props: Props) => {
-    const navigate = useNavigate()
-    const params = useParams()
-    const location = useLocation()
+    const history = useHistory()
+    const match = useRouteMatch()
 
     const showView = useCallback((viewId: string) => {
-        let newPath = Utils.buildBoardPath(location.pathname, {...params, viewId: viewId || ''})
+        let newPath = generatePath(Utils.getBoardPagePath(match.path), {...match.params, viewId: viewId || ''})
         if (props.readonly) {
             newPath += `?r=${Utils.getReadToken()}`
         }
-        navigate(newPath)
-    }, [params, navigate, location.pathname, props.readonly])
+        history.push(newPath)
+    }, [match, history])
 
     const handleDuplicateView = useCallback(() => {
         const {board, activeView} = props

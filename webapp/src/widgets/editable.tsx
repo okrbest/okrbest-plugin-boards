@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useImperativeHandle, useLayoutEffect, useRef} from 'react'
+import React, {forwardRef, useImperativeHandle, useLayoutEffect, useRef} from 'react'
 
 import './editable.scss'
 
@@ -19,7 +19,6 @@ export type EditableProps = {
     onCancel?: () => void
     onSave?: (saveType: 'onEnter'|'onEsc'|'onBlur') => void
     onFocus?: () => void
-    ref?: React.Ref<Focusable>
 }
 
 export type Focusable = {
@@ -43,7 +42,7 @@ export type ElementProps = {
 
 export function useEditable(
     props: EditableProps,
-    focusableRef: React.Ref<Focusable> | undefined,
+    focusableRef: React.Ref<Focusable>,
     elementRef: React.RefObject<ElementType>): ElementProps {
     const saveOnBlur = useRef<boolean>(true)
 
@@ -118,10 +117,9 @@ export function useEditable(
     }
 }
 
-const Editable = (props: EditableProps): React.JSX.Element => {
-    const { ref, ...otherProps } = props
+const Editable = (props: EditableProps, ref: React.Ref<Focusable>): JSX.Element => {
     const elementRef = useRef<HTMLInputElement>(null)
-    const elementProps = useEditable(otherProps, ref, elementRef as React.RefObject<ElementType>)
+    const elementProps = useEditable(props, ref, elementRef as React.RefObject<ElementType>)
 
     useLayoutEffect(() => {
         if (props.autoExpand && elementRef.current) {
@@ -138,4 +136,4 @@ const Editable = (props: EditableProps): React.JSX.Element => {
     )
 }
 
-export default Editable
+export default forwardRef(Editable)

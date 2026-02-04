@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef} from 'react'
+import React, {forwardRef, useEffect, useRef} from 'react'
 
 import {EditableProps, Focusable, useEditable, ElementType} from './editable'
 
@@ -11,12 +11,11 @@ function getBorderWidth(style: CSSStyleDeclaration): number {
     return parseInt(style.borderTopWidth || '0', 10) + parseInt(style.borderBottomWidth || '0', 10)
 }
 
-const EditableArea = (props: EditableProps): React.JSX.Element => {
-    const { ref, ...otherProps } = props
+const EditableArea = (props: EditableProps, ref: React.Ref<Focusable>): JSX.Element => {
     const elementRef = useRef<HTMLTextAreaElement>(null)
     const referenceRef = useRef<HTMLTextAreaElement>(null)
     const heightRef = useRef(0)
-    const elementProps = useEditable(otherProps, ref, elementRef as React.RefObject<ElementType>)
+    const elementProps = useEditable(props, ref, elementRef as React.RefObject<ElementType>)
 
     useEffect(() => {
         if (!elementRef.current || !referenceRef.current) {
@@ -65,4 +64,4 @@ const EditableArea = (props: EditableProps): React.JSX.Element => {
     )
 }
 
-export default EditableArea
+export default forwardRef(EditableArea)
