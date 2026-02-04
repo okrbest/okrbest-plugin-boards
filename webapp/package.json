@@ -82,11 +82,6 @@
 			"^mattermost-redux/(.*)$": "<rootDir>/node_modules/mattermost-redux/lib/$1",
 			"^@mattermost/types/(.*)$": "<rootDir>/node_modules/@mattermost/types/lib/$1"
 		},
-		"globals": {
-			"ts-jest": {
-				"tsconfig": "./src/tsconfig.json"
-			}
-		},
 		"transform": {
 			"^.+\\.tsx?$": "@swc/jest"
 		},
@@ -122,7 +117,7 @@
 		"@types/diff": "^7.0.2",
 		"@types/draft-js": "0.11.9",
 		"@types/emoji-mart": "^3.0.9",
-		"@types/jest": "^27.4.1",
+		"@types/jest": "^29.5.14",
 		"@types/lodash": "4.14.182",
 		"@types/marked": "^4.0.3",
 		"@types/nanoevents": "^1.0.0",
@@ -158,7 +153,8 @@
 		"html-webpack-plugin": "^5.5.0",
 		"image-webpack-loader": "^8.1.0",
 		"isomorphic-fetch": "^3.0.0",
-		"jest": "27.5.1",
+		"jest": "^29.7.0",
+		"jest-environment-jsdom": "^30.2.0",
 		"jest-mock": "27.5.1",
 		"prettier": "^2.6.1",
 		"redux-mock-store": "^1.5.4",
@@ -169,7 +165,7 @@
 		"stylelint": "^14.6.1",
 		"stylelint-config-sass-guidelines": "^9.0.1",
 		"terser-webpack-plugin": "^5.3.1",
-		"ts-jest": "^27.1.4",
+		"ts-jest": "^29.4.6",
 		"ts-loader": "^9.2.8",
 		"typescript": "^5.7.0",
 		"webpack": "^5.70.0",
