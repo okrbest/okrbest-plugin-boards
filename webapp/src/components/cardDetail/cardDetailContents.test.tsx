@@ -6,7 +6,7 @@ import {Provider as ReduxProvider} from 'react-redux'
 
 import {fireEvent, render} from '@testing-library/react'
 
-import {act} from 'react-dom/test-utils'
+import {act} from 'react'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 

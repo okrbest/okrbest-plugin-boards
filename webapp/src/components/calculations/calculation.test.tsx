@@ -29,7 +29,7 @@ describe('components/calculations/Calculation', () => {
     card2.fields.properties.property_3 = ''
     card2.fields.properties.property_4 = 'Baz'
 
-    const Wrapper: React.FC = ({children}) => {
+    const Wrapper: React.FC<React.PropsWithChildren<unknown>> = ({children}) => {
         return wrapIntl(
             <ColumnResizeProvider
                 columnWidths={{}}

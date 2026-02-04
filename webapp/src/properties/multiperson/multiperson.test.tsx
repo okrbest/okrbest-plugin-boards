@@ -9,7 +9,7 @@ import {render, waitFor} from '@testing-library/react'
 
 import configureStore from 'redux-mock-store'
 
-import {act} from 'react-dom/test-utils'
+import {act} from 'react'
 
 import userEvent from '@testing-library/user-event'
 

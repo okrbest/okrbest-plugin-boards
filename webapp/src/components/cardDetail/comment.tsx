@@ -36,7 +36,7 @@ type Props = {
     scheduledAt?: number
 }
 
-const Comment: FC<Props> = (props: Props) => {
+const Comment: FC<React.PropsWithChildren<Props>> = (props: Props) => {
     const {comment, userId, userImageUrl, scheduledAt} = props
     const intl = useIntl()
     const user = useAppSelector(getUser(userId))

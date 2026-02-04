@@ -19,7 +19,7 @@ type RouteProps = {
     path: string|string[]
     exact?: boolean
     render?: (props: any) => React.ReactElement
-    component?: React.ComponentType
+    component?: React.ComponentType<React.PropsWithChildren<unknown>>
     children?: React.ReactElement
     getOriginalPath?: (match: any) => string
     loginRequired?: boolean

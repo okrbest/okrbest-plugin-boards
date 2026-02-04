@@ -4,7 +4,7 @@
 import React from 'react'
 import {render, screen, fireEvent, waitFor} from '@testing-library/react'
 import '@testing-library/jest-dom'
-import {act} from 'react-dom/test-utils'
+import {act} from 'react'
 
 import {Card, createCard} from '../../blocks/card'
 import {wrapIntl} from '../../testUtils'

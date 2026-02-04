@@ -5,7 +5,7 @@
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
 import {render} from '@testing-library/react'
-import {act} from 'react-dom/test-utils'
+import {act} from 'react'
 import {mocked} from 'jest-mock'
 
 import {AttachmentBlock} from '../../blocks/attachmentBlock'

@@ -30,7 +30,7 @@ type Props = {
     cards: readonly Card[]
     property: IPropertyTemplate
     hovered: boolean
-    optionsComponent: React.ComponentType<CommonCalculationOptionProps>
+    optionsComponent: React.ComponentType<React.PropsWithChildren<CommonCalculationOptionProps>>
 }
 
 const Calculation = (props: Props): JSX.Element => {
@@ -50,7 +50,6 @@ const Calculation = (props: Props): JSX.Element => {
     )
 
     return (
-
         // tabindex is needed to make onBlur work on div.
         // See this for more details-
         // https://stackoverflow.com/questions/47308081/onblur-event-is-not-firing
@@ -69,25 +68,21 @@ const Calculation = (props: Props): JSX.Element => {
                     </div>
                 )
             }
-
             <span className='calculationLabel'>
                 {optionDisplayNameString(valueOption!, intl)}
             </span>
-
             {
                 value === Options.none.value &&
                 <ChevronUp/>
             }
-
             {
                 value !== Options.none.value &&
                 <span className='calculationValue'>
                     {Calculations[value] ? Calculations[value](props.cards, props.property, intl) : ''}
                 </span>
             }
-
         </div>
-    )
+    );
 }
 
 export default Calculation

@@ -15,7 +15,7 @@ type Props = {
     onSelect: (emoji: string) => void
 }
 
-const EmojiPicker: FC<Props> = (props: Props): JSX.Element => (
+const EmojiPicker: FC<React.PropsWithChildren<Props>> = (props: Props): JSX.Element => (
     <div
         className='EmojiPicker'
         onClick={(e) => e.stopPropagation()}

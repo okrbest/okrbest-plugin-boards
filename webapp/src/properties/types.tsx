@@ -11,7 +11,7 @@ import {Utils} from '../utils'
 
 const hashSignToken = '___hash_sign___'
 function encodeText(text: string): string {
-    return text.replace(/"/g, '""').replace(/#/g, hashSignToken)
+    return text.replace(/"/g, '""').replace(/#/g, hashSignToken);
 }
 
 export type PropertyTypeEnum = BoardPropertyTypeEnum
@@ -66,7 +66,7 @@ export abstract class PropertyType {
         return `octo-propertyvalue${readonly ? ' octo-propertyvalue--readonly' : ''}`
     }
 
-    abstract Editor: React.FunctionComponent<PropertyProps>
+    abstract Editor: React.FunctionComponent<React.PropsWithChildren<PropertyProps>>
     abstract name: string
     abstract type: PropertyTypeEnum
     abstract displayName: (intl: IntlShape) => string

@@ -8,7 +8,7 @@ import '@testing-library/jest-dom'
 
 import 'isomorphic-fetch'
 
-import {act} from 'react-dom/test-utils'
+import {act} from 'react'
 
 import userEvent from '@testing-library/user-event'
 
@@ -43,7 +43,7 @@ const boardTreeGroup = {
     cards: [],
 }
 
-const Wrapper: React.FC = ({children}) => {
+const Wrapper: React.FC<React.PropsWithChildren<unknown>> = ({children}) => {
     return wrapDNDIntl(
         <ColumnResizeProvider
             columnWidths={{}}
