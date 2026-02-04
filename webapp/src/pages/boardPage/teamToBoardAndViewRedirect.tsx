@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {useEffect} from 'react'
-import {useNavigate, useParams, useLocation} from 'react-router-dom'
+import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import {getBoards, getCurrentBoardId} from '../../store/boards'
 import {setCurrent as setCurrentView, getCurrentBoardViews} from '../../store/views'
@@ -24,17 +24,9 @@ const TeamToBoardAndViewRedirect = (): null => {
     const teamId = params.teamId || UserSettings.lastTeamId || Constants.globalTeamId
 
     useEffect(() => {
-        let boardID = match.params.boardId
-        if (!match.params.boardId) {
-            // first preference is for last visited board, but only if it exists in the current team's boards
-            const lastBoardID = UserSettings.lastBoardId[teamId]
-            const boardsLoaded = Object.keys(boards).length > 0
-            if (lastBoardID && boards[lastBoardID]) {
-                boardID = lastBoardID
-            } else if (lastBoardID && boardsLoaded && !boards[lastBoardID]) {
-                // Board list is loaded but the saved board doesn't exist — clear stale/cross-contaminated entry
-                UserSettings.setLastBoardID(teamId, null)
-            }
+        let boardID = params.boardId
+        if (!params.boardId) {
+            boardID = UserSettings.lastBoardId[teamId]
 
             if (!boardID && categories.length > 0) {
                 let goToBoardID: string | null = null
@@ -54,7 +46,7 @@ const TeamToBoardAndViewRedirect = (): null => {
             }
 
             if (boardID) {
-                const newPath = Utils.buildBoardPath(location.pathname, {...params, boardId: boardID})
+                const newPath = generatePath(Utils.getBoardPagePath(location.pathname), {...params, boardId: boardID, viewID: undefined})
                 navigate(newPath, {replace: true})
                 return
             }
@@ -74,7 +66,7 @@ const TeamToBoardAndViewRedirect = (): null => {
             }
 
             if (viewID) {
-                const newPath = Utils.buildBoardPath(location.pathname, {...params, viewId: viewID})
+                const newPath = generatePath(Utils.getBoardPagePath(location.pathname), {...params, viewId: viewID})
                 navigate(newPath, {replace: true})
             }
         }

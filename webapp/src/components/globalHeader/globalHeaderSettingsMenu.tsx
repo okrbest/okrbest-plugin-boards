@@ -3,6 +3,7 @@
 
 import React, {useState} from 'react'
 import {useIntl} from 'react-intl'
+import {History} from 'history'
 
 import {Archiver} from '../../archiver'
 import Menu from '../../widgets/menu'
@@ -16,14 +17,17 @@ import octoClient from '../../octoClient'
 import {UserSettings} from '../../userSettings'
 import CheckIcon from '../../widgets/icons/check'
 import SettingsIcon from '../../widgets/icons/settings'
-import {navigateTo} from '../../router'
 
 import {Constants} from '../../constants'
 import TelemetryClient, {TelemetryCategory, TelemetryActions} from '../../telemetry/telemetryClient'
 
 import './globalHeaderSettingsMenu.scss'
 
-const GlobalHeaderSettingsMenu = () => {
+type Props = {
+    history: History
+}
+
+const GlobalHeaderSettingsMenu = (props: Props) => {
     const intl = useIntl()
     const me = useAppSelector<IUser|null>(getMe)
     const currentTeam = useAppSelector<Team|null>(getCurrentTeam)
@@ -125,7 +129,7 @@ const GlobalHeaderSettingsMenu = () => {
 
                                 const newPath = `/team/${onboardingData?.teamID}/${onboardingData?.boardID}`
 
-                                navigateTo(newPath)
+                                props.history.push(newPath)
                             }}
                         />}
                 </Menu>

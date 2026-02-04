@@ -1,12 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactNode, useRef, useState, useEffect} from 'react'
+import React, {ReactNode, useRef, createRef, useState, useEffect, MutableRefObject} from 'react'
 
 import './boardSwitcherDialog.scss'
 import {useIntl} from 'react-intl'
 
-import {useNavigate, useParams, useLocation} from 'react-router-dom'
+import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import octoClient from '../../octoClient'
 import SearchDialog from '../searchDialog/searchDialog'
@@ -23,9 +23,10 @@ type Props = {
     onClose: () => void
 }
 
-const BoardSwitcherDialog = (props: Props): React.JSX.Element => {
+const BoardSwitcherDialog = (props: Props): JSX.Element => {
     const [selected, setSelected] = useState<number>(-1)
-    const itemRefs = useRef<Map<number, HTMLElement | null>>(new Map())
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [refs, setRefs] = useState<MutableRefObject<any>>(useRef([]))
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [IDs, setIDs] = useState<any>({})
     const [initialData, setInitialData] = useState<ReactNode[]>([])
@@ -51,7 +52,7 @@ const BoardSwitcherDialog = (props: Props): React.JSX.Element => {
         if (!me) {
             return
         }
-        const newPath = Utils.buildBoardPath(location.pathname, {teamId, boardId})
+        const newPath = generatePath(Utils.getBoardPagePath(location.pathname), {...params, teamId, boardId, viewId: undefined})
         navigate(newPath)
         props.onClose()
     }
@@ -78,15 +79,8 @@ const BoardSwitcherDialog = (props: Props): React.JSX.Element => {
         }
         const sortedItems = currentTeamItems.concat(otherTeamItems)
         const untitledBoardTitle = intl.formatMessage({id: 'ViewTitle.untitled-board', defaultMessage: 'Untitled board'})
-        
-        // Clean up refs for items that are no longer in the list
-        const currentKeys = new Set(itemRefs.current.keys())
-        for (const key of currentKeys) {
-            if (key >= sortedItems.length) {
-                itemRefs.current.delete(key)
-            }
-        }
-        
+        refs.current = sortedItems.map((_, i) => refs.current[i] ?? createRef())
+        setRefs(refs)
         return sortedItems.flatMap((item, i) => {
             const resultTitle = item.title || untitledBoardTitle
             const teamInfo = teamsById[item.teamId]
@@ -104,11 +98,7 @@ const BoardSwitcherDialog = (props: Props): React.JSX.Element => {
                     key={item.id}
                     className='blockSearchResult'
                     onClick={() => selectBoard(item.teamId, item.id)}
-                    ref={(el) => {
-                        if (el) {
-                            itemRefs.current.set(i, el)
-                        }
-                    }}
+                    ref={refs.current[i]}
                 >
                     {item.type === BoardTypeOpen && <Globe/>}
                     {item.type === BoardTypePrivate && <LockOutline/>}
@@ -138,18 +128,16 @@ const BoardSwitcherDialog = (props: Props): React.JSX.Element => {
 
     useEffect(() => {
         if (selected >= 0) {
-            const element = itemRefs.current.get(selected)
-            if (element?.parentElement) {
-                element.parentElement.focus()
-            }
+            refs.current[selected].current.parentElement.focus()
         }
 
         document.addEventListener('keydown', handleEnterKeyPress)
 
+        // cleanup function
         return () => {
             document.removeEventListener('keydown', handleEnterKeyPress)
         }
-    }, [selected, IDs])
+    }, [selected, refs, IDs])
 
     return (
         <SearchDialog

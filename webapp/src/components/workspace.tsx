@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useCallback, useEffect, useState} from 'react'
-import {useParams, useNavigate, useLocation} from 'react-router-dom'
+import {generatePath, useParams, useNavigate, useLocation} from 'react-router-dom'
 import {FormattedMessage} from 'react-intl'
 
 import {DatePropertyType} from '../properties/types'
@@ -66,7 +66,8 @@ function CenterContent(props: Props) {
     }
 
     const showCard = useCallback((cardId?: string) => {
-        let newPath = Utils.buildBoardPath(location.pathname, {...params, cardId})
+        const newParams = {...params, cardId}
+        let newPath = generatePath(Utils.getBoardPagePath(location.pathname), newParams)
         if (props.readonly) {
             newPath += `?r=${Utils.getReadToken()}`
         }

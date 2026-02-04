@@ -117,13 +117,11 @@ const SidebarCategory = (props: Props) => {
             props.onBoardTemplateSelectorClose()
         }
 
-        const cardId = (boardId !== params.boardId && viewId !== params.viewId) ? undefined : params.cardId
-        const newPath = Utils.buildBoardPath(location.pathname, {
-            teamId: params.teamId,
-            boardId: boardId || '',
-            viewId: viewId || '',
-            cardId,
-        })
+        const newParams: Record<string, string | undefined> = {...params, boardId: boardId || '', viewId: viewId || ''}
+        if (boardId !== params.boardId && viewId !== params.viewId) {
+            newParams.cardId = undefined
+        }
+        const newPath = generatePath(Utils.getBoardPagePath(location.pathname), newParams)
         navigate(newPath)
         props.hideSidebar()
     }, [params, navigate, location.pathname, props.activeViewID, props.onBoardTemplateSelectorClose, props.hideSidebar])
