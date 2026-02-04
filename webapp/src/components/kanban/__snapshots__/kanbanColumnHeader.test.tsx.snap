@@ -87,6 +87,7 @@ exports[`src/components/kanban/kanbanColumnHeader return kanbanColumnHeader and 
                 />
               </div>
             </div>
+            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -122,6 +123,66 @@ exports[`src/components/kanban/kanbanColumnHeader return kanbanColumnHeader and 
           </div>
         </div>
       </div>
+    </div>
+    <button
+      class="IconButton"
+      type="button"
+    >
+      <i
+        class="CompassIcon icon-plus AddIcon"
+      />
+    </button>
+  </div>
+</div>
+`;
+
+exports[`src/components/kanban/kanbanColumnHeader return kanbanColumnHeader and edit title 1`] = `
+<div>
+  <div
+    class="octo-board-header-cell KanbanColumnHeader"
+    draggable="true"
+    style="opacity: 1;"
+  >
+    <span
+      class="Label propColorDefault "
+    >
+      <input
+        class="Editable "
+        placeholder="New Select"
+        spellcheck="true"
+        title="New Title"
+        value="New Title"
+      />
+    </span>
+    <div
+      class="KanbanCalculation"
+    >
+      <button
+        class="Button"
+        title="0"
+        type="button"
+      >
+        <span>
+          0
+        </span>
+      </button>
+    </div>
+    <div
+      class="octo-spacer"
+    />
+    <div
+      aria-label="menuwrapper"
+      class="MenuWrapper"
+      role="button"
+    >
+      <button
+        class="IconButton"
+        type="button"
+      >
+        <i
+          class="CompassIcon icon-dots-horizontal OptionsIcon"
+        />
+      </button>
     </div>
     <button
       class="IconButton"
