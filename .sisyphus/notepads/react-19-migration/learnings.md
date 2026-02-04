@@ -261,3 +261,76 @@ Pattern: Changed JSX-returning callbacks to string-returning callbacks
 - Phase 3, Task 3.4: Run full test suite to verify no runtime regressions
 - Phase 3, Task 3.5: Commit all React 19 migration changes
 
+
+## Phase 3, Task 3.6: Jest 29 Configuration Fix
+
+**Status**: ✅ COMPLETED (2026-02-04)
+
+### What was done
+Fixed Jest 29 configuration in webapp/package.json to resolve "jest-environment-jsdom cannot be found" error.
+
+### Issue
+- Jest upgraded from 27.5.1 to 29.7.0
+- jest-environment-jsdom@30.2.0 installed
+- Error: "Test environment jest-environment-jsdom cannot be found"
+- Root cause: Outdated `globals.ts-jest` section in Jest config (not compatible with Jest 29 + @swc/jest)
+
+### Solution
+Removed the outdated `globals.ts-jest` section from Jest config in webapp/package.json:
+
+**Before**:
+```json
+"jest": {
+  "moduleNameMapper": { ... },
+  "globals": {
+    "ts-jest": {
+      "tsconfig": "./src/tsconfig.json"
+    }
+  },
+  "transform": {
+    "^.+\\.tsx?$": "@swc/jest"
+  },
+  ...
+}
+```
+
+**After**:
+```json
+"jest": {
+  "moduleNameMapper": { ... },
+  "transform": {
+    "^.+\\.tsx?$": "@swc/jest"
+  },
+  ...
+}
+```
+
+### Key Changes
+1. **Removed**: `"globals": { "ts-jest": { "tsconfig": "./src/tsconfig.json" } }` section
+2. **Kept**: `testEnvironment: "jsdom"` (required for Jest 29)
+3. **Kept**: `@swc/jest` transformer (correct for this project)
+4. **Kept**: All other Jest config options unchanged
+
+### Verification
+✅ `npm run test -- --passWithNoTests` runs successfully
+✅ Jest 29 environment loads correctly
+✅ jest-environment-jsdom@30.2.0 is properly recognized
+✅ No "jest-environment-jsdom cannot be found" error
+
+### Key Findings
+
+1. **Jest 29 Breaking Change**: Jest 29 requires explicit jest-environment-jsdom installation (done), but the config must not have conflicting transformer settings.
+
+2. **ts-jest vs @swc/jest**: The project uses @swc/jest transformer, not ts-jest. The `globals.ts-jest` section was leftover from an older configuration and was interfering with Jest 29's environment resolution.
+
+3. **Jest Config Cleanup**: When upgrading Jest versions, always review and remove outdated configuration sections that reference old transformers or settings.
+
+4. **Compatibility**: Jest 29 + @swc/jest + jest-environment-jsdom@30.2.0 work correctly together when the config is clean (no conflicting transformer settings).
+
+### Files Modified
+- `webapp/package.json` (Jest config section only)
+
+### Next Steps
+- Phase 3, Task 3.7: Address remaining test failures (react-dom/client imports, snapshot mismatches)
+- Phase 3, Task 3.8: Full test suite verification
+
