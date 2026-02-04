@@ -5,11 +5,9 @@
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
 
-import {render, waitFor} from '@testing-library/react'
+import {render, waitFor, act} from '@testing-library/react'
 
 import configureStore from 'redux-mock-store'
-
-import {act} from 'react'
 
 import userEvent from '@testing-library/user-event'
 

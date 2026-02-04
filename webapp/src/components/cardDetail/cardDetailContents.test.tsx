@@ -4,9 +4,7 @@
 import React, {ReactElement, ReactNode} from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
 
-import {fireEvent, render} from '@testing-library/react'
-
-import {act} from 'react'
+import {fireEvent, render, act} from '@testing-library/react'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 

@@ -118,13 +118,7 @@ exports[`should match snapshot, add new 1`] = `
       <span
         class="Label propColorBrown "
       >
-        <input
-          class="Editable "
-          placeholder="New Select"
-          spellcheck="true"
-          title="value 1"
-          value="value 1"
-        />
+        value 1
       </span>
     </div>
     <button
@@ -183,13 +177,7 @@ exports[`should match snapshot, edit title 1`] = `
       <span
         class="Label propColorBrown "
       >
-        <input
-          class="Editable "
-          placeholder="New Select"
-          spellcheck="true"
-          title="value 1"
-          value="value 1"
-        />
+        value 1
       </span>
     </div>
     <button
@@ -248,13 +236,7 @@ exports[`should match snapshot, hide group 1`] = `
       <span
         class="Label propColorBrown "
       >
-        <input
-          class="Editable "
-          placeholder="New Select"
-          spellcheck="true"
-          title="value 1"
-          value="value 1"
-        />
+        value 1
       </span>
     </div>
     <button

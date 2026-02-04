@@ -92,7 +92,7 @@ describe('properties/multiSelect', () => {
         expect(container).toMatchSnapshot()
     })
 
-    it('opens editable multi value selector menu when the button/label is clicked', async () => {
+    it('opens editable multi value selector menu when the button/label is clicked', () => {
         const propertyTemplate = buildMultiSelectPropertyTemplate()
 
         render(
@@ -108,9 +108,9 @@ describe('properties/multiSelect', () => {
             {wrapper: Wrapper},
         )
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
 
-        expect(await screen.findByRole('combobox', {name: /value selector/i})).toBeInTheDocument()
+        expect(screen.getByRole('combobox', {name: /value selector/i})).toBeInTheDocument()
     })
 
     it('can select a option', async () => {
@@ -130,9 +130,9 @@ describe('properties/multiSelect', () => {
             {wrapper: Wrapper},
         )
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
 
-        await userEvent.type(await screen.findByRole('combobox', {name: /value selector/i}), 'b{enter}')
+        userEvent.type(screen.getByRole('combobox', {name: /value selector/i}), 'b{enter}')
 
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, ['multi-option-1', 'multi-option-2'])
         expectOptionsMenuToBeVisible(propertyTemplate)
@@ -155,9 +155,9 @@ describe('properties/multiSelect', () => {
             {wrapper: Wrapper},
         )
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
 
-        await userEvent.click((await screen.findAllByRole('button', {name: /clear/i}))[0])
+        userEvent.click(screen.getAllByRole('button', {name: /clear/i})[0])
 
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, ['multi-option-2'])
         expectOptionsMenuToBeVisible(propertyTemplate)
@@ -180,9 +180,9 @@ describe('properties/multiSelect', () => {
             {wrapper: Wrapper},
         )
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
 
-        await userEvent.type(await screen.findByRole('combobox', {name: /value selector/i}), '{backspace}')
+        userEvent.type(screen.getByRole('combobox', {name: /value selector/i}), '{backspace}')
 
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, ['multi-option-1'])
         expectOptionsMenuToBeVisible(propertyTemplate)
@@ -205,9 +205,9 @@ describe('properties/multiSelect', () => {
             {wrapper: Wrapper},
         )
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
 
-        await userEvent.type(await screen.findByRole('combobox', {name: /value selector/i}), '{escape}')
+        userEvent.type(screen.getByRole('combobox', {name: /value selector/i}), '{escape}')
 
         for (const option of propertyTemplate.options) {
             expect(screen.queryByRole('menuitem', {name: option.value})).toBeNull()
@@ -233,14 +233,14 @@ describe('properties/multiSelect', () => {
 
         mockedMutator.insertPropertyOption.mockResolvedValue()
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
-        await userEvent.type(await screen.findByRole('combobox', {name: /value selector/i}), 'new-value{enter}')
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.type(screen.getByRole('combobox', {name: /value selector/i}), 'new-value{enter}')
 
         expect(mockedMutator.insertPropertyOption).toHaveBeenCalledWith(board.id, board.cardProperties, propertyTemplate, expect.objectContaining({value: 'new-value'}), 'add property option')
         expectOptionsMenuToBeVisible(propertyTemplate)
     })
 
-    it('can delete a option', async () => {
+    it('can delete a option', () => {
         const propertyTemplate = buildMultiSelectPropertyTemplate()
         const propertyValue = ['multi-option-1', 'multi-option-2']
 
@@ -257,20 +257,20 @@ describe('properties/multiSelect', () => {
             {wrapper: Wrapper},
         )
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
 
-        await userEvent.click((await screen.findAllByRole('button', {name: /open menu/i}))[0])
+        userEvent.click(screen.getAllByRole('button', {name: /open menu/i})[0])
 
-        const deleteButtons = await screen.findAllByRole('button', {name: /delete/i})
+        const deleteButtons = screen.getAllByRole('button', {name: /delete/i})
         const menuDeleteButton = deleteButtons.find((btn) => btn.classList.contains('MenuOption'))
-        await userEvent.click(menuDeleteButton!)
+        userEvent.click(menuDeleteButton!)
 
         const optionToDelete = propertyTemplate.options.find((option: IPropertyOption) => option.id === propertyValue[0])
 
         expect(mockedMutator.deletePropertyOption).toHaveBeenCalledWith(board.id, board.cardProperties, propertyTemplate, optionToDelete)
     })
 
-    it('can change color for any option', async () => {
+    it('can change color for any option', () => {
         const propertyTemplate = buildMultiSelectPropertyTemplate()
         const propertyValue = ['multi-option-1', 'multi-option-2']
         const newColorKey = 'propColorYellow'
@@ -289,13 +289,13 @@ describe('properties/multiSelect', () => {
             {wrapper: Wrapper},
         )
 
-        await userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
+        userEvent.click(screen.getByTestId(nonEditableMultiSelectTestId))
 
-        await userEvent.click((await screen.findAllByRole('button', {name: /open menu/i}))[0])
+        userEvent.click(screen.getAllByRole('button', {name: /open menu/i})[0])
 
-        const colorButtons = await screen.findAllByRole('button', {name: new RegExp(newColorValue, 'i')})
+        const colorButtons = screen.getAllByRole('button', {name: new RegExp(newColorValue, 'i')})
         const menuColorButton = colorButtons.find((btn) => btn.classList.contains('MenuOption'))
-        await userEvent.click(menuColorButton!)
+        userEvent.click(menuColorButton!)
 
         const selectedOption = propertyTemplate.options.find((option: IPropertyOption) => option.id === propertyValue[0])
 

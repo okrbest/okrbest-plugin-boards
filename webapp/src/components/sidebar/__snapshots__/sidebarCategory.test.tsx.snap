@@ -3,11 +3,11 @@
 exports[`components/sidebarCategory sidebar call hideSidebar 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id="_r_0_"
+    data-rfd-droppable-context-id=":r0:"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id="_r_0_"
+      data-rfd-draggable-context-id=":r0:"
       data-rfd-draggable-id="category_1_id"
     >
       <div
@@ -15,16 +15,16 @@ exports[`components/sidebarCategory sidebar call hideSidebar 1`] = `
       >
         <div
           class="categoryBoardsDroppableArea"
-          data-rfd-droppable-context-id="_r_0_"
+          data-rfd-droppable-context-id=":r0:"
           data-rfd-droppable-id="category_1_id"
         >
           <div
             class="octo-sidebar-item category expanded "
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
+              aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
               class="octo-sidebar-title category-title"
-              data-rfd-drag-handle-context-id="_r_0_"
+              data-rfd-drag-handle-context-id=":r0:"
               data-rfd-drag-handle-draggable-id="category_1_id"
               draggable="false"
               role="button"
@@ -59,13 +59,13 @@ exports[`components/sidebarCategory sidebar call hideSidebar 1`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_0_"
+            data-rfd-draggable-context-id=":r0:"
             data-rfd-draggable-id="board_1_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
+              aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
               class="SidebarBoardItem subitem "
-              data-rfd-drag-handle-context-id="_r_0_"
+              data-rfd-drag-handle-context-id=":r0:"
               data-rfd-drag-handle-draggable-id="board_1_id"
               draggable="false"
               role="button"
@@ -101,13 +101,13 @@ exports[`components/sidebarCategory sidebar call hideSidebar 1`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_0_"
+            data-rfd-draggable-context-id=":r0:"
             data-rfd-draggable-id="board_2_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
+              aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
               class="SidebarBoardItem subitem "
-              data-rfd-drag-handle-context-id="_r_0_"
+              data-rfd-drag-handle-context-id=":r0:"
               data-rfd-drag-handle-draggable-id="board_2_id"
               draggable="false"
               role="button"
@@ -152,11 +152,11 @@ exports[`components/sidebarCategory sidebar call hideSidebar 1`] = `
 exports[`components/sidebarCategory sidebar call hideSidebar 2`] = `
 <div>
   <div
-    data-rfd-droppable-context-id="_r_0_"
+    data-rfd-droppable-context-id=":r0:"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id="_r_0_"
+      data-rfd-draggable-context-id=":r0:"
       data-rfd-draggable-id="category_1_id"
     >
       <div
@@ -164,16 +164,16 @@ exports[`components/sidebarCategory sidebar call hideSidebar 2`] = `
       >
         <div
           class="categoryBoardsDroppableArea"
-          data-rfd-droppable-context-id="_r_0_"
+          data-rfd-droppable-context-id=":r0:"
           data-rfd-droppable-id="category_1_id"
         >
           <div
             class="octo-sidebar-item category expanded "
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
+              aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
               class="octo-sidebar-title category-title"
-              data-rfd-drag-handle-context-id="_r_0_"
+              data-rfd-drag-handle-context-id=":r0:"
               data-rfd-drag-handle-draggable-id="category_1_id"
               draggable="false"
               role="button"
@@ -208,13 +208,13 @@ exports[`components/sidebarCategory sidebar call hideSidebar 2`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_0_"
+            data-rfd-draggable-context-id=":r0:"
             data-rfd-draggable-id="board_1_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
+              aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
               class="SidebarBoardItem subitem "
-              data-rfd-drag-handle-context-id="_r_0_"
+              data-rfd-drag-handle-context-id=":r0:"
               data-rfd-drag-handle-draggable-id="board_1_id"
               draggable="false"
               role="button"
@@ -250,13 +250,13 @@ exports[`components/sidebarCategory sidebar call hideSidebar 2`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_0_"
+            data-rfd-draggable-context-id=":r0:"
             data-rfd-draggable-id="board_2_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
+              aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
               class="SidebarBoardItem subitem "
-              data-rfd-drag-handle-context-id="_r_0_"
+              data-rfd-drag-handle-context-id=":r0:"
               data-rfd-drag-handle-draggable-id="board_2_id"
               draggable="false"
               role="button"
@@ -301,11 +301,11 @@ exports[`components/sidebarCategory sidebar call hideSidebar 2`] = `
 exports[`components/sidebarCategory sidebar collapsed with active board in it 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id="_r_e_"
+    data-rfd-droppable-context-id=":r14:"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id="_r_e_"
+      data-rfd-draggable-context-id=":r14:"
       data-rfd-draggable-id="category_1_id"
     >
       <div
@@ -313,16 +313,16 @@ exports[`components/sidebarCategory sidebar collapsed with active board in it 1`
       >
         <div
           class="categoryBoardsDroppableArea"
-          data-rfd-droppable-context-id="_r_e_"
+          data-rfd-droppable-context-id=":r14:"
           data-rfd-droppable-id="category_1_id"
         >
           <div
             class="octo-sidebar-item category collapsed "
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_e_-hidden-text-_r_f_"
+              aria-describedby="rfd-hidden-text-:r14:-hidden-text-:r15:"
               class="octo-sidebar-title category-title"
-              data-rfd-drag-handle-context-id="_r_e_"
+              data-rfd-drag-handle-context-id=":r14:"
               data-rfd-drag-handle-draggable-id="category_1_id"
               draggable="false"
               role="button"
@@ -357,13 +357,13 @@ exports[`components/sidebarCategory sidebar collapsed with active board in it 1`
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_e_"
+            data-rfd-draggable-context-id=":r14:"
             data-rfd-draggable-id="board_1_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_e_-hidden-text-_r_f_"
+              aria-describedby="rfd-hidden-text-:r14:-hidden-text-:r15:"
               class="SidebarBoardItem subitem active"
-              data-rfd-drag-handle-context-id="_r_e_"
+              data-rfd-drag-handle-context-id=":r14:"
               data-rfd-drag-handle-draggable-id="board_1_id"
               draggable="false"
               role="button"
@@ -437,11 +437,11 @@ exports[`components/sidebarCategory sidebar collapsed with active board in it 1`
 exports[`components/sidebarCategory sidebar collapsed without active board 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id="_r_7_"
+    data-rfd-droppable-context-id=":r7:"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id="_r_7_"
+      data-rfd-draggable-context-id=":r7:"
       data-rfd-draggable-id="category_1_id"
     >
       <div
@@ -449,16 +449,16 @@ exports[`components/sidebarCategory sidebar collapsed without active board 1`] =
       >
         <div
           class="categoryBoardsDroppableArea"
-          data-rfd-droppable-context-id="_r_7_"
+          data-rfd-droppable-context-id=":r7:"
           data-rfd-droppable-id="category_1_id"
         >
           <div
             class="octo-sidebar-item category collapsed "
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_7_-hidden-text-_r_8_"
+              aria-describedby="rfd-hidden-text-:r7:-hidden-text-:r8:"
               class="octo-sidebar-title category-title"
-              data-rfd-drag-handle-context-id="_r_7_"
+              data-rfd-drag-handle-context-id=":r7:"
               data-rfd-drag-handle-draggable-id="category_1_id"
               draggable="false"
               role="button"
@@ -502,11 +502,11 @@ exports[`components/sidebarCategory sidebar collapsed without active board 1`] =
 exports[`components/sidebarCategory sidebar template close other 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id="_r_t_"
+    data-rfd-droppable-context-id=":r29:"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id="_r_t_"
+      data-rfd-draggable-context-id=":r29:"
       data-rfd-draggable-id="category_1_id"
     >
       <div
@@ -514,16 +514,16 @@ exports[`components/sidebarCategory sidebar template close other 1`] = `
       >
         <div
           class="categoryBoardsDroppableArea"
-          data-rfd-droppable-context-id="_r_t_"
+          data-rfd-droppable-context-id=":r29:"
           data-rfd-droppable-id="category_1_id"
         >
           <div
             class="octo-sidebar-item category expanded "
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_t_-hidden-text-_r_u_"
+              aria-describedby="rfd-hidden-text-:r29:-hidden-text-:r30:"
               class="octo-sidebar-title category-title"
-              data-rfd-drag-handle-context-id="_r_t_"
+              data-rfd-drag-handle-context-id=":r29:"
               data-rfd-drag-handle-draggable-id="category_1_id"
               draggable="false"
               role="button"
@@ -558,13 +558,13 @@ exports[`components/sidebarCategory sidebar template close other 1`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_t_"
+            data-rfd-draggable-context-id=":r29:"
             data-rfd-draggable-id="board_1_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_t_-hidden-text-_r_u_"
+              aria-describedby="rfd-hidden-text-:r29:-hidden-text-:r30:"
               class="SidebarBoardItem subitem "
-              data-rfd-drag-handle-context-id="_r_t_"
+              data-rfd-drag-handle-context-id=":r29:"
               data-rfd-drag-handle-draggable-id="board_1_id"
               draggable="false"
               role="button"
@@ -600,13 +600,13 @@ exports[`components/sidebarCategory sidebar template close other 1`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_t_"
+            data-rfd-draggable-context-id=":r29:"
             data-rfd-draggable-id="board_2_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_t_-hidden-text-_r_u_"
+              aria-describedby="rfd-hidden-text-:r29:-hidden-text-:r30:"
               class="SidebarBoardItem subitem active"
-              data-rfd-drag-handle-context-id="_r_t_"
+              data-rfd-drag-handle-context-id=":r29:"
               data-rfd-drag-handle-draggable-id="board_2_id"
               draggable="false"
               role="button"
@@ -680,11 +680,11 @@ exports[`components/sidebarCategory sidebar template close other 1`] = `
 exports[`components/sidebarCategory sidebar template close self 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id="_r_m_"
+    data-rfd-droppable-context-id=":r22:"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id="_r_m_"
+      data-rfd-draggable-context-id=":r22:"
       data-rfd-draggable-id="category_1_id"
     >
       <div
@@ -692,16 +692,16 @@ exports[`components/sidebarCategory sidebar template close self 1`] = `
       >
         <div
           class="categoryBoardsDroppableArea"
-          data-rfd-droppable-context-id="_r_m_"
+          data-rfd-droppable-context-id=":r22:"
           data-rfd-droppable-id="category_1_id"
         >
           <div
             class="octo-sidebar-item category expanded "
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_m_-hidden-text-_r_n_"
+              aria-describedby="rfd-hidden-text-:r22:-hidden-text-:r23:"
               class="octo-sidebar-title category-title"
-              data-rfd-drag-handle-context-id="_r_m_"
+              data-rfd-drag-handle-context-id=":r22:"
               data-rfd-drag-handle-draggable-id="category_1_id"
               draggable="false"
               role="button"
@@ -736,13 +736,13 @@ exports[`components/sidebarCategory sidebar template close self 1`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_m_"
+            data-rfd-draggable-context-id=":r22:"
             data-rfd-draggable-id="board_1_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_m_-hidden-text-_r_n_"
+              aria-describedby="rfd-hidden-text-:r22:-hidden-text-:r23:"
               class="SidebarBoardItem subitem active"
-              data-rfd-drag-handle-context-id="_r_m_"
+              data-rfd-drag-handle-context-id=":r22:"
               data-rfd-drag-handle-draggable-id="board_1_id"
               draggable="false"
               role="button"
@@ -807,13 +807,13 @@ exports[`components/sidebarCategory sidebar template close self 1`] = `
             </div>
           </div>
           <div
-            data-rfd-draggable-context-id="_r_m_"
+            data-rfd-draggable-context-id=":r22:"
             data-rfd-draggable-id="board_2_id"
           >
             <div
-              aria-describedby="rfd-hidden-text-_r_m_-hidden-text-_r_n_"
+              aria-describedby="rfd-hidden-text-:r22:-hidden-text-:r23:"
               class="SidebarBoardItem subitem "
-              data-rfd-drag-handle-context-id="_r_m_"
+              data-rfd-drag-handle-context-id=":r22:"
               data-rfd-drag-handle-draggable-id="board_2_id"
               draggable="false"
               role="button"

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react'
-import {fireEvent, render, screen, within, waitFor} from '@testing-library/react'
+import {fireEvent, render, screen, within} from '@testing-library/react'
 import {createIntl} from 'react-intl'
 import userEvent from '@testing-library/user-event'
 import {mocked} from 'jest-mock'
@@ -103,150 +103,150 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         ))
         expect(container).toMatchSnapshot()
     })
-    test('return kanbanColumnHeader and click on menuwrapper', async () => {
-         const {container} = render(wrapDNDIntl(
-             <ReduxProvider store={store}>
-                 <KanbanColumnHeader
-                     board={board}
-                     activeView={activeView}
-                     group={{
-                         option,
-                         cards: [card],
-                     }}
-                     intl={intl}
-                     readonly={false}
-                     addCard={jest.fn()}
-                     addCardFromTemplate={jest.fn()}
-                     defaultTemplateID={"1"}
-                     propertyNameChanged={jest.fn()}
-                     onDropToColumn={jest.fn()}
-                     calculationMenuOpen={false}
-                     onCalculationMenuOpen={jest.fn()}
-                     onCalculationMenuClose={jest.fn()}
-                 />
-             </ReduxProvider>,
-         ))
-         const buttonMenuWrapper = await screen.findByRole('button', {name: 'menuwrapper'})
-         expect(buttonMenuWrapper).toBeDefined()
-         await userEvent.click(buttonMenuWrapper)
-         expect(container).toMatchSnapshot()
-     })
-    test('return kanbanColumnHeader, click on menuwrapper and click on hide menu', async () => {
-         render(wrapDNDIntl(
-             <ReduxProvider store={store}>
-                 <KanbanColumnHeader
-                     board={board}
-                     activeView={activeView}
-                     group={{
-                         option,
-                         cards: [card],
-                     }}
-                     intl={intl}
-                     readonly={false}
-                     addCard={jest.fn()}
-                     addCardFromTemplate={jest.fn()}
-                     defaultTemplateID={"1"}
-                     propertyNameChanged={jest.fn()}
-                     onDropToColumn={jest.fn()}
-                     calculationMenuOpen={false}
-                     onCalculationMenuOpen={jest.fn()}
-                     onCalculationMenuClose={jest.fn()}
-                 />
-             </ReduxProvider>,
-         ))
-         const buttonMenuWrapper = await screen.findByRole('button', {name: 'menuwrapper'})
-         expect(buttonMenuWrapper).toBeDefined()
-         await userEvent.click(buttonMenuWrapper)
-         const buttonHide = await within(buttonMenuWrapper).findByRole('button', {name: 'Hide'})
-         expect(buttonHide).toBeDefined()
-         await userEvent.click(buttonHide)
-         expect(mockedMutator.hideViewColumn).toBeCalledTimes(1)
-     })
+    test('return kanbanColumnHeader and click on menuwrapper', () => {
+        const {container} = render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <KanbanColumnHeader
+                    board={board}
+                    activeView={activeView}
+                    group={{
+                        option,
+                        cards: [card],
+                    }}
+                    intl={intl}
+                    readonly={false}
+                    addCard={jest.fn()}
+                    addCardFromTemplate={jest.fn()}
+                    defaultTemplateID={"1"}
+                    propertyNameChanged={jest.fn()}
+                    onDropToColumn={jest.fn()}
+                    calculationMenuOpen={false}
+                    onCalculationMenuOpen={jest.fn()}
+                    onCalculationMenuClose={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+        const buttonMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
+        expect(buttonMenuWrapper).toBeDefined()
+        userEvent.click(buttonMenuWrapper)
+        expect(container).toMatchSnapshot()
+    })
+    test('return kanbanColumnHeader, click on menuwrapper and click on hide menu', () => {
+        render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <KanbanColumnHeader
+                    board={board}
+                    activeView={activeView}
+                    group={{
+                        option,
+                        cards: [card],
+                    }}
+                    intl={intl}
+                    readonly={false}
+                    addCard={jest.fn()}
+                    addCardFromTemplate={jest.fn()}
+                    defaultTemplateID={"1"}
+                    propertyNameChanged={jest.fn()}
+                    onDropToColumn={jest.fn()}
+                    calculationMenuOpen={false}
+                    onCalculationMenuOpen={jest.fn()}
+                    onCalculationMenuClose={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+        const buttonMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
+        expect(buttonMenuWrapper).toBeDefined()
+        userEvent.click(buttonMenuWrapper)
+        const buttonHide = within(buttonMenuWrapper).getByRole('button', {name: 'Hide'})
+        expect(buttonHide).toBeDefined()
+        userEvent.click(buttonHide)
+        expect(mockedMutator.hideViewColumn).toBeCalledTimes(1)
+    })
 
-    test('return kanbanColumnHeader and click to add card', async () => {
-         const mockedAddCard = jest.fn()
-         const {container} = render(wrapDNDIntl(
-             <ReduxProvider store={store}>
-                 <KanbanColumnHeader
-                     board={board}
-                     activeView={activeView}
-                     group={{
-                         option,
-                         cards: [card],
-                     }}
-                     intl={intl}
-                     readonly={false}
-                     addCard={mockedAddCard}
-                     addCardFromTemplate={jest.fn()}
-                     defaultTemplateID={undefined}
-                     propertyNameChanged={jest.fn()}
-                     onDropToColumn={jest.fn()}
-                     calculationMenuOpen={false}
-                     onCalculationMenuOpen={jest.fn()}
-                     onCalculationMenuClose={jest.fn()}
-                 />
-             </ReduxProvider>,
-         ))
-         const buttonAddCard = container.querySelector('.AddIcon')?.parentElement
-         expect(buttonAddCard).toBeDefined()
-         await userEvent.click(buttonAddCard!)
-         expect(mockedAddCard).toBeCalledTimes(1)
-     })
-    test('return kanbanColumnHeader and click KanbanCalculationMenu', async () => {
-         const mockedCalculationMenuOpen = jest.fn()
-         render(wrapDNDIntl(
-             <ReduxProvider store={store}>
-                 <KanbanColumnHeader
-                     board={board}
-                     activeView={activeView}
-                     group={{
-                         option,
-                         cards: [card],
-                     }}
-                     intl={intl}
-                     readonly={false}
-                     addCard={jest.fn()}
-                     addCardFromTemplate={jest.fn()}
-                     defaultTemplateID={"1"}
-                     propertyNameChanged={jest.fn()}
-                     onDropToColumn={jest.fn()}
-                     calculationMenuOpen={false}
-                     onCalculationMenuOpen={mockedCalculationMenuOpen}
-                     onCalculationMenuClose={jest.fn()}
-                 />
-             </ReduxProvider>,
-         ))
-         const buttonKanbanCalculation = (await screen.findByText(/0/i)).parentElement
-         expect(buttonKanbanCalculation).toBeDefined()
-         await userEvent.click(buttonKanbanCalculation!)
-         expect(mockedCalculationMenuOpen).toBeCalledTimes(1)
-     })
-    test('return kanbanColumnHeader and click count on KanbanCalculationMenu', async () => {
-         render(wrapDNDIntl(
-             <ReduxProvider store={store}>
-                 <KanbanColumnHeader
-                     board={board}
-                     activeView={activeView}
-                     group={{
-                         option,
-                         cards: [card],
-                     }}
-                     intl={intl}
-                     readonly={false}
-                     addCard={jest.fn()}
-                     addCardFromTemplate={jest.fn()}
-                     defaultTemplateID={"1"}
-                     propertyNameChanged={jest.fn()}
-                     onDropToColumn={jest.fn()}
-                     calculationMenuOpen={true}
-                     onCalculationMenuOpen={jest.fn()}
-                     onCalculationMenuClose={jest.fn()}
-                 />
-             </ReduxProvider>,
-         ))
-         const menuCountEmpty = await screen.findByText('Count')
-         expect(menuCountEmpty).toBeDefined()
-         await userEvent.click(menuCountEmpty)
-         expect(mockedMutator.changeViewKanbanCalculations).toBeCalledTimes(1)
-     })
+    test('return kanbanColumnHeader and click to add card', () => {
+        const mockedAddCard = jest.fn()
+        const {container} = render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <KanbanColumnHeader
+                    board={board}
+                    activeView={activeView}
+                    group={{
+                        option,
+                        cards: [card],
+                    }}
+                    intl={intl}
+                    readonly={false}
+                    addCard={mockedAddCard}
+                    addCardFromTemplate={jest.fn()}
+                    defaultTemplateID={undefined}
+                    propertyNameChanged={jest.fn()}
+                    onDropToColumn={jest.fn()}
+                    calculationMenuOpen={false}
+                    onCalculationMenuOpen={jest.fn()}
+                    onCalculationMenuClose={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+        const buttonAddCard = container.querySelector('.AddIcon')?.parentElement
+        expect(buttonAddCard).toBeDefined()
+        userEvent.click(buttonAddCard!)
+        expect(mockedAddCard).toBeCalledTimes(1)
+    })
+    test('return kanbanColumnHeader and click KanbanCalculationMenu', () => {
+        const mockedCalculationMenuOpen = jest.fn()
+        render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <KanbanColumnHeader
+                    board={board}
+                    activeView={activeView}
+                    group={{
+                        option,
+                        cards: [card],
+                    }}
+                    intl={intl}
+                    readonly={false}
+                    addCard={jest.fn()}
+                    addCardFromTemplate={jest.fn()}
+                    defaultTemplateID={"1"}
+                    propertyNameChanged={jest.fn()}
+                    onDropToColumn={jest.fn()}
+                    calculationMenuOpen={false}
+                    onCalculationMenuOpen={mockedCalculationMenuOpen}
+                    onCalculationMenuClose={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+        const buttonKanbanCalculation = screen.getByText(/0/i).parentElement
+        expect(buttonKanbanCalculation).toBeDefined()
+        userEvent.click(buttonKanbanCalculation!)
+        expect(mockedCalculationMenuOpen).toBeCalledTimes(1)
+    })
+    test('return kanbanColumnHeader and click count on KanbanCalculationMenu', () => {
+        render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <KanbanColumnHeader
+                    board={board}
+                    activeView={activeView}
+                    group={{
+                        option,
+                        cards: [card],
+                    }}
+                    intl={intl}
+                    readonly={false}
+                    addCard={jest.fn()}
+                    addCardFromTemplate={jest.fn()}
+                    defaultTemplateID={"1"}
+                    propertyNameChanged={jest.fn()}
+                    onDropToColumn={jest.fn()}
+                    calculationMenuOpen={true}
+                    onCalculationMenuOpen={jest.fn()}
+                    onCalculationMenuClose={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+        const menuCountEmpty = screen.getByText('Count')
+        expect(menuCountEmpty).toBeDefined()
+        userEvent.click(menuCountEmpty)
+        expect(mockedMutator.changeViewKanbanCalculations).toBeCalledTimes(1)
+    })
 })
