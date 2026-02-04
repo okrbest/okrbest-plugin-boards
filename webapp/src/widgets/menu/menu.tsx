@@ -21,7 +21,7 @@ type Props = {
     parentRef?: React.RefObject<any>
 }
 
-const Menu = React.memo((props: Props): React.JSX.Element => {
+const Menu = React.memo((props: Props): JSX.Element => {
     const {position, fixed, children, parentRef} = props
     const menuRef = useRef<HTMLDivElement>(null)
     const [hovering, setHovering] = useState<React.ReactNode>(null)
@@ -44,16 +44,14 @@ const Menu = React.memo((props: Props): React.JSX.Element => {
         >
             <div className='menu-contents'>
                 <div className='menu-options'>
-                    {React.Children.toArray(children).map((child, index) => (
+                    {React.Children.map(children, (child) => (
                         <div
-                            key={index}
                             onMouseEnter={() => setHovering(child)}
                         >
                             <HoveringContext.Provider value={child === hovering}>
                                 {child}
                             </HoveringContext.Provider>
-                        </div>
-                    ))}
+                        </div>))}
                 </div>
 
                 <div className='menu-spacer hideOnWidescreen'/>
