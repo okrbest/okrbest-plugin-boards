@@ -6,7 +6,7 @@ import {fireEvent, render, screen, waitFor} from '@testing-library/react'
 import '@testing-library/jest-dom'
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {MemoryRouter} from 'react-router-dom'
+
 import {mocked} from 'jest-mock'
 import userEvent from '@testing-library/user-event'
 
@@ -140,7 +140,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         expect(container).toMatchSnapshot()
     })
     test('should match snapshot without permissions', () => {
@@ -177,7 +177,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         expect(container).toMatchSnapshot()
     })
     test('do not return a kanban with groupByProperty undefined', () => {
@@ -213,7 +213,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
 
         expect(mockedUtils.assertFailure).toBeCalled()
         expect(container).toMatchSnapshot()
@@ -251,7 +251,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
 
         const cardsElement = container.querySelectorAll('.KanbanCard')
         expect(cardsElement).not.toBeNull()
@@ -299,7 +299,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
 
         const cardsElement = container.querySelectorAll('.KanbanCard')
         expect(cardsElement).not.toBeNull()
@@ -347,7 +347,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
 
         const cardsElement = container.querySelectorAll('.KanbanCard')
         expect(cardsElement).not.toBeNull()
@@ -396,7 +396,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
         expect(allButtonsNew).not.toBeNull()
         userEvent.click(allButtonsNew[0])
@@ -436,7 +436,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         const buttonKanbanCalculation = screen.getByRole('button', {name: '2'})
         expect(buttonKanbanCalculation).toBeDefined()
         userEvent.click(buttonKanbanCalculation!)
@@ -476,7 +476,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         const buttonAddGroup = screen.getByRole('button', {name: '+ Add a group'})
         expect(buttonAddGroup).toBeDefined()
         userEvent.click(buttonAddGroup)
@@ -604,7 +604,7 @@ describe('src/component/kanban/kanban', () => {
                     showHiddenCardCountNotification={jest.fn()}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
         expect(allButtonsNew).not.toBeNull()
         userEvent.click(allButtonsNew[0])

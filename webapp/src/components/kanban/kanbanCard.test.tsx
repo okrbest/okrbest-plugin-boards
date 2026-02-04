@@ -4,7 +4,6 @@
 import React from 'react'
 import {render, screen, within} from '@testing-library/react'
 import '@testing-library/jest-dom'
-import {MemoryRouter} from 'react-router-dom'
 
 import {Provider as ReduxProvider} from 'react-redux'
 
@@ -91,7 +90,7 @@ describe('src/components/kanban/kanbanCard', () => {
                     isManualSort={false}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         expect(container).toMatchSnapshot()
     })
     test('should match snapshot with readonly', () => {
@@ -109,7 +108,7 @@ describe('src/components/kanban/kanbanCard', () => {
                     isManualSort={false}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         expect(container).toMatchSnapshot()
     })
     test('return kanbanCard and click on delete menu ', () => {
@@ -127,7 +126,7 @@ describe('src/components/kanban/kanbanCard', () => {
                     isManualSort={false}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
 
         const {container} = result
 
@@ -163,7 +162,7 @@ describe('src/components/kanban/kanbanCard', () => {
                     isManualSort={false}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
         expect(elementMenuWrapper).not.toBeNull()
         userEvent.click(elementMenuWrapper)
@@ -189,7 +188,7 @@ describe('src/components/kanban/kanbanCard', () => {
                     isManualSort={false}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
         expect(elementMenuWrapper).not.toBeNull()
         userEvent.click(elementMenuWrapper)

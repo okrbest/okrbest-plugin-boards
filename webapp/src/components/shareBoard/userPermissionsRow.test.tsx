@@ -7,7 +7,6 @@ import {Provider as ReduxProvider} from 'react-redux'
 import thunk from 'redux-thunk'
 
 import React from 'react'
-import {MemoryRouter} from 'react-router'
 import {mocked} from 'jest-mock'
 
 import {BoardMember} from '../../blocks/board'
@@ -93,7 +92,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -125,7 +124,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -154,7 +153,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -193,7 +192,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })

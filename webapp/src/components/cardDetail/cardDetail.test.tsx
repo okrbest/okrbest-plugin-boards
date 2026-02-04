@@ -8,6 +8,7 @@ import {act, render} from '@testing-library/react'
 
 import configureStore from 'redux-mock-store'
 import {Provider as ReduxProvider} from 'react-redux'
+import {MemoryRouter} from 'react-router-dom'
 
 import userEvent from '@testing-library/user-event'
 
@@ -107,24 +108,26 @@ describe('components/cardDetail/CardDetail', () => {
         })
 
         const component = (
-            <ReduxProvider store={store}>
-                {wrapIntl(
-                    <CardDetail
-                        board={board}
-                        activeView={view}
-                        views={[view]}
-                        cards={[card]}
-                        card={card}
-                        comments={[comment1, comment2]}
-                        contents={[]}
-                        attachments={[]}
-                        readonly={false}
-                        onClose={jest.fn()}
-                        onDelete={jest.fn()}
-                        addAttachment={jest.fn()}
-                    />,
-                )}
-            </ReduxProvider>
+            <MemoryRouter initialEntries={['/team/team-id/board-id/view-id']}>
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <CardDetail
+                            board={board}
+                            activeView={view}
+                            views={[view]}
+                            cards={[card]}
+                            card={card}
+                            comments={[comment1, comment2]}
+                            contents={[]}
+                            attachments={[]}
+                            readonly={false}
+                            onClose={jest.fn()}
+                            onDelete={jest.fn()}
+                            addAttachment={jest.fn()}
+                        />,
+                    )}
+                </ReduxProvider>
+            </MemoryRouter>
         )
 
         let container: Element | DocumentFragment | null = null
@@ -183,24 +186,26 @@ describe('components/cardDetail/CardDetail', () => {
         })
 
         const component = (
-            <ReduxProvider store={store}>
-                {wrapIntl(
-                    <CardDetail
-                        board={board}
-                        activeView={view}
-                        views={[view]}
-                        cards={[card]}
-                        card={card}
-                        comments={[comment1, comment2]}
-                        contents={[]}
-                        attachments={[]}
-                        readonly={true}
-                        onClose={jest.fn()}
-                        onDelete={jest.fn()}
-                        addAttachment={jest.fn()}
-                    />,
-                )}
-            </ReduxProvider>
+            <MemoryRouter initialEntries={['/team/team-id/board-id/view-id']}>
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <CardDetail
+                            board={board}
+                            activeView={view}
+                            views={[view]}
+                            cards={[card]}
+                            card={card}
+                            comments={[comment1, comment2]}
+                            contents={[]}
+                            attachments={[]}
+                            readonly={true}
+                            onClose={jest.fn()}
+                            onDelete={jest.fn()}
+                            addAttachment={jest.fn()}
+                        />,
+                    )}
+                </ReduxProvider>
+            </MemoryRouter>
         )
 
         let container: Element | DocumentFragment | null = null
@@ -212,11 +217,9 @@ describe('components/cardDetail/CardDetail', () => {
 
         expect(container).toBeDefined()
 
-        // comments show up
         const comments = container!.querySelectorAll('.mocked-message-html')
         expect(comments.length).toBe(2)
 
-        // Add comment option is not shown in readonly mode
         const newCommentSection = container!.querySelectorAll('.newcomment')
         expect(newCommentSection.length).toBe(0)
     })
@@ -279,24 +282,26 @@ describe('components/cardDetail/CardDetail', () => {
         onboardingCard.title = OnboardingCardTitle
 
         const component = (
-            <ReduxProvider store={store}>
-                {wrapIntl(
-                    <CardDetail
-                        board={onboardingBoard}
-                        activeView={view}
-                        views={[view]}
-                        cards={[onboardingCard]}
-                        card={onboardingCard}
-                        comments={[comment1, comment2]}
-                        contents={[]}
-                        attachments={[]}
-                        readonly={false}
-                        onClose={jest.fn()}
-                        onDelete={jest.fn()}
-                        addAttachment={jest.fn()}
-                    />,
-                )}
-            </ReduxProvider>
+            <MemoryRouter initialEntries={['/team/team-id/board-id/view-id']}>
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <CardDetail
+                            board={onboardingBoard}
+                            activeView={view}
+                            views={[view]}
+                            cards={[onboardingCard]}
+                            card={onboardingCard}
+                            comments={[comment1, comment2]}
+                            contents={[]}
+                            attachments={[]}
+                            readonly={false}
+                            onClose={jest.fn()}
+                            onDelete={jest.fn()}
+                            addAttachment={jest.fn()}
+                        />,
+                    )}
+                </ReduxProvider>
+            </MemoryRouter>
         )
 
         let container: Element | DocumentFragment | null = null
@@ -390,24 +395,26 @@ describe('components/cardDetail/CardDetail', () => {
         onboardingCard.title = OnboardingCardTitle
 
         const component = (
-            <ReduxProvider store={store}>
-                {wrapIntl(
-                    <CardDetail
-                        board={onboardingBoard}
-                        activeView={view}
-                        views={[view]}
-                        cards={[onboardingCard]}
-                        card={onboardingCard}
-                        comments={[comment1, comment2]}
-                        contents={[]}
-                        attachments={[]}
-                        readonly={false}
-                        onClose={jest.fn()}
-                        onDelete={jest.fn()}
-                        addAttachment={jest.fn()}
-                    />,
-                )}
-            </ReduxProvider>
+            <MemoryRouter initialEntries={['/team/team-id/board-id/view-id']}>
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <CardDetail
+                            board={onboardingBoard}
+                            activeView={view}
+                            views={[view]}
+                            cards={[onboardingCard]}
+                            card={onboardingCard}
+                            comments={[comment1, comment2]}
+                            contents={[]}
+                            attachments={[]}
+                            readonly={false}
+                            onClose={jest.fn()}
+                            onDelete={jest.fn()}
+                            addAttachment={jest.fn()}
+                        />,
+                    )}
+                </ReduxProvider>
+            </MemoryRouter>
         )
 
         let container: Element | DocumentFragment | null = null
@@ -482,24 +489,26 @@ describe('components/cardDetail/CardDetail', () => {
         })
 
         const component = (
-            <ReduxProvider store={store}>
-                {wrapIntl(
-                    <CardDetail
-                        board={board}
-                        activeView={view}
-                        views={[view]}
-                        cards={[limitedCard]}
-                        card={limitedCard}
-                        comments={[comment1, comment2]}
-                        contents={[]}
-                        attachments={[]}
-                        readonly={false}
-                        onClose={jest.fn()}
-                        onDelete={jest.fn()}
-                        addAttachment={jest.fn()}
-                    />,
-                )}
-            </ReduxProvider>
+            <MemoryRouter initialEntries={['/team/team-id/board-id/view-id']}>
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <CardDetail
+                            board={board}
+                            activeView={view}
+                            views={[view]}
+                            cards={[limitedCard]}
+                            card={limitedCard}
+                            comments={[comment1, comment2]}
+                            contents={[]}
+                            attachments={[]}
+                            readonly={false}
+                            onClose={jest.fn()}
+                            onDelete={jest.fn()}
+                            addAttachment={jest.fn()}
+                        />,
+                    )}
+                </ReduxProvider>
+            </MemoryRouter>
         )
 
         let container: Element | DocumentFragment | null = null

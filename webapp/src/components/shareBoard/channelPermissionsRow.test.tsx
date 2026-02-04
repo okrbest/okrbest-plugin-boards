@@ -7,7 +7,6 @@ import {Provider as ReduxProvider} from 'react-redux'
 import thunk from 'redux-thunk'
 
 import React from 'react'
-import {MemoryRouter} from 'react-router'
 import {mocked} from 'jest-mock'
 
 import {IUser} from '../../user'
@@ -89,7 +88,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -108,7 +107,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -126,7 +125,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -148,7 +147,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -175,7 +174,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -193,7 +192,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -225,7 +224,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
