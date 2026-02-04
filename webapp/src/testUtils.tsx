@@ -7,6 +7,7 @@ import {DndProvider} from 'react-dnd'
 import {HTML5Backend} from 'react-dnd-html5-backend'
 import configureStore, {MockStoreEnhanced} from 'redux-mock-store'
 import {Middleware} from 'redux'
+import {MemoryRouter} from 'react-router-dom'
 
 import {DragDropContext, Droppable} from '@hello-pangea/dnd'
 
@@ -17,9 +18,11 @@ export const wrapIntl = (children?: React.ReactNode): JSX.Element => {
 }
 export const wrapDNDIntl = (children?: React.ReactNode): JSX.Element => {
     return (
-        <DndProvider backend={HTML5Backend}>
-            {wrapIntl(children)}
-        </DndProvider>
+        <MemoryRouter initialEntries={['/team/team-id/board-id/view-id']}>
+            <DndProvider backend={HTML5Backend}>
+                {wrapIntl(children)}
+            </DndProvider>
+        </MemoryRouter>
     )
 }
 
