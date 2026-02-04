@@ -60,6 +60,7 @@ func createSubscriptionsNotifyBackend(params notifyBackendParams) (*notifysubscr
 		Logger:                 params.logger,
 		NotifyFreqCardSeconds:  params.cfg.NotifyFreqCardSeconds,
 		NotifyFreqBoardSeconds: params.cfg.NotifyFreqBoardSeconds,
+		TeammateNameDisplay:    params.cfg.TeammateNameDisplay,
 	}
 	backend := notifysubscriptions.New(backendParams)
 
