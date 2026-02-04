@@ -6,18 +6,18 @@ exports[`components/cardDetail/CardDetailProperties cancel on delete dialog shou
     class="octo-propertylist CardDetailProperties"
   >
     <div
-      data-rfd-droppable-context-id=":r51:"
+      data-rfd-droppable-context-id=":r1j:"
       data-rfd-droppable-id="property-list"
     >
       <div
         class="octo-propertyrow"
-        data-rfd-draggable-context-id=":r51:"
+        data-rfd-draggable-context-id=":r1j:"
         data-rfd-draggable-id="property_id_1"
       >
         <div
-          aria-describedby="rfd-hidden-text-:r51:-hidden-text-:r52:"
+          aria-describedby="rfd-hidden-text-:r1j:-hidden-text-:r1k:"
           class="drag-handle"
-          data-rfd-drag-handle-context-id=":r51:"
+          data-rfd-drag-handle-context-id=":r1j:"
           data-rfd-drag-handle-draggable-id="property_id_1"
           draggable="false"
           role="button"
@@ -73,13 +73,13 @@ exports[`components/cardDetail/CardDetailProperties cancel on delete dialog shou
       </div>
       <div
         class="octo-propertyrow"
-        data-rfd-draggable-context-id=":r51:"
+        data-rfd-draggable-context-id=":r1j:"
         data-rfd-draggable-id="property_id_2"
       >
         <div
-          aria-describedby="rfd-hidden-text-:r51:-hidden-text-:r52:"
+          aria-describedby="rfd-hidden-text-:r1j:-hidden-text-:r1k:"
           class="drag-handle"
-          data-rfd-drag-handle-context-id=":r51:"
+          data-rfd-drag-handle-context-id=":r1j:"
           data-rfd-drag-handle-draggable-id="property_id_2"
           draggable="false"
           role="button"
@@ -302,18 +302,18 @@ exports[`components/cardDetail/CardDetailProperties should show property types m
     class="octo-propertylist CardDetailProperties"
   >
     <div
-      data-rfd-droppable-context-id=":r16:"
+      data-rfd-droppable-context-id=":rg:"
       data-rfd-droppable-id="property-list"
     >
       <div
         class="octo-propertyrow"
-        data-rfd-draggable-context-id=":r16:"
+        data-rfd-draggable-context-id=":rg:"
         data-rfd-draggable-id="property_id_1"
       >
         <div
-          aria-describedby="rfd-hidden-text-:r16:-hidden-text-:r17:"
+          aria-describedby="rfd-hidden-text-:rg:-hidden-text-:rh:"
           class="drag-handle"
-          data-rfd-drag-handle-context-id=":r16:"
+          data-rfd-drag-handle-context-id=":rg:"
           data-rfd-drag-handle-draggable-id="property_id_1"
           draggable="false"
           role="button"
@@ -369,13 +369,13 @@ exports[`components/cardDetail/CardDetailProperties should show property types m
       </div>
       <div
         class="octo-propertyrow"
-        data-rfd-draggable-context-id=":r16:"
+        data-rfd-draggable-context-id=":rg:"
         data-rfd-draggable-id="property_id_2"
       >
         <div
-          aria-describedby="rfd-hidden-text-:r16:-hidden-text-:r17:"
+          aria-describedby="rfd-hidden-text-:rg:-hidden-text-:rh:"
           class="drag-handle"
-          data-rfd-drag-handle-context-id=":r16:"
+          data-rfd-drag-handle-context-id=":rg:"
           data-rfd-drag-handle-draggable-id="property_id_2"
           draggable="false"
           role="button"

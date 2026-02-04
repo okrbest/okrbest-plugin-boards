@@ -378,13 +378,8 @@ describe('src/components/shareBoard/shareBoard', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('return shareBoardComponent and click Switch without sharing', async () => {
-        const sharing: ISharing = {
-            id: '',
-            enabled: false,
-            token: '',
-        }
-        mockedOctoClient.getSharing.mockResolvedValue(sharing)
+    test('return shareBoardComponent and click Switch without sharing (null sharing)', async () => {
+        mockedOctoClient.getSharing.mockResolvedValue(undefined as unknown as ISharing)
         mockedUtils.createGuid.mockReturnValue('aToken')
         let container: Element | undefined
         await act(async () => {
@@ -396,32 +391,28 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-
             )
             container = result.container
-            mockedOctoClient.getSharing.mockResolvedValue({
-                id: boardId,
-                enabled: true,
-                token: 'aToken',
-            })
+        })
 
-            const publishButton = screen.getByRole('button', {name: 'Publish'})
-            expect(publishButton).toBeDefined()
-            userEvent.click(publishButton)
+        mockedOctoClient.getSharing.mockResolvedValue({
+            id: boardId,
+            enabled: true,
+            token: 'aToken',
+        })
+
+        const publishButton = screen.getByRole('button', {name: 'Publish'})
+        expect(publishButton).toBeDefined()
+        userEvent.click(publishButton)
+        await act(async () => {
             jest.runOnlyPendingTimers()
+        })
 
-            const switchElement = container?.querySelector('.Switch')
-            expect(switchElement).toBeDefined()
+        const switchElement = container?.querySelector('.Switch')
+        expect(switchElement).toBeDefined()
+        await act(async () => {
             userEvent.click(switchElement!)
             jest.runOnlyPendingTimers()
-            result.rerender(
-                wrapDNDIntl(
-                    <ReduxProvider store={store}>
-                        <ShareBoard
-                            onClose={jest.fn()}
-                            enableSharedBoards={true}
-                        />
-                    </ReduxProvider>))
         })
 
         expect(mockedOctoClient.setSharing).toBeCalledTimes(1)
