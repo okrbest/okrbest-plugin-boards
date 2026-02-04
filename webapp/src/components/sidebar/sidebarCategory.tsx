@@ -167,7 +167,7 @@ const SidebarCategory = (props: Props) => {
             },
             {
                 categoryName: props.categoryBoards.name,
-                b: (...chunks) => <b>{chunks}</b>,
+                b: (chunks: string[]) => chunks.join(''),
             },
         ),
         onConfirm: () => handleDeleteCategory(),

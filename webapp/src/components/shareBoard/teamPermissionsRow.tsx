@@ -77,7 +77,7 @@ const TeamPermissionsRow = (): JSX.Element => {
                     id: 'shareBoard.confirm-change-team-role.body',
                     defaultMessage: 'Everyone on this board with a lower permission than the "{role}" role will <b>now be promoted to {role}</b>. Are you sure you want to change the minimum role for the board?',
                 }, {
-                    b: (...chunks) => <b>{chunks}</b>,
+                    b: (chunks: string[]) => chunks.join(''),
                     role: changeRoleConfirmation === MemberRole.Editor ? intl.formatMessage({id: 'BoardMember.schemeEditor', defaultMessage: 'Editor'}) : intl.formatMessage({id: 'BoardMember.schemeCommenter', defaultMessage: 'Commenter'}),
                 }),
                 confirmButtonText: intl.formatMessage({

@@ -53,7 +53,7 @@ const TableGroup = (props: Props): JSX.Element => {
 
     return (
         <div
-            ref={drop}
+            ref={(node) => { drop(node) }}
             className={className}
             key={group.option.id}
         >

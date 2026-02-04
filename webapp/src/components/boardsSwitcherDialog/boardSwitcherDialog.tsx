@@ -40,7 +40,7 @@ const BoardSwitcherDialog = (props: Props): JSX.Element => {
             defaultMessage: 'Type to find a board. Use <b>UP/DOWN</b> to browse. <b>ENTER</b> to select, <b>ESC</b> to dismiss',
         },
         {
-            b: (...chunks) => <b>{chunks}</b>,
+            b: (chunks: string[]) => chunks.join(''),
         },
     )
 

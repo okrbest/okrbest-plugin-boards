@@ -102,7 +102,7 @@ const TutorialTourTip = ({
         preventDefault,
     }
 
-    const triggerRef = useRef(null)
+    const triggerRef = useRef<HTMLDivElement>(null)
     const {
         show,
         tourSteps,
@@ -317,7 +317,7 @@ const TutorialTourTip = ({
                     aria={{content: 'labelledby'}}
                     allowHTML={true}
                     zIndex={9999}
-                    reference={triggerRef}
+                    reference={triggerRef as React.RefObject<Element>}
                     interactive={true}
                     appendTo={document.body}
                     className={`tutorial-tour-tip__box ${className || ''}`}

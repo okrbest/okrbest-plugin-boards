@@ -45,7 +45,7 @@ export default function KanbanHiddenColumnItem(props: Props): JSX.Element {
 
     return (
         <div
-            ref={drop}
+            ref={(node) => { drop(node) }}
             key={group.option.id || 'empty'}
             className={className}
         >
