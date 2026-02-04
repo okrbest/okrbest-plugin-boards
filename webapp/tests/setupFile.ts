@@ -6,6 +6,12 @@ import 'isomorphic-fetch'
 
 import React from 'react'
 import { jest } from '@jest/globals'
+import {useSyncExternalStore} from 'use-sync-external-store/shim'
+
+// Polyfill useSyncExternalStore for React 17
+if (!React.useSyncExternalStore) {
+    (React as Record<string, unknown>).useSyncExternalStore = useSyncExternalStore
+}
 
 Object.defineProperty(global, 'crypto', {
     value: {
