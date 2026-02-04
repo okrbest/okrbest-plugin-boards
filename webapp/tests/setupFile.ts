@@ -13,6 +13,15 @@ if (!React.useSyncExternalStore) {
     (React as Record<string, unknown>).useSyncExternalStore = useSyncExternalStore
 }
 
+// Polyfill useId for React 17 (required by @hello-pangea/dnd)
+let useIdCounter = 0
+if (!React.useId) {
+    (React as Record<string, unknown>).useId = () => {
+        const [id] = React.useState(() => `:r${useIdCounter++}:`)
+        return id
+    }
+}
+
 Object.defineProperty(global, 'crypto', {
     value: {
         getRandomValues: (arr: any) => crypto.randomFillSync(arr),

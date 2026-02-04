@@ -3,12 +3,10 @@
 
 
 import React from 'react'
-import {fireEvent, render} from '@testing-library/react'
+import {fireEvent, render, act} from '@testing-library/react'
 import '@testing-library/jest-dom'
 
 import 'isomorphic-fetch'
-
-import {act} from 'react'
 
 import userEvent from '@testing-library/user-event'
 
@@ -174,7 +172,7 @@ test('should match snapshot, add new', async () => {
 })
 
 test('should match snapshot, edit title', async () => {
-    const {container, getByTitle} = render(
+    const {container, getByText} = render(
         <Wrapper>
             <TableGroupHeaderRowElement
                 board={board}
@@ -189,9 +187,9 @@ test('should match snapshot, edit title', async () => {
         </Wrapper>,
     )
 
-    const input = getByTitle(/value 1/)
+    const label = getByText(/value 1/)
     act(() => {
-        userEvent.click(input)
+        userEvent.click(label)
         userEvent.keyboard('{enter}')
     })
 

@@ -29,6 +29,7 @@ const mockedMutator = mocked(mutator, true)
 const mockedOctoClient = mocked(octoClient, true)
 mockedUtils.createGuid.mockReturnValue('test-id')
 mockedUtils.isFocalboardPlugin.mockReturnValue(true)
+mockedMutator.fetchSubCards.mockResolvedValue([])
 
 beforeAll(() => {
     mockDOM()
@@ -61,6 +62,14 @@ describe('components/cardDialog', () => {
                 [card.id]: card,
             },
             current: card.id,
+            templates: {},
+            modifiedCardIds: [],
+            subCardsByParent: {
+                [card.id]: [],
+            },
+            subCardCountByParent: {
+                [card.id]: 0,
+            },
         },
         teams: {
             current: {id: 'team-id'},
@@ -83,6 +92,15 @@ describe('components/cardDialog', () => {
                 5: {username: 'g'},
             },
             blockSubscriptions: [],
+        },
+        views: {
+            views: {
+                [boardView.id]: boardView,
+            },
+            current: boardView.id,
+        },
+        templates: {
+            templates: {},
         },
     }
 
@@ -363,6 +381,14 @@ describe('components/cardDialog', () => {
                 [limitedCard.id]: limitedCard,
             },
             current: limitedCard.id,
+            templates: {},
+            modifiedCardIds: [],
+            subCardsByParent: {
+                [limitedCard.id]: [],
+            },
+            subCardCountByParent: {
+                [limitedCard.id]: 0,
+            },
         }
 
         const newStore = mockStateStore([], newState)

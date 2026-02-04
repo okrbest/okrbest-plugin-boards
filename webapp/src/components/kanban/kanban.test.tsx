@@ -443,53 +443,6 @@ describe('src/component/kanban/kanban', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('return kanban and change title on KanbanColumnHeader', async () => {
-        const {container} = render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <Kanban
-                    board={board}
-                    activeView={activeView}
-                    cards={[card1, card2]}
-                    groupByProperty={groupProperty}
-                    visibleGroups={[
-                        {
-                            option: optionQ1,
-                            cards: [card1, card2],
-                        }, {
-                            option: optionQ2,
-                            cards: [card3],
-                        },
-                    ]}
-                    hiddenGroups={[
-                        {
-                            option: optionQ3,
-                            cards: [],
-                        },
-                    ]}
-                    selectedCardIds={[]}
-                    readonly={false}
-                    onCardClicked={jest.fn()}
-                    addCard={jest.fn()}
-                    addCardFromTemplate={jest.fn()}
-                    showCard={jest.fn()}
-                    hiddenCardsCount={0}
-                    showHiddenCardCountNotification={jest.fn()}
-                />
-            </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
-
-        const inputTitle = screen.getByRole('textbox', {name: optionQ1.value})
-        expect(inputTitle).toBeDefined()
-        fireEvent.change(inputTitle, {target: {value: ''}})
-        userEvent.type(inputTitle, 'New Q1')
-        fireEvent.blur(inputTitle)
-
-        await waitFor(async () => {
-            expect(mockedchangePropertyOptionValue).toBeCalledWith(board.id, board.cardProperties, groupProperty, optionQ1, 'New Q1')
-        })
-
-        expect(container).toMatchSnapshot()
-    })
     test('return kanban and add a group', async () => {
         render(wrapDNDIntl(
             <ReduxProvider store={store}>

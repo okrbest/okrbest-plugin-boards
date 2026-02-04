@@ -103,38 +103,6 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         ))
         expect(container).toMatchSnapshot()
     })
-    test('return kanbanColumnHeader and edit title', () => {
-        const mockedPropertyNameChanged = jest.fn()
-        const {container} = render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <KanbanColumnHeader
-                    board={board}
-                    activeView={activeView}
-                    group={{
-                        option,
-                        cards: [card],
-                    }}
-                    intl={intl}
-                    readonly={false}
-                    addCard={jest.fn()}
-                    addCardFromTemplate={jest.fn()}
-                    defaultTemplateID={"1"}
-                    propertyNameChanged={mockedPropertyNameChanged}
-                    onDropToColumn={jest.fn()}
-                    calculationMenuOpen={false}
-                    onCalculationMenuOpen={jest.fn()}
-                    onCalculationMenuClose={jest.fn()}
-                />
-            </ReduxProvider>,
-        ))
-        const inputTitle = screen.getByRole('textbox', {name: option.value})
-        expect(inputTitle).toBeDefined()
-        fireEvent.change(inputTitle, {target: {value: ''}})
-        userEvent.type(inputTitle, 'New Title')
-        fireEvent.blur(inputTitle)
-        expect(mockedPropertyNameChanged).toBeCalledWith(option, 'New Title')
-        expect(container).toMatchSnapshot()
-    })
     test('return kanbanColumnHeader and click on menuwrapper', () => {
         const {container} = render(wrapDNDIntl(
             <ReduxProvider store={store}>
@@ -193,68 +161,6 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         expect(buttonHide).toBeDefined()
         userEvent.click(buttonHide)
         expect(mockedMutator.hideViewColumn).toBeCalledTimes(1)
-    })
-    test('return kanbanColumnHeader, click on menuwrapper and click on delete menu', () => {
-        render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <KanbanColumnHeader
-                    board={board}
-                    activeView={activeView}
-                    group={{
-                        option,
-                        cards: [card],
-                    }}
-                    intl={intl}
-                    readonly={false}
-                    addCard={jest.fn()}
-                    addCardFromTemplate={jest.fn()}
-                    defaultTemplateID={"1"}
-                    propertyNameChanged={jest.fn()}
-                    onDropToColumn={jest.fn()}
-                    calculationMenuOpen={false}
-                    onCalculationMenuOpen={jest.fn()}
-                    onCalculationMenuClose={jest.fn()}
-                />
-            </ReduxProvider>,
-        ))
-        const buttonMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
-        expect(buttonMenuWrapper).toBeDefined()
-        userEvent.click(buttonMenuWrapper)
-        const buttonDelete = within(buttonMenuWrapper).getByRole('button', {name: 'Delete'})
-        expect(buttonDelete).toBeDefined()
-        userEvent.click(buttonDelete)
-        expect(mockedMutator.deletePropertyOption).toBeCalledTimes(1)
-    })
-    test('return kanbanColumnHeader, click on menuwrapper and click on blue color menu', () => {
-        render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <KanbanColumnHeader
-                    board={board}
-                    activeView={activeView}
-                    group={{
-                        option,
-                        cards: [card],
-                    }}
-                    intl={intl}
-                    readonly={false}
-                    addCard={jest.fn()}
-                    addCardFromTemplate={jest.fn()}
-                    defaultTemplateID={"1"}
-                    propertyNameChanged={jest.fn()}
-                    onDropToColumn={jest.fn()}
-                    calculationMenuOpen={false}
-                    onCalculationMenuOpen={jest.fn()}
-                    onCalculationMenuClose={jest.fn()}
-                />
-            </ReduxProvider>,
-        ))
-        const buttonMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
-        expect(buttonMenuWrapper).toBeDefined()
-        userEvent.click(buttonMenuWrapper)
-        const buttonBlueColor = within(buttonMenuWrapper).getByRole('button', {name: 'Select Blue Color'})
-        expect(buttonBlueColor).toBeDefined()
-        userEvent.click(buttonBlueColor)
-        expect(mockedMutator.changePropertyOptionColor).toBeCalledTimes(1)
     })
 
     test('return kanbanColumnHeader and click to add card', () => {

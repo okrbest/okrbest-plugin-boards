@@ -41,6 +41,7 @@ const mockedMutator = mocked(Mutator, true)
 const mockedOctoClient = mocked(octoClient, true)
 mockedUtils.createGuid.mockReturnValue('test-id')
 mockedUtils.generateClassName = jest.requireActual('../utils').Utils.generateClassName
+mockedMutator.fetchSubCards.mockResolvedValue([])
 describe('components/centerPanel', () => {
     (window as any).store = mockMMStore
     const board = TestBlockFactory.createBoard()
@@ -120,6 +121,9 @@ describe('components/centerPanel', () => {
             templates: [card1, card2],
             cards: [card1, card2],
             current: card1.id,
+            modifiedCardIds: [],
+            subCardsByParent: {},
+            subCardCountByParent: {},
         },
         views: {
             views: {
@@ -613,6 +617,9 @@ describe('components/centerPanel', () => {
             templates: [card1, card2],
             cards: [card1, card2],
             current: card1.id,
+            modifiedCardIds: [],
+            subCardsByParent: {},
+            subCardCountByParent: {},
         },
         views: {
             views: {

@@ -2,9 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react'
-import {render, screen, fireEvent, waitFor} from '@testing-library/react'
+import {render, screen, fireEvent, waitFor, act} from '@testing-library/react'
 import '@testing-library/jest-dom'
-import {act} from 'react'
 
 import {Card, createCard} from '../../blocks/card'
 import {wrapIntl} from '../../testUtils'
@@ -83,7 +82,7 @@ describe('components/cardDetail/CardLinkSelector', () => {
             )
         })
 
-        expect(screen.getByText('로딩 중...')).toBeInTheDocument()
+        expect(screen.getByText('Loading...')).toBeInTheDocument()
     })
 
     test('renders card list after loading', async () => {
@@ -107,7 +106,7 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
         expect(screen.getByText('Card 1')).toBeInTheDocument()
@@ -135,10 +134,10 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
-        expect(screen.getByText('연결 가능한 카드가 없습니다')).toBeInTheDocument()
+        expect(screen.getByText('No cards available to link')).toBeInTheDocument()
     })
 
     test('filters cards by search query', async () => {
@@ -162,10 +161,10 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
-        const searchInput = screen.getByPlaceholderText('카드 검색...')
+        const searchInput = screen.getByPlaceholderText('Search cards...')
         fireEvent.change(searchInput, {target: {value: 'Card 1'}})
 
         expect(screen.getByText('Card 1')).toBeInTheDocument()
@@ -193,7 +192,7 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
         fireEvent.click(screen.getByText('Card 1'))
@@ -222,7 +221,7 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
         const backdrop = document.querySelector('.CardLinkSelector__backdrop')
@@ -266,12 +265,12 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
         const disabledItem = document.querySelector('.CardLinkSelector__item--disabled')
         expect(disabledItem).toBeInTheDocument()
-        expect(screen.getByText('자기 자신')).toBeInTheDocument()
+        expect(screen.getByText('Cannot link self')).toBeInTheDocument()
     })
 
     test('disables already sub-card in list', async () => {
@@ -295,10 +294,10 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
-        expect(screen.getByText('이미 하위 카드')).toBeInTheDocument()
+        expect(screen.getByText('Already a sub-card')).toBeInTheDocument()
     })
 
     test('does not call onSelect for disabled card', async () => {
@@ -334,7 +333,7 @@ describe('components/cardDetail/CardLinkSelector', () => {
         })
 
         await waitFor(() => {
-            expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument()
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
         })
 
         fireEvent.click(screen.getByText('Current Card'))

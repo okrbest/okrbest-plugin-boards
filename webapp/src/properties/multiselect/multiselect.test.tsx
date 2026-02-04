@@ -261,7 +261,9 @@ describe('properties/multiSelect', () => {
 
         userEvent.click(screen.getAllByRole('button', {name: /open menu/i})[0])
 
-        userEvent.click(screen.getByRole('button', {name: /delete/i}))
+        const deleteButtons = screen.getAllByRole('button', {name: /delete/i})
+        const menuDeleteButton = deleteButtons.find((btn) => btn.classList.contains('MenuOption'))
+        userEvent.click(menuDeleteButton!)
 
         const optionToDelete = propertyTemplate.options.find((option: IPropertyOption) => option.id === propertyValue[0])
 
@@ -291,7 +293,9 @@ describe('properties/multiSelect', () => {
 
         userEvent.click(screen.getAllByRole('button', {name: /open menu/i})[0])
 
-        userEvent.click(screen.getByRole('button', {name: new RegExp(newColorValue, 'i')}))
+        const colorButtons = screen.getAllByRole('button', {name: new RegExp(newColorValue, 'i')})
+        const menuColorButton = colorButtons.find((btn) => btn.classList.contains('MenuOption'))
+        userEvent.click(menuColorButton!)
 
         const selectedOption = propertyTemplate.options.find((option: IPropertyOption) => option.id === propertyValue[0])
 

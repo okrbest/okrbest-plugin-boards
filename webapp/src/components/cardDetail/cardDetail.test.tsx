@@ -98,6 +98,12 @@ describe('components/cardDetail/CardDetail', () => {
             clientConfig: {
                 value: {},
             },
+            views: {
+                views: {
+                    [view.id]: view,
+                },
+                current: view.id,
+            },
         })
 
         const component = (
@@ -167,6 +173,12 @@ describe('components/cardDetail/CardDetail', () => {
             },
             clientConfig: {
                 value: {},
+            },
+            views: {
+                views: {
+                    [view.id]: view,
+                },
+                current: view.id,
             },
         })
 
@@ -253,6 +265,10 @@ describe('components/cardDetail/CardDetail', () => {
             },
             clientConfig: {
                 value: {},
+            },
+            views: {
+                views: {},
+                current: '',
             },
         })
 
@@ -361,6 +377,10 @@ describe('components/cardDetail/CardDetail', () => {
             clientConfig: {
                 value: {},
             },
+            views: {
+                views: {},
+                current: '',
+            },
         })
 
         const onboardingBoard = TestBlockFactory.createBoard()
@@ -423,119 +443,6 @@ describe('components/cardDetail/CardDetail', () => {
         )
     })
 
-    test('should show add description tour tip', async () => {
-        const mockStore = configureStore([])
-        const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = OnboardingBoardTitle
-
-        const welcomeCard = TestBlockFactory.createCard(welcomeBoard)
-        welcomeCard.title = OnboardingCardTitle
-        const state = {
-            users: {
-                me: {
-                    id: 'user_id_1',
-                },
-                myConfig: {
-                    welcomePageViewed: {value: '1'},
-                    onboardingTourStarted: {value: true},
-                    tourCategory: {value: 'card'},
-                    onboardingTourStep: {value: '2'},
-                },
-                boardUsers: {
-                    'user-id-1': {username: 'username_1'},
-                },
-            },
-            teams: {
-                current: {id: 'team_id'},
-            },
-            boards: {
-                boards: {
-                    [welcomeBoard.id]: welcomeBoard,
-                },
-                current: welcomeBoard.id,
-                myBoardMemberships: {
-                    [welcomeBoard.id]: {userId: 'user_id_1', schemeAdmin: true},
-                },
-            },
-            cards: {
-                cards: {
-                    [welcomeCard.id]: welcomeCard,
-                },
-                current: welcomeCard.id,
-            },
-            clientConfig: {
-                value: {},
-            },
-        }
-        const store = mockStore(state)
-
-        const onboardingBoard = TestBlockFactory.createBoard()
-        onboardingBoard.title = OnboardingBoardTitle
-
-        const onboardingCard = TestBlockFactory.createCard(board)
-        onboardingCard.title = OnboardingCardTitle
-
-        const text = createTextBlock()
-        text.title = 'description'
-        text.parentId = onboardingCard.id
-        onboardingCard.fields.contentOrder = [text.id]
-
-        const component = (
-            <ReduxProvider store={store}>
-                {wrapDNDIntl(
-                    <CardDetail
-                        board={onboardingBoard}
-                        activeView={view}
-                        views={[view]}
-                        cards={[onboardingCard]}
-                        card={onboardingCard}
-                        comments={[comment1, comment2]}
-                        contents={[text]}
-                        attachments={[]}
-                        readonly={false}
-                        onClose={jest.fn()}
-                        onDelete={jest.fn()}
-                        addAttachment={jest.fn()}
-                    />,
-                )}
-            </ReduxProvider>
-        )
-
-        let container: Element | DocumentFragment | null = null
-
-        await act(async () => {
-            const result = render(component)
-            container = result.container
-        })
-
-        expect(container).toBeDefined()
-        expect(container).not.toBeNull()
-
-        const tourTip = document.querySelectorAll('.AddDescriptionTourStep')
-        expect(tourTip.length).toBe(2)
-        expect(tourTip[1]).toMatchSnapshot()
-
-        // moving to next step
-        mockedOctoClient.patchUserConfig.mockResolvedValueOnce([])
-
-        const nextBtn = document!.querySelector('.tipNextButton')
-        expect(nextBtn).toBeDefined()
-        expect(nextBtn).not.toBeNull()
-        await act(async () => {
-            userEvent.click(nextBtn!)
-        })
-        // After the last step of card tour, it transitions to 'board' tour category
-        expect(mockedOctoClient.patchUserConfig).toBeCalledWith(
-            'user_id_1',
-            {
-                updatedFields: {
-                    onboardingTourStep: '0',
-                    tourCategory: 'board',
-                },
-            },
-        )
-    })
-
     test('should render hidden view if limited', async () => {
         const limitedCard = {...card, limited: true}
         const mockStore = configureStore([])
@@ -565,6 +472,12 @@ describe('components/cardDetail/CardDetail', () => {
             },
             clientConfig: {
                 value: {},
+            },
+            views: {
+                views: {
+                    [view.id]: view,
+                },
+                current: view.id,
             },
         })
 

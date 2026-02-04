@@ -154,6 +154,7 @@ exports[`components/centerPanel Clicking on the Hidden card count should open a 
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -303,6 +304,7 @@ exports[`components/centerPanel Clicking on the Hidden card count should open a 
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -359,13 +361,7 @@ exports[`components/centerPanel Clicking on the Hidden card count should open a 
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -569,13 +565,7 @@ exports[`components/centerPanel Clicking on the Hidden card count should open a 
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -844,6 +834,7 @@ exports[`components/centerPanel return centerPanel and click on card to show car
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -949,6 +940,7 @@ exports[`components/centerPanel return centerPanel and click on card to show car
             No name
           </span>
           
+          
           <div
             class="KanbanCalculation"
           >
@@ -996,13 +988,7 @@ exports[`components/centerPanel return centerPanel and click on card to show car
           <span
             class="Label propColorOrange "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q1"
-              value="Q1"
-            />
+            Q1
           </span>
           <div
             class="KanbanCalculation"
@@ -1051,13 +1037,7 @@ exports[`components/centerPanel return centerPanel and click on card to show car
           <span
             class="Label propColorBlue "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q2"
-              value="Q2"
-            />
+            Q2
           </span>
           <div
             class="KanbanCalculation"
@@ -1379,6 +1359,7 @@ exports[`components/centerPanel return centerPanel and click on new card to edit
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -1528,6 +1509,7 @@ exports[`components/centerPanel return centerPanel and click on new card to edit
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -1584,13 +1566,7 @@ exports[`components/centerPanel return centerPanel and click on new card to edit
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -1794,13 +1770,7 @@ exports[`components/centerPanel return centerPanel and click on new card to edit
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -2031,6 +2001,7 @@ exports[`components/centerPanel return centerPanel and press touch 1 with readon
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -2065,14 +2036,7 @@ exports[`components/centerPanel return centerPanel and press touch 1 with readon
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable readonly "
-                    placeholder="New Select"
-                    readonly=""
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -2196,14 +2160,7 @@ exports[`components/centerPanel return centerPanel and press touch 1 with readon
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable readonly "
-                    placeholder="New Select"
-                    readonly=""
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -2400,6 +2357,7 @@ exports[`components/centerPanel return centerPanel and press touch ctrl+d for on
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -2549,6 +2507,7 @@ exports[`components/centerPanel return centerPanel and press touch ctrl+d for on
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -2605,13 +2564,7 @@ exports[`components/centerPanel return centerPanel and press touch ctrl+d for on
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -2815,13 +2768,7 @@ exports[`components/centerPanel return centerPanel and press touch ctrl+d for on
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -3040,6 +2987,7 @@ exports[`components/centerPanel return centerPanel and press touch del for one c
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -3189,6 +3137,7 @@ exports[`components/centerPanel return centerPanel and press touch del for one c
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -3245,13 +3194,7 @@ exports[`components/centerPanel return centerPanel and press touch del for one c
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -3455,13 +3398,7 @@ exports[`components/centerPanel return centerPanel and press touch del for one c
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -3680,6 +3617,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -3829,6 +3767,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -3885,13 +3824,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -4095,13 +4028,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -4320,6 +4247,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -4469,6 +4397,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -4525,13 +4454,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -4735,13 +4658,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -4960,6 +4877,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -5109,6 +5027,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -5165,13 +5084,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -5375,13 +5288,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -5600,6 +5507,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -5749,6 +5657,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -5805,13 +5714,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -6015,13 +5918,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -6240,6 +6137,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -6389,6 +6287,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -6445,13 +6344,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -6655,13 +6548,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -6880,6 +6767,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -7029,6 +6917,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -7085,13 +6974,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -7295,13 +7178,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -7520,6 +7397,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -7669,6 +7547,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -7725,13 +7604,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -7935,13 +7808,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
@@ -8417,6 +8284,7 @@ exports[`components/centerPanel should match snapshot for Kanban 1`] = `
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -8522,6 +8390,7 @@ exports[`components/centerPanel should match snapshot for Kanban 1`] = `
             No name
           </span>
           
+          
           <div
             class="KanbanCalculation"
           >
@@ -8569,13 +8438,7 @@ exports[`components/centerPanel should match snapshot for Kanban 1`] = `
           <span
             class="Label propColorOrange "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q1"
-              value="Q1"
-            />
+            Q1
           </span>
           <div
             class="KanbanCalculation"
@@ -8624,13 +8487,7 @@ exports[`components/centerPanel should match snapshot for Kanban 1`] = `
           <span
             class="Label propColorBlue "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q2"
-              value="Q2"
-            />
+            Q2
           </span>
           <div
             class="KanbanCalculation"
@@ -8918,6 +8775,7 @@ exports[`components/centerPanel should match snapshot for Kanban, not shared 1`]
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -9023,6 +8881,7 @@ exports[`components/centerPanel should match snapshot for Kanban, not shared 1`]
             No name
           </span>
           
+          
           <div
             class="KanbanCalculation"
           >
@@ -9070,13 +8929,7 @@ exports[`components/centerPanel should match snapshot for Kanban, not shared 1`]
           <span
             class="Label propColorOrange "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q1"
-              value="Q1"
-            />
+            Q1
           </span>
           <div
             class="KanbanCalculation"
@@ -9125,13 +8978,7 @@ exports[`components/centerPanel should match snapshot for Kanban, not shared 1`]
           <span
             class="Label propColorBlue "
           >
-            <input
-              class="Editable "
-              placeholder="New Select"
-              spellcheck="true"
-              title="Q2"
-              value="Q2"
-            />
+            Q2
           </span>
           <div
             class="KanbanCalculation"
@@ -9419,6 +9266,7 @@ exports[`components/centerPanel should match snapshot for Table 1`] = `
               Group by: 
               <span
                 id="groupByLabel"
+                style="color: rgb(var(--center-channel-color-rgb));"
               >
                 name
               </span>
@@ -9568,6 +9416,7 @@ exports[`components/centerPanel should match snapshot for Table 1`] = `
                   No name
                 </span>
                 
+                
               </div>
               <button
                 class="Button"
@@ -9624,13 +9473,7 @@ exports[`components/centerPanel should match snapshot for Table 1`] = `
                 <span
                   class="Label propColorOrange "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q1"
-                    value="Q1"
-                  />
+                  Q1
                 </span>
               </div>
               <button
@@ -9761,13 +9604,7 @@ exports[`components/centerPanel should match snapshot for Table 1`] = `
                 <span
                   class="Label propColorBlue "
                 >
-                  <input
-                    class="Editable "
-                    placeholder="New Select"
-                    spellcheck="true"
-                    title="Q2"
-                    value="Q2"
-                  />
+                  Q2
                 </span>
               </div>
               <button
