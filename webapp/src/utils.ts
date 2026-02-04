@@ -5,9 +5,7 @@ import {marked} from 'marked'
 import {IntlShape} from 'react-intl'
 import moment from 'moment'
 
-import {generatePath, match as routerMatch} from 'react-router-dom'
-
-import {History} from 'history'
+import {generatePath, NavigateFunction} from 'react-router-dom'
 
 import {IUser} from './user'
 
@@ -818,18 +816,17 @@ class Utils {
 
     static showBoard(
         boardId: string,
-        match: routerMatch<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>,
-        history: History,
+        params: {boardId?: string, viewId?: string, cardId?: string, teamId?: string},
+        navigate: NavigateFunction,
+        currentPath: string,
     ) {
-        // if the same board, reuse the match params
-        // otherwise remove viewId and cardId, results in first view being selected
-        const params = {...match.params, boardId: boardId || ''}
-        if (boardId !== match.params.boardId) {
-            params.viewId = undefined
-            params.cardId = undefined
+        const newParams: Record<string, string | undefined> = {...params, boardId: boardId || ''}
+        if (boardId !== params.boardId) {
+            newParams.viewId = undefined
+            newParams.cardId = undefined
         }
-        const newPath = generatePath(Utils.getBoardPagePath(match.path), params)
-        history.push(newPath)
+        const newPath = generatePath(Utils.getBoardPagePath(currentPath), newParams)
+        navigate(newPath)
     }
 
     static humanFileSize(bytesParam: number, si = false, dp = 1): string {

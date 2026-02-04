@@ -6,7 +6,7 @@ import React, {ReactNode, useRef, createRef, useState, useEffect, MutableRefObje
 import './boardSwitcherDialog.scss'
 import {useIntl} from 'react-intl'
 
-import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
+import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import octoClient from '../../octoClient'
 import SearchDialog from '../searchDialog/searchDialog'
@@ -44,15 +44,16 @@ const BoardSwitcherDialog = (props: Props): JSX.Element => {
         },
     )
 
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string}>()
-    const history = useHistory()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string}>()
+    const navigate = useNavigate()
+    const location = useLocation()
 
     const selectBoard = async (teamId: string, boardId: string): Promise<void> => {
         if (!me) {
             return
         }
-        const newPath = generatePath(Utils.getBoardPagePath(match.path), {...match.params, teamId, boardId, viewId: undefined})
-        history.push(newPath)
+        const newPath = generatePath(Utils.getBoardPagePath(location.pathname), {...params, teamId, boardId, viewId: undefined})
+        navigate(newPath)
         props.onClose()
     }
 

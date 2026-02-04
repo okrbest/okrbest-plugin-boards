@@ -19,7 +19,7 @@ import GlobalHeaderSettingsMenu from './globalHeaderSettingsMenu'
 import './globalHeader.scss'
 
 type HeaderItemProps = {
-    history: History<unknown>
+    history: History
 }
 
 const HeaderItems = (props: HeaderItemProps) => {
@@ -48,7 +48,7 @@ const HeaderItems = (props: HeaderItemProps) => {
 }
 
 type Props = {
-    history: History<unknown>
+    history: History
 }
 
 const GlobalHeader = (props: Props): JSX.Element => {

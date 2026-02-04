@@ -24,7 +24,7 @@ import TelemetryClient, {TelemetryCategory, TelemetryActions} from '../../teleme
 import './globalHeaderSettingsMenu.scss'
 
 type Props = {
-    history: History<unknown>
+    history: History
 }
 
 const GlobalHeaderSettingsMenu = (props: Props) => {

@@ -3,7 +3,7 @@
 
 import React, {useEffect, useRef, useCallback, useState} from 'react'
 import {useIntl} from 'react-intl'
-import {useHistory} from 'react-router-dom'
+import {useNavigate} from 'react-router-dom'
 
 import {AffineSchemas, PageEditorBlockSpecs} from '@blocksuite/blocks'
 import {DocModeExtension, type DocModeProvider} from '@blocksuite/affine-shared/services'
@@ -47,7 +47,7 @@ type Props = {
 function BlockSuiteEditor(props: Props): JSX.Element {
     const {card, contents, readonly, teamId, viewId} = props
     const intl = useIntl()
-    const history = useHistory()
+    const navigate = useNavigate()
     const dispatch = useAppDispatch()
 
     const allCards = useAppSelector(getSortedCards)
@@ -126,7 +126,7 @@ function BlockSuiteEditor(props: Props): JSX.Element {
         if (matchWithView) {
             e.preventDefault()
             e.stopPropagation()
-            history.push(`/team/${matchWithView[2]}/${matchWithView[3]}/${matchWithView[4]}/${matchWithView[5]}`)
+            navigate(`/team/${matchWithView[2]}/${matchWithView[3]}/${matchWithView[4]}/${matchWithView[5]}`)
             return
         }
 
@@ -134,9 +134,9 @@ function BlockSuiteEditor(props: Props): JSX.Element {
         if (matchWithoutView) {
             e.preventDefault()
             e.stopPropagation()
-            history.push(`/team/${matchWithoutView[2]}/${matchWithoutView[3]}/${matchWithoutView[4]}`)
+            navigate(`/team/${matchWithoutView[2]}/${matchWithoutView[3]}/${matchWithoutView[4]}`)
         }
-    }, [history])
+    }, [navigate])
 
     const handleDocUpdate = useCallback(async () => {
         if (readonly || !editorDocRef.current || !jobRef.current) {

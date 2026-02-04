@@ -96,7 +96,7 @@ const handleBrowserHistoryPush = (pathName: string, history: ReturnType<typeof c
 }
 
 function customHistory() {
-    const history = createBrowserHistory({ basename: Utils.getFrontendBaseURL() })
+    const history = createBrowserHistory({ window })
 
     if (Utils.isDesktop()) {
         if (windowAny.desktopAPI?.onBrowserHistoryPush) {
@@ -124,7 +124,7 @@ function customHistory() {
     }
 }
 
-let browserHistory: History<unknown>
+let browserHistory: History
 
 const MainApp = (props: Props) => {
     useEffect(() => {

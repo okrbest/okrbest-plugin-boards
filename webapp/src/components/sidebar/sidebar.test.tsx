@@ -4,9 +4,8 @@
 import React from 'react'
 import configureStore from 'redux-mock-store'
 
-import {createMemoryHistory} from 'history'
 import {Provider as ReduxProvider} from 'react-redux'
-import {Router} from 'react-router-dom'
+import {MemoryRouter} from 'react-router-dom'
 
 import {render, waitFor} from '@testing-library/react'
 
@@ -87,14 +86,13 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
         const onBoardTemplateSelectorOpen = jest.fn()
 
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <Sidebar onBoardTemplateSelectorOpen={onBoardTemplateSelectorOpen}/>
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         )
         const {container} = render(component)
@@ -156,14 +154,13 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
         const onBoardTemplateSelectorOpen = jest.fn()
 
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <Sidebar onBoardTemplateSelectorOpen={onBoardTemplateSelectorOpen}/>
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         )
         const {container} = render(component)
@@ -224,14 +221,13 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
         const onBoardTemplateSelectorOpen = jest.fn()
 
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <Sidebar onBoardTemplateSelectorOpen={onBoardTemplateSelectorOpen}/>
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         )
         const {container, getAllByText} = render(component)
@@ -291,14 +287,13 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
         const onBoardTemplateSelectorOpen = jest.fn()
 
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <Sidebar onBoardTemplateSelectorOpen={onBoardTemplateSelectorOpen}/>
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         )
         const {container} = render(component)
@@ -349,16 +344,15 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
         const onBoardTemplateSelectorOpen = jest.fn()
 
         mockedOctoClient.moveBoardToCategory.mockResolvedValueOnce({} as Response)
 
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <Sidebar onBoardTemplateSelectorOpen={onBoardTemplateSelectorOpen}/>
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         )
         const {container} = render(component)
@@ -415,14 +409,13 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
         const onBoardTemplateSelectorOpen = jest.fn()
 
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <Sidebar onBoardTemplateSelectorOpen={onBoardTemplateSelectorOpen}/>
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         )
         const {container} = render(component)

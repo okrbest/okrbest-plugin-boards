@@ -3,7 +3,7 @@
 
 import React, {useCallback, useRef, useState} from 'react'
 import {useIntl} from 'react-intl'
-import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
+import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
 import {Draggable} from '@hello-pangea/dnd'
 
 import {BaseEmoji} from 'emoji-mart'
@@ -80,8 +80,9 @@ const SidebarBoardItem = (props: Props) => {
     const teamID = team?.id || ''
     const me = useAppSelector(getMe)
 
-    const match = useRouteMatch<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
-    const history = useHistory()
+    const params = useParams<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
+    const navigate = useNavigate()
+    const location = useLocation()
     const dispatch = useAppDispatch()
     const currentBoardID = useAppSelector(getCurrentBoardId)
     const allBoards = useAppSelector(getMySortedBoards)
@@ -112,7 +113,7 @@ const SidebarBoardItem = (props: Props) => {
             asTemplate,
             undefined,
             () => {
-                Utils.showBoard(board.id, match, history)
+                Utils.showBoard(board.id, params, navigate, location.pathname)
                 return Promise.resolve()
             },
         )
@@ -143,15 +144,12 @@ const SidebarBoardItem = (props: Props) => {
             }]))
         }
 
-        Utils.showBoard(boardId, match, history)
-    }, [board.id])
+        Utils.showBoard(boardId, params, navigate, location.pathname)
+    }, [board.id, params, navigate, location.pathname])
 
     const showTemplatePicker = () => {
-        // if the same board, reuse the match params
-        // otherwise remove viewId and cardId, results in first view being selected
-        const params = {teamId: match.params.teamId}
-        const newPath = generatePath('/team/:teamId?', params)
-        history.push(newPath)
+        const newPath = generatePath('/team/:teamId?', {teamId: params.teamId ?? ''})
+        navigate(newPath)
     }
 
     const handleHideBoard = async () => {
@@ -191,7 +189,7 @@ const SidebarBoardItem = (props: Props) => {
             }
 
             if (nextValidBoardID === null) {
-                UserSettings.setLastBoardID(match.params.teamId!, null)
+                UserSettings.setLastBoardID(params.teamId!, null)
                 showTemplatePicker()
             } else {
                 props.showBoard(nextValidBoardID)

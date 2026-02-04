@@ -6,7 +6,7 @@ import {IntlProvider} from 'react-intl'
 import {DndProvider} from 'react-dnd'
 import {HTML5Backend} from 'react-dnd-html5-backend'
 import {TouchBackend} from 'react-dnd-touch-backend'
-import {History} from 'history'
+import type {History} from 'history'
 
 import TelemetryClient from './telemetry/telemetryClient'
 
@@ -23,7 +23,7 @@ import FocalboardRouter from './router'
 import {IUser} from './user'
 
 type Props = {
-    history?: History<unknown>
+    history?: History
 }
 
 const App = (props: Props): JSX.Element => {

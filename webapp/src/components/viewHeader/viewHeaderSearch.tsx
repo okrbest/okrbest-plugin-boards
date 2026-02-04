@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef, useEffect, useMemo} from 'react'
-import {useRouteMatch} from 'react-router-dom'
+import {useParams, useLocation} from 'react-router-dom'
 import {useIntl} from 'react-intl'
 import {useHotkeys} from 'react-hotkeys-hook'
 import {debounce} from 'lodash'
@@ -17,11 +17,12 @@ const ViewHeaderSearch = (): JSX.Element => {
     const searchText = useAppSelector<string>(getSearchText)
     const dispatch = useAppDispatch()
     const intl = useIntl()
-    const match = useRouteMatch<{viewId?: string}>()
+    const params = useParams<{viewId?: string}>()
+    const location = useLocation()
 
     const searchFieldRef = useRef<{focus(selectAll?: boolean): void}>(null)
     const [searchValue, setSearchValue] = useState(searchText)
-    const [currentView, setCurrentView] = useState(match.params?.viewId)
+    const [currentView, setCurrentView] = useState(params.viewId)
 
     const dispatchSearchText = (value: string) => {
         dispatch(setSearchText(value))
@@ -31,17 +32,15 @@ const ViewHeaderSearch = (): JSX.Element => {
         () => debounce(dispatchSearchText, 200), [])
 
     useEffect(() => {
-        const viewId = match.params?.viewId
+        const viewId = params.viewId
         if (viewId !== currentView) {
             setCurrentView(viewId)
             setSearchValue('')
 
-            // Previously debounced calls to change the search text should be cancelled
-            // to avoid resetting the search text.
             debouncedDispatchSearchText.cancel()
             dispatchSearchText('')
         }
-    }, [match.url])
+    }, [location.pathname, params.viewId])
 
     useEffect(() => {
         return () => {

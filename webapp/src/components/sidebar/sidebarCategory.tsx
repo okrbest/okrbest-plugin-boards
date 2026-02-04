@@ -3,7 +3,7 @@
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
+import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import {debounce} from 'lodash'
 
@@ -67,13 +67,13 @@ export const ClassForManageCategoriesTourStep = 'manageCategoriesTourStep'
 const SidebarCategory = (props: Props) => {
     const [collapsed, setCollapsed] = useState(props.categoryBoards.collapsed)
     const intl = useIntl()
-    const history = useHistory()
+    const navigate = useNavigate()
+    const params = useParams<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
+    const location = useLocation()
 
     const [deleteBoard, setDeleteBoard] = useState<Board|null>()
     const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState<boolean>(false)
     const [categoryMenuOpen, setCategoryMenuOpen] = useState<boolean>(false)
-
-    const match = useRouteMatch<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
     const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false)
     const [showUpdateCategoryModal, setShowUpdateCategoryModal] = useState(false)
 
@@ -108,25 +108,23 @@ const SidebarCategory = (props: Props) => {
         if (boardId === props.activeBoardID && props.onBoardTemplateSelectorClose) {
             props.onBoardTemplateSelectorClose()
         }
-        Utils.showBoard(boardId, match, history)
+        Utils.showBoard(boardId, params, navigate, location.pathname)
         props.hideSidebar()
-    }, [match, history])
+    }, [params, navigate, location.pathname, props.activeBoardID, props.onBoardTemplateSelectorClose, props.hideSidebar])
 
     const showView = useCallback((viewId: string, boardId: string) => {
         if (viewId === props.activeViewID && props.onBoardTemplateSelectorClose) {
             props.onBoardTemplateSelectorClose()
         }
 
-        // if the same board, reuse the match params
-        // otherwise remove viewId and cardId, results in first view being selected
-        const params = {...match.params, boardId: boardId || '', viewId: viewId || ''}
-        if (boardId !== match.params.boardId && viewId !== match.params.viewId) {
-            params.cardId = undefined
+        const newParams: Record<string, string | undefined> = {...params, boardId: boardId || '', viewId: viewId || ''}
+        if (boardId !== params.boardId && viewId !== params.viewId) {
+            newParams.cardId = undefined
         }
-        const newPath = generatePath(Utils.getBoardPagePath(match.path), params)
-        history.push(newPath)
+        const newPath = generatePath(Utils.getBoardPagePath(location.pathname), newParams)
+        navigate(newPath)
         props.hideSidebar()
-    }, [match, history])
+    }, [params, navigate, location.pathname, props.activeViewID, props.onBoardTemplateSelectorClose, props.hideSidebar])
 
     const isBoardVisible = (boardID: string, existingBoardMetadata?: CategoryBoardMetadata): boolean => {
         const categoryBoardMetadata = existingBoardMetadata || sidebarBoardMetadata.find((metadata) => metadata.boardID === boardID)

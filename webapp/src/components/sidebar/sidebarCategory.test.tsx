@@ -3,8 +3,7 @@
 
 import React from 'react'
 
-import {createMemoryHistory} from 'history'
-import {Router} from 'react-router-dom'
+import {MemoryRouter} from 'react-router-dom'
 
 import {render} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -25,7 +24,6 @@ describe('components/sidebarCategory', () => {
 
     const view = TestBlockFactory.createBoardView(board)
     view.fields.sortOptions = []
-    const history = createMemoryHistory()
 
     const board1 = TestBlockFactory.createBoard()
     board1.id = 'board_1_id'
@@ -91,7 +89,7 @@ describe('components/sidebarCategory', () => {
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <SidebarCategory
                         hideSidebar={() => {}}
                         categoryBoards={categoryBoards1}
@@ -99,7 +97,7 @@ describe('components/sidebarCategory', () => {
                         allCategories={allCategoryBoards}
                         index={0}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
@@ -118,7 +116,7 @@ describe('components/sidebarCategory', () => {
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <SidebarCategory
                         hideSidebar={() => {}}
                         categoryBoards={categoryBoards1}
@@ -126,7 +124,7 @@ describe('components/sidebarCategory', () => {
                         allCategories={allCategoryBoards}
                         index={0}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
@@ -143,7 +141,7 @@ describe('components/sidebarCategory', () => {
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <SidebarCategory
                         hideSidebar={() => {}}
                         activeBoardID={board1.id}
@@ -152,7 +150,7 @@ describe('components/sidebarCategory', () => {
                         allCategories={allCategoryBoards}
                         index={0}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
@@ -171,7 +169,7 @@ describe('components/sidebarCategory', () => {
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <SidebarCategory
                         activeBoardID={board1.id}
                         hideSidebar={() => {}}
@@ -181,13 +179,12 @@ describe('components/sidebarCategory', () => {
                         index={0}
                         onBoardTemplateSelectorClose={mockTemplateClose}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
         expect(container).toMatchSnapshot()
 
-        // testing collapsed state of category
         const subItems = container.querySelectorAll('.subitem')
         expect(subItems).toBeDefined()
         userEvent.click(subItems[0] as Element)
@@ -202,7 +199,7 @@ describe('components/sidebarCategory', () => {
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
                     <SidebarCategory
                         activeBoardID={board2.id}
                         hideSidebar={() => {}}
@@ -212,13 +209,12 @@ describe('components/sidebarCategory', () => {
                         index={0}
                         onBoardTemplateSelectorClose={mockTemplateClose}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
         expect(container).toMatchSnapshot()
 
-        // testing collapsed state of category
         const subItems = container.querySelectorAll('.category-title')
         expect(subItems).toBeDefined()
         userEvent.click(subItems[0] as Element)

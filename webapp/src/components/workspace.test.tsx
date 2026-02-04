@@ -4,7 +4,7 @@
 import {act, render, waitFor} from '@testing-library/react'
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {MemoryRouter} from 'react-router-dom'
+
 import {mocked} from 'jest-mock'
 
 import userEvent from '@testing-library/user-event'
@@ -102,14 +102,12 @@ jest.mock('react-router-dom', () => {
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {
-                params: {
-                    boardId: board.id,
-                    viewId: activeView.id,
-                },
-            }
-        }),
+        useParams: jest.fn(() => ({
+            boardId: board.id,
+            viewId: activeView.id,
+            teamId: 'team-id',
+        })),
+        useNavigate: jest.fn(() => jest.fn()),
     }
 })
 
@@ -185,6 +183,7 @@ describe('src/components/workspace', () => {
     beforeEach(() => {
         jest.clearAllMocks()
         mockedUtils.createGuid.mockReturnValue('test-id')
+        mockedUtils.getBoardPagePath.mockReturnValue('/team/:teamId/:boardId/:viewId/:cardId?')
     })
     test('should match snapshot', async () => {
         let container
@@ -193,7 +192,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={store}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
         })
@@ -206,7 +205,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={store}>
                     <Workspace readonly={true}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
         })
@@ -220,7 +219,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={store}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
             const cardElements = container!.querySelectorAll('.KanbanCard')
@@ -238,7 +237,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={store}>
                     <Workspace readonly={true}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
             const cardElements = container!.querySelectorAll('.KanbanCard')
@@ -300,7 +299,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={emptyStore}>
                     <Workspace readonly={true}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
         })
@@ -405,7 +404,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={localStore}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             jest.runOnlyPendingTimers()
         })
 
@@ -509,7 +508,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={localStore}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
         })
 
         jest.runOnlyPendingTimers()
@@ -618,7 +617,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={localStore}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             jest.runOnlyPendingTimers()
         })
 

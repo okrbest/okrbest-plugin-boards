@@ -7,7 +7,6 @@ import {Provider as ReduxProvider} from 'react-redux'
 import thunk from 'redux-thunk'
 
 import React from 'react'
-import {MemoryRouter} from 'react-router'
 import {mocked} from 'jest-mock'
 
 import {IUser} from '../../user'
@@ -32,20 +31,13 @@ jest.mock('../../utils')
 const mockedOctoClient = mocked(client, true)
 const mockedUtils = mocked(Utils, true)
 
-let params = {}
-jest.mock('react-router', () => {
-    const originalModule = jest.requireActual('react-router')
+let params: Record<string, string> = {}
+jest.mock('react-router-dom', () => {
+    const originalModule = jest.requireActual('react-router-dom')
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {
-                url: 'http://localhost/',
-                path: '/',
-                params,
-                isExact: true,
-            }
-        }),
+        useParams: jest.fn(() => params),
     }
 })
 
@@ -219,7 +211,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -249,7 +241,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -277,7 +269,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -319,7 +311,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -363,7 +355,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -404,7 +396,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
             mockedOctoClient.getSharing.mockResolvedValue({
@@ -459,7 +451,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                         enableSharedBoards={true}
                     />
                 </ReduxProvider>),
-            {wrapper: MemoryRouter})
+)
             container = result.container
         })
         expect(container).toMatchSnapshot()
@@ -482,7 +474,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                         enableSharedBoards={true}
                     />
                 </ReduxProvider>),
-            {wrapper: MemoryRouter})
+)
             container = result.container
         })
         expect(container).toMatchSnapshot()
@@ -524,7 +516,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={false}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -573,7 +565,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={false}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -608,7 +600,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -654,7 +646,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={true}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -703,7 +695,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                             enableSharedBoards={false}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
