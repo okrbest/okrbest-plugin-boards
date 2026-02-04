@@ -242,11 +242,11 @@ export default Menu;
 #### 1.10 Phase 1 검증
 
 **Acceptance Criteria**:
-- [x] `npm run test` → All tests pass
-- [x] `npm run check-types` → Exit code 0
-- [x] `npm run build` → Exit code 0
-- [x] `grep "react-beautiful-dnd" webapp/src/ -r | wc -l` → 0
-- [x] `grep "PureComponent" webapp/src/widgets/menu/menu.tsx | wc -l` → 0
+- [ ] `npm run test` → All tests pass
+- [ ] `npm run check-types` → Exit code 0
+- [ ] `npm run build` → Exit code 0
+- [ ] `grep "react-beautiful-dnd" webapp/src/ -r | wc -l` → 0
+- [ ] `grep "PureComponent" webapp/src/widgets/menu/menu.tsx | wc -l` → 0
 
 **Commit**: `chore: complete Phase 1 - pre-migration cleanup`
 
@@ -541,13 +541,13 @@ npm install --save-dev @testing-library/react@^15.0.0 @testing-library/dom
 #### 2.10 Phase 2 검증
 
 **Acceptance Criteria**:
-- [x] `npm run test -- --updateSnapshot` → All tests pass
-- [x] `npm run check-types` → Exit code 0
-- [x] `npm run build` → Exit code 0
-- [x] `npm run check` → No errors
-- [x] `grep "ReactDOM.render" webapp/src/ -r | wc -l` → 0
-- [x] `npm ls react-redux` → "9.x"
-- [x] `npm ls @reduxjs/toolkit` → "2.x"
+- [ ] `npm run test -- --updateSnapshot` → All tests pass
+- [ ] `npm run check-types` → Exit code 0
+- [ ] `npm run build` → Exit code 0
+- [ ] `npm run check` → No errors
+- [ ] `grep "ReactDOM.render" webapp/src/ -r | wc -l` → 0
+- [ ] `npm ls react-redux` → "9.x"
+- [ ] `npm ls @reduxjs/toolkit` → "2.x"
 
 **Commit**: `chore: complete Phase 2 - React 18 upgrade`
 
@@ -647,7 +647,7 @@ npx types-react-codemod@latest preset-19 ./webapp/src
 ```
 
 **Acceptance Criteria**:
-- [x] `grep -r "useRef()" webapp/src/ | wc -l` → 0
+- [ ] `grep -r "useRef()" webapp/src/ | wc -l` → 0
 
 **Commit**: `refactor(types): add useRef arguments for React 19 compatibility`
 
@@ -729,11 +729,11 @@ cd webapp && npm run test -- --updateSnapshot
 #### 3.7 최종 검증
 
 **Acceptance Criteria**:
-- [x] `npm run test` → All tests pass
-- [x] `npm run check-types` → Exit code 0
-- [x] `npm run build` → Exit code 0
-- [x] `npm run check` → No errors
-- [x] 모든 DND 기능 정상 동작 (수동 또는 E2E 테스트)
+- [ ] `npm run test` → All tests pass
+- [ ] `npm run check-types` → Exit code 0
+- [ ] `npm run build` → Exit code 0
+- [ ] `npm run check` → No errors
+- [ ] 모든 DND 기능 정상 동작 (수동 또는 E2E 테스트)
 
 **Commit**: `chore: complete Phase 3 - React 19 compatibility`
 
@@ -826,16 +826,16 @@ npm ls @types/react  # 19.x
 
 ### 마이그레이션 완료 조건
 
-- [x] **Phase 1**: react-beautiful-dnd → @hello-pangea/dnd 완료
-- [x] **Phase 1**: Menu 클래스 → 함수형 전환 완료
-- [x] **Phase 2**: ReactDOM.render → createRoot 완료
-- [x] **Phase 2**: JSX Transform 설정 변경 완료
-- [x] **Phase 2**: react-redux 9.x 업그레이드 완료
-- [x] **Phase 2**: @reduxjs/toolkit 2.x 업그레이드 완료
-- [x] **Phase 2**: @testing-library/react 15.x 업그레이드 완료
-- [x] **Phase 3**: @types/react 19.x 업데이트 완료
-- [x] **Phase 3**: useRef 인자 추가 완료
-- [x] **Phase 3**: ref cleanup 패턴 수정 완료
+- [ ] **Phase 1**: react-beautiful-dnd → @hello-pangea/dnd 완료
+- [ ] **Phase 1**: Menu 클래스 → 함수형 전환 완료
+- [ ] **Phase 2**: ReactDOM.render → createRoot 완료
+- [ ] **Phase 2**: JSX Transform 설정 변경 완료
+- [ ] **Phase 2**: react-redux 9.x 업그레이드 완료
+- [ ] **Phase 2**: @reduxjs/toolkit 2.x 업그레이드 완료
+- [ ] **Phase 2**: @testing-library/react 15.x 업그레이드 완료
+- [ ] **Phase 3**: @types/react 19.x 업데이트 완료
+- [ ] **Phase 3**: useRef 인자 추가 완료
+- [ ] **Phase 3**: ref cleanup 패턴 수정 완료
 
 ### 검증 명령어 (최종)
 
@@ -926,15 +926,15 @@ echo "Checking legacy code removal..."
 
 ### Final Checklist
 
-- [x] 모든 "Must Have" 충족
-- [x] 모든 "Must NOT Have" 준수
-- [x] 모든 테스트 통과
-- [x] 타입 체크 통과
-- [x] 빌드 성공
-- [x] ESLint/Stylelint 통과
-- [x] react-beautiful-dnd 완전 제거
-- [x] ReactDOM.render 완전 제거
-- [x] createRoot API 적용 완료
-- [x] Menu 함수형 컴포넌트 전환 완료
-- [x] React 19 호환 타입 패턴 적용 완료
-- [x] 기존 기능 100% 유지
+- [ ] 모든 "Must Have" 충족
+- [ ] 모든 "Must NOT Have" 준수
+- [ ] 모든 테스트 통과
+- [ ] 타입 체크 통과
+- [ ] 빌드 성공
+- [ ] ESLint/Stylelint 통과
+- [ ] react-beautiful-dnd 완전 제거
+- [ ] ReactDOM.render 완전 제거
+- [ ] createRoot API 적용 완료
+- [ ] Menu 함수형 컴포넌트 전환 완료
+- [ ] React 19 호환 타입 패턴 적용 완료
+- [ ] 기존 기능 100% 유지
