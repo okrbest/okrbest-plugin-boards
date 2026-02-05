@@ -24,7 +24,7 @@ type Props = {
     onDrop: (card: Card) => void
 }
 
-export default function KanbanHiddenColumnItem(props: Props): JSX.Element {
+export default function KanbanHiddenColumnItem(props: Props): React.JSX.Element {
     const {activeView, intl, group} = props
     const hiddenCardGroupId = 'hidden-card-group-id'
 

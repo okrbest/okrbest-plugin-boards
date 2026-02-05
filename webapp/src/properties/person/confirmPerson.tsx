@@ -19,7 +19,7 @@ import {Permission} from '../../constants'
 import ConfirmAddUserForNotifications from '../../components/confirmAddUserForNotifications'
 import PersonSelector from '../../components/personSelector'
 
-const ConfirmPerson = (props: PropertyProps): JSX.Element => {
+const ConfirmPerson = (props: PropertyProps): React.JSX.Element => {
     const {card, board, propertyTemplate, propertyValue, property, readOnly} = props
     const [confirmAddUser, setConfirmAddUser] = useState<IUser|null>(null)
     const intl = useIntl()

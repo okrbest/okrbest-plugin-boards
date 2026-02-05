@@ -19,7 +19,7 @@ type Props = {
     onRename: (option: IPropertyOption, newValue: string) => void
 }
 
-const RenameOptionDialog = (props: Props): JSX.Element => {
+const RenameOptionDialog = (props: Props): React.JSX.Element => {
     const intl = useIntl()
     const [name, setName] = useState(props.option.value)
 

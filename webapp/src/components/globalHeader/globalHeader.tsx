@@ -30,7 +30,7 @@ const HeaderItems = () => {
     )
 }
 
-const GlobalHeader = (): JSX.Element => {
+const GlobalHeader = (): React.JSX.Element => {
     return (
         <ReduxProvider store={store}>
             <HeaderItems/>

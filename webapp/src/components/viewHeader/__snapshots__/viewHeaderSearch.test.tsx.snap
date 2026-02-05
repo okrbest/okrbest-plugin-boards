@@ -27,8 +27,6 @@ exports[`components/viewHeader/ViewHeaderSearch search text after input 1`] = `
     <input
       class="Editable "
       placeholder="Search cards"
-      title="Hello"
-      value="Hello"
     />
   </div>
 </div>

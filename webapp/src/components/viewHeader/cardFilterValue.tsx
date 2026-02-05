@@ -89,7 +89,7 @@ type Props = {
     template: IPropertyTemplate
 }
 
-const CardFilterValue = (props: Props): JSX.Element => {
+const CardFilterValue = (props: Props): React.JSX.Element => {
     const {filter, view, template} = props
     const intl = useIntl()
     const emptyDisplayValue = intl.formatMessage({id: 'FilterValue.empty', defaultMessage: '(empty)'})

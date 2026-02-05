@@ -25,7 +25,6 @@ import {CardDetailContext, CardDetailContextType} from './cardDetail/cardDetailC
 jest.mock('../mutator')
 jest.mock('../utils')
 jest.mock('../octoClient')
-jest.mock('draft-js/lib/generateRandomKey', () => () => '123')
 
 beforeAll(mockDOM)
 

@@ -17,7 +17,7 @@ type Props = {
     showEmptyPlaceholder: boolean
 }
 
-const PropertyValueElement = (props: Props): JSX.Element => {
+const PropertyValueElement = (props: Props): React.JSX.Element => {
     const {card, propertyTemplate, readOnly, showEmptyPlaceholder, board} = props
 
     let propertyValue = card.fields.properties[propertyTemplate.id]

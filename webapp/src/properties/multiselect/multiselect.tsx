@@ -15,7 +15,7 @@ import RenameOptionDialog from '../../widgets/renameOptionDialog'
 
 import { PropertyProps } from '../types'
 
-const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
+const MultiSelectProperty = (props: PropertyProps): React.JSX.Element => {
     const { propertyTemplate, propertyValue, board, card } = props
     const isEditable = !props.readOnly && Boolean(board)
     const [open, setOpen] = useState(false)

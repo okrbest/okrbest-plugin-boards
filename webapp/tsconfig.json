@@ -16,7 +16,8 @@
         "outDir": "./dist",
         "moduleResolution": "bundler",
         "skipLibCheck": true,
-        "typeRoots": ["./node_modules/@types"]
+        "typeRoots": ["./node_modules/@types"],
+        "types": ["react", "jest", "node"]
     },
     "include": [
 		"src/**/*"

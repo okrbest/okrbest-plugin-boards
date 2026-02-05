@@ -53,7 +53,7 @@ type Props = {
     viewId: string
 }
 
-function BlockSuiteEditor(props: Props): JSX.Element {
+function BlockSuiteEditor(props: Props): React.JSX.Element {
     const {card, contents, readonly, teamId, viewId} = props
     const intl = useIntl()
     const navigate = useNavigate()

@@ -42,8 +42,8 @@ const TourTipOverlay = ({
     ) : null)
 
 type Props = {
-    screen: JSX.Element
-    title: JSX.Element
+    screen: React.JSX.Element
+    title: React.JSX.Element
     imageURL?: string
     punchOut?: TutorialTourTipPunchout | null
     step: number
@@ -90,7 +90,7 @@ const TutorialTourTip = ({
     hideBackdrop = false,
     onPunchholeClick,
     skipCategoryFromBackdrop,
-}: Props): JSX.Element => {
+}: Props): React.JSX.Element => {
     const managerProps: TutorialTourTipManagerProps = {
         step,
         autoTour,
@@ -118,7 +118,7 @@ const TutorialTourTip = ({
         handleSendToNextTour,
     } = useTutorialTourTipManager(managerProps)
 
-    const getButtonText = (): JSX.Element => {
+    const getButtonText = (): React.JSX.Element => {
         let buttonText = (
             <FormattedMessage
                 id={'tutorial_tip.ok'}

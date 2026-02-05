@@ -24,7 +24,7 @@ type Props = {
     cords: {x: number, y?: number, z?: number}
 }
 
-export default function ContentElement(props: Props): JSX.Element|null {
+export default function ContentElement(props: Props): React.JSX.Element|null {
     const {block, readonly, cords} = props
     const cardDetail = useCardDetailContext()
 
