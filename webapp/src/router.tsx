@@ -1,20 +1,18 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useMemo} from 'react'
+import React, {useEffect, useCallback, useMemo} from 'react'
 import {
-    unstable_HistoryRouter as HistoryRouter,
+    createBrowserRouter,
+    RouterProvider,
     Navigate,
-    Routes,
-    Route,
     useParams,
     useNavigate,
     generatePath,
     useLocation,
     useMatch,
+    Outlet,
 } from 'react-router-dom'
-import {createBrowserHistory, type History as HistoryLib} from 'history'
-import type {History as RouterHistory} from '@remix-run/router'
 
 import {IAppWindow} from './types'
 import BoardPage from './pages/boardPage/boardPage'
@@ -32,6 +30,14 @@ import FBRoute from './route'
 
 declare let window: IAppWindow
 
+export const NAVIGATION_EVENT = 'focalboard:navigate'
+export const NAVIGATION_REPLACE_EVENT = 'focalboard:navigate:replace'
+
+interface NavigationEventDetail {
+    path: string
+    state?: unknown
+}
+
 function HomeToCurrentTeamContent() {
     const firstTeam = useAppSelector<Team|null>(getFirstTeam)
     const dispatch = useAppDispatch()
@@ -44,8 +50,9 @@ function HomeToCurrentTeamContent() {
 
     let teamID = (window.getCurrentTeamId && window.getCurrentTeamId()) || ''
     const lastTeamID = UserSettings.lastTeamId
+    
     if (!teamID && !firstTeam && !lastTeamID) {
-        return null
+        return <div className='focalboard-loading'>Loading...</div>
     }
     teamID = teamID || lastTeamID || firstTeam?.id || ''
 
@@ -132,85 +139,125 @@ function GlobalErrorRedirect() {
     return null
 }
 
-type Props = {
-    history?: HistoryLib
-}
+function NavigationEventHandler() {
+    const navigate = useNavigate()
 
-const FocalboardRouter = (props: Props): JSX.Element => {
-    const browserHistory = useMemo(() => {
-        if (props.history) {
-            return props.history
+    const handleNavigate = useCallback((event: Event) => {
+        const customEvent = event as CustomEvent<NavigationEventDetail>
+        if (customEvent.detail?.path) {
+            Utils.log(`Navigation event: ${customEvent.detail.path}`)
+            navigate(customEvent.detail.path, {state: customEvent.detail.state})
         }
-        return createBrowserHistory({window})
-    }, [props.history])
+    }, [navigate])
+
+    const handleNavigateReplace = useCallback((event: Event) => {
+        const customEvent = event as CustomEvent<NavigationEventDetail>
+        if (customEvent.detail?.path) {
+            Utils.log(`Navigation replace event: ${customEvent.detail.path}`)
+            navigate(customEvent.detail.path, {replace: true, state: customEvent.detail.state})
+        }
+    }, [navigate])
 
     useEffect(() => {
-        if (window.frontendBaseURL) {
-            browserHistory.replace(window.location.pathname.replace(window.frontendBaseURL, ''))
+        window.addEventListener(NAVIGATION_EVENT, handleNavigate)
+        window.addEventListener(NAVIGATION_REPLACE_EVENT, handleNavigateReplace)
+
+        return () => {
+            window.removeEventListener(NAVIGATION_EVENT, handleNavigate)
+            window.removeEventListener(NAVIGATION_REPLACE_EVENT, handleNavigateReplace)
         }
-    }, [browserHistory])
+    }, [handleNavigate, handleNavigateReplace])
 
-    const basename = Utils.isFocalboardPlugin() ? '' : Utils.getFrontendBaseURL()
+    return null
+}
 
+function RootLayout() {
     return (
-        <HistoryRouter history={browserHistory as unknown as RouterHistory} basename={basename}>
+        <>
             <GlobalErrorRedirect/>
-            <Routes>
-                <Route
-                    path='/boards'
-                    element={<Navigate to='/' replace/>}
-                />
-                <Route
-                    path='/'
-                    element={
+            <NavigationEventHandler/>
+            <Outlet/>
+        </>
+    )
+}
+
+export function navigateTo(path: string, state?: unknown): void {
+    window.dispatchEvent(new CustomEvent<NavigationEventDetail>(NAVIGATION_EVENT, {
+        detail: {path, state},
+    }))
+}
+
+export function navigateReplace(path: string, state?: unknown): void {
+    window.dispatchEvent(new CustomEvent<NavigationEventDetail>(NAVIGATION_REPLACE_EVENT, {
+        detail: {path, state},
+    }))
+}
+
+function getBasename(): string {
+    return Utils.isFocalboardPlugin() ? (window.frontendBaseURL || '') : ('/' + Utils.getFrontendBaseURL())
+}
+
+function createRoutes() {
+    return [
+        {
+            path: '/',
+            element: <RootLayout/>,
+            children: [
+                {
+                    path: 'boards',
+                    element: <Navigate to='/' replace/>,
+                },
+                {
+                    index: true,
+                    element: (
                         <FBRoute loginRequired={true}>
                             <HomeToCurrentTeamContent/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/welcome'
-                    element={
+                    ),
+                },
+                {
+                    path: 'welcome',
+                    element: (
                         <FBRoute>
                             <WelcomePage/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/error'
-                    element={
+                    ),
+                },
+                {
+                    path: 'error',
+                    element: (
                         <FBRoute>
                             <ErrorPage/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/team/:teamId/new/:channelId'
-                    element={
+                    ),
+                },
+                {
+                    path: 'team/:teamId/new/:channelId',
+                    element: (
                         <FBRoute>
                             <BoardPage new={true}/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/team/:teamId/shared/:boardId?/:viewId?/:cardId?'
-                    element={
+                    ),
+                },
+                {
+                    path: 'team/:teamId/shared/:boardId?/:viewId?/:cardId?',
+                    element: (
                         <FBRoute>
                             <BoardPage readonly={true}/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/shared/:boardId?/:viewId?/:cardId?'
-                    element={
+                    ),
+                },
+                {
+                    path: 'shared/:boardId?/:viewId?/:cardId?',
+                    element: (
                         <FBRoute>
                             <BoardPage readonly={true}/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/board/:boardId?/:viewId?/:cardId?'
-                    element={
+                    ),
+                },
+                {
+                    path: 'board/:boardId?/:viewId?/:cardId?',
+                    element: (
                         <FBRoute
                             loginRequired={true}
                             getOriginalPath={(params) => {
@@ -219,27 +266,27 @@ const FocalboardRouter = (props: Props): JSX.Element => {
                         >
                             <BoardPage/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?'
-                    element={
+                    ),
+                },
+                {
+                    path: 'workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?',
+                    element: (
                         <FBRoute>
                             <WorkspaceToTeamRedirect/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/workspace/:workspaceId/:boardId?/:viewId?/:cardId?'
-                    element={
+                    ),
+                },
+                {
+                    path: 'workspace/:workspaceId/:boardId?/:viewId?/:cardId?',
+                    element: (
                         <FBRoute>
                             <WorkspaceToTeamRedirect/>
                         </FBRoute>
-                    }
-                />
-                <Route
-                    path='/team/:teamId/:boardId?/:viewId?/:cardId?'
-                    element={
+                    ),
+                },
+                {
+                    path: 'team/:teamId/:boardId?/:viewId?/:cardId?',
+                    element: (
                         <FBRoute
                             loginRequired={true}
                             getOriginalPath={(params) => {
@@ -248,11 +295,25 @@ const FocalboardRouter = (props: Props): JSX.Element => {
                         >
                             <BoardPage/>
                         </FBRoute>
-                    }
-                />
-            </Routes>
-        </HistoryRouter>
-    )
+                    ),
+                },
+                {
+                    path: '*',
+                    element: null,
+                },
+            ],
+        },
+    ]
+}
+
+const FocalboardRouter = (): JSX.Element => {
+    const router = useMemo(() => {
+        const basename = getBasename()
+        Utils.log(`Creating router with basename: ${basename}`)
+        return createBrowserRouter(createRoutes(), {basename})
+    }, [])
+
+    return <RouterProvider router={router}/>
 }
 
 export default React.memo(FocalboardRouter)
