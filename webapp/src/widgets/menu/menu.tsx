@@ -44,14 +44,16 @@ const Menu = React.memo((props: Props): JSX.Element => {
         >
             <div className='menu-contents'>
                 <div className='menu-options'>
-                    {React.Children.map(children, (child) => (
+                    {React.Children.toArray(children).map((child, index) => (
                         <div
+                            key={index}
                             onMouseEnter={() => setHovering(child)}
                         >
                             <HoveringContext.Provider value={child === hovering}>
                                 {child}
                             </HoveringContext.Provider>
-                        </div>))}
+                        </div>
+                    ))}
                 </div>
 
                 <div className='menu-spacer hideOnWidescreen'/>

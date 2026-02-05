@@ -14,8 +14,8 @@ exports[`components/content/checkboxElement should change title 1`] = `
       class="Editable "
       placeholder="Edit text..."
       spellcheck="true"
-      title=""
-      value=""
+      title="new title"
+      value="new title"
     />
   </div>
 </div>
@@ -73,7 +73,7 @@ exports[`components/content/checkboxElement should toggle value 1`] = `
     <input
       id="checkbox-test-id"
       type="checkbox"
-      value="off"
+      value="on"
     />
     <input
       class="Editable "

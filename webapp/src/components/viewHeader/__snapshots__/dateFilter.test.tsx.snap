@@ -35,88 +35,105 @@ exports[`components/viewHeader/dateFilter handles \`Today\` button click event 1
 `;
 
 exports[`components/viewHeader/dateFilter handles calendar click event 1`] = `
-<IntlProvider
-  defaultFormats={{}}
-  defaultLocale="en"
-  fallbackOnEmptyString={true}
-  formats={{}}
-  locale="en"
-  messages={{}}
-  onError={[Function]}
-  onWarn={[Function]}
-  textComponent={Symbol(react.fragment)}
->
-  <React.Fragment>
-    <DateFilter
-      filter={
-        {
-          "condition": "is",
-          "propertyId": "myPropertyId",
-          "values": [],
-        }
-      }
-      view={
-        {
-          "boardId": "testBoardID",
-          "createAt": 1672228800000,
-          "createdBy": "",
-          "deleteAt": 0,
-          "fields": {
-            "cardOrder": [
-              "card1",
-              "card2",
-              "card3",
-            ],
-            "collapsedOptionIds": [],
-            "columnCalculations": {},
-            "columnWidths": {
-              "column1": 100,
-              "column2": 200,
-            },
-            "dateDisplayPropertyId": undefined,
-            "defaultTemplateId": "",
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "children": {
+      "$$typeof": Symbol(react.transitional.element),
+      "_owner": null,
+      "_store": {},
+      "key": null,
+      "props": {
+        "children": {
+          "$$typeof": Symbol(react.transitional.element),
+          "_owner": null,
+          "_store": {},
+          "key": null,
+          "props": {
             "filter": {
-              "filters": [
-                {
-                  "condition": "is",
-                  "propertyId": "myPropertyId",
-                  "values": [],
-                },
-              ],
-              "operation": "and",
+              "condition": "is",
+              "propertyId": "myPropertyId",
+              "values": [],
             },
-            "groupById": "property1",
-            "hiddenOptionIds": [
-              "value1",
-            ],
-            "kanbanCalculations": {},
-            "sortOptions": [
-              {
-                "propertyId": "property1",
-                "reversed": true,
+            "view": {
+              "boardId": "testBoardID",
+              "createAt": 1672228800000,
+              "createdBy": "",
+              "deleteAt": 0,
+              "fields": {
+                "cardOrder": [
+                  "card1",
+                  "card2",
+                  "card3",
+                ],
+                "collapsedOptionIds": [],
+                "columnCalculations": {},
+                "columnWidths": {
+                  "column1": 100,
+                  "column2": 200,
+                },
+                "dateDisplayPropertyId": undefined,
+                "defaultTemplateId": "",
+                "filter": {
+                  "filters": [
+                    {
+                      "condition": "is",
+                      "propertyId": "myPropertyId",
+                      "values": [],
+                    },
+                  ],
+                  "operation": "and",
+                },
+                "groupById": "property1",
+                "hiddenOptionIds": [
+                  "value1",
+                ],
+                "kanbanCalculations": {},
+                "sortOptions": [
+                  {
+                    "propertyId": "property1",
+                    "reversed": true,
+                  },
+                  {
+                    "propertyId": "property2",
+                    "reversed": false,
+                  },
+                ],
+                "viewType": "board",
+                "visibleOptionIds": [],
+                "visiblePropertyIds": [],
               },
-              {
-                "propertyId": "property2",
-                "reversed": false,
-              },
-            ],
-            "viewType": "board",
-            "visibleOptionIds": [],
-            "visiblePropertyIds": [],
+              "id": "testViewID",
+              "limited": false,
+              "modifiedBy": "",
+              "parentId": "",
+              "schema": 1,
+              "title": "view title",
+              "type": "view",
+              "updateAt": 1672228800000,
+            },
           },
-          "id": "testViewID",
-          "limited": false,
-          "modifiedBy": "",
-          "parentId": "",
-          "schema": 1,
-          "title": "view title",
-          "type": "view",
-          "updateAt": 1672228800000,
-        }
-      }
-    />
-  </React.Fragment>
-</IntlProvider>
+          "type": [Function],
+        },
+      },
+      "type": Symbol(react.fragment),
+    },
+    "defaultFormats": {},
+    "defaultLocale": "en",
+    "fallbackOnEmptyString": true,
+    "formats": {},
+    "locale": "en",
+    "messages": {},
+    "onError": [Function],
+    "onWarn": [Function],
+    "textComponent": Symbol(react.fragment),
+    "timeZone": undefined,
+  },
+  "type": [Function],
+}
 `;
 
 exports[`components/viewHeader/dateFilter return dateFilter default value 1`] = `

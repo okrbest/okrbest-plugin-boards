@@ -110,26 +110,26 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
       </div>
       <div
         class="octo-sidebar-list"
-        data-rfd-droppable-context-id=":r6:"
+        data-rfd-droppable-context-id="_r_6_"
         data-rfd-droppable-id="lhs-categories"
       >
         <div
-          data-rfd-draggable-context-id=":r6:"
+          data-rfd-draggable-context-id="_r_6_"
         >
           <div
             class="SidebarCategory"
           >
             <div
               class="categoryBoardsDroppableArea"
-              data-rfd-droppable-context-id=":r6:"
+              data-rfd-droppable-context-id="_r_6_"
             >
               <div
                 class="octo-sidebar-item category expanded active"
               >
                 <div
-                  aria-describedby="rfd-hidden-text-:r6:-hidden-text-:r7:"
+                  aria-describedby="rfd-hidden-text-_r_6_-hidden-text-_r_7_"
                   class="octo-sidebar-title category-title"
-                  data-rfd-drag-handle-context-id=":r6:"
+                  data-rfd-drag-handle-context-id="_r_6_"
                   draggable="false"
                   role="button"
                   tabindex="0"
@@ -162,13 +162,13 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
                 </div>
               </div>
               <div
-                data-rfd-draggable-context-id=":r6:"
+                data-rfd-draggable-context-id="_r_6_"
                 data-rfd-draggable-id="board1"
               >
                 <div
-                  aria-describedby="rfd-hidden-text-:r6:-hidden-text-:r7:"
+                  aria-describedby="rfd-hidden-text-_r_6_-hidden-text-_r_7_"
                   class="SidebarBoardItem subitem active"
-                  data-rfd-drag-handle-context-id=":r6:"
+                  data-rfd-drag-handle-context-id="_r_6_"
                   data-rfd-drag-handle-draggable-id="board1"
                   draggable="false"
                   role="button"
@@ -449,7 +449,6 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
             <div
@@ -880,7 +879,6 @@ exports[`src/components/workspace return workspace readonly and showcard 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
           </div>
@@ -1184,26 +1182,26 @@ exports[`src/components/workspace should match snapshot 1`] = `
       </div>
       <div
         class="octo-sidebar-list"
-        data-rfd-droppable-context-id=":r0:"
+        data-rfd-droppable-context-id="_r_0_"
         data-rfd-droppable-id="lhs-categories"
       >
         <div
-          data-rfd-draggable-context-id=":r0:"
+          data-rfd-draggable-context-id="_r_0_"
         >
           <div
             class="SidebarCategory"
           >
             <div
               class="categoryBoardsDroppableArea"
-              data-rfd-droppable-context-id=":r0:"
+              data-rfd-droppable-context-id="_r_0_"
             >
               <div
                 class="octo-sidebar-item category expanded active"
               >
                 <div
-                  aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
+                  aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
                   class="octo-sidebar-title category-title"
-                  data-rfd-drag-handle-context-id=":r0:"
+                  data-rfd-drag-handle-context-id="_r_0_"
                   draggable="false"
                   role="button"
                   tabindex="0"
@@ -1236,13 +1234,13 @@ exports[`src/components/workspace should match snapshot 1`] = `
                 </div>
               </div>
               <div
-                data-rfd-draggable-context-id=":r0:"
+                data-rfd-draggable-context-id="_r_0_"
                 data-rfd-draggable-id="board1"
               >
                 <div
-                  aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
+                  aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
                   class="SidebarBoardItem subitem active"
-                  data-rfd-drag-handle-context-id=":r0:"
+                  data-rfd-drag-handle-context-id="_r_0_"
                   data-rfd-drag-handle-draggable-id="board1"
                   draggable="false"
                   role="button"
@@ -1523,7 +1521,6 @@ exports[`src/components/workspace should match snapshot 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
             <div
@@ -1954,7 +1951,6 @@ exports[`src/components/workspace should match snapshot with readonly 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
           </div>
