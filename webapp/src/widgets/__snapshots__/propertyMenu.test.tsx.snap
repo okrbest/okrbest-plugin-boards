@@ -503,8 +503,6 @@ exports[`widgets/PropertyMenu should match snapshot 1`] = `
             </div>
           </div>
         </div>
-        <div />
-        <div />
         <div>
           <div
             class="MenuOption MenuSeparator menu-separator"

@@ -142,8 +142,8 @@ const CreateBoardFromTemplate = (props: Props) => {
                 <Placeholder {...props}>
                     {props.selectProps.placeholder}
                 </Placeholder>
-                {React.Children.map(children, (child) =>
-                    child && child.type !== Placeholder ? child : null
+                {React.Children.toArray(children).filter((child) =>
+                    React.isValidElement(child) && child.type !== Placeholder
                 )}
             </ValueContainer>
         )

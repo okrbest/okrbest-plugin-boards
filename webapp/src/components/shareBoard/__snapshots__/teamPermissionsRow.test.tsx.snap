@@ -465,8 +465,6 @@ exports[`src/components/shareBoard/teamPermissionsRow should match snapshot in t
             <div
               class="menu-options"
             >
-              <div />
-              <div />
               <div>
                 <div
                   aria-label="Viewer"

@@ -647,9 +647,6 @@ exports[`/components/viewMenu should match snapshot, read only 1`] = `
                   class="MenuOption MenuSeparator menu-separator"
                 />
               </div>
-              <div />
-              <div />
-              <div />
             </div>
             <div
               class="menu-spacer hideOnWidescreen"
@@ -802,9 +799,6 @@ exports[`/components/viewMenu should match snapshot, read only 1`] = `
                 class="MenuOption MenuSeparator menu-separator"
               />
             </div>
-            <div />
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"

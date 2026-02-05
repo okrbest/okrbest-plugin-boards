@@ -3,17 +3,17 @@
 exports[`components/sidebarBoardItem renders default icon if no custom icon set 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id=":r4:"
+    data-rfd-droppable-context-id="_r_4_"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id=":r4:"
+      data-rfd-draggable-context-id="_r_4_"
       data-rfd-draggable-id="board_id_1"
     >
       <div
-        aria-describedby="rfd-hidden-text-:r4:-hidden-text-:r5:"
+        aria-describedby="rfd-hidden-text-_r_4_-hidden-text-_r_5_"
         class="SidebarBoardItem subitem active"
-        data-rfd-drag-handle-context-id=":r4:"
+        data-rfd-drag-handle-context-id="_r_4_"
         data-rfd-drag-handle-draggable-id="board_id_1"
         draggable="false"
         role="button"
@@ -86,17 +86,17 @@ exports[`components/sidebarBoardItem renders default icon if no custom icon set 
 exports[`components/sidebarBoardItem sidebar board item 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id=":r0:"
+    data-rfd-droppable-context-id="_r_0_"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id=":r0:"
+      data-rfd-draggable-context-id="_r_0_"
       data-rfd-draggable-id="board_id_1"
     >
       <div
-        aria-describedby="rfd-hidden-text-:r0:-hidden-text-:r1:"
+        aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
         class="SidebarBoardItem subitem active"
-        data-rfd-drag-handle-context-id=":r0:"
+        data-rfd-drag-handle-context-id="_r_0_"
         data-rfd-drag-handle-draggable-id="board_id_1"
         draggable="false"
         role="button"
@@ -389,17 +389,17 @@ exports[`components/sidebarBoardItem sidebar board item 1`] = `
 exports[`components/sidebarBoardItem sidebar board item for guest 1`] = `
 <div>
   <div
-    data-rfd-droppable-context-id=":r8:"
+    data-rfd-droppable-context-id="_r_8_"
     data-rfd-droppable-id="droppable_id"
   >
     <div
-      data-rfd-draggable-context-id=":r8:"
+      data-rfd-draggable-context-id="_r_8_"
       data-rfd-draggable-id="board_id_1"
     >
       <div
-        aria-describedby="rfd-hidden-text-:r8:-hidden-text-:r9:"
+        aria-describedby="rfd-hidden-text-_r_8_-hidden-text-_r_9_"
         class="SidebarBoardItem subitem active"
-        data-rfd-drag-handle-context-id=":r8:"
+        data-rfd-drag-handle-context-id="_r_8_"
         data-rfd-drag-handle-draggable-id="board_id_1"
         draggable="false"
         role="button"
@@ -462,8 +462,6 @@ exports[`components/sidebarBoardItem sidebar board item for guest 1`] = `
                       />
                     </div>
                   </div>
-                  <div />
-                  <div />
                   <div>
                     <div
                       aria-label="Export board archive"
