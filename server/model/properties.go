@@ -85,11 +85,62 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 		return pd.ParseDate(date)
 
 	case "person":
-		// v is a userid
-		userID, ok := v.(string)
-		if !ok {
+		// v is a userid, or a JSON-encoded value
+		var userID string
+		switch typed := v.(type) {
+		case string:
+			if typed == "" {
+				return "", nil
+			}
+			trimmed := strings.TrimSpace(typed)
+			switch {
+			case strings.HasPrefix(trimmed, "["):
+				var ids []string
+				if err := json.Unmarshal([]byte(trimmed), &ids); err != nil {
+					return "", ErrInvalidPropertyValueType
+				}
+				if len(ids) > 0 {
+					userID = ids[0]
+				}
+			case strings.HasPrefix(trimmed, "{"):
+				var obj map[string]interface{}
+				if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
+					return "", ErrInvalidPropertyValueType
+				}
+				if id, ok := obj["id"].(string); ok {
+					userID = id
+				} else if id, ok := obj["userId"].(string); ok {
+					userID = id
+				}
+			default:
+				userID = typed
+			}
+		case []interface{}:
+			if len(typed) > 0 {
+				id, ok := typed[0].(string)
+				if !ok {
+					return "", ErrInvalidPropertyValueType
+				}
+				userID = id
+			}
+		case []string:
+			if len(typed) > 0 {
+				userID = typed[0]
+			}
+		case map[string]interface{}:
+			if id, ok := typed["id"].(string); ok {
+				userID = id
+			} else if id, ok := typed["userId"].(string); ok {
+				userID = id
+			}
+		default:
 			return "", ErrInvalidPropertyValueType
 		}
+
+		if userID == "" {
+			return "", nil
+		}
+
 		if resolver != nil {
 			user, err := resolver.GetUserByID(userID)
 			if err != nil {
@@ -103,30 +154,49 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 		return userID, nil
 
 	case "multiPerson":
-		// v is a slice of user IDs
-		userIDs, ok := v.([]interface{})
-		if !ok {
+		// v is a slice of user IDs or a JSON-encoded string
+		var userIDs []string
+		switch typed := v.(type) {
+		case []interface{}:
+			userIDs = make([]string, 0, len(typed))
+			for _, item := range typed {
+				id, ok := item.(string)
+				if !ok {
+					return "", fmt.Errorf("multiPerson property type: %w", ErrInvalidPropertyValueType)
+				}
+				userIDs = append(userIDs, id)
+			}
+		case []string:
+			userIDs = typed
+		case string:
+			if typed == "" {
+				return "", nil
+			}
+			if err := json.Unmarshal([]byte(typed), &userIDs); err != nil {
+				return "", fmt.Errorf("multiPerson property type: %w", ErrInvalidPropertyValueType)
+			}
+		default:
 			return "", fmt.Errorf("multiPerson property type: %w", ErrInvalidPropertyValueType)
 		}
-		if resolver != nil {
-			usernames := make([]string, len(userIDs))
 
-			for i, userIDInterface := range userIDs {
-				userID := userIDInterface.(string)
-
-				user, err := resolver.GetUserByID(userID)
-				if err != nil {
-					return "", err
-				}
-				if user == nil {
-					usernames[i] = userID
-				} else {
-					usernames[i] = user.Username
-				}
-			}
-
-			return strings.Join(usernames, ", "), nil
+		if resolver == nil {
+			return strings.Join(userIDs, ", "), nil
 		}
+
+		usernames := make([]string, len(userIDs))
+		for i, userID := range userIDs {
+			user, err := resolver.GetUserByID(userID)
+			if err != nil {
+				return "", err
+			}
+			if user == nil {
+				usernames[i] = userID
+			} else {
+				usernames[i] = user.Username
+			}
+		}
+
+		return strings.Join(usernames, ", "), nil
 
 	case "multiSelect":
 		// v is a slice of strings containing option ids

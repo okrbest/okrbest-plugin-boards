@@ -29,6 +29,7 @@ type BackendParams struct {
 	Logger                 mlog.LoggerIFace
 	NotifyFreqCardSeconds  int
 	NotifyFreqBoardSeconds int
+	TeammateNameDisplay    string
 }
 
 // Backend provides the notification backend for subscriptions.

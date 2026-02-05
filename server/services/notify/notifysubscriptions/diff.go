@@ -53,6 +53,7 @@ type diffGenerator struct {
 	hint         *model.NotificationHint
 	lastNotifyAt int64
 	logger       mlog.LoggerIFace
+	nameFormat   string
 }
 
 func (dg *diffGenerator) generateDiffs() ([]*Diff, error) {
@@ -217,7 +218,7 @@ func (dg *diffGenerator) generateDiffsForCard(card *model.Block, schema model.Pr
 		// Add author from card's ModifiedBy
 		user, err := dg.store.GetUserByID(card.ModifiedBy)
 		if err == nil && user != nil {
-			cardDiff.Authors.Add(user.ID, user.Username)
+			cardDiff.Authors.Add(user.ID, displayNameForUser(user, dg.nameFormat))
 		}
 	}
 
@@ -300,7 +301,7 @@ func (dg *diffGenerator) generateDiffForBlock(newBlock *model.Block, schema mode
 			)
 			authors.Add(b.ModifiedBy, "unknown_user") // todo: localize this when server has i18n
 		} else {
-			authors.Add(user.ID, user.Username)
+			authors.Add(user.ID, displayNameForUser(user, dg.nameFormat))
 		}
 	}
 
@@ -331,7 +332,11 @@ func (dg *diffGenerator) generateDiffForBlock(newBlock *model.Block, schema mode
 func (dg *diffGenerator) generatePropDiffs(oldBlock, newBlock *model.Block, schema model.PropSchema) []PropDiff {
 	var propDiffs []PropDiff
 
-	oldProps, err := model.ParseProperties(oldBlock, schema, dg.store)
+	resolver := &displayNameResolver{
+		base:       dg.store,
+		nameFormat: dg.nameFormat,
+	}
+	oldProps, err := model.ParseProperties(oldBlock, schema, resolver)
 	if err != nil {
 		dg.logger.Error("Cannot parse properties for old block",
 			mlog.String("block_id", oldBlock.ID),
@@ -339,7 +344,7 @@ func (dg *diffGenerator) generatePropDiffs(oldBlock, newBlock *model.Block, sche
 		)
 	}
 
-	newProps, err := model.ParseProperties(newBlock, schema, dg.store)
+	newProps, err := model.ParseProperties(newBlock, schema, resolver)
 	if err != nil {
 		dg.logger.Error("Cannot parse properties for new block",
 			mlog.String("block_id", oldBlock.ID),
@@ -388,6 +393,20 @@ func (dg *diffGenerator) generatePropDiffs(oldBlock, newBlock *model.Block, sche
 		}
 	}
 	return sortPropDiffs(propDiffs)
+}
+
+type displayNameResolver struct {
+	base       AppAPI
+	nameFormat string
+}
+
+func (r *displayNameResolver) GetUserByID(userID string) (*model.User, error) {
+	user, err := r.base.GetUserByID(userID)
+	if err != nil || user == nil {
+		return user, err
+	}
+	user.Username = displayNameForUser(user, r.nameFormat)
+	return user, nil
 }
 
 func sortPropDiffs(propDiffs []PropDiff) []PropDiff {
