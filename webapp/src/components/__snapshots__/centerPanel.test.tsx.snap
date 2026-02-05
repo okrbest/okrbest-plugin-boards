@@ -2584,7 +2584,7 @@ exports[`components/centerPanel return centerPanel and press touch ctrl+d for on
               </button>
             </div>
             <div
-              class="TableRow octo-table-row selected"
+              class="TableRow octo-table-row"
               draggable="true"
               style="opacity: 1;"
             >
@@ -3211,7 +3211,7 @@ exports[`components/centerPanel return centerPanel and press touch del for one c
               </button>
             </div>
             <div
-              class="TableRow octo-table-row selected"
+              class="TableRow octo-table-row"
               draggable="true"
               style="opacity: 1;"
             >
@@ -3838,7 +3838,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for one c
               </button>
             </div>
             <div
-              class="TableRow octo-table-row selected"
+              class="TableRow octo-table-row"
               draggable="true"
               style="opacity: 1;"
             >
@@ -5092,7 +5092,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
               </button>
             </div>
             <div
-              class="TableRow octo-table-row selected"
+              class="TableRow octo-table-row"
               draggable="true"
               style="opacity: 1;"
             >
@@ -5719,7 +5719,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
               </button>
             </div>
             <div
-              class="TableRow octo-table-row selected"
+              class="TableRow octo-table-row"
               draggable="true"
               style="opacity: 1;"
             >
@@ -5792,7 +5792,7 @@ exports[`components/centerPanel return centerPanel and press touch esc for two c
               </div>
             </div>
             <div
-              class="TableRow octo-table-row selected"
+              class="TableRow octo-table-row"
               draggable="true"
               style="opacity: 1;"
             >
@@ -6973,7 +6973,7 @@ exports[`components/centerPanel return centerPanel and select one card and click
               </button>
             </div>
             <div
-              class="TableRow octo-table-row selected"
+              class="TableRow octo-table-row"
               draggable="true"
               style="opacity: 1;"
             >

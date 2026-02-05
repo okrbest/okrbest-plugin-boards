@@ -21,7 +21,7 @@ import FocalboardRouter from './router'
 
 import {IUser} from './user'
 
-const App = (): JSX.Element => {
+const App = (): React.JSX.Element => {
     const language = useAppSelector<string>(getLanguage)
     const me = useAppSelector<IUser|null>(getMe)
     const dispatch = useAppDispatch()

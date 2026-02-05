@@ -21,7 +21,7 @@ type Props = {
     parentRef?: React.RefObject<any>
 }
 
-const Menu = React.memo((props: Props): JSX.Element => {
+const Menu = React.memo((props: Props): React.JSX.Element => {
     const {position, fixed, children, parentRef} = props
     const menuRef = useRef<HTMLDivElement>(null)
     const [hovering, setHovering] = useState<React.ReactNode>(null)

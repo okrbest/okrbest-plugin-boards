@@ -13,10 +13,10 @@ import {DragDropContext, Droppable} from '@hello-pangea/dnd'
 
 import {Block} from './blocks/block'
 
-export const wrapIntl = (children?: React.ReactNode): JSX.Element => {
+export const wrapIntl = (children?: React.ReactNode): React.JSX.Element => {
     return <IntlProvider locale='en'><>{children}</></IntlProvider>
 }
-export const wrapDNDIntl = (children?: React.ReactNode): JSX.Element => {
+export const wrapDNDIntl = (children?: React.ReactNode): React.JSX.Element => {
     return (
         <MemoryRouter initialEntries={['/team/team-id/board-id/view-id']}>
             <DndProvider backend={HTML5Backend}>
@@ -26,7 +26,7 @@ export const wrapDNDIntl = (children?: React.ReactNode): JSX.Element => {
     )
 }
 
-export const wrapRBDNDContext = (children?: React.ReactNode): JSX.Element => {
+export const wrapRBDNDContext = (children?: React.ReactNode): React.JSX.Element => {
     return (
         <DragDropContext onDragEnd={() => {}}>
             {children}
@@ -34,7 +34,7 @@ export const wrapRBDNDContext = (children?: React.ReactNode): JSX.Element => {
     )
 }
 
-export const wrapRBDNDDroppable = (children?: React.ReactNode): JSX.Element => {
+export const wrapRBDNDDroppable = (children?: React.ReactNode): React.JSX.Element => {
     const draggableComponent = (
         <Droppable droppableId='droppable_id'>
             {(provided) => (

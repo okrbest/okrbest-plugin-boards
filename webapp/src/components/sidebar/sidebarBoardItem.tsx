@@ -6,8 +6,6 @@ import {useIntl} from 'react-intl'
 import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
 import {Draggable} from '@hello-pangea/dnd'
 
-import {BaseEmoji} from 'emoji-mart'
-
 import {Board} from '../../blocks/board'
 import {BoardView, IViewType} from '../../blocks/boardView'
 import mutator from '../../mutator'
@@ -44,9 +42,9 @@ import octoClient from '../../octoClient'
 import {getCurrentBoardId} from '../../store/boards'
 import {UserSettings} from '../../userSettings'
 import {Archiver} from '../../archiver'
-import {getValidEmojiData} from '../../utils/emojiUtils'
+import {getValidEmojiData, EmojiData} from '../../utils/emojiUtils'
 
-const iconForViewType = (viewType: IViewType): JSX.Element => {
+const iconForViewType = (viewType: IViewType): React.JSX.Element => {
     switch (viewType) {
     case 'board': return <BoardIcon/>
     case 'table': return <TableIcon/>
@@ -200,7 +198,7 @@ const SidebarBoardItem = (props: Props) => {
     const boardItemRef = useRef<HTMLDivElement>(null)
 
     const title = board.title || intl.formatMessage({id: 'Sidebar.untitled-board', defaultMessage: '(Untitled Board)'})
-    let emojiData: BaseEmoji | null  = null
+    let emojiData: EmojiData | null  = null
     if (board.icon) {
         emojiData = getValidEmojiData(board.icon)
     }

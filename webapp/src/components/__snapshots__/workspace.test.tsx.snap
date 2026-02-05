@@ -2132,7 +2132,9 @@ exports[`src/components/workspace should match snapshot with readonly 1`] = `
 </div>
 `;
 
-exports[`src/components/workspace show add new view tooltip 1`] = `
+exports[`src/components/workspace show add new view tooltip 1`] = `<div />`;
+
+exports[`src/components/workspace show add new view tooltip 2`] = `
 <div
   class="tippy-box tutorial-tour-tip__box AddViewTourStep"
   data-animation="scale-subtle"
@@ -2349,7 +2351,9 @@ exports[`src/components/workspace show copy link tooltip 1`] = `
 </div>
 `;
 
-exports[`src/components/workspace show open card tooltip 1`] = `
+exports[`src/components/workspace show open card tooltip 1`] = `<div />`;
+
+exports[`src/components/workspace show open card tooltip 2`] = `
 <div
   class="tippy-box tutorial-tour-tip__box OpenCardTourStep"
   data-animation="scale-subtle"

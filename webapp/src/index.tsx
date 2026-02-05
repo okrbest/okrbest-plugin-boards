@@ -10,6 +10,8 @@ import {Store, Action} from 'redux'
 import {Provider as ReduxProvider} from 'react-redux'
 import {GlobalState} from '@mattermost/types/store'
 import {selectTeam} from 'mattermost-redux/actions/teams'
+import data from '@emoji-mart/data'
+import {init as initEmojiMart} from 'emoji-mart'
 
 import appBarIcon from '../static/app-bar-icon.png'
 
@@ -159,8 +161,8 @@ export default class Plugin {
     registry?: PluginRegistry
 
     async initialize(registry: PluginRegistry, mmStore: Store<GlobalState, Action<Record<string, unknown>>>): Promise<void> {
-        // Patch BlockSuite configurations safely during initialization
         patchSlashMenu();
+        initEmojiMart({data})
 
         const siteURL = mmStore.getState().entities.general.config.SiteURL
         const subpath = siteURL ? getSubpath(siteURL) : ''

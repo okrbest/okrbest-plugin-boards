@@ -306,7 +306,7 @@ function createRoutes() {
     ]
 }
 
-const FocalboardRouter = (): JSX.Element => {
+const FocalboardRouter = (): React.JSX.Element => {
     const router = useMemo(() => {
         const basename = getBasename()
         Utils.log(`Creating router with basename: ${basename}`)

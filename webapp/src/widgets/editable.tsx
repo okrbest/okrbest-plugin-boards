@@ -118,7 +118,7 @@ export function useEditable(
     }
 }
 
-const Editable = (props: EditableProps): JSX.Element => {
+const Editable = (props: EditableProps): React.JSX.Element => {
     const { ref, ...otherProps } = props
     const elementRef = useRef<HTMLInputElement>(null)
     const elementProps = useEditable(otherProps, ref, elementRef as React.RefObject<ElementType>)
