@@ -14,6 +14,12 @@ import {effects as presetsEffects} from '@blocksuite/presets/effects'
 import {effects as blocksEffects} from '@blocksuite/blocks/effects'
 
 import {Block} from '../../blocks/block'
+
+declare global {
+    interface Window {
+        __BLOCKSUITE_EFFECTS_INITIALIZED__?: boolean
+    }
+}
 import {Card} from '../../blocks/card'
 import {Board} from '../../blocks/board'
 import {Utils} from '../../utils'
@@ -33,8 +39,11 @@ import {patchImageDragOption, createImageDraggableObserver} from './imageDragPat
 import './blockSuiteTheme.css'
 import './blockSuite.scss'
 
-presetsEffects()
-blocksEffects()
+if (!window.__BLOCKSUITE_EFFECTS_INITIALIZED__) {
+    presetsEffects()
+    blocksEffects()
+    window.__BLOCKSUITE_EFFECTS_INITIALIZED__ = true
+}
 
 type Props = {
     card: Card

@@ -4,7 +4,6 @@
 
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {createMemoryHistory} from 'history'
 
 import {render, act} from '@testing-library/react'
 
@@ -28,7 +27,6 @@ const mockedOctoClient = mocked(client, true)
 
 describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
     const mockStore = configureStore([])
-    const history = createMemoryHistory()
     let store = mockStore({})
     beforeEach(() => {
         store = mockStore({
@@ -54,7 +52,7 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
     test('settings menu closed should match snapshot', () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <GlobalHeaderSettingsMenu history={history}/>
+                <GlobalHeaderSettingsMenu/>
             </ReduxProvider>,
         )
 
@@ -65,7 +63,7 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
     test('settings menu open should match snapshot', () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <GlobalHeaderSettingsMenu history={history}/>
+                <GlobalHeaderSettingsMenu/>
             </ReduxProvider>,
         )
 
@@ -77,7 +75,7 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
     test('languages menu open should match snapshot', () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <GlobalHeaderSettingsMenu history={history}/>
+                <GlobalHeaderSettingsMenu/>
             </ReduxProvider>,
         )
 
@@ -95,7 +93,7 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
         window.open = jest.fn()
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <GlobalHeaderSettingsMenu history={history}/>
+                <GlobalHeaderSettingsMenu/>
             </ReduxProvider>,
         )
 
@@ -115,7 +113,7 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
     test('Product Tour option restarts the tour', () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <GlobalHeaderSettingsMenu history={history}/>
+                <GlobalHeaderSettingsMenu/>
             </ReduxProvider>,
         )
 

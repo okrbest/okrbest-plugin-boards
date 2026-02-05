@@ -3,7 +3,7 @@
 
 import React, {useCallback} from 'react'
 import {injectIntl, IntlShape} from 'react-intl'
-import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
+import {useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import {Board, IPropertyTemplate} from '../blocks/board'
 import {BoardView, createBoardView, IViewType} from '../blocks/boardView'
@@ -38,7 +38,7 @@ const ViewMenu = (props: Props) => {
     const location = useLocation()
 
     const showView = useCallback((viewId: string) => {
-        let newPath = generatePath(Utils.getBoardPagePath(location.pathname), {...params, viewId: viewId || ''})
+        let newPath = Utils.buildBoardPath(location.pathname, {...params, viewId: viewId || ''})
         if (props.readonly) {
             newPath += `?r=${Utils.getReadToken()}`
         }

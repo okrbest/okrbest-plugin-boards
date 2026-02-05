@@ -183,7 +183,7 @@ describe('src/components/workspace', () => {
     beforeEach(() => {
         jest.clearAllMocks()
         mockedUtils.createGuid.mockReturnValue('test-id')
-        mockedUtils.getBoardPagePath.mockReturnValue('/team/:teamId/:boardId/:viewId/:cardId?')
+        mockedUtils.getBoardPagePath.mockReturnValue('/team/:teamId/:boardId?/:viewId?/:cardId?')
     })
     test('should match snapshot', async () => {
         let container

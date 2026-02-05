@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {useEffect} from 'react'
-import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
+import {useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import {getBoards, getCurrentBoardId} from '../../store/boards'
 import {setCurrent as setCurrentView, getCurrentBoardViews} from '../../store/views'
@@ -46,7 +46,7 @@ const TeamToBoardAndViewRedirect = (): null => {
             }
 
             if (boardID) {
-                const newPath = generatePath(Utils.getBoardPagePath(location.pathname), {...params, boardId: boardID, viewID: undefined})
+                const newPath = Utils.buildBoardPath(location.pathname, {...params, boardId: boardID})
                 navigate(newPath, {replace: true})
                 return
             }
@@ -66,7 +66,7 @@ const TeamToBoardAndViewRedirect = (): null => {
             }
 
             if (viewID) {
-                const newPath = generatePath(Utils.getBoardPagePath(location.pathname), {...params, viewId: viewID})
+                const newPath = Utils.buildBoardPath(location.pathname, {...params, viewId: viewID})
                 navigate(newPath, {replace: true})
             }
         }

@@ -1,20 +1,19 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// BlockSuite Web Components 등록 (반드시 다른 import 전에 호출)
 import { effects as blocksEffects } from '@blocksuite/blocks/effects'
 import { effects as presetsEffects } from '@blocksuite/presets/effects'
 
-// Custom Elements 등록 (한 번만 실행)
-blocksEffects()
-presetsEffects()
+declare global {
+    interface Window {
+        __BLOCKSUITE_EFFECTS_INITIALIZED__?: boolean
+    }
+}
 
-// Initialize Toggle List in Slash Menu
-
-// Debug: Verify drag handle widget is registered
-if (typeof window !== 'undefined') {
-    const isRegistered = customElements.get('affine-drag-handle-widget')
-    console.log('[Editor] affine-drag-handle-widget registered:', !!isRegistered)
+if (typeof window !== 'undefined' && !window.__BLOCKSUITE_EFFECTS_INITIALIZED__) {
+    blocksEffects()
+    presetsEffects()
+    window.__BLOCKSUITE_EFFECTS_INITIALIZED__ = true
 }
 
 import { PageEditor } from '@blocksuite/presets'
