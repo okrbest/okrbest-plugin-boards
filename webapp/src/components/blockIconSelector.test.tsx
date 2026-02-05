@@ -3,7 +3,7 @@
 
 
 import React from 'react'
-import {fireEvent, render, screen} from '@testing-library/react'
+import {fireEvent, render, screen, act} from '@testing-library/react'
 
 import userEvent from '@testing-library/user-event'
 
@@ -50,14 +50,13 @@ describe('components/blockIconSelector', () => {
         expect(container).toMatchSnapshot()
     })
     test('return menu on click', async () => {
-        const user = userEvent.setup()
         const {container} = render(wrapIntl(
             <BlockIconSelector
                 block={card}
                 size='l'
             />,
         ))
-        await user.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+        userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
         expect(container).toMatchSnapshot()
     })
     test('return no menu in readonly', () => {
@@ -71,52 +70,53 @@ describe('components/blockIconSelector', () => {
     })
 
     test('return a new icon after click on random menu', async () => {
-        const user = userEvent.setup()
         render(wrapIntl(
             <BlockIconSelector
                 block={card}
                 size='l'
             />,
         ))
-        await user.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+        userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
         const buttonRandom = await screen.findByRole('button', {name: 'Random'})
         expect(buttonRandom).not.toBeNull()
-        await user.click(buttonRandom!)
+        userEvent.click(buttonRandom!)
         expect(mockedMutator.changeBlockIcon).toBeCalledTimes(1)
     })
 
-    test('return a new icon after click on EmojiPicker', async () => {
-        const user = userEvent.setup()
-        const {container, getByRole} = render(wrapIntl(
+    test('return a new icon after click on EmojiPicker', () => {
+        const {container, getByRole, getAllByRole} = render(wrapIntl(
             <BlockIconSelector
                 block={card}
                 size='l'
             />,
         ))
-        await user.click(getByRole('button', {name: 'menuwrapper'}))
+        act(() => {
+            userEvent.click(getByRole('button', {name: 'menuwrapper'}))
+        })
         const menuPicker = container.querySelector('div#pick')
         expect(menuPicker).not.toBeNull()
 
-        await user.click(menuPicker!)
+        act(() => {
+            fireEvent.mouseEnter(menuPicker!)
+        })
 
-        const emojiButtons = await screen.findAllByRole('button', {name: /thumbsup/i})
-        await user.click(emojiButtons[0])
+        const allButtonThumbUp = getAllByRole('button', {name: /thumbsup/i})
+        userEvent.click(allButtonThumbUp[0])
         expect(mockedMutator.changeBlockIcon).toBeCalledTimes(1)
         expect(mockedMutator.changeBlockIcon).toBeCalledWith(card.boardId, card.id, card.fields.icon, '👍')
     })
 
     test('return no icon after click on remove menu', async () => {
-        const user = userEvent.setup()
         const {container, rerender} = render(wrapIntl(
             <BlockIconSelector
                 block={card}
                 size='l'
             />,
         ))
-        await user.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+        userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
         const buttonRemove = await screen.findByRole('button', {name: 'Remove icon'})
         expect(buttonRemove).not.toBeNull()
-        await user.click(buttonRemove!)
+        userEvent.click(buttonRemove!)
         expect(mockedMutator.changeBlockIcon).toBeCalledTimes(1)
         expect(mockedMutator.changeBlockIcon).toBeCalledWith(card.boardId, card.id, card.fields.icon, '', 'remove icon')
 

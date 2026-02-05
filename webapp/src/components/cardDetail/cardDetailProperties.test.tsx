@@ -3,7 +3,7 @@
 
 
 import React from 'react'
-import {render, screen, fireEvent} from '@testing-library/react'
+import {render, screen, act, fireEvent} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {mocked} from 'jest-mock'
 import '@testing-library/jest-dom'
@@ -167,52 +167,45 @@ describe('components/cardDetail/CardDetailProperties', () => {
      })
 
     it('should allow change property types menu, confirm', async () => {
-         const user = userEvent.setup()
-         const {container} = renderComponent()
+         renderComponent()
 
          const menuElement = await screen.findByRole('button', {name: 'Owner'})
-         await user.click(menuElement)
+         await userEvent.click(menuElement)
 
-         const typeSubMenu = container.querySelector('#type')
-         expect(typeSubMenu).not.toBeNull()
-         await user.click(typeSubMenu!)
+         const typeProperty = await screen.findByText(/Type: Select/i)
+         expect(typeProperty).toBeInTheDocument()
+
+         fireEvent.mouseOver(typeProperty)
 
          const newTypeMenu = await screen.findByRole('button', {name: 'Text'})
-         await user.click(newTypeMenu)
+         await userEvent.click(newTypeMenu)
 
          expect(await screen.findByRole('heading', {name: 'Confirm property type change'})).toBeInTheDocument()
          expect(await screen.findByRole('button', {name: /Change property/i})).toBeInTheDocument()
      })
 
     test('rename select property and confirm button on dialog should rename property', async () => {
-        const user = userEvent.setup()
         const result = renderComponent()
 
-        const propertyLabel = result.container.querySelector('.MenuWrapper')
-        expect(propertyLabel).toBeDefined()
-        await user.click(propertyLabel!)
-
-        const propertyNameInput = result.container.querySelector('.PropertyMenu.menu-textbox') as HTMLInputElement
-        expect(propertyNameInput).toBeDefined()
-        await user.clear(propertyNameInput!)
-        await user.type(propertyNameInput!, 'Owner - Renamed{enter}')
-        await user.click(propertyLabel!)
-
+        // rename to "Owner-Renamed"
+        await onPropertyRenameNoConfirmationDialog(result.container)
         const propertyTemplate = board.cardProperties[0]
 
+        // should be called once on confirming renaming the property
         expect(mockedMutator.changePropertyTypeAndName).toBeCalledTimes(1)
         expect(mockedMutator.changePropertyTypeAndName).toHaveBeenCalledWith(board, cards, propertyTemplate, 'select', 'Owner - Renamed')
     })
 
     it('should add new number property', async () => {
-         const user = userEvent.setup()
          renderComponent()
 
          const menuElement = await screen.findByRole('button', {name: /add a property/i})
-         await user.click(menuElement)
+         await userEvent.click(menuElement)
 
-         const numberType = await screen.findByRole('button', {name: /number/i})
-         await user.click(numberType)
+         await act(async () => {
+             const numberType = await screen.findByRole('button', {name: /number/i})
+             await userEvent.click(numberType)
+         })
 
          expect(mockedMutator.insertPropertyTemplate).toHaveBeenCalledTimes(1)
 
@@ -250,16 +243,15 @@ describe('components/cardDetail/CardDetailProperties', () => {
      })
 
     it('cancel on delete dialog should do nothing', async () => {
-         const user = userEvent.setup()
          const {container} = renderComponent()
 
          // Open property menu
          const menuElement = await screen.findByRole('button', {name: 'Owner'})
-         await user.click(menuElement)
+         await userEvent.click(menuElement)
 
          // Click delete option in menu
          const deleteOption = await screen.findByRole('button', {name: /^delete$/i})
-         await user.click(deleteOption)
+         await userEvent.click(deleteOption)
 
          // Confirm dialog should appear
          expect(await screen.findByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
@@ -267,8 +259,20 @@ describe('components/cardDetail/CardDetailProperties', () => {
          // Click cancel button
          const cancelButton = await screen.findByTitle('Cancel')
          expect(cancelButton).toBeDefined()
-         await user.click(cancelButton!)
+         await userEvent.click(cancelButton!)
 
          expect(container).toMatchSnapshot()
      })
+
+    async function onPropertyRenameNoConfirmationDialog(container: HTMLElement) {
+         const propertyLabel = container.querySelector('.MenuWrapper')
+         expect(propertyLabel).toBeDefined()
+         await userEvent.click(propertyLabel!)
+
+         // write new name in the name text box
+         const propertyNameInput = container.querySelector('.PropertyMenu.menu-textbox')
+         expect(propertyNameInput).toBeDefined()
+         await userEvent.type(propertyNameInput!, 'Owner - Renamed{enter}')
+         await userEvent.click(propertyLabel!)
+     }
 })

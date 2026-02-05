@@ -409,39 +409,6 @@ exports[`components/kanban/calculations/KanbanCalculationOptions with submenu op
               class="CompassIcon icon-chevron-right ChevronRightIcon"
             />
           </span>
-          <div
-            class="dropdown-submenu"
-            style="top: -10px; left: 0px;"
-          >
-            <div
-              class="drops "
-            >
-              <span>
-                Status
-              </span>
-            </div>
-            <div
-              class="drops active"
-            >
-              <span>
-                Property 1
-              </span>
-            </div>
-            <div
-              class="drops "
-            >
-              <span>
-                Property 2
-              </span>
-            </div>
-            <div
-              class="drops "
-            >
-              <span>
-                Property 3
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

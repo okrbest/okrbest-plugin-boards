@@ -5,7 +5,7 @@
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
 
-import {render, screen, fireEvent} from '@testing-library/react'
+import {render, act} from '@testing-library/react'
 
 import userEvent from '@testing-library/user-event'
 import configureStore from 'redux-mock-store'
@@ -55,7 +55,6 @@ describe('components/sidebar/SidebarSettingsMenu', () => {
     })
 
     test('settings menu open should match snapshot', async () => {
-        const user = userEvent.setup()
         const component = wrapIntl(
             <ReduxProvider store={store}>
                 <SidebarSettingsMenu activeTheme={defaultThemeName}/>
@@ -63,12 +62,11 @@ describe('components/sidebar/SidebarSettingsMenu', () => {
         )
 
         const {container} = render(component)
-        await user.click(container.querySelector('.menu-entry') as Element)
+        await userEvent.click(container.querySelector('.menu-entry') as Element)
         expect(container).toMatchSnapshot()
     })
 
     test('theme menu open should match snapshot', async () => {
-        const user = userEvent.setup()
         const component = wrapIntl(
             <ReduxProvider store={store}>
                 <SidebarSettingsMenu activeTheme={defaultThemeName}/>
@@ -76,13 +74,16 @@ describe('components/sidebar/SidebarSettingsMenu', () => {
         )
 
         const {container} = render(component)
-        await user.click(container.querySelector('.menu-entry') as Element)
-        await user.click(container.querySelector('#theme') as Element)
+        await act(async () => {
+            await userEvent.click(container.querySelector('.menu-entry') as Element)
+        })
+        await act(async () => {
+            await userEvent.hover(container.querySelector('#theme') as Element)
+        })
         expect(container).toMatchSnapshot()
     })
 
     test('languages menu open should match snapshot', async () => {
-        const user = userEvent.setup()
         const component = wrapIntl(
             <ReduxProvider store={store}>
                 <SidebarSettingsMenu activeTheme={defaultThemeName}/>
@@ -90,13 +91,16 @@ describe('components/sidebar/SidebarSettingsMenu', () => {
         )
 
         const {container} = render(component)
-        await user.click(container.querySelector('.menu-entry') as Element)
-        await user.click(container.querySelector('#lang') as Element)
+        await act(async () => {
+            await userEvent.click(container.querySelector('.menu-entry') as Element)
+        })
+        await act(async () => {
+            await userEvent.hover(container.querySelector('#lang') as Element)
+        })
         expect(container).toMatchSnapshot()
     })
 
     test('imports menu open should match snapshot', async () => {
-        const user = userEvent.setup()
         window.open = jest.fn()
         const component = wrapIntl(
             <ReduxProvider store={store}>
@@ -105,12 +109,15 @@ describe('components/sidebar/SidebarSettingsMenu', () => {
         )
 
         const {container} = render(component)
-        await user.click(container.querySelector('.menu-entry') as Element)
-        await user.click(container.querySelector('#import') as Element)
+        await act(async () => {
+            await userEvent.click(container.querySelector('.menu-entry') as Element)
+        })
+        await act(async () => {
+            await userEvent.hover(container.querySelector('#import') as Element)
+        })
         expect(container).toMatchSnapshot()
 
-        const asanaButton = await screen.findByRole('button', {name: 'Asana'})
-        await user.click(asanaButton)
+        await userEvent.click(container.querySelector('[aria-label="Asana"]') as Element)
         expect(mockedTelemetry.trackEvent).toBeCalledWith(TelemetryCategory, TelemetryActions.ImportAsana)
     })
 })

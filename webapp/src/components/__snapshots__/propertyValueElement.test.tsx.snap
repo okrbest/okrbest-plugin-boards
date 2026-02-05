@@ -7,8 +7,8 @@ exports[`components/propertyValueElement Generic fields should allow cancel 1`] 
     placeholder="Empty"
     spellcheck="true"
     style="width: 100%;"
-    title=""
-    value=""
+    title="http://test"
+    value="http://test"
   />
 </div>
 `;
