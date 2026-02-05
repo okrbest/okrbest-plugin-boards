@@ -52,80 +52,80 @@ describe('components/viewHeader/filterComponent', () => {
         board.cardProperties[0].options = [{id: 'Status', value: 'Status', color: ''}]
         activeView.fields.filter.filters = [filter]
     })
-    test('return filterComponent', () => {
-        const {container} = render(
-            wrapIntl(
-                <ReduxProvider store={store}>
-                    <FilterComponenet
-                        board={board}
-                        activeView={activeView}
-                        onClose={jest.fn()}
-                    />
-                </ReduxProvider>,
-            ),
-        )
-        const buttonElement = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
-        userEvent.click(buttonElement)
-        expect(container).toMatchSnapshot()
-    })
-    test('return filterComponent and add Filter', () => {
-        const {container} = render(
-            wrapIntl(
-                <ReduxProvider store={store}>
-                    <FilterComponenet
-                        board={board}
-                        activeView={activeView}
-                        onClose={jest.fn()}
-                    />
-                </ReduxProvider>,
-            ),
-        )
-        const buttonElement = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
-        userEvent.click(buttonElement)
-        expect(container).toMatchSnapshot()
-        const buttonAdd = screen.getByText('+ Add filter')
-        userEvent.click(buttonAdd)
-        expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
-    })
+    test('return filterComponent', async () => {
+         const {container} = render(
+             wrapIntl(
+                 <ReduxProvider store={store}>
+                     <FilterComponenet
+                         board={board}
+                         activeView={activeView}
+                         onClose={jest.fn()}
+                     />
+                 </ReduxProvider>,
+             ),
+         )
+         const buttonElements = await screen.findAllByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElements[0])
+         expect(container).toMatchSnapshot()
+     })
+    test('return filterComponent and add Filter', async () => {
+         const {container} = render(
+             wrapIntl(
+                 <ReduxProvider store={store}>
+                     <FilterComponenet
+                         board={board}
+                         activeView={activeView}
+                         onClose={jest.fn()}
+                     />
+                 </ReduxProvider>,
+             ),
+         )
+         const buttonElements = await screen.findAllByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElements[0])
+         expect(container).toMatchSnapshot()
+         const buttonAdd = await screen.findByText('+ Add filter')
+         userEvent.click(buttonAdd)
+         expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
+     })
 
-    test('return filterComponent and filter by status', () => {
-        activeView.fields.filter.filters = [unknownFilter]
-        const {container} = render(
-            wrapIntl(
-                <ReduxProvider store={store}>
-                    <FilterComponenet
-                        board={board}
-                        activeView={activeView}
-                        onClose={jest.fn()}
-                    />
-                </ReduxProvider>,
-            ),
-        )
-        const buttonElement = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
-        userEvent.click(buttonElement)
-        expect(container).toMatchSnapshot()
-        const buttonStatus = screen.getByRole('button', {name: 'Status'})
-        userEvent.click(buttonStatus)
-        expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
-    })
+    test('return filterComponent and filter by status', async () => {
+         activeView.fields.filter.filters = [unknownFilter]
+         const {container} = render(
+             wrapIntl(
+                 <ReduxProvider store={store}>
+                     <FilterComponenet
+                         board={board}
+                         activeView={activeView}
+                         onClose={jest.fn()}
+                     />
+                 </ReduxProvider>,
+             ),
+         )
+         const buttonElements = await screen.findAllByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElements[0])
+         expect(container).toMatchSnapshot()
+         const buttonStatus = await screen.findByRole('button', {name: 'Status'})
+         userEvent.click(buttonStatus)
+         expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
+     })
 
-    test('return filterComponent and click is empty', () => {
-        const {container} = render(
-            wrapIntl(
-                <ReduxProvider store={store}>
-                    <FilterComponenet
-                        board={board}
-                        activeView={activeView}
-                        onClose={jest.fn()}
-                    />
-                </ReduxProvider>,
-            ),
-        )
-        const buttonElement = screen.getAllByRole('button', {name: 'menuwrapper'})[1]
-        userEvent.click(buttonElement)
-        expect(container).toMatchSnapshot()
-        const buttonNotInclude = screen.getByRole('button', {name: 'is empty'})
-        userEvent.click(buttonNotInclude)
-        expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
-    })
+    test('return filterComponent and click is empty', async () => {
+         const {container} = render(
+             wrapIntl(
+                 <ReduxProvider store={store}>
+                     <FilterComponenet
+                         board={board}
+                         activeView={activeView}
+                         onClose={jest.fn()}
+                     />
+                 </ReduxProvider>,
+             ),
+         )
+         const buttonElements = await screen.findAllByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElements[1])
+         expect(container).toMatchSnapshot()
+         const buttonNotInclude = await screen.findByRole('button', {name: 'is empty'})
+         userEvent.click(buttonNotInclude)
+         expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
+     })
 })

@@ -107,7 +107,7 @@ describe('components/flashMessages', () => {
         expect(screen.queryByText('Mock Content')).toBeNull()
     })
 
-    test('renders a flash message with low severity and check onClick on flash works', () => {
+    test('renders a flash message with low severity and check onClick on flash works', async () => {
         const {container} = render(
             wrapIntl(<FlashMessages milliseconds={200}/>),
         )
@@ -116,7 +116,7 @@ describe('components/flashMessages', () => {
             sendFlashMessage({content: 'Mock Content', severity: 'low'})
         })
 
-        userEvent.click(screen.getByText('Mock Content'))
+        await userEvent.click(screen.getByText('Mock Content'))
 
         expect(container).toMatchSnapshot()
 

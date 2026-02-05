@@ -72,7 +72,7 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('languages menu open should match snapshot', () => {
+    test('languages menu open should match snapshot', async () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
                 <GlobalHeaderSettingsMenu/>
@@ -80,16 +80,16 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
         )
 
         const {container} = render(component)
-        act(() => {
+        await act(async () => {
             userEvent.click(container.querySelector('.menu-entry') as Element)
         })
-        act(() => {
+        await act(async () => {
             userEvent.hover(container.querySelector('#lang') as Element)
         })
         expect(container).toMatchSnapshot()
     })
 
-    test('imports menu open should match snapshot', () => {
+    test('imports menu open should match snapshot', async () => {
         window.open = jest.fn()
         const component = wrapIntl(
             <ReduxProvider store={store}>
@@ -98,10 +98,10 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
         )
 
         const {container} = render(component)
-        act(() => {
+        await act(async () => {
             userEvent.click(container.querySelector('.menu-entry') as Element)
         })
-        act(() => {
+        await act(async () => {
             userEvent.hover(container.querySelector('#import') as Element)
         })
         expect(container).toMatchSnapshot()
@@ -110,7 +110,7 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
         expect(mockedTelemetry.trackEvent).toBeCalledWith(TelemetryCategory, TelemetryActions.ImportAsana)
     })
 
-    test('Product Tour option restarts the tour', () => {
+    test('Product Tour option restarts the tour', async () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
                 <GlobalHeaderSettingsMenu/>
@@ -118,10 +118,10 @@ describe('components/sidebar/GlobalHeaderSettingsMenu', () => {
         )
 
         const {container} = render(component)
-        act(() => {
+        await act(async () => {
             userEvent.click(container.querySelector('.menu-entry') as Element)
         })
-        act(() => {
+        await act(async () => {
             userEvent.click(container.querySelector('.product-tour') as Element)
         })
 

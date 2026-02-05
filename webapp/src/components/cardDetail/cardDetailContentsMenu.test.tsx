@@ -37,21 +37,21 @@ describe('components/cardDetail/cardDetailContentsMenu', () => {
     beforeEach(() => {
         jest.clearAllMocks()
     })
-    test('return cardDetailContentsMenu', () => {
+    test('return cardDetailContentsMenu', async () => {
         const {container} = render(wrap(<CardDetailContentsMenu/>))
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
     })
 
     test('return cardDetailContentsMenu and add Text content', async () => {
         const {container} = render(wrap(<CardDetailContentsMenu/>))
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
         await act(async () => {
-            const buttonAddText = screen.getByRole('button', {name: 'text'})
-            userEvent.click(buttonAddText)
+            const buttonAddText = await screen.findByRole('button', {name: 'text'})
+            await userEvent.click(buttonAddText)
         })
         expect(container).toMatchSnapshot()
     })

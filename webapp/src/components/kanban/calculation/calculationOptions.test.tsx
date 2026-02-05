@@ -3,7 +3,7 @@
 
 import React from 'react'
 
-import {render} from '@testing-library/react'
+import {render, screen} from '@testing-library/react'
 
 import userEvent from '@testing-library/user-event'
 
@@ -45,7 +45,7 @@ describe('components/kanban/calculations/KanbanCalculationOptions', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('with submenu open', () => {
+    test('with submenu open', async () => {
         const component = wrapIntl(
             <KanbanCalculationOptions
                 value={'count'}
@@ -56,14 +56,14 @@ describe('components/kanban/calculations/KanbanCalculationOptions', () => {
             />,
         )
 
-        const {container, getByText} = render(component)
-        const countUniqueValuesOption = getByText('Count Unique Values')
+        const {container} = render(component)
+        const countUniqueValuesOption = await screen.findByText('Count Unique Values')
         expect(countUniqueValuesOption).toBeDefined()
-        userEvent.hover(countUniqueValuesOption)
+        await userEvent.hover(countUniqueValuesOption)
         expect(container).toMatchSnapshot()
     })
 
-    test('duplicate property types', () => {
+    test('duplicate property types', async () => {
         const boardWithProps = TestBlockFactory.createBoard()
         boardWithProps.cardProperties.push({
             id: 'number-property-1',
@@ -88,13 +88,13 @@ describe('components/kanban/calculations/KanbanCalculationOptions', () => {
             />,
         )
 
-        const {getAllByText} = render(component)
-        const sumOptions = getAllByText('Sum')
+        render(component)
+        const sumOptions = await screen.findAllByText('Sum')
         expect(sumOptions).toBeDefined()
         expect(sumOptions.length).toBe(1)
     })
 
-    test('effectively date fields', () => {
+    test('effectively date fields', async () => {
         // date, created time and updated time are effectively date fields.
         // Only one set of date related menus should show up for all of them.
 
@@ -128,17 +128,17 @@ describe('components/kanban/calculations/KanbanCalculationOptions', () => {
             />,
         )
 
-        const {getAllByText} = render(component)
+        render(component)
 
-        const earliestDateMenu = getAllByText('Earliest Date')
+        const earliestDateMenu = await screen.findAllByText('Earliest Date')
         expect(earliestDateMenu).toBeDefined()
         expect(earliestDateMenu.length).toBe(1)
 
-        const latestDateMenu = getAllByText('Latest Date')
+        const latestDateMenu = await screen.findAllByText('Latest Date')
         expect(latestDateMenu).toBeDefined()
         expect(latestDateMenu.length).toBe(1)
 
-        const dateRangeMenu = getAllByText('Date Range')
+        const dateRangeMenu = await screen.findAllByText('Date Range')
         expect(dateRangeMenu).toBeDefined()
         expect(dateRangeMenu.length).toBe(1)
     })

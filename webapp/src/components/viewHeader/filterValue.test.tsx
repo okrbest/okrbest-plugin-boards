@@ -3,7 +3,7 @@
 
 
 import React from 'react'
-import {render, screen} from '@testing-library/react'
+import {render, screen, waitFor, act} from '@testing-library/react'
 import {Provider as ReduxProvider} from 'react-redux'
 
 import '@testing-library/jest-dom'
@@ -49,7 +49,7 @@ describe('components/viewHeader/filterValue', () => {
         board.cardProperties[0].options = [{id: 'Status', value: 'Status', color: ''}]
         activeView.fields.filter.filters = [filter]
     })
-    test('return filterValue', () => {
+    test('return filterValue', async () => {
         const {container} = render(
             wrapIntl(
                 <ReduxProvider store={store}>
@@ -62,11 +62,13 @@ describe('components/viewHeader/filterValue', () => {
                 </ReduxProvider>,
             ),
         )
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await act(async () => {
+            userEvent.click(buttonElement)
+        })
         expect(container).toMatchSnapshot()
     })
-    test('return filterValue and click Status', () => {
+    test('return filterValue and click Status', async () => {
         const {container} = render(
             wrapIntl(
                 <ReduxProvider store={store}>
@@ -79,14 +81,18 @@ describe('components/viewHeader/filterValue', () => {
                 </ReduxProvider>,
             ),
         )
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
-        const switchStatus = screen.getAllByText('Status')[1]
-        userEvent.click(switchStatus)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await act(async () => {
+            userEvent.click(buttonElement)
+        })
+        const switchStatus = (await screen.findAllByText('Status'))[1]
+        await act(async () => {
+            userEvent.click(switchStatus)
+        })
         expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
         expect(container).toMatchSnapshot()
     })
-    test('return filterValue and click Status with Status not in filter', () => {
+    test('return filterValue and click Status with Status not in filter', async () => {
         filter.values = ['test']
         activeView.fields.filter.filters = [filter]
         const {container} = render(
@@ -101,14 +107,18 @@ describe('components/viewHeader/filterValue', () => {
                 </ReduxProvider>,
             ),
         )
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
-        const switchStatus = screen.getAllByText('Status')[0]
-        userEvent.click(switchStatus)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await act(async () => {
+            userEvent.click(buttonElement)
+        })
+        const switchStatus = (await screen.findAllByText('Status'))[0]
+        await act(async () => {
+            userEvent.click(switchStatus)
+        })
         expect(mockedMutator.changeViewFilter).toBeCalledTimes(1)
         expect(container).toMatchSnapshot()
     })
-    test('return filterValue and verify that menu is not closed after clicking on the item', () => {
+    test('return filterValue and verify that menu is not closed after clicking on the item', async () => {
         filter.values = []
         activeView.fields.filter.filters = [filter]
         render(
@@ -123,15 +133,19 @@ describe('components/viewHeader/filterValue', () => {
                 </ReduxProvider>,
             ),
         )
-        const buttonElement = screen.getByRole('button', {name: '(empty)'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: '(empty)'})
+        await act(async () => {
+            userEvent.click(buttonElement)
+        })
 
-        const switchStatus = screen.getByRole('button', {name: 'Status'})
-        userEvent.click(switchStatus)
+        const switchStatus = await screen.findByRole('button', {name: 'Status'})
+        await act(async () => {
+            userEvent.click(switchStatus)
+        })
         expect(switchStatus).toBeInTheDocument()
     })
 
-    test('return date filter value', () => {
+    test('return date filter value', async () => {
         const propertyTemplate: IPropertyTemplate = {
             id: 'datePropertyID',
             name: 'My Date Property',
@@ -162,11 +176,13 @@ describe('components/viewHeader/filterValue', () => {
         )
         expect(container).toMatchSnapshot()
 
-        const buttonElement = screen.getByRole('button', {name: 'Empty'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'Empty'})
+        await act(async () => {
+            userEvent.click(buttonElement)
+        })
 
         // make sure modal is displayed
-        const clearButton = screen.getByRole('button', {name: 'Clear'})
+        const clearButton = await screen.findByRole('button', {name: 'Clear'})
         expect(clearButton).toBeInTheDocument()
     })
 })

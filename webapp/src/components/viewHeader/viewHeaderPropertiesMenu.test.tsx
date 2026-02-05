@@ -41,7 +41,7 @@ describe('components/viewHeader/viewHeaderPropertiesMenu', () => {
         jest.clearAllMocks()
         activeView = TestBlockFactory.createBoardView(board)
     })
-    test('return properties menu', () => {
+    test('return properties menu', async () => {
         const {container} = render(
             wrapIntl(
                 <ReduxProvider store={store}>
@@ -52,11 +52,11 @@ describe('components/viewHeader/viewHeaderPropertiesMenu', () => {
                 </ReduxProvider>,
             ),
         )
-        const buttonElement = screen.getByRole('button', {name: 'Properties menu'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'Properties menu'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
     })
-    test('return properties menu with gallery typeview', () => {
+    test('return properties menu with gallery typeview', async () => {
         activeView.fields.viewType = 'gallery'
         const {container} = render(
             wrapIntl(
@@ -68,11 +68,11 @@ describe('components/viewHeader/viewHeaderPropertiesMenu', () => {
                 </ReduxProvider>,
             ),
         )
-        const buttonElement = screen.getByRole('button', {name: 'Properties menu'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'Properties menu'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
     })
-    test('show menu and verify the call for showing card badges', () => {
+    test('show menu and verify the call for showing card badges', async () => {
         render(
             wrapIntl(
                 <ReduxProvider store={store}>
@@ -83,10 +83,10 @@ describe('components/viewHeader/viewHeaderPropertiesMenu', () => {
                 </ReduxProvider>,
             ),
         )
-        const menuButton = screen.getByRole('button', {name: 'Properties menu'})
-        userEvent.click(menuButton)
-        const badgesButton = screen.getByRole('button', {name: 'Comments and description'})
-        userEvent.click(badgesButton)
+        const menuButton = await screen.findByRole('button', {name: 'Properties menu'})
+        await userEvent.click(menuButton)
+        const badgesButton = await screen.findByRole('button', {name: 'Comments and description'})
+        await userEvent.click(badgesButton)
         expect(mockedMutator.changeViewVisibleProperties).toHaveBeenCalledWith(
             activeView.boardId,
             activeView.id,
@@ -94,7 +94,7 @@ describe('components/viewHeader/viewHeaderPropertiesMenu', () => {
             [...activeView.fields.visiblePropertyIds, Constants.badgesColumnId],
         )
     })
-    test('show menu and verify that it is not closed after clicking on the item', () => {
+    test('show menu and verify that it is not closed after clicking on the item', async () => {
         render(
             wrapIntl(
                 <ReduxProvider store={store}>
@@ -105,15 +105,15 @@ describe('components/viewHeader/viewHeaderPropertiesMenu', () => {
                 </ReduxProvider>,
             ),
         )
-        const menuButton = screen.getByRole('button', {name: 'Properties menu'})
-        userEvent.click(menuButton)
+        const menuButton = await screen.findByRole('button', {name: 'Properties menu'})
+        await userEvent.click(menuButton)
 
-        const property1Button = screen.getByRole('button', {name: 'Property 1'})
-        userEvent.click(property1Button)
+        const property1Button = await screen.findByRole('button', {name: 'Property 1'})
+        await userEvent.click(property1Button)
         expect(property1Button).toBeInTheDocument()
 
-        const property2Button = screen.getByRole('button', {name: 'Property 2'})
-        userEvent.click(property2Button)
+        const property2Button = await screen.findByRole('button', {name: 'Property 2'})
+        await userEvent.click(property2Button)
         expect(property2Button).toBeInTheDocument()
 
         expect(mockedMutator.changeViewVisibleProperties).toHaveBeenCalledTimes(2)

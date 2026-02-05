@@ -191,7 +191,7 @@ describe('components/cardDialog', () => {
                 </ReduxProvider>,
             ))
         })
-        const buttonElement = screen.getByRole('button', {name: 'Close dialog'})
+        const buttonElement = await screen.findByRole('button', {name: 'Close dialog'})
         userEvent.click(buttonElement)
         expect(closeFn).toBeCalledTimes(1)
     })
@@ -214,7 +214,7 @@ describe('components/cardDialog', () => {
             ))
             container = result.container
         })
-        const buttonMenu = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
+        const buttonMenu = (await screen.findAllByRole('button', {name: 'menuwrapper'}))[0]
         userEvent.click(buttonMenu)
         expect(container).toMatchSnapshot()
     })
@@ -235,15 +235,15 @@ describe('components/cardDialog', () => {
                 </ReduxProvider>,
             ))
         })
-        const buttonMenu = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
+        const buttonMenu = (await screen.findAllByRole('button', {name: 'menuwrapper'}))[0]
         userEvent.click(buttonMenu)
-        const buttonDelete = screen.getByRole('button', {name: 'Delete'})
+        const buttonDelete = await screen.findByRole('button', {name: 'Delete'})
         userEvent.click(buttonDelete)
 
-        const confirmDialog = screen.getByTitle('Confirmation Dialog Box')
+        const confirmDialog = await screen.findByTitle('Confirmation Dialog Box')
         expect(confirmDialog).toBeDefined()
 
-        const confirmButton = screen.getByTitle('Delete')
+        const confirmButton = await screen.findByTitle('Delete')
         expect(confirmButton).toBeDefined()
 
         //click delete button
@@ -273,15 +273,15 @@ describe('components/cardDialog', () => {
             container = result.container
         })
 
-        const buttonMenu = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
+        const buttonMenu = (await screen.findAllByRole('button', {name: 'menuwrapper'}))[0]
         userEvent.click(buttonMenu)
-        const buttonDelete = screen.getByRole('button', {name: 'Delete'})
+        const buttonDelete = await screen.findByRole('button', {name: 'Delete'})
         userEvent.click(buttonDelete)
 
-        const confirmDialog = screen.getByTitle('Confirmation Dialog Box')
+        const confirmDialog = await screen.findByTitle('Confirmation Dialog Box')
         expect(confirmDialog).toBeDefined()
 
-        const cancelButton = screen.getByTitle('Cancel')
+        const cancelButton = await screen.findByTitle('Cancel')
         expect(cancelButton).toBeDefined()
 
         //click delete button
@@ -308,9 +308,9 @@ describe('components/cardDialog', () => {
                 </ReduxProvider>,
             ))
         })
-        const buttonMenu = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
+        const buttonMenu = (await screen.findAllByRole('button', {name: 'menuwrapper'}))[0]
         userEvent.click(buttonMenu)
-        const buttonTemplate = screen.getByRole('button', {name: 'New template from card'})
+        const buttonTemplate = await screen.findByRole('button', {name: 'New template from card'})
         userEvent.click(buttonTemplate)
         expect(mockedMutator.duplicateCard).toBeCalledTimes(1)
     })
@@ -332,9 +332,9 @@ describe('components/cardDialog', () => {
                 </ReduxProvider>,
             ))
         })
-        const buttonMenu = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
+        const buttonMenu = (await screen.findAllByRole('button', {name: 'menuwrapper'}))[0]
         userEvent.click(buttonMenu)
-        const buttonCopy = screen.getByRole('button', {name: 'Copy link'})
+        const buttonCopy = await screen.findByRole('button', {name: 'Copy link'})
         userEvent.click(buttonCopy)
         expect(mockedUtils.copyTextToClipboard).toBeCalledTimes(1)
     })

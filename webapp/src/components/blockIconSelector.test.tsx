@@ -49,14 +49,14 @@ describe('components/blockIconSelector', () => {
         ))
         expect(container).toMatchSnapshot()
     })
-    test('return menu on click', () => {
+    test('return menu on click', async () => {
         const {container} = render(wrapIntl(
             <BlockIconSelector
                 block={card}
                 size='l'
             />,
         ))
-        userEvent.click(screen.getByRole('button', {name: 'menuwrapper'}))
+        userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
         expect(container).toMatchSnapshot()
     })
     test('return no menu in readonly', () => {
@@ -69,15 +69,15 @@ describe('components/blockIconSelector', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('return a new icon after click on random menu', () => {
+    test('return a new icon after click on random menu', async () => {
         render(wrapIntl(
             <BlockIconSelector
                 block={card}
                 size='l'
             />,
         ))
-        userEvent.click(screen.getByRole('button', {name: 'menuwrapper'}))
-        const buttonRandom = screen.queryByRole('button', {name: 'Random'})
+        userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+        const buttonRandom = await screen.findByRole('button', {name: 'Random'})
         expect(buttonRandom).not.toBeNull()
         userEvent.click(buttonRandom!)
         expect(mockedMutator.changeBlockIcon).toBeCalledTimes(1)
@@ -106,15 +106,15 @@ describe('components/blockIconSelector', () => {
         expect(mockedMutator.changeBlockIcon).toBeCalledWith(card.boardId, card.id, card.fields.icon, '👍')
     })
 
-    test('return no icon after click on remove menu', () => {
+    test('return no icon after click on remove menu', async () => {
         const {container, rerender} = render(wrapIntl(
             <BlockIconSelector
                 block={card}
                 size='l'
             />,
         ))
-        userEvent.click(screen.getByRole('button', {name: 'menuwrapper'}))
-        const buttonRemove = screen.queryByRole('button', {name: 'Remove icon'})
+        userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+        const buttonRemove = await screen.findByRole('button', {name: 'Remove icon'})
         expect(buttonRemove).not.toBeNull()
         userEvent.click(buttonRemove!)
         expect(mockedMutator.changeBlockIcon).toBeCalledTimes(1)

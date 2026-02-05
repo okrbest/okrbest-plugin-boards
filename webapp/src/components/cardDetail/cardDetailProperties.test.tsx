@@ -136,59 +136,59 @@ describe('components/cardDetail/CardDetailProperties', () => {
         expect(container).toMatchSnapshot()
     })
 
-    it('should show confirmation dialog when deleting existing select property', () => {
-        renderComponent()
+    it('should show confirmation dialog when deleting existing select property', async () => {
+         renderComponent()
 
-        const menuElement = screen.getByRole('button', {name: 'Owner'})
-        userEvent.click(menuElement)
+         const menuElement = await screen.findByRole('button', {name: 'Owner'})
+         await userEvent.click(menuElement)
 
-        const deleteButton = screen.getByRole('button', {name: /delete/i})
-        userEvent.click(deleteButton)
+         const deleteButton = await screen.findByRole('button', {name: /delete/i})
+         await userEvent.click(deleteButton)
 
-        expect(screen.getByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
-        expect(screen.getByRole('button', {name: /delete/i})).toBeInTheDocument()
-    })
+         expect(await screen.findByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
+         expect(await screen.findByRole('button', {name: /delete/i})).toBeInTheDocument()
+     })
 
-    it('should show property types menu', () => {
-        const intl = createIntl({locale: 'en'})
-        const {container} = renderComponent()
+    it('should show property types menu', async () => {
+         const intl = createIntl({locale: 'en'})
+         const {container} = renderComponent()
 
-        const menuElement = screen.getByRole('button', {name: /add a property/i})
-        userEvent.click(menuElement)
-        expect(container).toMatchSnapshot()
+         const menuElement = await screen.findByRole('button', {name: /add a property/i})
+         await userEvent.click(menuElement)
+         expect(container).toMatchSnapshot()
 
-        const selectProperty = screen.getByText(/select property type/i)
-        expect(selectProperty).toBeInTheDocument()
+         const selectProperty = await screen.findByText(/select property type/i)
+         expect(selectProperty).toBeInTheDocument()
 
-        propsRegistry.list().forEach((type: PropertyType) => {
-            const typeButton = screen.getByRole('button', {name: type.displayName(intl)})
-            expect(typeButton).toBeInTheDocument()
-        })
-    })
+         propsRegistry.list().forEach((type: PropertyType) => {
+             const typeButton = screen.getByRole('button', {name: type.displayName(intl)})
+             expect(typeButton).toBeInTheDocument()
+         })
+     })
 
-    it('should allow change property types menu, confirm', () => {
-        renderComponent()
+    it('should allow change property types menu, confirm', async () => {
+         renderComponent()
 
-        const menuElement = screen.getByRole('button', {name: 'Owner'})
-        userEvent.click(menuElement)
+         const menuElement = await screen.findByRole('button', {name: 'Owner'})
+         await userEvent.click(menuElement)
 
-        const typeProperty = screen.getByText(/Type: Select/i)
-        expect(typeProperty).toBeInTheDocument()
+         const typeProperty = await screen.findByText(/Type: Select/i)
+         expect(typeProperty).toBeInTheDocument()
 
-        fireEvent.mouseOver(typeProperty)
+         fireEvent.mouseOver(typeProperty)
 
-        const newTypeMenu = screen.getByRole('button', {name: 'Text'})
-        userEvent.click(newTypeMenu)
+         const newTypeMenu = await screen.findByRole('button', {name: 'Text'})
+         await userEvent.click(newTypeMenu)
 
-        expect(screen.getByRole('heading', {name: 'Confirm property type change'})).toBeInTheDocument()
-        expect(screen.getByRole('button', {name: /Change property/i})).toBeInTheDocument()
-    })
+         expect(await screen.findByRole('heading', {name: 'Confirm property type change'})).toBeInTheDocument()
+         expect(await screen.findByRole('button', {name: /Change property/i})).toBeInTheDocument()
+     })
 
     test('rename select property and confirm button on dialog should rename property', async () => {
         const result = renderComponent()
 
         // rename to "Owner-Renamed"
-        onPropertyRenameNoConfirmationDialog(result.container)
+        await onPropertyRenameNoConfirmationDialog(result.container)
         const propertyTemplate = board.cardProperties[0]
 
         // should be called once on confirming renaming the property
@@ -197,82 +197,82 @@ describe('components/cardDetail/CardDetailProperties', () => {
     })
 
     it('should add new number property', async () => {
-        renderComponent()
+         renderComponent()
 
-        const menuElement = screen.getByRole('button', {name: /add a property/i})
-        userEvent.click(menuElement)
+         const menuElement = await screen.findByRole('button', {name: /add a property/i})
+         await userEvent.click(menuElement)
 
-        await act(async () => {
-            const numberType = screen.getByRole('button', {name: /number/i})
-            userEvent.click(numberType)
-        })
+         await act(async () => {
+             const numberType = await screen.findByRole('button', {name: /number/i})
+             await userEvent.click(numberType)
+         })
 
-        expect(mockedMutator.insertPropertyTemplate).toHaveBeenCalledTimes(1)
+         expect(mockedMutator.insertPropertyTemplate).toHaveBeenCalledTimes(1)
 
-        const args = mockedMutator.insertPropertyTemplate.mock.calls[0]
-        const template = args[3]
-        expect(template).toBeTruthy()
-        expect(template!.name).toMatch(/number/i)
-        expect(template!.type).toBe('number')
-    })
+         const args = mockedMutator.insertPropertyTemplate.mock.calls[0]
+         const template = args[3]
+         expect(template).toBeTruthy()
+         expect(template!.name).toMatch(/number/i)
+         expect(template!.type).toBe('number')
+     })
 
-    it('confirmation on delete dialog should delete the property', () => {
-        renderComponent()
+    it('confirmation on delete dialog should delete the property', async () => {
+         renderComponent()
 
-        const propertyTemplate = board.cardProperties[0]
+         const propertyTemplate = board.cardProperties[0]
 
-        // Open property menu
-        const menuElement = screen.getByRole('button', {name: 'Owner'})
-        userEvent.click(menuElement)
+         // Open property menu
+         const menuElement = await screen.findByRole('button', {name: 'Owner'})
+         await userEvent.click(menuElement)
 
-        // Click delete option in menu
-        const deleteOption = screen.getByRole('button', {name: /^delete$/i})
-        userEvent.click(deleteOption)
+         // Click delete option in menu
+         const deleteOption = await screen.findByRole('button', {name: /^delete$/i})
+         await userEvent.click(deleteOption)
 
-        // Confirm dialog should appear
-        expect(screen.getByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
+         // Confirm dialog should appear
+         expect(await screen.findByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
 
-        // Click confirm button in dialog
-        const confirmButton = screen.getByTitle('Delete')
-        expect(confirmButton).toBeDefined()
-        userEvent.click(confirmButton!)
+         // Click confirm button in dialog
+         const confirmButton = await screen.findByTitle('Delete')
+         expect(confirmButton).toBeDefined()
+         await userEvent.click(confirmButton!)
 
-        // should be called once on confirming delete
-        expect(mockedMutator.deleteProperty).toBeCalledTimes(1)
-        expect(mockedMutator.deleteProperty).toBeCalledWith(board, views, cards, propertyTemplate.id)
-    })
+         // should be called once on confirming delete
+         expect(mockedMutator.deleteProperty).toBeCalledTimes(1)
+         expect(mockedMutator.deleteProperty).toBeCalledWith(board, views, cards, propertyTemplate.id)
+     })
 
-    it('cancel on delete dialog should do nothing', () => {
-        const {container} = renderComponent()
+    it('cancel on delete dialog should do nothing', async () => {
+         const {container} = renderComponent()
 
-        // Open property menu
-        const menuElement = screen.getByRole('button', {name: 'Owner'})
-        userEvent.click(menuElement)
+         // Open property menu
+         const menuElement = await screen.findByRole('button', {name: 'Owner'})
+         await userEvent.click(menuElement)
 
-        // Click delete option in menu
-        const deleteOption = screen.getByRole('button', {name: /^delete$/i})
-        userEvent.click(deleteOption)
+         // Click delete option in menu
+         const deleteOption = await screen.findByRole('button', {name: /^delete$/i})
+         await userEvent.click(deleteOption)
 
-        // Confirm dialog should appear
-        expect(screen.getByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
+         // Confirm dialog should appear
+         expect(await screen.findByRole('heading', {name: 'Confirm delete property'})).toBeInTheDocument()
 
-        // Click cancel button
-        const cancelButton = screen.getByTitle('Cancel')
-        expect(cancelButton).toBeDefined()
-        userEvent.click(cancelButton!)
+         // Click cancel button
+         const cancelButton = await screen.findByTitle('Cancel')
+         expect(cancelButton).toBeDefined()
+         await userEvent.click(cancelButton!)
 
-        expect(container).toMatchSnapshot()
-    })
+         expect(container).toMatchSnapshot()
+     })
 
-    function onPropertyRenameNoConfirmationDialog(container: HTMLElement) {
-        const propertyLabel = container.querySelector('.MenuWrapper')
-        expect(propertyLabel).toBeDefined()
-        userEvent.click(propertyLabel!)
+    async function onPropertyRenameNoConfirmationDialog(container: HTMLElement) {
+         const propertyLabel = container.querySelector('.MenuWrapper')
+         expect(propertyLabel).toBeDefined()
+         await userEvent.click(propertyLabel!)
 
-        // write new name in the name text box
-        const propertyNameInput = container.querySelector('.PropertyMenu.menu-textbox')
-        expect(propertyNameInput).toBeDefined()
-        userEvent.type(propertyNameInput!, 'Owner - Renamed{enter}')
-        userEvent.click(propertyLabel!)
-    }
+         // write new name in the name text box
+         const propertyNameInput = container.querySelector('.PropertyMenu.menu-textbox')
+         expect(propertyNameInput).toBeDefined()
+         await userEvent.type(propertyNameInput!, 'Owner - Renamed{enter}')
+         await userEvent.click(propertyLabel!)
+     }
 })

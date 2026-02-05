@@ -72,7 +72,7 @@ describe('properties/link', () => {
         expect(container).toMatchSnapshot()
     })
 
-    it('should change to link after entering url', () => {
+    it('should change to link after entering url', async () => {
         render(
             wrapIntl(
                 <Url
@@ -83,13 +83,13 @@ describe('properties/link', () => {
         )
 
         const url = 'https://mattermost.com'
-        const input = screen.getByRole('textbox')
-        userEvent.type(input, `${url}{enter}`)
+        const input = await screen.findByRole('textbox')
+        await userEvent.type(input, `${url}{enter}`)
 
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, url)
     })
 
-    it('should allow to edit link url', () => {
+    it('should allow to edit link url', async () => {
         render(
             wrapIntl(
                 <Url
@@ -99,15 +99,16 @@ describe('properties/link', () => {
             ),
         )
 
-        screen.getByRole('button', {name: 'Edit'}).click()
+        const editButton = await screen.findByRole('button', {name: 'Edit'})
+        await userEvent.click(editButton)
         const newURL = 'https://github.com/mattermost'
-        const input = screen.getByRole('textbox')
-        userEvent.clear(input)
-        userEvent.type(input, `${newURL}{enter}`)
+        const input = await screen.findByRole('textbox')
+        await userEvent.clear(input)
+        await userEvent.type(input, `${newURL}{enter}`)
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, newURL)
     })
 
-    it('should allow to copy url', () => {
+    it('should allow to copy url', async () => {
         const url = 'https://mattermost.com'
         render(
             wrapIntl(
@@ -117,7 +118,8 @@ describe('properties/link', () => {
                 />,
             ),
         )
-        screen.getByRole('button', {name: 'Copy'}).click()
+        const copyButton = await screen.findByRole('button', {name: 'Copy'})
+        await userEvent.click(copyButton)
         expect(mockedCopy).toHaveBeenCalledWith(url)
         expect(mockedSendFlashMessage).toHaveBeenCalledWith({content: 'Copied!', severity: 'high'})
     })

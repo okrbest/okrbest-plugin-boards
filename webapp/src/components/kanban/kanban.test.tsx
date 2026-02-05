@@ -362,86 +362,86 @@ describe('src/component/kanban/kanban', () => {
             expect(mockedChangeViewCardOrder).toBeCalled()
         })
     })
-    test('return kanban and click on New', () => {
-        const mockedAddCard = jest.fn()
-        render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <Kanban
-                    board={board}
-                    activeView={activeView}
-                    cards={[card1, card2]}
-                    groupByProperty={groupProperty}
-                    visibleGroups={[
-                        {
-                            option: optionQ1,
-                            cards: [card1, card2],
-                        }, {
-                            option: optionQ2,
-                            cards: [card3],
-                        },
-                    ]}
-                    hiddenGroups={[
-                        {
-                            option: optionQ3,
-                            cards: [],
-                        },
-                    ]}
-                    selectedCardIds={[]}
-                    readonly={false}
-                    onCardClicked={jest.fn()}
-                    addCard={mockedAddCard}
-                    addCardFromTemplate={jest.fn()}
-                    showCard={jest.fn()}
-                    hiddenCardsCount={0}
-                    showHiddenCardCountNotification={jest.fn()}
-                />
-            </ReduxProvider>,
-        ))
-        const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
-        expect(allButtonsNew).not.toBeNull()
-        userEvent.click(allButtonsNew[0])
-        expect(mockedAddCard).toBeCalledTimes(1)
-    })
+     test('return kanban and click on New', async () => {
+         const mockedAddCard = jest.fn()
+         render(wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <Kanban
+                     board={board}
+                     activeView={activeView}
+                     cards={[card1, card2]}
+                     groupByProperty={groupProperty}
+                     visibleGroups={[
+                         {
+                             option: optionQ1,
+                             cards: [card1, card2],
+                         }, {
+                             option: optionQ2,
+                             cards: [card3],
+                         },
+                     ]}
+                     hiddenGroups={[
+                         {
+                             option: optionQ3,
+                             cards: [],
+                         },
+                     ]}
+                     selectedCardIds={[]}
+                     readonly={false}
+                     onCardClicked={jest.fn()}
+                     addCard={mockedAddCard}
+                     addCardFromTemplate={jest.fn()}
+                     showCard={jest.fn()}
+                     hiddenCardsCount={0}
+                     showHiddenCardCountNotification={jest.fn()}
+                 />
+             </ReduxProvider>,
+         ))
+         const allButtonsNew = await screen.findAllByRole('button', {name: '+ New'})
+         expect(allButtonsNew).not.toBeNull()
+         userEvent.click(allButtonsNew[0])
+         expect(mockedAddCard).toBeCalledTimes(1)
+     })
 
-    test('return kanban and click on KanbanCalculationMenu', () => {
-        const {container} = render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <Kanban
-                    board={board}
-                    activeView={activeView}
-                    cards={[card1, card2]}
-                    groupByProperty={groupProperty}
-                    visibleGroups={[
-                        {
-                            option: optionQ1,
-                            cards: [card1, card2],
-                        }, {
-                            option: optionQ2,
-                            cards: [card3],
-                        },
-                    ]}
-                    hiddenGroups={[
-                        {
-                            option: optionQ3,
-                            cards: [],
-                        },
-                    ]}
-                    selectedCardIds={[]}
-                    readonly={false}
-                    onCardClicked={jest.fn()}
-                    addCard={jest.fn()}
-                    addCardFromTemplate={jest.fn()}
-                    showCard={jest.fn()}
-                    hiddenCardsCount={0}
-                    showHiddenCardCountNotification={jest.fn()}
-                />
-            </ReduxProvider>,
-        ))
-        const buttonKanbanCalculation = screen.getByRole('button', {name: '2'})
-        expect(buttonKanbanCalculation).toBeDefined()
-        userEvent.click(buttonKanbanCalculation!)
-        expect(container).toMatchSnapshot()
-    })
+     test('return kanban and click on KanbanCalculationMenu', async () => {
+         const {container} = render(wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <Kanban
+                     board={board}
+                     activeView={activeView}
+                     cards={[card1, card2]}
+                     groupByProperty={groupProperty}
+                     visibleGroups={[
+                         {
+                             option: optionQ1,
+                             cards: [card1, card2],
+                         }, {
+                             option: optionQ2,
+                             cards: [card3],
+                         },
+                     ]}
+                     hiddenGroups={[
+                         {
+                             option: optionQ3,
+                             cards: [],
+                         },
+                     ]}
+                     selectedCardIds={[]}
+                     readonly={false}
+                     onCardClicked={jest.fn()}
+                     addCard={jest.fn()}
+                     addCardFromTemplate={jest.fn()}
+                     showCard={jest.fn()}
+                     hiddenCardsCount={0}
+                     showHiddenCardCountNotification={jest.fn()}
+                 />
+             </ReduxProvider>,
+         ))
+         const buttonKanbanCalculation = await screen.findByRole('button', {name: '2'})
+         expect(buttonKanbanCalculation).toBeDefined()
+         userEvent.click(buttonKanbanCalculation!)
+         expect(container).toMatchSnapshot()
+     })
 
     test('return kanban and add a group', async () => {
         render(wrapDNDIntl(
@@ -570,44 +570,44 @@ describe('src/component/kanban/kanban', () => {
         mockDOM()
     })
     beforeEach(jest.resetAllMocks)
-    test('return kanban and click on New if view have already have defaultTemplateId', () => {
-        const mockedAddCard = jest.fn()
-        render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <Kanban
-                    board={board}
-                    activeView={activeView}
-                    cards={[card1, card2]}
-                    groupByProperty={groupProperty}
-                    visibleGroups={[
-                        {
-                            option: optionQ1,
-                            cards: [card1, card2],
-                        }, {
-                            option: optionQ2,
-                            cards: [card3],
-                        },
-                    ]}
-                    hiddenGroups={[
-                        {
-                            option: optionQ3,
-                            cards: [],
-                        },
-                    ]}
-                    selectedCardIds={[]}
-                    readonly={false}
-                    onCardClicked={jest.fn()}
-                    addCard={jest.fn()}
-                    addCardFromTemplate={mockedAddCard}
-                    showCard={jest.fn()}
-                    hiddenCardsCount={0}
-                    showHiddenCardCountNotification={jest.fn()}
-                />
-            </ReduxProvider>,
-        ))
-        const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
-        expect(allButtonsNew).not.toBeNull()
-        userEvent.click(allButtonsNew[0])
-        expect(mockedAddCard).toBeCalledTimes(1)
-    })
+     test('return kanban and click on New if view have already have defaultTemplateId', async () => {
+         const mockedAddCard = jest.fn()
+         render(wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <Kanban
+                     board={board}
+                     activeView={activeView}
+                     cards={[card1, card2]}
+                     groupByProperty={groupProperty}
+                     visibleGroups={[
+                         {
+                             option: optionQ1,
+                             cards: [card1, card2],
+                         }, {
+                             option: optionQ2,
+                             cards: [card3],
+                         },
+                     ]}
+                     hiddenGroups={[
+                         {
+                             option: optionQ3,
+                             cards: [],
+                         },
+                     ]}
+                     selectedCardIds={[]}
+                     readonly={false}
+                     onCardClicked={jest.fn()}
+                     addCard={jest.fn()}
+                     addCardFromTemplate={mockedAddCard}
+                     showCard={jest.fn()}
+                     hiddenCardsCount={0}
+                     showHiddenCardCountNotification={jest.fn()}
+                 />
+             </ReduxProvider>,
+         ))
+         const allButtonsNew = await screen.findAllByRole('button', {name: '+ New'})
+         expect(allButtonsNew).not.toBeNull()
+         userEvent.click(allButtonsNew[0])
+         expect(mockedAddCard).toBeCalledTimes(1)
+     })
 })

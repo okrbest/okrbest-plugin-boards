@@ -1029,7 +1029,7 @@ exports[`components/sidebar/GlobalHeaderSettingsMenu settings menu open should m
   >
     <div
       aria-label="menuwrapper"
-      class="MenuWrapper override menuOpened"
+      class="MenuWrapper"
       role="button"
     >
       <div
@@ -1038,136 +1038,6 @@ exports[`components/sidebar/GlobalHeaderSettingsMenu settings menu open should m
         <i
           class="CompassIcon icon-settings-outline SettingsIcon"
         />
-      </div>
-      <div
-        class="Menu noselect left "
-      >
-        <div
-          class="menu-contents"
-        >
-          <div
-            class="menu-options"
-          >
-            <div>
-              <div
-                class="MenuOption SubMenuOption menu-option open-left"
-                id="import"
-              >
-                <div
-                  class="noicon"
-                />
-                <div
-                  class="menu-name"
-                >
-                  Import
-                </div>
-                <i
-                  class="CompassIcon icon-chevron-right"
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                class="MenuOption SubMenuOption menu-option open-left"
-                id="lang"
-              >
-                <div
-                  class="noicon"
-                />
-                <div
-                  class="menu-name"
-                >
-                  Set language
-                </div>
-                <i
-                  class="CompassIcon icon-chevron-right"
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                aria-label="Random icons"
-                class="MenuOption SwitchOption menu-option"
-                role="button"
-              >
-                <div
-                  class="noicon"
-                />
-                <div
-                  class="menu-name"
-                >
-                  Random icons
-                </div>
-                <div
-                  class="Switch override-main size--small on"
-                >
-                  <div
-                    class="octo-switch-inner"
-                  />
-                </div>
-              </div>
-            </div>
-            <div>
-              <div
-                aria-label="Product tour"
-                class="MenuOption TextOption menu-option product-tour"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="noicon"
-                  />
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Product tour
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-            </div>
-          </div>
-          <div
-            class="menu-spacer hideOnWidescreen"
-          />
-          <div
-            class="menu-options hideOnWidescreen"
-          >
-            <div
-              aria-label="Cancel"
-              class="MenuOption TextOption menu-option menu-cancel"
-              role="button"
-            >
-              <div
-                class="d-flex"
-              >
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Cancel
-                </div>
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>

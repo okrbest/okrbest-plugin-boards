@@ -99,7 +99,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -131,7 +131,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -160,7 +160,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -199,7 +199,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })

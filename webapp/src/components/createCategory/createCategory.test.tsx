@@ -67,7 +67,7 @@ describe('components/createCategory/CreateCategory', () => {
         expect(container).toMatchSnapshot()
     })
 
-    it('should call onClose on being closed', () => {
+    it('should call onClose on being closed', async () => {
         const onCloseHandler = jest.fn()
         const component = wrapIntl(
             <ReduxProvider store={store}>
@@ -83,16 +83,16 @@ describe('components/createCategory/CreateCategory', () => {
         const {container} = render(component)
         const cancelBtn = container.querySelector('.createCategoryActions > .Button.danger')
         expect(cancelBtn).toBeTruthy()
-        userEvent.click(cancelBtn as Element)
+        await userEvent.click(cancelBtn as Element)
         expect(onCloseHandler).toBeCalledTimes(1)
 
         const closeBtn = container.querySelector('.toolbar .dialog__close')
         expect(closeBtn).toBeTruthy()
-        userEvent.click(closeBtn as Element)
+        await userEvent.click(closeBtn as Element)
         expect(onCloseHandler).toBeCalledTimes(2)
     })
 
-    it('should call onCreate on pressing enter', () => {
+    it('should call onCreate on pressing enter', async () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
                 <CreateCategory
@@ -107,7 +107,7 @@ describe('components/createCategory/CreateCategory', () => {
         const {container} = render(component)
         const inputField = container.querySelector('.categoryNameInput')
         expect(inputField).toBeTruthy()
-        userEvent.type(inputField as Element, 'category name{enter}')
+        await userEvent.type(inputField as Element, 'category name{enter}')
         expect(mockedMutator.createCategory).toBeCalledWith({
             name: 'category name',
             teamID: 'team-id',
@@ -134,7 +134,7 @@ describe('components/createCategory/CreateCategory', () => {
         expect((inputField as HTMLInputElement).value).toBe('Dwight prank ideas')
     })
 
-    it('should clear input field on clicking clear icon', () => {
+    it('should clear input field on clicking clear icon', async () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
                 <CreateCategory
@@ -154,7 +154,7 @@ describe('components/createCategory/CreateCategory', () => {
 
         const clearBtn = container.querySelector('.clearBtn')
         expect(clearBtn).toBeTruthy()
-        userEvent.click(clearBtn as Element)
+        await userEvent.click(clearBtn as Element)
         expect((inputField as HTMLInputElement).value).toBe('')
     })
 })

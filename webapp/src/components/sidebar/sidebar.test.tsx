@@ -7,7 +7,7 @@ import configureStore from 'redux-mock-store'
 import {Provider as ReduxProvider} from 'react-redux'
 import {MemoryRouter} from 'react-router-dom'
 
-import {render, waitFor} from '@testing-library/react'
+import {render, waitFor, screen} from '@testing-library/react'
 
 import thunk from 'redux-thunk'
 
@@ -175,7 +175,7 @@ describe('components/sidebarSidebar', () => {
         customGlobal.innerWidth = 1024
     })
 
-    test('dont show hidden boards', () => {
+    test('dont show hidden boards', async () => {
         const localCategoryAttribute = TestBlockFactory.createCategoryBoards()
         localCategoryAttribute.id = 'category1'
         localCategoryAttribute.name = 'Category 1'
@@ -230,7 +230,7 @@ describe('components/sidebarSidebar', () => {
                 </MemoryRouter>
             </ReduxProvider>,
         )
-        const {container, getAllByText} = render(component)
+        const {container} = render(component)
         expect(container).toMatchSnapshot()
 
         const sidebarBoards = container.getElementsByClassName('SidebarBoardItem')
@@ -239,7 +239,7 @@ describe('components/sidebarSidebar', () => {
         // be no boards visible in sidebar
         expect(sidebarBoards.length).toBe(0)
 
-        const noBoardsText = getAllByText('No boards inside')
+        const noBoardsText = await screen.findAllByText('No boards inside')
         expect(noBoardsText.length).toBe(1)
     })
 

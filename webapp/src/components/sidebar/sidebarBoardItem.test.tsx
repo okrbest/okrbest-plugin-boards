@@ -5,7 +5,7 @@ import React from 'react'
 
 import {MemoryRouter} from 'react-router-dom'
 
-import {render} from '@testing-library/react'
+import {render, screen, waitFor, act} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import {Provider as ReduxProvider} from 'react-redux'
@@ -69,7 +69,7 @@ describe('components/sidebarBoardItem', () => {
         },
     }
 
-    test('sidebar board item', () => {
+    test('sidebar board item', async () => {
         const mockStore = configureStore([])
         const store = mockStore(state)
 
@@ -90,9 +90,13 @@ describe('components/sidebarBoardItem', () => {
             </ReduxProvider>,
         ))
         const {container} = render(component)
-        const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
-        expect(elementMenuWrapper).not.toBeNull()
-        userEvent.click(elementMenuWrapper!)
+        await waitFor(async () => {
+            const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
+            expect(elementMenuWrapper).not.toBeNull()
+            await act(async () => {
+                userEvent.click(elementMenuWrapper!)
+            })
+        })
         expect(container).toMatchSnapshot()
     })
 
@@ -121,7 +125,7 @@ describe('components/sidebarBoardItem', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('sidebar board item for guest', () => {
+    test('sidebar board item for guest', async () => {
         const mockStore = configureStore([])
         const store = mockStore({...state, users: {me: {is_guest: true}}})
 
@@ -142,9 +146,13 @@ describe('components/sidebarBoardItem', () => {
             </ReduxProvider>,
         ))
         const {container} = render(component)
-        const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
-        expect(elementMenuWrapper).not.toBeNull()
-        userEvent.click(elementMenuWrapper!)
+        await waitFor(async () => {
+            const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
+            expect(elementMenuWrapper).not.toBeNull()
+            await act(async () => {
+                userEvent.click(elementMenuWrapper!)
+            })
+        })
         expect(container).toMatchSnapshot()
     })
 })

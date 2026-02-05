@@ -105,12 +105,12 @@ describe('components/blocksEditor/blocksEditor', () => {
             ))
         })
 
-        let input = screen.getByDisplayValue('')
+        let input = await screen.findByDisplayValue('')
         expect(onBlockCreated).not.toBeCalled()
         fireEvent.change(input, {target: {value: '/title'}})
         fireEvent.keyDown(input, {key: 'Enter'})
 
-        input = screen.getByDisplayValue('')
+        input = await screen.findByDisplayValue('')
         fireEvent.change(input, {target: {value: 'test'}})
         fireEvent.keyDown(input, {key: 'Enter'})
 
@@ -131,10 +131,10 @@ describe('components/blocksEditor/blocksEditor', () => {
                     />
                 </ReduxProvider>,
             ))
-            const input = screen.getByTestId('checkbox-check')
-            expect(onBlockModified).not.toBeCalled()
-            fireEvent.click(input)
-            expect(onBlockModified).toBeCalledWith(expect.objectContaining({value: {checked: false, value: 'Checkbox'}}))
         })
+        const input = screen.getByTestId('checkbox-check')
+        expect(onBlockModified).not.toBeCalled()
+        fireEvent.click(input)
+        expect(onBlockModified).toBeCalledWith(expect.objectContaining({value: {checked: false, value: 'Checkbox'}}))
     })
 })
