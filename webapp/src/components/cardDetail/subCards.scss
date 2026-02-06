@@ -42,6 +42,10 @@
 
         &:hover {
             background-color: rgba(var(--center-channel-color-rgb), 0.08);
+
+            .SubCards__item-unlink {
+                display: flex;
+            }
         }
 
         &:active {
@@ -92,10 +96,6 @@
             font-size: 14px;
             color: rgba(var(--center-channel-color-rgb), 0.7);
         }
-    }
-
-    &__item:hover &__item-unlink {
-        display: flex;
     }
 
     &__actions {

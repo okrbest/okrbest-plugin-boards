@@ -128,7 +128,7 @@ func (a *App) CreateSubCard(card *model.Card, parentCardID string, boardID strin
 	card.UpdateAt = now
 	card.DeleteAt = 0
 
-	if card.Properties == nil {
+	if len(card.Properties) == 0 {
 		card.Properties = deepCopyProperties(parentCard.Properties)
 	}
 
