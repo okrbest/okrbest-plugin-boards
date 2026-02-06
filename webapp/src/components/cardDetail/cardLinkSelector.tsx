@@ -63,11 +63,56 @@ const CardLinkSelector = (props: Props): JSX.Element => {
         fetchCards()
     }, [boardId])
 
+    // 카드의 실제 부모 카드 ID를 가져오는 헬퍼 함수
+    // Block.parentId가 boardId와 같으면 최상위 카드이므로 빈 문자열 반환
+    const getParentCardId = useCallback((card: Card): string => {
+        // fields.parentCardId가 있으면 사용 (새로 저장된 카드)
+        if (card.fields?.parentCardId) {
+            return card.fields.parentCardId
+        }
+        // 없으면 block.parentId 사용 (단, boardId와 다를 때만)
+        if (card.parentId && card.parentId !== boardId) {
+            return card.parentId
+        }
+        return ''
+    }, [boardId])
+
+    // 현재 카드의 조상(부모, 부모의 부모 등) ID 집합 계산
+    const ancestorIds = useMemo(() => {
+        const ancestors = new Set<string>()
+        const cardMap = new Map<string, Card>()
+
+        // 카드 ID → 카드 맵 생성
+        cards.forEach((card) => {
+            cardMap.set(card.id, card)
+        })
+
+        // 현재 카드부터 시작해서 부모 체인 추적
+        const currentCard = cardMap.get(currentCardId)
+        let parentId = currentCard ? getParentCardId(currentCard) : ''
+
+        while (parentId) {
+            ancestors.add(parentId)
+            const parentCard = cardMap.get(parentId)
+            parentId = parentCard ? getParentCardId(parentCard) : ''
+        }
+
+        return ancestors
+    }, [cards, currentCardId, getParentCardId])
+
     const canLinkCard = useCallback((card: Card): {canLink: boolean; reason?: string} => {
         if (card.id === currentCardId) {
             return {
                 canLink: false,
                 reason: intl.formatMessage({id: 'CardLinkSelector.cannotLinkSelf', defaultMessage: 'Cannot link self'}),
+            }
+        }
+
+        // 현재 카드의 조상인 경우 순환 참조 방지
+        if (ancestorIds.has(card.id)) {
+            return {
+                canLink: false,
+                reason: intl.formatMessage({id: 'CardLinkSelector.isAncestor', defaultMessage: 'Parent card'}),
             }
         }
 
@@ -87,7 +132,7 @@ const CardLinkSelector = (props: Props): JSX.Element => {
         }
 
         return {canLink: true}
-    }, [currentCardId, currentCardDepth, intl])
+    }, [currentCardId, currentCardDepth, intl, ancestorIds])
 
     const filteredCards = useMemo(() => {
         if (!searchQuery.trim()) {

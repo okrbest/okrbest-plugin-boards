@@ -170,6 +170,10 @@ type CardPatch struct {
 	// required: false
 	ParentCardID *string `json:"parentCardId"`
 
+	// The nesting depth (0 = top-level, max 2)
+	// required: false
+	Depth *int `json:"depth"`
+
 	// A map of property ids to property option ids to be updated
 	// required: false
 	UpdatedProperties map[string]any `json:"updatedProperties"`
@@ -223,6 +227,7 @@ func Card2Block(card *Card) *Block {
 	fields["isTemplate"] = card.IsTemplate
 	fields["properties"] = card.Properties
 	fields["depth"] = card.Depth
+	fields["parentCardId"] = card.ParentCardID
 
 	parentID := card.BoardID
 	if card.ParentCardID != "" {
@@ -354,6 +359,9 @@ func CardPatch2BlockPatch(cardPatch *CardPatch) (*BlockPatch, error) {
 	}
 	if cardPatch.Icon != nil {
 		updatedFields["icon"] = cardPatch.Icon
+	}
+	if cardPatch.Depth != nil {
+		updatedFields["depth"] = *cardPatch.Depth
 	}
 
 	properties := make(map[string]any)
