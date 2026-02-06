@@ -128,7 +128,7 @@ func (a *App) CreateSubCard(card *model.Card, parentCardID string, boardID strin
 	card.UpdateAt = now
 	card.DeleteAt = 0
 
-	if card.Properties == nil {
+	if len(card.Properties) == 0 {
 		card.Properties = deepCopyProperties(parentCard.Properties)
 	}
 
@@ -221,15 +221,13 @@ func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Car
 
 	cardPatch := &model.CardPatch{
 		ParentCardID: &parentCardID,
+		Depth:        &newDepth,
 	}
 
 	updatedCard, err := a.PatchCard(cardPatch, cardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to link card: %w", err)
 	}
-
-	updatedCard.Depth = newDepth
-	updatedCard.ParentCardID = parentCardID
 
 	// Send channel notification if board is linked to a channel
 	board, boardErr := a.GetBoard(card.BoardID)
@@ -294,17 +292,16 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 	}
 
 	emptyParent := ""
+	zeroDepth := 0
 	cardPatch := &model.CardPatch{
 		ParentCardID: &emptyParent,
+		Depth:        &zeroDepth,
 	}
 
 	updatedCard, err := a.PatchCard(cardPatch, cardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unlink card: %w", err)
 	}
-
-	updatedCard.Depth = 0
-	updatedCard.ParentCardID = ""
 
 	// Send channel notification if board is linked to a channel
 	board, boardErr := a.GetBoard(card.BoardID)
