@@ -4,11 +4,12 @@
 import React, {useState} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
 
-import {CommentBlock, createCommentBlock} from '../../blocks/commentBlock'
+import {CommentBlock, createCommentBlock, getScheduledAt, isPendingScheduledComment} from '../../blocks/commentBlock'
 import mutator from '../../mutator'
 import {useAppSelector} from '../../store/hooks'
 import {Utils} from '../../utils'
 import Button from '../../widgets/buttons/button'
+import CompassIcon from '../../widgets/icons/compassIcon'
 
 import {MarkdownEditor} from '../markdownEditor'
 
@@ -20,6 +21,7 @@ import {Permission} from '../../constants'
 import AddCommentTourStep from '../onboardingTour/addComments/addComments'
 
 import Comment from './comment'
+import ScheduledCommentPicker from './scheduledCommentPicker'
 
 import './commentsList.scss'
 
@@ -32,13 +34,16 @@ type Props = {
 
 const CommentsList = (props: Props) => {
     const [newComment, setNewComment] = useState('')
+    const [showSchedulePicker, setShowSchedulePicker] = useState(false)
     const me = useAppSelector<IUser|null>(getMe)
     const canDeleteOthersComments = useHasCurrentBoardPermissions([Permission.DeleteOthersComments])
+    const intl = useIntl()
+
+    const {comments, boardId, cardId} = props
 
     const onSendClicked = () => {
         const commentText = newComment
         if (commentText) {
-            const {cardId, boardId} = props
             Utils.log(`Send comment: ${commentText}`)
             Utils.assertValue(cardId)
 
@@ -51,8 +56,21 @@ const CommentsList = (props: Props) => {
         }
     }
 
-    const {comments} = props
-    const intl = useIntl()
+    const onScheduleClicked = async (scheduledAt: number) => {
+        const commentText = newComment
+        if (commentText) {
+            Utils.log(`Schedule comment: ${commentText}`)
+            Utils.assertValue(cardId)
+
+            try {
+                await mutator.createScheduledComment(boardId, cardId, commentText, scheduledAt)
+                setNewComment('')
+            } catch (err) {
+                Utils.log(`Failed to schedule comment: ${err}`)
+            }
+            setShowSchedulePicker(false)
+        }
+    }
 
     const newCommentComponent = (
         <div className='CommentsList__new'>
@@ -71,17 +89,32 @@ const CommentsList = (props: Props) => {
                 }}
             />
 
-            {newComment &&
-            <Button
-                filled={true}
-                onClick={onSendClicked}
-            >
-                <FormattedMessage
-                    id='CommentsList.send'
-                    defaultMessage='Send'
+            {newComment && (
+                <div className='CommentsList__actions'>
+                    <Button
+                        onClick={() => setShowSchedulePicker(true)}
+                        title={intl.formatMessage({id: 'CommentsList.schedule', defaultMessage: 'Schedule'})}
+                    >
+                        <CompassIcon icon='clock-outline'/>
+                    </Button>
+                    <Button
+                        filled={true}
+                        onClick={onSendClicked}
+                    >
+                        <FormattedMessage
+                            id='CommentsList.send'
+                            defaultMessage='Send'
+                        />
+                    </Button>
+                </div>
+            )}
+
+            {showSchedulePicker && (
+                <ScheduledCommentPicker
+                    onSchedule={onScheduleClicked}
+                    onCancel={() => setShowSchedulePicker(false)}
                 />
-            </Button>
-            }
+            )}
 
             <AddCommentTourStep/>
         </div>
@@ -93,8 +126,10 @@ const CommentsList = (props: Props) => {
             {!props.readonly && newCommentComponent}
 
             {comments.slice(0).reverse().map((comment) => {
-                // Only modify _own_ comments, EXCEPT for Admins, which can delete _any_ comment
-                // NOTE: editing comments will exist in the future (in addition to deleting)
+                const isScheduled = isPendingScheduledComment(comment)
+                if (isScheduled && comment.createdBy !== me?.id) {
+                    return null
+                }
                 const canDeleteComment: boolean = canDeleteOthersComments || me?.id === comment.modifiedBy
                 return (
                     <Comment
@@ -103,6 +138,7 @@ const CommentsList = (props: Props) => {
                         userImageUrl={Utils.getProfilePicture(comment.modifiedBy)}
                         userId={comment.modifiedBy}
                         readonly={props.readonly || !canDeleteComment}
+                        scheduledAt={isScheduled ? getScheduledAt(comment) : undefined}
                     />
                 )
             })}

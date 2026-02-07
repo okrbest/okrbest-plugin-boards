@@ -64,29 +64,36 @@ func TestCreateCategory(t *testing.T) {
 }
 
 func TestUpdateCategory(t *testing.T) {
-	th, tearDown := SetupTestHelper(t)
-	defer tearDown()
-
 	t.Run("base case", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:     "category_id_1",
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
+
+		categoryID := utils.NewID(utils.IDTypeNone)
+		teamID := utils.NewID(utils.IDTypeTeam)
+		userID := utils.NewID(utils.IDTypeUser)
+
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:     categoryID,
 			Name:   "Category",
-			TeamID: "team_id_1",
-			UserID: "user_id_1",
+			TeamID: teamID,
+			UserID: userID,
 			Type:   "custom",
 		}, nil)
 
 		th.Store.EXPECT().UpdateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory("category_id_1").Return(&model.Category{
-			ID:   "category_id_1",
-			Name: "Category",
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:     categoryID,
+			Name:   "Category",
+			TeamID: teamID,
+			UserID: userID,
+			Type:   "custom",
 		}, nil)
 
 		category := &model.Category{
-			ID:     "category_id_1",
+			ID:     categoryID,
 			Name:   "Category",
-			UserID: "user_id_1",
-			TeamID: "team_id_1",
+			UserID: userID,
+			TeamID: teamID,
 			Type:   "custom",
 		}
 		updatedCategory, err := th.App.UpdateCategory(category)
@@ -94,66 +101,98 @@ func TestUpdateCategory(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("updating invalid category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:     "category_id_1",
-			Name:   "Category",
-			TeamID: "team_id_1",
-			UserID: "user_id_1",
-			Type:   "custom",
-		}, nil)
+	// Note: empty ID test is not valid because Hydrate() auto-generates ID
+
+	t.Run("updating invalid category - empty name", func(t *testing.T) {
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
 
 		category := &model.Category{
-			ID:     "category_id_1",
-			Name:   "Name",
-			UserID: "user_id",
-			TeamID: "team_id",
+			ID:     utils.NewID(utils.IDTypeNone),
+			Name:   "",
+			UserID: utils.NewID(utils.IDTypeUser),
+			TeamID: utils.NewID(utils.IDTypeTeam),
 			Type:   "custom",
 		}
 
-		category.ID = ""
 		createdCategory, err := th.App.UpdateCategory(category)
 		assert.Nil(t, createdCategory)
 		assert.Error(t, err)
+	})
 
-		category.ID = "category_id_1"
-		category.Name = ""
-		createdCategory, err = th.App.UpdateCategory(category)
+	t.Run("updating invalid category - empty userID", func(t *testing.T) {
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
+
+		category := &model.Category{
+			ID:     utils.NewID(utils.IDTypeNone),
+			Name:   "Name",
+			UserID: "",
+			TeamID: utils.NewID(utils.IDTypeTeam),
+			Type:   "custom",
+		}
+
+		createdCategory, err := th.App.UpdateCategory(category)
 		assert.Nil(t, createdCategory)
 		assert.Error(t, err)
+	})
 
-		category.Name = "Name"
-		category.UserID = "" // empty creator user id shouldn't be allowed
-		createdCategory, err = th.App.UpdateCategory(category)
+	t.Run("updating invalid category - empty teamID", func(t *testing.T) {
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
+
+		category := &model.Category{
+			ID:     utils.NewID(utils.IDTypeNone),
+			Name:   "Name",
+			UserID: utils.NewID(utils.IDTypeUser),
+			TeamID: "",
+			Type:   "custom",
+		}
+
+		createdCategory, err := th.App.UpdateCategory(category)
 		assert.Nil(t, createdCategory)
 		assert.Error(t, err)
+	})
 
-		category.UserID = "user_id"
-		category.TeamID = "" // empty TeamID shouldn't be allowed
-		createdCategory, err = th.App.UpdateCategory(category)
-		assert.Nil(t, createdCategory)
-		assert.Error(t, err)
+	t.Run("updating invalid category - invalid type", func(t *testing.T) {
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
 
-		category.Type = "invalid" // unknown type shouldn't be allowed
-		createdCategory, err = th.App.UpdateCategory(category)
+		category := &model.Category{
+			ID:     utils.NewID(utils.IDTypeNone),
+			Name:   "Name",
+			UserID: utils.NewID(utils.IDTypeUser),
+			TeamID: utils.NewID(utils.IDTypeTeam),
+			Type:   "invalid",
+		}
+
+		createdCategory, err := th.App.UpdateCategory(category)
 		assert.Nil(t, createdCategory)
 		assert.Error(t, err)
 	})
 
 	t.Run("trying to update someone else's category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:     "category_id_1",
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
+
+		categoryID := utils.NewID(utils.IDTypeNone)
+		teamID := utils.NewID(utils.IDTypeTeam)
+		userID := utils.NewID(utils.IDTypeUser)
+		otherUserID := utils.NewID(utils.IDTypeUser)
+
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:     categoryID,
 			Name:   "Category",
-			TeamID: "team_id_1",
-			UserID: "user_id_1",
+			TeamID: teamID,
+			UserID: userID,
 			Type:   "custom",
 		}, nil)
 
 		category := &model.Category{
-			ID:     "category_id_1",
+			ID:     categoryID,
 			Name:   "Category",
-			UserID: "user_id_2",
-			TeamID: "team_id_1",
+			UserID: otherUserID,
+			TeamID: teamID,
 			Type:   "custom",
 		}
 		updatedCategory, err := th.App.UpdateCategory(category)
@@ -162,19 +201,27 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("trying to update some other team's category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:     "category_id_1",
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
+
+		categoryID := utils.NewID(utils.IDTypeNone)
+		teamID := utils.NewID(utils.IDTypeTeam)
+		userID := utils.NewID(utils.IDTypeUser)
+		otherTeamID := utils.NewID(utils.IDTypeTeam)
+
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:     categoryID,
 			Name:   "Category",
-			TeamID: "team_id_1",
-			UserID: "user_id_1",
+			TeamID: teamID,
+			UserID: userID,
 			Type:   "custom",
 		}, nil)
 
 		category := &model.Category{
-			ID:     "category_id_1",
+			ID:     categoryID,
 			Name:   "Category",
-			UserID: "user_id_1",
-			TeamID: "team_id_2",
+			UserID: userID,
+			TeamID: otherTeamID,
 			Type:   "custom",
 		}
 		updatedCategory, err := th.App.UpdateCategory(category)
@@ -183,30 +230,37 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("should not be allowed to rename system category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:     "category_id_1",
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
+
+		categoryID := utils.NewID(utils.IDTypeNone)
+		teamID := utils.NewID(utils.IDTypeTeam)
+		userID := utils.NewID(utils.IDTypeUser)
+
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:     categoryID,
 			Name:   "Category",
-			TeamID: "team_id_1",
-			UserID: "user_id_1",
+			TeamID: teamID,
+			UserID: userID,
 			Type:   "system",
 		}, nil).Times(1)
 
 		th.Store.EXPECT().UpdateCategory(utils.Anything).Return(nil)
 
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:        "category_id_1",
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:        categoryID,
 			Name:      "Category",
-			TeamID:    "team_id_1",
-			UserID:    "user_id_1",
+			TeamID:    teamID,
+			UserID:    userID,
 			Type:      "system",
 			Collapsed: true,
 		}, nil).Times(1)
 
 		category := &model.Category{
-			ID:     "category_id_1",
+			ID:     categoryID,
 			Name:   "Updated Name",
-			UserID: "user_id_1",
-			TeamID: "team_id_1",
+			UserID: userID,
+			TeamID: teamID,
 			Type:   "system",
 		}
 		updatedCategory, err := th.App.UpdateCategory(category)
@@ -216,31 +270,38 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("should be allowed to collapse and expand any category type", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:        "category_id_1",
+		th, tearDown := SetupTestHelper(t)
+		defer tearDown()
+
+		categoryID := utils.NewID(utils.IDTypeNone)
+		teamID := utils.NewID(utils.IDTypeTeam)
+		userID := utils.NewID(utils.IDTypeUser)
+
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:        categoryID,
 			Name:      "Category",
-			TeamID:    "team_id_1",
-			UserID:    "user_id_1",
+			TeamID:    teamID,
+			UserID:    userID,
 			Type:      "system",
 			Collapsed: false,
 		}, nil).Times(1)
 
 		th.Store.EXPECT().UpdateCategory(utils.Anything).Return(nil)
 
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
-			ID:        "category_id_1",
+		th.Store.EXPECT().GetCategory(categoryID).Return(&model.Category{
+			ID:        categoryID,
 			Name:      "Category",
-			TeamID:    "team_id_1",
-			UserID:    "user_id_1",
+			TeamID:    teamID,
+			UserID:    userID,
 			Type:      "system",
 			Collapsed: true,
 		}, nil).Times(1)
 
 		category := &model.Category{
-			ID:        "category_id_1",
+			ID:        categoryID,
 			Name:      "Updated Name",
-			UserID:    "user_id_1",
-			TeamID:    "team_id_1",
+			UserID:    userID,
+			TeamID:    teamID,
 			Type:      "system",
 			Collapsed: true,
 		}

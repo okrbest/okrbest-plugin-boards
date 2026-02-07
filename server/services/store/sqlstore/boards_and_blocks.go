@@ -134,7 +134,7 @@ func (s *SQLStore) deleteBoardsAndBlocks(db sq.BaseRunner, dbab *model.DeleteBoa
 	return nil
 }
 
-func (s *SQLStore) duplicateBoard(db sq.BaseRunner, boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
+func (s *SQLStore) duplicateBoard(db sq.BaseRunner, boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, map[string]string, error) {
 	bab := &model.BoardsAndBlocks{
 		Boards: []*model.Board{},
 		Blocks: []*model.Block{},
@@ -142,7 +142,7 @@ func (s *SQLStore) duplicateBoard(db sq.BaseRunner, boardID string, userID strin
 
 	board, err := s.getBoard(db, boardID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// todo: server localization
@@ -167,7 +167,7 @@ func (s *SQLStore) duplicateBoard(db sq.BaseRunner, boardID string, userID strin
 	bab.Boards = []*model.Board{board}
 	blocks, err := s.getBlocksForBoard(db, boardID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	newBlocks := []*model.Block{}
 	for _, b := range blocks {
@@ -177,10 +177,11 @@ func (s *SQLStore) duplicateBoard(db sq.BaseRunner, boardID string, userID strin
 	}
 	bab.Blocks = newBlocks
 
-	bab, err = model.GenerateBoardsAndBlocksIDs(bab, nil)
+	bab, cardIDMapping, err := model.GenerateBoardsAndBlocksIDsWithMapping(bab, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return s.createBoardsAndBlocksWithAdmin(db, bab, userID)
+	resultBab, members, err := s.createBoardsAndBlocksWithAdmin(db, bab, userID)
+	return resultBab, members, cardIDMapping, err
 }

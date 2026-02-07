@@ -1,4 +1,4 @@
-@import '../../styles/z-index';
+@use '../../styles/z-index' as *;
 
 .CardDetail {
     .title {
@@ -31,8 +31,6 @@
         flex-direction: column;
         width: 100%;
     }
-
-
 
     .octo-propertyvalue {
         font-size: 14px;
@@ -115,6 +113,17 @@
         .Label {
             margin: 0 4px 0 0;
         }
+
+        &--required-empty {
+            .octo-propertyvalue {
+                border: 1px solid var(--error-text);
+                border-radius: 4px;
+                background-color: rgba(
+                    var(--error-text-color-rgb, 210, 75, 78),
+                    0.08
+                );
+            }
+        }
     }
 
     .Person {
@@ -147,9 +156,16 @@
         }
 
         &.add-property {
+            padding-left: 0;
             margin: 8px 0 0;
             color: rgba(var(--center-channel-color-rgb), 0.4);
             position: relative;
+        }
+
+        &--required {
+            color: var(--error-text);
+            margin-left: 2px;
+            font-weight: bold;
         }
     }
 
@@ -228,5 +244,13 @@
 
     .BlocksEditor {
         width: 100%;
+        min-height: 300px;
+    }
+
+    /* BlockSuite 에디터 - 스크롤 비활성화 (카드 디테일에서 스크롤) */
+    .blocksuite-editor-wrapper {
+        min-height: 300px;
+        height: auto;
+        overflow: visible !important;
     }
 }

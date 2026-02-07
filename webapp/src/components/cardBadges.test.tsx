@@ -41,6 +41,9 @@ describe('components/cardBadges', () => {
             cards: blocksById([card, emptyCard]),
             templates: {},
             cardHiddenWarning: true,
+            modifiedCardIds: [],
+            subCardsByParent: {},
+            subCardCountByParent: {},
         },
         comments: {
             comments: blocksById(comments),

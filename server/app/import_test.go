@@ -142,72 +142,90 @@ func TestApp_ImportArchive(t *testing.T) {
 		require.Equal(t, board.ID, newBoard.ID, "Board ID should be same")
 	})
 
-	t.Run("fix image and attachment", func(t *testing.T) {
-		boardMap := map[string]*model.Board{
-			"test": board,
-		}
+}
 
-		fileMap := map[string]string{
-			"oldFileName1.jpg": "newFileName1.jpg",
-			"oldFileName2.jpg": "newFileName2.jpg",
-		}
+func TestApp_FixImagesAttachments(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
 
-		imageBlock := &model.Block{
-			ID:         "blockID-1",
-			ParentID:   "c3zqnh6fsu3f4mr6hzq9hizwske",
-			CreatedBy:  "6k6ynxdp47dujjhhojw9nqhmyh",
-			ModifiedBy: "6k6ynxdp47dujjhhojw9nqhmyh",
-			Schema:     1,
-			Type:       "image",
-			Title:      "",
-			Fields:     map[string]interface{}{"fileId": "oldFileName1.jpg"},
-			CreateAt:   1680725585250,
-			UpdateAt:   1680725585250,
-			DeleteAt:   0,
-			BoardID:    "board-id",
-		}
+	fixBoard := &model.Board{
+		ID:         "fix-board-id-123456789012345",
+		TeamID:     "test-team",
+		Title:      "Fix Test Board",
+		IsTemplate: false,
+	}
 
-		attachmentBlock := &model.Block{
-			ID:         "blockID-2",
-			ParentID:   "c3zqnh6fsu3f4mr6hzq9hizwske",
-			CreatedBy:  "6k6ynxdp47dujjhhojw9nqhmyh",
-			ModifiedBy: "6k6ynxdp47dujjhhojw9nqhmyh",
-			Schema:     1,
-			Type:       "attachment",
-			Title:      "",
-			Fields:     map[string]interface{}{"fileId": "oldFileName2.jpg"},
-			CreateAt:   1680725585250,
-			UpdateAt:   1680725585250,
-			DeleteAt:   0,
-			BoardID:    "board-id",
-		}
+	boardMap := map[string]*model.Board{
+		"test": fixBoard,
+	}
 
-		blockIDs := []string{"blockID-1", "blockID-2"}
+	// Use valid file IDs format: 7 + 26-char valid Mattermost ID + extension
+	// Valid Mattermost IDs use base62 characters (a-z, A-Z, 0-9)
+	oldFileID1 := "7xhwgf5r15fr3dryfozf1dmy41r.jpg"
+	oldFileID2 := "7yhwgf5r15fr3dryfozf1dmy42r.jpg"
+	newFileID1 := "7ahwgf5r15fr3dryfozf1dmy43r.jpg"
+	newFileID2 := "7bhwgf5r15fr3dryfozf1dmy44r.jpg"
 
-		blockPatch := model.BlockPatch{
-			UpdatedFields: map[string]interface{}{"fileId": "newFileName1.jpg"},
-		}
+	fileMap := map[string]string{
+		oldFileID1: newFileID1,
+		oldFileID2: newFileID2,
+	}
 
-		blockPatch2 := model.BlockPatch{
-			UpdatedFields: map[string]interface{}{"fileId": "newFileName2.jpg"},
-		}
+	imageBlock := &model.Block{
+		ID:         "blockID-1",
+		ParentID:   "c3zqnh6fsu3f4mr6hzq9hizwske",
+		CreatedBy:  "6k6ynxdp47dujjhhojw9nqhmyh",
+		ModifiedBy: "6k6ynxdp47dujjhhojw9nqhmyh",
+		Schema:     1,
+		Type:       "image",
+		Title:      "",
+		Fields:     map[string]interface{}{"fileId": oldFileID1},
+		CreateAt:   1680725585250,
+		UpdateAt:   1680725585250,
+		DeleteAt:   0,
+		BoardID:    fixBoard.ID,
+	}
 
-		blockPatches := []model.BlockPatch{blockPatch, blockPatch2}
+	attachmentBlock := &model.Block{
+		ID:         "blockID-2",
+		ParentID:   "c3zqnh6fsu3f4mr6hzq9hizwske",
+		CreatedBy:  "6k6ynxdp47dujjhhojw9nqhmyh",
+		ModifiedBy: "6k6ynxdp47dujjhhojw9nqhmyh",
+		Schema:     1,
+		Type:       "attachment",
+		Title:      "",
+		Fields:     map[string]interface{}{"fileId": oldFileID2},
+		CreateAt:   1680725585250,
+		UpdateAt:   1680725585250,
+		DeleteAt:   0,
+		BoardID:    fixBoard.ID,
+	}
 
-		blockPatchesBatch := model.BlockPatchBatch{BlockIDs: blockIDs, BlockPatches: blockPatches}
+	blockIDs := []string{"blockID-1", "blockID-2"}
 
-		opts := model.QueryBlocksOptions{
-			BoardID: board.ID,
-		}
-		th.Store.EXPECT().GetBlocks(opts).Return([]*model.Block{imageBlock, attachmentBlock}, nil)
-		th.Store.EXPECT().GetBlocksByIDs(blockIDs).Return([]*model.Block{imageBlock, attachmentBlock}, nil)
-		th.Store.EXPECT().GetBlock(blockIDs[0]).Return(imageBlock, nil)
-		th.Store.EXPECT().GetBlock(blockIDs[1]).Return(attachmentBlock, nil)
-		th.Store.EXPECT().GetMembersForBoard("board-id").AnyTimes().Return([]*model.BoardMember{}, nil)
+	blockPatch := model.BlockPatch{
+		UpdatedFields: map[string]interface{}{"fileId": newFileID1},
+	}
 
-		th.Store.EXPECT().PatchBlocks(&blockPatchesBatch, "my-userid")
-		th.App.fixImagesAttachments(boardMap, fileMap, "test-team", "my-userid")
-	})
+	blockPatch2 := model.BlockPatch{
+		UpdatedFields: map[string]interface{}{"fileId": newFileID2},
+	}
+
+	blockPatches := []model.BlockPatch{blockPatch, blockPatch2}
+
+	blockPatchesBatch := model.BlockPatchBatch{BlockIDs: blockIDs, BlockPatches: blockPatches}
+
+	opts := model.QueryBlocksOptions{
+		BoardID: fixBoard.ID,
+	}
+	th.Store.EXPECT().GetBlocks(opts).Return([]*model.Block{imageBlock, attachmentBlock}, nil)
+	th.Store.EXPECT().GetBlocksByIDs(blockIDs).Return([]*model.Block{imageBlock, attachmentBlock}, nil)
+	th.Store.EXPECT().GetBlock(blockIDs[0]).Return(imageBlock, nil)
+	th.Store.EXPECT().GetBlock(blockIDs[1]).Return(attachmentBlock, nil)
+	th.Store.EXPECT().GetMembersForBoard(fixBoard.ID).AnyTimes().Return([]*model.BoardMember{}, nil)
+
+	th.Store.EXPECT().PatchBlocks(&blockPatchesBatch, "my-userid")
+	th.App.fixImagesAttachments(boardMap, fileMap, "test-team", "my-userid")
 }
 
 //nolint:lll

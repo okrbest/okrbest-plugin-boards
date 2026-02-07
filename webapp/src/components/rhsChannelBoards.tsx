@@ -32,9 +32,10 @@ import boardsScreenshots from '../../static/boards-screenshots.png'
 
 import {getMessages} from '../i18n'
 
+import {getCurrentRHSView, getSelectedBoard, showBoardsList} from '../store/rhs'
+
 import RHSChannelBoardItem from './rhsChannelBoardItem'
 import RHSBoardCards from './rhsBoardCards'
-import {getCurrentRHSView, getSelectedBoard, showBoardsList} from '../store/rhs'
 
 
 import './rhsChannelBoards.scss'

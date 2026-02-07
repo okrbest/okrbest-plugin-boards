@@ -11,7 +11,13 @@ const Number = (props: PropertyProps): JSX.Element => {
     return (
         <BaseTextEditor
             {...props}
-            validator={() => props.propertyValue === '' || !isNaN(parseInt(props.propertyValue as string, 10))}
+            validator={(value: string) => {
+                // 빈 값은 허용 (필수 여부는 required 속성으로 처리)
+                if (!value || value.trim() === '') {
+                    return true
+                }
+                return !isNaN(parseInt(value, 10))
+            }}
         />
     )
 }

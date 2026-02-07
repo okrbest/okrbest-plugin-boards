@@ -1,4 +1,4 @@
-@import '../../styles/z-index';
+@use '../../styles/z-index' as *;
 
 .Table {
     margin-top: 16px;

@@ -99,6 +99,7 @@ interface IPropertyTemplate {
     type: PropertyTypeEnum
     options: IPropertyOption[]
     index?: number
+    required?: boolean
 }
 
 function createBoard(board?: Board): Board {
@@ -123,6 +124,7 @@ function createBoard(board?: Board): Board {
                 name: o.name,
                 type: o.type,
                 options: o.options ? o.options.map((option) => ({...option})) : [],
+                required: o.required,
             }
         })
     }
@@ -168,14 +170,16 @@ function isPropertyEqual(propA: IPropertyTemplate, propB: IPropertyTemplate): bo
         return false
     }
 
-    for (const opt of propA.options) {
-        const optionB = propB.options.find((o) => o.id === opt.id)
-        if (!optionB) {
+    for (let i = 0; i < propA.options.length; i++) {
+        const optA = propA.options[i]
+        const optB = propB.options[i]
+
+        if (optA.id !== optB.id) {
             return false
         }
 
-        for (const val of Object.keys(opt)) {
-            if ((opt as any)[val] !== (optionB as any)[val]) {
+        for (const val of Object.keys(optA)) {
+            if ((optA as any)[val] !== (optB as any)[val]) {
                 return false
             }
         }

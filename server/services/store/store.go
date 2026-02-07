@@ -46,7 +46,7 @@ type Store interface {
 	GetBoardAndCardByID(blockID string) (board *model.Board, card *model.Block, err error)
 	GetBoardAndCard(block *model.Block) (board *model.Board, card *model.Block, err error)
 	// @withTransaction
-	DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, error)
+	DuplicateBoard(boardID string, userID string, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, map[string]string, error)
 	// @withTransaction
 	DuplicateBlock(boardID string, blockID string, userID string, asTemplate bool) ([]*model.Block, error)
 	// @withTransaction
@@ -128,6 +128,7 @@ type Store interface {
 	// BlockSuite document operations
 	GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error)
 	GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocInfo, error)
+	GetBlockSuiteDocsByBoardID(boardID string) ([]*model.BlockSuiteDoc, error)
 	// @withTransaction
 	UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error
 	DeleteBlockSuiteDocByCardID(cardID string) error
@@ -161,6 +162,9 @@ type Store interface {
 	GetCardLimitTimestamp() (int64, error)
 	UpdateCardLimitTimestamp(cardLimit int) (int64, error)
 
+	GetBlockSuiteMigrationStatus() (*model.BlockSuiteMigrationStatus, error)
+	GetUnmigratedCardsWithContentBlocks(limit int, offset int) ([]*model.UnmigratedCard, int64, error)
+
 	DBType() string
 	DBVersion() string
 
@@ -180,6 +184,12 @@ type Store interface {
 	// For unit testing only
 	DeleteBoardRecord(boardID, modifiedBy string) error
 	DeleteBlockRecord(blockID, modifiedBy string) error
+
+	// Scheduled comments
+	GetScheduledComments(beforeTime int64) ([]*model.Block, error)
+	GetScheduledCommentsByUser(userID string) ([]*model.Block, error)
+	GetScheduledCommentsForCard(cardID string) ([]*model.Block, error)
+	GetScheduledCommentsCountByUser(userID string) (int, error)
 }
 
 type NotSupportedError struct {

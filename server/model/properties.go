@@ -20,6 +20,7 @@ var ErrInvalidProperty = errors.New("invalid property")
 var ErrInvalidPropertyValue = errors.New("invalid property value")
 var ErrInvalidPropertyValueType = errors.New("invalid property value type")
 var ErrInvalidDate = errors.New("invalid date property")
+var ErrRequiredPropertyMissing = errors.New("required property is missing")
 
 // PropValueResolver allows PropDef.GetValue to further decode property values, such as
 // looking up usernames from ids.
@@ -51,11 +52,12 @@ type PropDefOption struct {
 
 // PropDef represents a property definition as defined in a board's Fields member.
 type PropDef struct {
-	ID      string                   `json:"id"`
-	Index   int                      `json:"index"`
-	Name    string                   `json:"name"`
-	Type    string                   `json:"type"`
-	Options map[string]PropDefOption `json:"options"`
+	ID       string                   `json:"id"`
+	Index    int                      `json:"index"`
+	Name     string                   `json:"name"`
+	Type     string                   `json:"type"`
+	Options  map[string]PropDefOption `json:"options"`
+	Required bool                     `json:"required"`
 }
 
 // GetValue resolves the value of a property if the passed value is an ID for an option,
@@ -83,11 +85,62 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 		return pd.ParseDate(date)
 
 	case "person":
-		// v is a userid
-		userID, ok := v.(string)
-		if !ok {
+		// v is a userid, or a JSON-encoded value
+		var userID string
+		switch typed := v.(type) {
+		case string:
+			if typed == "" {
+				return "", nil
+			}
+			trimmed := strings.TrimSpace(typed)
+			switch {
+			case strings.HasPrefix(trimmed, "["):
+				var ids []string
+				if err := json.Unmarshal([]byte(trimmed), &ids); err != nil {
+					return "", ErrInvalidPropertyValueType
+				}
+				if len(ids) > 0 {
+					userID = ids[0]
+				}
+			case strings.HasPrefix(trimmed, "{"):
+				var obj map[string]interface{}
+				if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
+					return "", ErrInvalidPropertyValueType
+				}
+				if id, ok := obj["id"].(string); ok {
+					userID = id
+				} else if id, ok := obj["userId"].(string); ok {
+					userID = id
+				}
+			default:
+				userID = typed
+			}
+		case []interface{}:
+			if len(typed) > 0 {
+				id, ok := typed[0].(string)
+				if !ok {
+					return "", ErrInvalidPropertyValueType
+				}
+				userID = id
+			}
+		case []string:
+			if len(typed) > 0 {
+				userID = typed[0]
+			}
+		case map[string]interface{}:
+			if id, ok := typed["id"].(string); ok {
+				userID = id
+			} else if id, ok := typed["userId"].(string); ok {
+				userID = id
+			}
+		default:
 			return "", ErrInvalidPropertyValueType
 		}
+
+		if userID == "" {
+			return "", nil
+		}
+
 		if resolver != nil {
 			user, err := resolver.GetUserByID(userID)
 			if err != nil {
@@ -101,30 +154,49 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 		return userID, nil
 
 	case "multiPerson":
-		// v is a slice of user IDs
-		userIDs, ok := v.([]interface{})
-		if !ok {
+		// v is a slice of user IDs or a JSON-encoded string
+		var userIDs []string
+		switch typed := v.(type) {
+		case []interface{}:
+			userIDs = make([]string, 0, len(typed))
+			for _, item := range typed {
+				id, ok := item.(string)
+				if !ok {
+					return "", fmt.Errorf("multiPerson property type: %w", ErrInvalidPropertyValueType)
+				}
+				userIDs = append(userIDs, id)
+			}
+		case []string:
+			userIDs = typed
+		case string:
+			if typed == "" {
+				return "", nil
+			}
+			if err := json.Unmarshal([]byte(typed), &userIDs); err != nil {
+				return "", fmt.Errorf("multiPerson property type: %w", ErrInvalidPropertyValueType)
+			}
+		default:
 			return "", fmt.Errorf("multiPerson property type: %w", ErrInvalidPropertyValueType)
 		}
-		if resolver != nil {
-			usernames := make([]string, len(userIDs))
 
-			for i, userIDInterface := range userIDs {
-				userID := userIDInterface.(string)
-
-				user, err := resolver.GetUserByID(userID)
-				if err != nil {
-					return "", err
-				}
-				if user == nil {
-					usernames[i] = userID
-				} else {
-					usernames[i] = user.Username
-				}
-			}
-
-			return strings.Join(usernames, ", "), nil
+		if resolver == nil {
+			return strings.Join(userIDs, ", "), nil
 		}
+
+		usernames := make([]string, len(userIDs))
+		for i, userID := range userIDs {
+			user, err := resolver.GetUserByID(userID)
+			if err != nil {
+				return "", err
+			}
+			if user == nil {
+				usernames[i] = userID
+			} else {
+				usernames[i] = user.Username
+			}
+		}
+
+		return strings.Join(usernames, ", "), nil
 
 	case "multiSelect":
 		// v is a slice of strings containing option ids
@@ -257,11 +329,12 @@ func ParsePropertySchema(board *Board) (PropSchema, error) {
 
 	for i, prop := range board.CardProperties {
 		pd := PropDef{
-			ID:      getMapString("id", prop),
-			Index:   i,
-			Name:    getMapString("name", prop),
-			Type:    getMapString("type", prop),
-			Options: make(map[string]PropDefOption),
+			ID:       getMapString("id", prop),
+			Index:    i,
+			Name:     getMapString("name", prop),
+			Type:     getMapString("type", prop),
+			Options:  make(map[string]PropDefOption),
+			Required: getMapBool("required", prop),
 		}
 		optsIface, ok := prop["options"]
 		if ok {
@@ -299,6 +372,82 @@ func getMapString(key string, m map[string]interface{}) string {
 		return ""
 	}
 	return s
+}
+
+func getMapBool(key string, m map[string]interface{}) bool {
+	iface, ok := m[key]
+	if !ok {
+		return false
+	}
+
+	b, ok := iface.(bool)
+	if !ok {
+		return false
+	}
+	return b
+}
+
+// IsPropertyValueEmpty checks if a property value is considered empty.
+func IsPropertyValueEmpty(value interface{}) bool {
+	if value == nil {
+		return true
+	}
+
+	switch v := value.(type) {
+	case string:
+		return v == ""
+	case []interface{}:
+		return len(v) == 0
+	case []string:
+		return len(v) == 0
+	default:
+		return false
+	}
+}
+
+// ValidateRequiredProperties checks if all required properties have values.
+// Returns a list of missing required property names.
+func ValidateRequiredProperties(block *Block, schema PropSchema) []string {
+	var missing []string
+
+	if block == nil {
+		return missing
+	}
+
+	propsIface, ok := block.Fields["properties"]
+	if !ok {
+		// No properties at all - check if any required properties exist
+		for _, def := range schema {
+			if def.Required {
+				missing = append(missing, def.Name)
+			}
+		}
+		return missing
+	}
+
+	blockProps, ok := propsIface.(map[string]interface{})
+	if !ok {
+		// Properties field is wrong type - consider all required as missing
+		for _, def := range schema {
+			if def.Required {
+				missing = append(missing, def.Name)
+			}
+		}
+		return missing
+	}
+
+	for _, def := range schema {
+		if !def.Required {
+			continue
+		}
+
+		value, exists := blockProps[def.ID]
+		if !exists || IsPropertyValueEmpty(value) {
+			missing = append(missing, def.Name)
+		}
+	}
+
+	return missing
 }
 
 // ParseProperties parses a block's `Fields` to extract the properties. Properties typically exist on

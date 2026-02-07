@@ -38,6 +38,7 @@ func TestCreateCard(t *testing.T) {
 
 	t.Run("success scenario", func(t *testing.T) {
 		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil)
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block"))
 		th.Store.EXPECT().InsertBlock(gomock.AssignableToTypeOf(reflect.TypeOf(block)), userID).Return(nil)
 		th.Store.EXPECT().GetMembersForBoard(board.ID).Return([]*model.BoardMember{}, nil)
 
@@ -52,6 +53,7 @@ func TestCreateCard(t *testing.T) {
 
 	t.Run("error scenario", func(t *testing.T) {
 		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil)
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block"))
 		th.Store.EXPECT().InsertBlock(gomock.AssignableToTypeOf(reflect.TypeOf(block)), userID).Return(blockError{"error"})
 
 		newCard, err := th.App.CreateCard(card, board.ID, userID, false)
@@ -71,7 +73,6 @@ func TestGetCards(t *testing.T) {
 
 	const cardCount = 25
 
-	// make some cards
 	blocks := make([]*model.Block, 0, cardCount)
 	for i := 0; i < cardCount; i++ {
 		card := &model.Block{
@@ -88,6 +89,7 @@ func TestGetCards(t *testing.T) {
 	t.Run("success scenario", func(t *testing.T) {
 		opts := model.QueryBlocksOptions{
 			BoardID:   board.ID,
+			ParentID:  board.ID,
 			BlockType: model.TypeCard,
 		}
 
@@ -101,6 +103,7 @@ func TestGetCards(t *testing.T) {
 	t.Run("error scenario", func(t *testing.T) {
 		opts := model.QueryBlocksOptions{
 			BoardID:   board.ID,
+			ParentID:  board.ID,
 			BlockType: model.TypeCard,
 		}
 
@@ -266,4 +269,428 @@ func modifyProps(m map[string]any) map[string]any {
 		out[k] = utils.NewID(utils.IDTypeBlock)
 	}
 	return out
+}
+
+func TestCreateSubCard(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	board := &model.Board{
+		ID: utils.NewID(utils.IDTypeBoard),
+	}
+	userID := utils.NewID(utils.IDTypeUser)
+
+	parentCard := &model.Card{
+		ID:         utils.NewID(utils.IDTypeCard),
+		BoardID:    board.ID,
+		Title:      "parent card",
+		Depth:      0,
+		Properties: makeProps(2),
+	}
+	parentBlock := model.Card2Block(parentCard)
+
+	subCard := &model.Card{
+		BoardID: board.ID,
+		Title:   "sub card",
+	}
+
+	t.Run("success scenario", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(parentBlock, nil)
+		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil)
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block"))
+		th.Store.EXPECT().InsertBlock(gomock.Any(), userID).Return(nil)
+		th.Store.EXPECT().GetMembersForBoard(board.ID).Return([]*model.BoardMember{}, nil)
+
+		newCard, err := th.App.CreateSubCard(subCard, parentCard.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.NotNil(t, newCard)
+		require.Equal(t, board.ID, newCard.BoardID)
+		require.Equal(t, parentCard.ID, newCard.ParentCardID)
+		require.Equal(t, 1, newCard.Depth)
+	})
+
+	t.Run("parent not found", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(nil, model.NewErrNotFound("not found"))
+
+		newCard, err := th.App.CreateSubCard(subCard, parentCard.ID, board.ID, userID, false)
+
+		require.Error(t, err)
+		require.Nil(t, newCard)
+		require.True(t, model.IsErrNotFound(err))
+	})
+
+	t.Run("max depth exceeded", func(t *testing.T) {
+		deepParentCard := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Title:   "deep parent",
+			Depth:   model.MaxCardDepth,
+		}
+		deepParentBlock := model.Card2Block(deepParentCard)
+
+		th.Store.EXPECT().GetBlock(deepParentCard.ID).Return(deepParentBlock, nil)
+
+		newCard, err := th.App.CreateSubCard(subCard, deepParentCard.ID, board.ID, userID, false)
+
+		require.Error(t, err)
+		require.Nil(t, newCard)
+	})
+
+	t.Run("board mismatch", func(t *testing.T) {
+		differentBoardID := utils.NewID(utils.IDTypeBoard)
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(parentBlock, nil)
+
+		newCard, err := th.App.CreateSubCard(subCard, parentCard.ID, differentBoardID, userID, false)
+
+		require.Error(t, err)
+		require.Nil(t, newCard)
+	})
+}
+
+func TestGetSubCards(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	parentCardID := utils.NewID(utils.IDTypeCard)
+	boardID := utils.NewID(utils.IDTypeBoard)
+
+	const subCardCount = 5
+	blocks := make([]*model.Block, 0, subCardCount)
+	for i := 0; i < subCardCount; i++ {
+		fields := map[string]any{
+			"depth":        1,
+			"properties":   map[string]any{},
+			"contentOrder": []string{},
+		}
+		block := &model.Block{
+			ID:       utils.NewID(utils.IDTypeCard),
+			ParentID: parentCardID,
+			BoardID:  boardID,
+			Type:     model.TypeCard,
+			Title:    fmt.Sprintf("sub card %d", i),
+			Fields:   fields,
+		}
+		blocks = append(blocks, block)
+	}
+
+	t.Run("success scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			Page:      0,
+			PerPage:   100,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(blocks, nil)
+
+		cards, err := th.App.GetSubCards(parentCardID, 0, 100)
+		require.NoError(t, err)
+		assert.Len(t, cards, subCardCount)
+	})
+
+	t.Run("empty result", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			Page:      0,
+			PerPage:   100,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return([]*model.Block{}, nil)
+
+		cards, err := th.App.GetSubCards(parentCardID, 0, 100)
+		require.NoError(t, err)
+		assert.Len(t, cards, 0)
+	})
+
+	t.Run("error scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			Page:      0,
+			PerPage:   100,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(nil, blockError{"error"})
+
+		cards, err := th.App.GetSubCards(parentCardID, 0, 100)
+		require.Error(t, err)
+		require.Nil(t, cards)
+	})
+}
+
+func TestGetSubCardCount(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	parentCardID := utils.NewID(utils.IDTypeCard)
+	boardID := utils.NewID(utils.IDTypeBoard)
+
+	const subCardCount = 3
+	blocks := make([]*model.Block, 0, subCardCount)
+	for i := 0; i < subCardCount; i++ {
+		fields := map[string]any{
+			"depth":        1,
+			"properties":   map[string]any{},
+			"contentOrder": []string{},
+		}
+		block := &model.Block{
+			ID:       utils.NewID(utils.IDTypeCard),
+			ParentID: parentCardID,
+			BoardID:  boardID,
+			Type:     model.TypeCard,
+			Fields:   fields,
+		}
+		blocks = append(blocks, block)
+	}
+
+	t.Run("success scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			PerPage:   -1,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(blocks, nil)
+
+		count, err := th.App.GetSubCardCount(parentCardID)
+		require.NoError(t, err)
+		assert.Equal(t, subCardCount, count)
+	})
+
+	t.Run("zero count", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			PerPage:   -1,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return([]*model.Block{}, nil)
+
+		count, err := th.App.GetSubCardCount(parentCardID)
+		require.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("error scenario", func(t *testing.T) {
+		opts := model.QueryBlocksOptions{
+			ParentID:  parentCardID,
+			BlockType: model.TypeCard,
+			PerPage:   -1,
+		}
+
+		th.Store.EXPECT().GetBlocks(opts).Return(nil, blockError{"error"})
+
+		count, err := th.App.GetSubCardCount(parentCardID)
+		require.Error(t, err)
+		assert.Equal(t, 0, count)
+	})
+}
+
+func TestLinkCardAsSubCard(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	board := &model.Board{
+		ID: utils.NewID(utils.IDTypeBoard),
+	}
+	userID := utils.NewID(utils.IDTypeUser)
+
+	parentCard := &model.Card{
+		ID:         utils.NewID(utils.IDTypeCard),
+		BoardID:    board.ID,
+		Title:      "parent card",
+		Depth:      0,
+		Properties: map[string]any{},
+	}
+	parentBlock := model.Card2Block(parentCard)
+
+	cardToLink := &model.Card{
+		ID:         utils.NewID(utils.IDTypeCard),
+		BoardID:    board.ID,
+		Title:      "card to link",
+		Depth:      0,
+		Properties: map[string]any{},
+	}
+	cardToLinkBlock := model.Card2Block(cardToLink)
+
+	t.Run("success scenario", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(cardToLink.ID).Return(cardToLinkBlock, nil).Times(3)
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(parentBlock, nil).Times(2)
+		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil)
+		th.Store.EXPECT().PatchBlock(cardToLink.ID, gomock.Any(), userID).Return(nil)
+		th.Store.EXPECT().GetMembersForBoard(board.ID).Return([]*model.BoardMember{}, nil)
+
+		linkedCard, err := th.App.LinkCardAsSubCard(cardToLink.ID, parentCard.ID, userID)
+
+		require.NoError(t, err)
+		require.NotNil(t, linkedCard)
+		require.Equal(t, parentCard.ID, linkedCard.ParentCardID)
+		require.Equal(t, 1, linkedCard.Depth)
+	})
+
+	t.Run("cannot link to self", func(t *testing.T) {
+		linkedCard, err := th.App.LinkCardAsSubCard(cardToLink.ID, cardToLink.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, linkedCard)
+	})
+
+	t.Run("card not found", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(cardToLink.ID).Return(nil, model.NewErrNotFound("not found"))
+
+		linkedCard, err := th.App.LinkCardAsSubCard(cardToLink.ID, parentCard.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, linkedCard)
+		require.True(t, model.IsErrNotFound(err))
+	})
+
+	t.Run("parent not found", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(cardToLink.ID).Return(cardToLinkBlock, nil)
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(nil, model.NewErrNotFound("not found"))
+
+		linkedCard, err := th.App.LinkCardAsSubCard(cardToLink.ID, parentCard.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, linkedCard)
+		require.True(t, model.IsErrNotFound(err))
+	})
+
+	t.Run("different board", func(t *testing.T) {
+		differentBoardCard := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    utils.NewID(utils.IDTypeBoard),
+			Title:      "different board card",
+			Depth:      0,
+			Properties: map[string]any{},
+		}
+		differentBoardBlock := model.Card2Block(differentBoardCard)
+
+		th.Store.EXPECT().GetBlock(cardToLink.ID).Return(cardToLinkBlock, nil)
+		th.Store.EXPECT().GetBlock(differentBoardCard.ID).Return(differentBoardBlock, nil)
+
+		linkedCard, err := th.App.LinkCardAsSubCard(cardToLink.ID, differentBoardCard.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, linkedCard)
+	})
+
+	t.Run("card already sub-card", func(t *testing.T) {
+		alreadySubCard := &model.Card{
+			ID:           utils.NewID(utils.IDTypeCard),
+			BoardID:      board.ID,
+			Title:        "already sub-card",
+			Depth:        1,
+			ParentCardID: utils.NewID(utils.IDTypeCard),
+			Properties:   map[string]any{},
+		}
+		alreadySubCardBlock := model.Card2Block(alreadySubCard)
+
+		th.Store.EXPECT().GetBlock(alreadySubCard.ID).Return(alreadySubCardBlock, nil)
+		th.Store.EXPECT().GetBlock(parentCard.ID).Return(parentBlock, nil)
+
+		linkedCard, err := th.App.LinkCardAsSubCard(alreadySubCard.ID, parentCard.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, linkedCard)
+	})
+
+	t.Run("max depth exceeded", func(t *testing.T) {
+		deepParent := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    board.ID,
+			Title:      "deep parent",
+			Depth:      model.MaxCardDepth,
+			Properties: map[string]any{},
+		}
+		deepParentBlock := model.Card2Block(deepParent)
+
+		th.Store.EXPECT().GetBlock(cardToLink.ID).Return(cardToLinkBlock, nil)
+		th.Store.EXPECT().GetBlock(deepParent.ID).Return(deepParentBlock, nil)
+
+		linkedCard, err := th.App.LinkCardAsSubCard(cardToLink.ID, deepParent.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, linkedCard)
+	})
+}
+
+func TestUnlinkSubCard(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	board := &model.Board{
+		ID: utils.NewID(utils.IDTypeBoard),
+	}
+	userID := utils.NewID(utils.IDTypeUser)
+
+	parentCardID := utils.NewID(utils.IDTypeCard)
+	subCard := &model.Card{
+		ID:           utils.NewID(utils.IDTypeCard),
+		BoardID:      board.ID,
+		Title:        "sub card",
+		Depth:        1,
+		ParentCardID: parentCardID,
+		Properties:   map[string]any{},
+	}
+	subCardBlock := model.Card2Block(subCard)
+
+	unlinkedBlock := &model.Block{
+		ID:       subCard.ID,
+		BoardID:  board.ID,
+		ParentID: board.ID,
+		Type:     model.TypeCard,
+		Title:    subCard.Title,
+		Fields: map[string]any{
+			"depth":        0,
+			"properties":   map[string]any{},
+			"contentOrder": []string{},
+		},
+	}
+
+	t.Run("success scenario", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(subCard.ID).Return(subCardBlock, nil).Times(2)
+		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil)
+		th.Store.EXPECT().PatchBlock(subCard.ID, gomock.Any(), userID).Return(nil)
+		th.Store.EXPECT().GetMembersForBoard(board.ID).Return([]*model.BoardMember{}, nil)
+		th.Store.EXPECT().GetBlock(subCard.ID).Return(unlinkedBlock, nil)
+
+		unlinkedCard, err := th.App.UnlinkSubCard(subCard.ID, userID)
+
+		require.NoError(t, err)
+		require.NotNil(t, unlinkedCard)
+		require.Equal(t, "", unlinkedCard.ParentCardID)
+		require.Equal(t, 0, unlinkedCard.Depth)
+	})
+
+	t.Run("card not found", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(subCard.ID).Return(nil, model.NewErrNotFound("not found"))
+
+		unlinkedCard, err := th.App.UnlinkSubCard(subCard.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, unlinkedCard)
+		require.True(t, model.IsErrNotFound(err))
+	})
+
+	t.Run("card not a sub-card", func(t *testing.T) {
+		topLevelCard := &model.Card{
+			ID:           utils.NewID(utils.IDTypeCard),
+			BoardID:      board.ID,
+			Title:        "top level card",
+			Depth:        0,
+			ParentCardID: "",
+			Properties:   map[string]any{},
+		}
+		topLevelBlock := model.Card2Block(topLevelCard)
+
+		th.Store.EXPECT().GetBlock(topLevelCard.ID).Return(topLevelBlock, nil)
+
+		unlinkedCard, err := th.App.UnlinkSubCard(topLevelCard.ID, userID)
+
+		require.Error(t, err)
+		require.Nil(t, unlinkedCard)
+	})
 }

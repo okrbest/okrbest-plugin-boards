@@ -6,6 +6,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
@@ -13,8 +14,9 @@ import (
 )
 
 func (a *API) registerStatisticsRoutes(r *mux.Router) {
-	// statistics
 	r.HandleFunc("/statistics", a.sessionRequired(a.handleStatistics)).Methods("GET")
+	r.HandleFunc("/statistics/migration", a.sessionRequired(a.handleMigrationStatus)).Methods("GET")
+	r.HandleFunc("/migration/unmigrated-cards", a.sessionRequired(a.handleGetUnmigratedCards)).Methods("GET")
 }
 
 func (a *API) handleStatistics(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +62,65 @@ func (a *API) handleStatistics(w http.ResponseWriter, r *http.Request) {
 		Cards:  cardCount,
 	}
 	data, err := json.Marshal(stats)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+}
+
+func (a *API) handleMigrationStatus(w http.ResponseWriter, r *http.Request) {
+	userID := getUserID(r)
+	if !a.permissions.HasPermissionTo(userID, mmModel.PermissionGetAnalytics) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied Migration Status"))
+		return
+	}
+
+	status, err := a.app.GetBlockSuiteMigrationStatus()
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	data, err := json.Marshal(status)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+}
+
+func (a *API) handleGetUnmigratedCards(w http.ResponseWriter, r *http.Request) {
+	userID := getUserID(r)
+	if !a.permissions.HasPermissionTo(userID, mmModel.PermissionGetAnalytics) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied Unmigrated Cards"))
+		return
+	}
+
+	limit := 50
+	offset := 0
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 && parsedLimit <= 100 {
+			limit = parsedLimit
+		}
+	}
+
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil && parsedOffset >= 0 {
+			offset = parsedOffset
+		}
+	}
+
+	response, err := a.app.GetUnmigratedCardsWithContentBlocks(limit, offset)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	data, err := json.Marshal(response)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return

@@ -135,8 +135,17 @@ describe('components/cardDetail/CommentsList', () => {
                     board_id_1: {userId: 'user_id_1', schemeAdmin: true},
                 },
             },
+            cards: {
+                cards: {
+                    card_id_1: {title: 'Card'},
+                },
+                current: 'card_id_1',
+            },
             teams: {
                 current: {id: 'team_id'},
+            },
+            clientConfig: {
+                value: {},
             },
         })
 

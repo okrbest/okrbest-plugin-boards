@@ -1,6 +1,9 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// Ensure global is defined before any other imports
+import './polyfill';
+
 import React, {useEffect} from 'react'
 import {createIntl, createIntlCache} from 'react-intl'
 import {Store, Action} from 'redux'
@@ -51,6 +54,7 @@ import {PluginRegistry} from './types/mattermost-webapp'
 import './plugin.scss'
 import CloudUpgradeNudge from "./components/cloudUpgradeNudge/cloudUpgradeNudge"
 import CreateBoardFromTemplate from './components/createBoardFromTemplate'
+import {patchSlashMenu} from 'blockSuitePatch'
 
 const windowAny = (window as SuiteWindow)
 windowAny.baseURL = process.env.TARGET_IS_PRODUCT ? '/plugins/boards' : '/plugins/focalboard'
@@ -168,8 +172,10 @@ export default class Plugin {
     boardSelectorId?: string
     registry?: PluginRegistry
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
     async initialize(registry: PluginRegistry, mmStore: Store<GlobalState, Action<Record<string, unknown>>>): Promise<void> {
+        // Patch BlockSuite configurations safely during initialization
+        patchSlashMenu();
+
         const siteURL = mmStore.getState().entities.general.config.SiteURL
         const subpath = siteURL ? getSubpath(siteURL) : ''
         windowAny.frontendBaseURL = subpath + windowAny.frontendBaseURL
@@ -385,10 +391,9 @@ export default class Plugin {
         ))
 
         windowAny.getCurrentTeamId = (): string => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
             return mmStore.getState().entities.teams.currentTeamId
         }
+
     }
 
     uninitialize(): void {

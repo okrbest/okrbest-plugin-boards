@@ -21,6 +21,11 @@ import {mockStateStore, wrapDNDIntl} from '../../testUtils'
 
 import BoardSwitcherDialog from './boardSwitcherDialog'
 
+// Mock octoClient to prevent actual API calls
+jest.mock('../../octoClient', () => ({
+    searchAll: jest.fn().mockResolvedValue([]),
+}))
+
 describe('component/BoardSwitcherDialog', () => {
     const team1: Team = {
         id: 'team-id-1',

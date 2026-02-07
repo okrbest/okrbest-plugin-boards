@@ -36,14 +36,26 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/ws"
 	"github.com/oklog/run"
 
+	mmModel "github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 	"github.com/mattermost/mattermost/server/v8/platform/shared/filestore"
 )
 
 const (
-	cleanupSessionTaskFrequency = 10 * time.Minute
-	updateMetricsTaskFrequency  = 15 * time.Minute
+	cleanupSessionTaskFrequency         = 10 * time.Minute
+	updateMetricsTaskFrequency          = 15 * time.Minute
+	processScheduledCommentsFrequency   = 1 * time.Minute
 )
+
+type noOpMutexAPIAdapter struct{}
+
+func (m *noOpMutexAPIAdapter) KVSetWithOptions(key string, value []byte, options mmModel.PluginKVSetOptions) (bool, *mmModel.AppError) {
+	return true, nil
+}
+
+func (m *noOpMutexAPIAdapter) LogError(msg string, keyValuePairs ...interface{}) {
+}
 
 type Server struct {
 	config                 *config.Configuration
@@ -57,6 +69,7 @@ type Server struct {
 	metricsServer          *metrics.Service
 	metricsService         *metrics.Metrics
 	metricsUpdaterTask     *scheduler.ScheduledTask
+	scheduledCommentsTask  *scheduler.ScheduledTask
 	auditService           *audit.Audit
 	notificationService    *notify.Service
 	servicesStartStopMutex sync.Mutex
@@ -129,16 +142,17 @@ func New(params Params) (*Server, error) {
 	}
 
 	appServices := app.Services{
-		Auth:             authenticator,
-		Store:            params.DBStore,
-		FilesBackend:     filesBackend,
-		Webhook:          webhookClient,
-		Metrics:          metricsService,
-		Notifications:    notificationService,
-		Logger:           params.Logger,
-		Permissions:      params.PermissionsService,
-		ServicesAPI:      params.ServicesAPI,
-		SkipTemplateInit: utils.IsRunningUnitTests(),
+		Auth:                 authenticator,
+		Store:                params.DBStore,
+		FilesBackend:         filesBackend,
+		Webhook:              webhookClient,
+		Metrics:              metricsService,
+		Notifications:        notificationService,
+		SubscriptionsBackend: params.SubscriptionsBackend,
+		Logger:               params.Logger,
+		Permissions:          params.PermissionsService,
+		ServicesAPI:          params.ServicesAPI,
+		SkipTemplateInit:     utils.IsRunningUnitTests(),
 	}
 	app := app.New(params.Cfg, wsAdapter, appServices)
 
@@ -224,6 +238,9 @@ func NewStore(config *config.Configuration, logger mlog.LoggerIFace) (store.Stor
 		TablePrefix:      config.DBTablePrefix,
 		Logger:           logger,
 		DB:               sqlDB,
+		NewMutexFn: func(name string) (*cluster.Mutex, error) {
+			return cluster.NewMutex(&noOpMutexAPIAdapter{}, name)
+		},
 	}
 
 	var db store.Store
@@ -276,6 +293,14 @@ func (s *Server) Start() error {
 	// metricsUpdater()   Calling this immediately causes integration unit tests to fail.
 	s.metricsUpdaterTask = scheduler.CreateRecurringTask("updateMetrics", metricsUpdater, updateMetricsTaskFrequency)
 
+	// Start scheduled comments processor
+	scheduledCommentsProcessor := func() {
+		if err := s.app.ProcessScheduledComments(); err != nil {
+			s.logger.Error("Error processing scheduled comments", mlog.Err(err))
+		}
+	}
+	s.scheduledCommentsTask = scheduler.CreateRecurringTask("processScheduledComments", scheduledCommentsProcessor, processScheduledCommentsFrequency)
+
 	if s.config.Telemetry {
 		firstRun := utils.GetMillis()
 		s.telemetry.RunTelemetryJob(firstRun)
@@ -315,6 +340,10 @@ func (s *Server) Shutdown() error {
 
 	if s.metricsUpdaterTask != nil {
 		s.metricsUpdaterTask.Cancel()
+	}
+
+	if s.scheduledCommentsTask != nil {
+		s.scheduledCommentsTask.Cancel()
 	}
 
 	if err := s.telemetry.Shutdown(); err != nil {

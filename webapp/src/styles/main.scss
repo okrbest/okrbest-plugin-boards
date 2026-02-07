@@ -1,6 +1,6 @@
-@import 'typography';
-@import 'modifiers';
-@import 'z-index';
+@use 'typography';
+@use 'modifiers';
+@use 'z-index' as *;
 
 html {
     height: 100%;
@@ -116,6 +116,10 @@ html {
     }
 
     /* Icons */
+
+    .CompassIcon {
+        font-family: 'compass-icons', serif !important;
+    }
 
     .octo-icon {
         font-family: 'Apple Color Emoji', 'Segoe UI Emoji', NotoColorEmoji,

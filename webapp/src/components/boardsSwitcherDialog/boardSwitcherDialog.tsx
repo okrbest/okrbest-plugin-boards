@@ -67,12 +67,26 @@ const BoardSwitcherDialog = (props: Props): JSX.Element => {
         }
 
         const items = await octoClient.searchAll(query)
+        const currentTeamItems: typeof items = []
+        const otherTeamItems: typeof items = []
+        for (const item of items) {
+            if (item.teamId === team.id) {
+                currentTeamItems.push(item)
+            } else {
+                otherTeamItems.push(item)
+            }
+        }
+        const sortedItems = currentTeamItems.concat(otherTeamItems)
         const untitledBoardTitle = intl.formatMessage({id: 'ViewTitle.untitled-board', defaultMessage: 'Untitled board'})
-        refs.current = items.map((_, i) => refs.current[i] ?? createRef())
+        refs.current = sortedItems.map((_, i) => refs.current[i] ?? createRef())
         setRefs(refs)
-        return items.map((item, i) => {
+        return sortedItems.flatMap((item, i) => {
             const resultTitle = item.title || untitledBoardTitle
-            const teamTitle = teamsById[item.teamId].title
+            const teamInfo = teamsById[item.teamId]
+            if (!teamInfo) {
+                return []
+            }
+            const teamTitle = teamInfo.title
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setIDs((prevIDs: any) => ({
                 ...prevIDs,

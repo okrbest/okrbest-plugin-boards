@@ -8,7 +8,9 @@ type CardFields = {
     icon?: string
     isTemplate?: boolean
     properties: Record<string, string | string[]>
-    contentOrder: Array<string | string[]>
+    contentOrder?: Array<string | string[]>
+    parentCardId?: string
+    depth?: number
 }
 
 type Card = Block & {
@@ -16,10 +18,11 @@ type Card = Block & {
 }
 
 function createCard(block?: Block): Card {
-    const contentOrder: Array<string|string[]> = []
     const contentIds = block?.fields?.contentOrder?.filter((id: any) => id !== null)
+    let contentOrder: Array<string|string[]> | undefined
 
     if (contentIds?.length > 0) {
+        contentOrder = []
         for (const contentId of contentIds) {
             if (typeof contentId === 'string') {
                 contentOrder.push(contentId)
@@ -36,6 +39,8 @@ function createCard(block?: Block): Card {
             properties: {...(block?.fields.properties || {})},
             contentOrder,
             isTemplate: block?.fields.isTemplate || false,
+            parentCardId: block?.fields.parentCardId || '',
+            depth: block?.fields.depth || 0,
         },
     }
 }

@@ -153,7 +153,7 @@ bundle:
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_NAME)
 	cp $(MANIFEST_FILE) dist/$(PLUGIN_NAME)/
-	cp -r webapp/pack dist/$(PLUGIN_NAME)/
+	cp -r webapp/dist dist/$(PLUGIN_NAME)/webapp/
 ifneq ($(wildcard LICENSE.txt),)
 	cp -r LICENSE.txt dist/$(PLUGIN_NAME)/
 endif
@@ -172,7 +172,6 @@ ifneq ($(HAS_SERVER),)
 endif
 ifneq ($(HAS_WEBAPP),)
 	mkdir -p dist/$(PLUGIN_NAME)/webapp
-	cp -r webapp/dist dist/$(PLUGIN_NAME)/webapp/
 endif
 	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_NAME)
 

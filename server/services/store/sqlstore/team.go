@@ -202,7 +202,8 @@ func (s *SQLStore) getTeamsForUser(db sq.BaseRunner, userID string) ([]*model.Te
 		From("Teams as t").
 		Join("TeamMembers as tm on t.Id=tm.TeamId").
 		Where(sq.Eq{"tm.UserId": userID}).
-		Where(sq.Eq{"tm.DeleteAt": 0})
+		Where(sq.Eq{"tm.DeleteAt": 0}).
+		Where(sq.Eq{"t.DeleteAt": 0})
 
 	rows, err := query.Query()
 	if err != nil {

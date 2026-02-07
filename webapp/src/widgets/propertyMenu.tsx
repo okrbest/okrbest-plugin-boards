@@ -7,7 +7,7 @@ import {useIntl, IntlShape} from 'react-intl'
 import Menu from '../widgets/menu'
 import propsRegistry from '../properties'
 import {PropertyType} from '../properties/types'
-import {Board} from '../blocks/board'
+import {Board, PropertyTypeEnum} from '../blocks/board'
 import octoClient from '../octoClient'
 import {useAppSelector} from '../store/hooks'
 import {getCurrentTeamId} from '../store/teams'
@@ -15,16 +15,25 @@ import {getCurrentBoard} from '../store/boards'
 import SearchIcon from '../widgets/icons/search'
 import './propertyMenu.scss'
 
+// required 체크를 하지 않는 속성 타입들
+// - 시스템 속성: 자동으로 설정되어 사용자가 입력할 수 없음
+// - 체크박스: true/false 둘 중 하나이므로 "비어있음" 상태가 없음
+export const NON_REQUIRED_PROPERTY_TYPES: PropertyTypeEnum[] = [
+    'createdTime',
+    'createdBy',
+    'updatedTime',
+    'updatedBy',
+    'checkbox',
+]
+
 type Props = {
     propertyId: string
     propertyName: string
     propertyType: PropertyType
+    required?: boolean
     onTypeAndNameChanged: (newType: PropertyType, newName: string) => void
+    onRequiredChanged?: (required: boolean) => void
     onDelete: (id: string) => void
-    onMoveUp: () => void
-    onMoveDown: () => void
-    canMoveUp: boolean
-    canMoveDown: boolean
     onBoardSelected?: (selectedBoard: Board) => void
 }
 
@@ -110,13 +119,9 @@ const PropertyMenu = (props: Props) => {
         id: 'PropertyMenu.Delete',
         defaultMessage: 'Delete',
     })
-    const moveUpText = intl.formatMessage({
-        id: 'PropertyMenu.MoveUp',
-        defaultMessage: 'Move property up',
-    })
-    const moveDownText = intl.formatMessage({
-        id: 'PropertyMenu.MoveDown',
-        defaultMessage: 'Move property down',
+    const requiredText = intl.formatMessage({
+        id: 'PropertyMenu.Required',
+        defaultMessage: 'Required',
     })
     // 선택된 보드 확인 (propertyTemplate.options[0].id에 보드 ID 저장)
     const selectedBoardId = propertyTemplate?.options?.[0]?.id
@@ -239,26 +244,14 @@ const PropertyMenu = (props: Props) => {
                     )}
                 </Menu.SubMenu>
             )}
-            <Menu.Text
-                id='move-up'
-                name={moveUpText}
-                disabled={!props.canMoveUp}
-                onClick={() => {
-                    if (props.canMoveUp) {
-                        props.onMoveUp()
-                    }
-                }}
-            />
-            <Menu.Text
-                id='move-down'
-                name={moveDownText}
-                disabled={!props.canMoveDown}
-                onClick={() => {
-                    if (props.canMoveDown) {
-                        props.onMoveDown()
-                    }
-                }}
-            />
+            {props.onRequiredChanged && !NON_REQUIRED_PROPERTY_TYPES.includes(props.propertyType.type) && (
+                <Menu.Switch
+                    id='required'
+                    name={requiredText}
+                    isOn={props.required || false}
+                    onClick={() => props.onRequiredChanged?.(!props.required)}
+                />
+            )}
             <Menu.Separator/>
             <Menu.Text
                 id='delete'

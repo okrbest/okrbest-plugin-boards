@@ -36,6 +36,7 @@ type notifier struct {
 	permissions permissions.PermissionsService
 	delivery    SubscriptionDelivery
 	logger      mlog.LoggerIFace
+	nameFormat  string
 
 	hints chan *model.NotificationHint
 
@@ -50,6 +51,7 @@ func newNotifier(params BackendParams) *notifier {
 		permissions: params.Permissions,
 		delivery:    params.Delivery,
 		logger:      params.Logger,
+		nameFormat:  params.TeammateNameDisplay,
 		done:        nil,
 		hints:       make(chan *model.NotificationHint, hintQueueSize),
 	}
@@ -125,6 +127,11 @@ func (n *notifier) onNotifyHint(hint *model.NotificationHint) error {
 	return nil
 }
 
+func (n *notifier) NotifyBlockNow(hint *model.NotificationHint) error {
+	n.logger.Debug("NotifyBlockNow - immediate notification", mlog.Any("hint", hint))
+	return n.notifySubscribers(hint)
+}
+
 func (n *notifier) notify() {
 	var hint *model.NotificationHint
 	var err error
@@ -180,6 +187,7 @@ func (n *notifier) notifySubscribers(hint *model.NotificationHint) error {
 		hint:         hint,
 		lastNotifyAt: oldestNotifiedAt,
 		logger:       n.logger,
+		nameFormat:   n.nameFormat,
 	}
 	diffs, err := dg.generateDiffs()
 	if err != nil {

@@ -11,7 +11,7 @@ import Editable from '../widgets/editable'
 
 import {PropertyProps} from './types'
 
-const BaseTextEditor = (props: PropertyProps & {validator: () => boolean, spellCheck?: boolean}): JSX.Element => {
+const BaseTextEditor = (props: PropertyProps & {validator: (value: string) => boolean, spellCheck?: boolean}): JSX.Element => {
     const [value, setValue] = useState(props.card.fields.properties[props.propertyTemplate.id || ''] || '')
     const onCancel = useCallback(() => setValue(props.propertyValue || ''), [props.propertyValue])
 

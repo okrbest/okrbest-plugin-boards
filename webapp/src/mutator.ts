@@ -11,7 +11,6 @@ import {Block, BlockPatch, createPatchesFromBlocks} from './blocks/block'
 import {Board, BoardMember, BoardsAndBlocks, IPropertyOption, IPropertyTemplate, PropertyTypeEnum, createBoard, createPatchesFromBoards, createPatchesFromBoardsAndBlocks, createCardPropertiesPatches} from './blocks/board'
 import {BoardView, ISortOption, createBoardView, KanbanCalculationFields} from './blocks/boardView'
 import {Card, createCard} from './blocks/card'
-import {ContentBlock} from './blocks/contentBlock'
 import {CommentBlock} from './blocks/commentBlock'
 import {AttachmentBlock} from './blocks/attachmentBlock'
 import {FilterGroup} from './blocks/filterGroup'
@@ -27,10 +26,9 @@ import {UserConfigPatch, UserPreference} from './user'
 import store from './store'
 import {updateBoards} from './store/boards'
 import {updateViews} from './store/views'
-import {updateCards} from './store/cards'
+import {updateCards, markCardModified} from './store/cards'
 import {updateAttachments} from './store/attachments'
 import {updateComments} from './store/comments'
-import {updateContents} from './store/contents'
 import {addBoardUsers, removeBoardUsersById} from './store/users'
 
 function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
@@ -40,7 +38,6 @@ function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
         store.dispatch(updateCards(blocks.filter((b: Block) => b.type === 'card' || b.deleteAt !== 0) as Card[]))
         store.dispatch(updateAttachments(blocks.filter((b: Block) => b.type === 'attachment' || b.deleteAt !== 0) as AttachmentBlock[]))
         store.dispatch(updateComments(blocks.filter((b: Block) => b.type === 'comment' || b.deleteAt !== 0) as CommentBlock[]))
-        store.dispatch(updateContents(blocks.filter((b: Block) => b.type !== 'card' && b.type !== 'view' && b.type !== 'board' && b.type !== 'comment') as ContentBlock[]))
     })
 }
 
@@ -133,6 +130,9 @@ class Mutator {
                 const jsonres = await res.json()
                 const newBlock = jsonres[0] as Block
                 await afterRedo?.(newBlock)
+                if (newBlock.parentId) {
+                    store.dispatch(markCardModified(newBlock.parentId))
+                }
                 return newBlock
             },
             async (newBlock: Block) => {
@@ -174,6 +174,9 @@ class Mutator {
             async () => {
                 await beforeRedo?.()
                 await octoClient.deleteBlock(block.boardId, block.id)
+                if (block.parentId) {
+                    store.dispatch(markCardModified(block.parentId))
+                }
             },
             async () => {
                 await octoClient.undeleteBlock(block.boardId, block.id)
@@ -236,9 +239,13 @@ class Mutator {
     }
 
     async changeBlockTitle(boardId: string, blockId: string, oldTitle: string, newTitle: string, description = 'change block title') {
+        if (oldTitle === newTitle) {
+            return
+        }
         await undoManager.perform(
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {title: newTitle})
+                store.dispatch(markCardModified(blockId))
             },
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {title: oldTitle})
@@ -304,6 +311,7 @@ class Mutator {
         await undoManager.perform(
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {updatedFields: {icon}})
+                store.dispatch(markCardModified(blockId))
             },
             async () => {
                 await octoClient.patchBlock(boardId, blockId, {updatedFields: {icon: oldIcon}})
@@ -348,6 +356,7 @@ class Mutator {
         await undoManager.perform(
             async () => {
                 await octoClient.patchBlock(boardId, cardId, {updatedFields: {contentOrder}})
+                store.dispatch(markCardModified(cardId))
             },
             async () => {
                 await octoClient.patchBlock(boardId, cardId, {updatedFields: {contentOrder: oldContentOrder}})
@@ -483,6 +492,7 @@ class Mutator {
             name: `${srcTemplate.name} copy`,
             type: srcTemplate.type,
             options: srcTemplate.options.slice(),
+            required: srcTemplate.required,
         }
         newBoard.cardProperties.splice(index + 1, 0, newTemplate)
 
@@ -585,6 +595,18 @@ class Mutator {
         )
     }
 
+    async changePropertyRequired(board: Board, template: IPropertyTemplate, required: boolean) {
+        const newBoard = createBoard(board)
+        const newTemplate = newBoard.cardProperties.find((o: IPropertyTemplate) => o.id === template.id)
+        if (!newTemplate) {
+            Utils.assertFailure(`changePropertyRequired: template not found: ${template.id}`)
+            return
+        }
+        newTemplate.required = required
+
+        await this.updateBoard(newBoard, board, required ? 'set property required' : 'set property optional')
+    }
+
     // Properties
 
     async updateBoardCardProperties(boardId: string, oldProperties: IPropertyTemplate[], newProperties: IPropertyTemplate[], description = 'update card properties') {
@@ -620,12 +642,23 @@ class Mutator {
     }
 
     async changePropertyOptionOrder(boardId: string, oldCardProperties: IPropertyTemplate[], template: IPropertyTemplate, option: IPropertyOption, destIndex: number) {
-        const srcIndex = template.options.indexOf(option)
+        const srcIndex = template.options.findIndex((o) => o.id === option.id)
         Utils.log(`srcIndex: ${srcIndex}, destIndex: ${destIndex}`)
+        if (srcIndex === -1) {
+            Utils.log('Option not found in template.options')
+            return
+        }
 
         const newCardProperties: IPropertyTemplate[] = cloneDeep(oldCardProperties)
         const newTemplate = newCardProperties.find((o: IPropertyTemplate) => o.id === template.id)!
         newTemplate.options.splice(destIndex, 0, newTemplate.options.splice(srcIndex, 1)[0])
+
+        // Optimistic update: immediately update Redux store for instant UI feedback
+        const currentBoard = store.getState().boards.boards[boardId]
+        if (currentBoard) {
+            const updatedBoard = {...currentBoard, cardProperties: newCardProperties}
+            store.dispatch(updateBoards([updatedBoard as Board]))
+        }
 
         await this.updateBoardCardProperties(boardId, oldCardProperties, newCardProperties, 'reorder option')
     }
@@ -663,7 +696,13 @@ class Mutator {
         } else {
             delete newCard.fields.properties[propertyId]
         }
+
         await this.updateBlock(boardId, newCard, card, description)
+
+        // Redux store 즉시 업데이트 (UI 반영을 위해)
+        store.dispatch(updateCards([newCard]))
+
+        store.dispatch(markCardModified(card.id))
         TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.EditCardProperty, {board: card.boardId, card: card.id})
     }
 
@@ -1079,7 +1118,7 @@ class Mutator {
         fromTemplate = false,
         description = 'duplicate card',
         asTemplate = false,
-        propertyOverrides?: Record<string, string>,
+        propertyOverrides?: Record<string, string | string[]>,
         afterRedo?: (newCardId: string) => Promise<void>,
         beforeUndo?: () => Promise<void>,
     ): Promise<[Block[], string]> {
@@ -1160,19 +1199,6 @@ class Mutator {
                     awaits.push(octoClient.deleteBoard(board.id))
                 }
                 await Promise.all(awaits)
-            },
-            description,
-            this.undoGroupId,
-        )
-    }
-
-    async moveContentBlock(blockId: string, dstBlockId: string, where: 'after'|'before', srcBlockId: string, srcWhere: 'after'|'before', description: string): Promise<void> {
-        return undoManager.perform(
-            async () => {
-                await octoClient.moveBlockTo(blockId, where, dstBlockId)
-            },
-            async () => {
-                await octoClient.moveBlockTo(blockId, srcWhere, srcBlockId)
             },
             description,
             this.undoGroupId,
@@ -1287,6 +1313,195 @@ class Mutator {
 
     async redo() {
         await undoManager.redo()
+    }
+
+    // ========================================
+    // Scheduled Comments
+    // ========================================
+
+    /**
+     * Create a scheduled comment
+     * Note: Scheduled comments are not undoable since they're time-sensitive
+     */
+    async createScheduledComment(
+        boardId: string,
+        cardId: string,
+        title: string,
+        scheduledAt: number,
+    ): Promise<Block | undefined> {
+        const comment = await octoClient.createScheduledComment(boardId, cardId, title, scheduledAt)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Cancel a scheduled comment
+     */
+    async cancelScheduledComment(boardId: string, blockId: string): Promise<Block | undefined> {
+        const comment = await octoClient.cancelScheduledComment(boardId, blockId)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Send a scheduled comment immediately
+     */
+    async sendScheduledCommentNow(boardId: string, blockId: string): Promise<Block | undefined> {
+        const comment = await octoClient.sendScheduledCommentNow(boardId, blockId)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Update a scheduled comment's content or scheduled time
+     */
+    async updateScheduledComment(
+        boardId: string,
+        blockId: string,
+        title?: string,
+        scheduledAt?: number,
+    ): Promise<Block | undefined> {
+        const comment = await octoClient.updateScheduledComment(boardId, blockId, title, scheduledAt)
+        if (comment) {
+            store.dispatch(updateComments([comment as CommentBlock]))
+        }
+        return comment
+    }
+
+    /**
+     * Fetch scheduled comments for a card
+     */
+    async fetchScheduledCommentsForCard(boardId: string, cardId: string): Promise<Block[]> {
+        const comments = await octoClient.getScheduledCommentsForCard(boardId, cardId)
+        if (comments.length > 0) {
+            store.dispatch(updateComments(comments as CommentBlock[]))
+        }
+        return comments
+    }
+
+    /**
+     * Fetch all scheduled comments for the current user
+     */
+    async fetchMyScheduledComments(): Promise<Block[]> {
+        return octoClient.getMyScheduledComments()
+    }
+
+    async createSubCard(
+        boardId: string,
+        parentCardId: string,
+        title = '',
+        afterRedo?: (card: Card) => Promise<void>,
+        beforeUndo?: (card: Card) => Promise<void>,
+    ): Promise<Card | undefined> {
+        const card = createCard()
+        card.boardId = boardId
+        card.title = title
+
+        return undoManager.perform(
+            async () => {
+                const apiCard = await octoClient.createSubCard(boardId, parentCardId, card)
+                if (apiCard) {
+                    const newCard = this.apiCardToCard(apiCard)
+                    await afterRedo?.(newCard)
+                    return newCard
+                }
+                return undefined
+            },
+            async (newCard: Card) => {
+                await beforeUndo?.(newCard)
+                await octoClient.deleteBlock(boardId, newCard.id)
+            },
+            'add sub-card',
+            this.undoGroupId,
+        )
+    }
+
+    async fetchSubCards(parentCardId: string): Promise<Card[]> {
+        const apiCards = await octoClient.getSubCards(parentCardId)
+        return apiCards.map((apiCard: any) => this.apiCardToCard(apiCard))
+    }
+
+    private apiCardToCard(apiCard: any): Card {
+        return {
+            id: apiCard.id || '',
+            parentId: apiCard.parentCardId || apiCard.boardId || '',
+            boardId: apiCard.boardId || '',
+            createdBy: apiCard.createdBy || '',
+            modifiedBy: apiCard.modifiedBy || '',
+            schema: 1,
+            type: 'card',
+            title: apiCard.title || '',
+            createAt: apiCard.createAt || 0,
+            updateAt: apiCard.updateAt || 0,
+            deleteAt: apiCard.deleteAt || 0,
+            fields: {
+                icon: apiCard.icon || '',
+                properties: apiCard.properties || {},
+                contentOrder: apiCard.contentOrder || [],
+                isTemplate: apiCard.isTemplate || false,
+                parentCardId: apiCard.parentCardId || '',
+                depth: apiCard.depth || 0,
+            },
+            limited: false,
+        }
+    }
+
+    async fetchSubCardCount(parentCardId: string): Promise<number> {
+        return octoClient.getSubCardCount(parentCardId)
+    }
+
+    async linkCardAsSubCard(
+        cardId: string,
+        parentCardId: string,
+        afterRedo?: (card: Card) => Promise<void>,
+    ): Promise<Card | undefined> {
+        return undoManager.perform(
+            async () => {
+                const apiCard = await octoClient.linkCardAsSubCard(cardId, parentCardId)
+                if (apiCard) {
+                    const linkedCard = this.apiCardToCard(apiCard)
+                    await afterRedo?.(linkedCard)
+                    return linkedCard
+                }
+                return undefined
+            },
+            async () => {
+                await octoClient.unlinkSubCard(cardId)
+            },
+            'link card as sub-card',
+            this.undoGroupId,
+        )
+    }
+
+    async unlinkSubCard(
+        cardId: string,
+        originalParentCardId: string,
+        afterRedo?: (card: Card) => Promise<void>,
+    ): Promise<Card | undefined> {
+        return undoManager.perform(
+            async () => {
+                const apiCard = await octoClient.unlinkSubCard(cardId)
+                if (apiCard) {
+                    const unlinkedCard = this.apiCardToCard(apiCard)
+                    await afterRedo?.(unlinkedCard)
+                    return unlinkedCard
+                }
+                return undefined
+            },
+            async () => {
+                if (originalParentCardId) {
+                    await octoClient.linkCardAsSubCard(cardId, originalParentCardId)
+                }
+            },
+            'unlink sub-card',
+            this.undoGroupId,
+        )
     }
 }
 

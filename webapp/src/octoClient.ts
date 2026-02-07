@@ -20,7 +20,7 @@ import {Constants} from './constants'
 
 import {BoardsCloudLimits} from './boardsCloudLimits'
 import {TopBoardResponse} from './insights'
-import {BoardSiteStatistics} from './statistics'
+import {BoardSiteStatistics, BlockSuiteMigrationStatus, UnmigratedCardsResponse} from './statistics'
 
 //
 // OctoClient is the client interface to the server APIs
@@ -304,21 +304,33 @@ class OctoClient {
     }
 
     async getAllBlocks(boardID: string): Promise<Block[]> {
+        console.log('[API] getAllBlocks called for board:', boardID)
         let path = `/api/v2/boards/${boardID}/blocks?all=true`
         const readToken = Utils.getReadToken()
         if (readToken) {
             path += `&read_token=${readToken}`
+            console.log('[API] Using read token:', readToken.substring(0, 10) + '...')
         }
-        return this.getBlocksWithPath(path)
+        console.log('[API] Full path:', path)
+        const blocks = await this.getBlocksWithPath(path)
+        console.log('[API] getAllBlocks returned:', blocks.length, 'blocks')
+        return blocks
     }
 
     private async getBlocksWithPath(path: string): Promise<Block[]> {
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const fullUrl = this.getBaseURL() + path
+        console.log('[API] getBlocksWithPath fetching:', fullUrl)
+        const response = await fetch(fullUrl, {headers: this.headers()})
+        console.log('[API] Response status:', response.status)
         if (response.status !== 200) {
+            console.warn('[API] ⚠️ getBlocksWithPath failed with status:', response.status)
             return []
         }
         const blocks = (await this.getJson(response, [])) as Block[]
-        return this.fixBlocks(blocks)
+        console.log('[API] Fetched raw blocks:', blocks.length)
+        const fixedBlocks = this.fixBlocks(blocks)
+        console.log('[API] Fixed blocks:', fixedBlocks.length)
+        return fixedBlocks
     }
 
     private async getBoardsWithPath(path: string): Promise<Board[]> {
@@ -641,7 +653,10 @@ class OctoClient {
         if (readToken) {
             path += `?read_token=${readToken}`
         }
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
         let fileInfo: FileInfo = {}
 
         if (response.status === 200) {
@@ -653,13 +668,21 @@ class OctoClient {
         return fileInfo
     }
 
-    async getFileAsDataUrl(boardId: string, fileId: string): Promise<FileInfo> {
-        let path = '/api/v2/files/teams/' + this.teamId + '/' + boardId + '/' + fileId
+    async getFileAsDataUrl(boardId: string, fileId: string, teamId?: string): Promise<FileInfo> {
+        // Use provided teamId, or fall back to teamPath logic (handles globalTeamId -> lastTeamId)
+        let effectiveTeamId = teamId
+        if (!effectiveTeamId) {
+            effectiveTeamId = this.teamId === Constants.globalTeamId ? UserSettings.lastTeamId || this.teamId : this.teamId
+        }
+        let path = '/api/v2/files/teams/' + effectiveTeamId + '/' + boardId + '/' + fileId
         const readToken = Utils.getReadToken()
         if (readToken) {
             path += `?read_token=${readToken}`
         }
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
         let fileInfo: FileInfo = {}
 
         if (response.status === 200) {
@@ -670,6 +693,30 @@ class OctoClient {
         }
 
         return fileInfo
+    }
+
+    /**
+     * 파일을 Blob으로 직접 가져오기 (BlockSuite BlobEngine용)
+     */
+    async getFileAsBlob(boardId: string, fileId: string): Promise<Blob | null> {
+        let path = '/api/v2/files/teams/' + this.teamId + '/' + boardId + '/' + fileId
+        const readToken = Utils.getReadToken()
+        if (readToken) {
+            path += `?read_token=${readToken}`
+        }
+        // Client4.getOptions()를 사용하여 credentials: 'include'가 포함되도록 함
+        // 이것이 있어야 브라우저가 세션 쿠키를 보내고 Mattermost가 Mattermost-User-Id 헤더를 추가함
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+
+        if (response.status === 200) {
+            return response.blob()
+        }
+        
+        Utils.logWarn(`getFileAsBlob failed: ${response.status} ${response.statusText}`)
+        return null
     }
 
     async getTeam(): Promise<Team | null> {
@@ -1053,6 +1100,24 @@ class OctoClient {
         return stats
     }
 
+    async getMigrationStatus(): Promise<BlockSuiteMigrationStatus | undefined> {
+        const path = '/api/v2/statistics/migration'
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, {})) as BlockSuiteMigrationStatus
+    }
+
+    async getUnmigratedCards(limit = 50, offset = 0): Promise<UnmigratedCardsResponse | undefined> {
+        const path = `/api/v2/migration/unmigrated-cards?limit=${limit}&offset=${offset}`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, {cards: [], totalCount: 0, hasMore: false})) as UnmigratedCardsResponse
+    }
+
     // insights
     async getMyTopBoards(timeRange: string, page: number, perPage: number, teamId: string): Promise<TopBoardResponse | undefined> {
         const path = `/api/v2/users/me/boards/insights?time_range=${timeRange}&page=${page}&per_page=${perPage}&team_id=${teamId}`
@@ -1072,14 +1137,6 @@ class OctoClient {
         }
 
         return (await this.getJson(response, {})) as TopBoardResponse
-    }
-
-    async moveBlockTo(blockId: string, where: 'before'|'after', dstBlockId: string): Promise<Response> {
-        return fetch(`${this.getBaseURL()}/api/v2/content-blocks/${blockId}/moveto/${where}/${dstBlockId}`, Client4.getOptions({
-            method: 'POST',
-            headers: this.headers(),
-            body: '{}',
-        }))
     }
 
     async hideBoard(categoryID: string, boardID: string): Promise<Response> {
@@ -1106,6 +1163,320 @@ class OctoClient {
             headers: this.headers(),
             body,
         }))
+    }
+
+    // BlockSuite Methods
+    async getBlockSuiteInfo(cardId: string): Promise<any | null> {
+        const path = `/api/v2/cards/${cardId}/blocksuite/info`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status === 404) {
+            return null
+        }
+        if (response.status !== 200) {
+            throw new Error(`getBlockSuiteInfo failed with status ${response.status}`)
+        }
+        return this.getJson(response, {})
+    }
+
+    async getBlockSuiteContent(cardId: string): Promise<any> {
+        const path = `/api/v2/cards/${cardId}/blocksuite/content`
+        console.log('[API] getBlockSuiteContent called for card:', cardId)
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        console.log('[API] Response status:', response.status)
+
+        if (response.status !== 200) {
+            throw new Error(`getBlockSuiteContent failed with status ${response.status}`)
+        }
+
+        // Content-Type 확인
+        const contentType = response.headers.get('Content-Type') || ''
+        console.log('[API] Content-Type:', contentType)
+
+        // 응답 본문 크기 확인
+        const contentLength = response.headers.get('Content-Length')
+        console.log('[API] Content-Length:', contentLength)
+
+        // 응답을 복제해서 여러 방식으로 읽어보기
+        const clonedResponse1 = response.clone()
+        const clonedResponse2 = response.clone()
+
+        // 방법 1: JSON으로 시도
+        try {
+            const json = await clonedResponse1.json()
+            console.log('[API] ✅ Successfully parsed as JSON:', json)
+            console.log('[API] JSON keys:', Object.keys(json))
+            return json
+        } catch (jsonError) {
+            console.log('[API] ❌ Failed to parse as JSON:', jsonError)
+        }
+
+        // 방법 2: 텍스트로 시도
+        try {
+            const text = await clonedResponse2.text()
+            console.log('[API] Raw text:', text)
+            console.log('[API] Text length:', text.length)
+
+            // 빈 응답 체크
+            if (!text || text.trim() === '' || text === '[object Object]') {
+                console.log('[API] ⚠️ Response is empty or invalid, returning null')
+                return null
+            }
+
+            // JSON 파싱 재시도
+            try {
+                const json = JSON.parse(text)
+                console.log('[API] ✅ Parsed text as JSON:', json)
+                return json
+            } catch (e) {
+                console.log('[API] Text is not valid JSON')
+            }
+
+            // 그냥 텍스트 반환
+            return text
+        } catch (textError) {
+            console.log('[API] ❌ Failed to parse as text:', textError)
+        }
+
+        // 방법 3: ArrayBuffer로 시도 (최후의 수단)
+        try {
+            const buffer = await response.arrayBuffer()
+            console.log('[API] ArrayBuffer size:', buffer.byteLength, 'bytes')
+
+            if (buffer.byteLength === 0) {
+                console.log('[API] ⚠️ Empty ArrayBuffer')
+                return null
+            }
+
+            return buffer
+        } catch (bufferError) {
+            console.error('[API] ❌ Failed to parse as ArrayBuffer:', bufferError)
+            return null
+        }
+    }
+
+    async saveBlockSuiteContent(cardId: string, content: Uint8Array | any): Promise<void> {
+        const path = `/api/v2/cards/${cardId}/blocksuite/content`
+        console.log('[API] saveBlockSuiteContent called for card:', cardId)
+        console.log('[API] Content type:', typeof content)
+        console.log('[API] Content is Uint8Array?', content instanceof Uint8Array)
+
+        const headers = this.headers() as Record<string, string>
+        headers['Content-Type'] = 'application/octet-stream'
+
+        // content를 Uint8Array로 변환
+        let bodyData: Uint8Array
+        if (content instanceof Uint8Array) {
+            bodyData = content
+        } else if (typeof content === 'object') {
+            // JSON 객체를 Uint8Array로 변환
+            const jsonStr = JSON.stringify(content)
+            const encoder = new TextEncoder()
+            bodyData = encoder.encode(jsonStr)
+            console.log('[API] Converted JSON to Uint8Array, size:', bodyData.length, 'bytes')
+        } else {
+            throw new Error('Invalid content type for saveBlockSuiteContent')
+        }
+
+        console.log('[API] Sending PUT request to:', this.getBaseURL() + path)
+        console.log('[API] Body size:', bodyData.length, 'bytes')
+
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'PUT',
+            headers,
+            body: bodyData,
+        }))
+
+        console.log('[API] Save response status:', response.status)
+
+        if (response.status !== 200) {
+            const errorText = await response.text()
+            console.error('[API] ❌ Save failed with status:', response.status)
+            console.error('[API] Error response:', errorText)
+            throw new Error(`saveBlockSuiteContent failed with status ${response.status}: ${errorText}`)
+        }
+
+        console.log('[API] ✅ Save successful')
+    }
+
+    // ========================================
+    // Scheduled Comments API
+    // ========================================
+
+    /**
+     * Get all scheduled comments for the current user
+     */
+    async getMyScheduledComments(): Promise<Block[]> {
+        const path = '/api/v2/me/scheduled-comments'
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as Block[]
+    }
+
+    /**
+     * Create a scheduled comment
+     */
+    async createScheduledComment(
+        boardId: string,
+        cardId: string,
+        title: string,
+        scheduledAt: number,
+    ): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments`
+        const body = JSON.stringify({
+            cardId,
+            title,
+            scheduledAt,
+        })
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    /**
+     * Get scheduled comments for a specific card
+     */
+    async getScheduledCommentsForCard(boardId: string, cardId: string): Promise<Block[]> {
+        const path = `/api/v2/boards/${boardId}/cards/${cardId}/scheduled-comments`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as Block[]
+    }
+
+    /**
+     * Update a scheduled comment
+     */
+    async updateScheduledComment(
+        boardId: string,
+        blockId: string,
+        title?: string,
+        scheduledAt?: number,
+    ): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments/${blockId}`
+        const body: Record<string, any> = {}
+        if (title !== undefined) {
+            body.title = title
+        }
+        if (scheduledAt !== undefined) {
+            body.scheduledAt = scheduledAt
+        }
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'PATCH',
+            headers: this.headers(),
+            body: JSON.stringify(body),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    /**
+     * Cancel a scheduled comment
+     */
+    async cancelScheduledComment(boardId: string, blockId: string): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments/${blockId}/cancel`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    /**
+     * Immediately send a scheduled comment
+     */
+    async sendScheduledCommentNow(boardId: string, blockId: string): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/scheduled-comments/${blockId}/send-now`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    // ========================================
+    // Sub-Cards API
+    // ========================================
+
+    async createSubCard(boardId: string, parentCardId: string, card: Partial<Block>, disableNotify = false): Promise<Block | undefined> {
+        const path = `/api/v2/boards/${boardId}/cards/${parentCardId}/subcards${disableNotify ? '?disable_notify=true' : ''}`
+        const body = JSON.stringify(card)
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    async getSubCards(parentCardId: string, page = 0, perPage = 100): Promise<Block[]> {
+        const path = `/api/v2/cards/${parentCardId}/subcards?page=${page}&per_page=${perPage}`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as Block[]
+    }
+
+    async getSubCardCount(parentCardId: string): Promise<number> {
+        const path = `/api/v2/cards/${parentCardId}/subcards/count`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return 0
+        }
+        const result = (await this.getJson(response, {count: 0})) as {count: number}
+        return result.count
+    }
+
+    async linkCardAsSubCard(cardId: string, parentCardId: string): Promise<Block | undefined> {
+        const path = `/api/v2/cards/${cardId}/link`
+        const body = JSON.stringify({parentCardId})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
+    }
+
+    async unlinkSubCard(cardId: string): Promise<Block | undefined> {
+        const path = `/api/v2/cards/${cardId}/link`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'DELETE',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            return undefined
+        }
+        return (await this.getJson(response, undefined)) as Block | undefined
     }
 }
 
