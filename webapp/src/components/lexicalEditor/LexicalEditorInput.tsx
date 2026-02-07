@@ -42,7 +42,6 @@ import KeyboardPlugin from './plugins/KeyboardPlugin'
 
 import './lexicalEditor.scss'
 
-const imageURLForUser = (window as any).Components?.imageURLForUser
 const BotBadge = (window as any).Components?.BotBadge
 
 type Props = {
@@ -65,18 +64,26 @@ const MentionsMenu = ({loading, ...props}: BeautifulMentionsMenuProps) => {
 }
 
 const MentionsMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
-    ({selected, item, itemValue, ...props}, ref) => {
+    ({selected, item, itemValue, ...restProps}, ref) => {
         const avatar = typeof item === 'object' ? (item.avatar as string) || '' : ''
         const displayName = typeof item === 'object' ? (item.displayName as string) || itemValue : itemValue
         const isBoardMember = typeof item === 'object' ? item.isBoardMember as boolean : true
         const isBot = typeof item === 'object' ? item.is_bot as boolean : false
         const isGuest = typeof item === 'object' ? item.is_guest as boolean : false
 
+        // BeautifulMentionsPlugin spreads item data as individual props via Object.assign().
+        // Filter custom data props to prevent React DOM warnings.
+        const {
+            isBoardMember: _bm, is_bot: _bot, is_guest: _guest,
+            avatar: _av, displayName: _dn, id: _id,
+            ...domProps
+        } = restProps as Record<string, unknown>
+
         return (
             <li
                 ref={ref}
                 className={`LexicalEditor__mentionItem ${selected ? 'LexicalEditor__mentionItem--selected' : ''}`}
-                {...props}
+                {...domProps}
             >
                 <div className='LexicalEditor__mentionItem__left'>
                     <img
@@ -110,15 +117,20 @@ const EmojiMenu = ({loading, ...props}: BeautifulMentionsMenuProps) => {
 }
 
 const EmojiMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
-    ({selected, item, itemValue, ...props}, ref) => {
+    ({selected, item, itemValue, ...restProps}, ref) => {
         const native = typeof item === 'object' ? (item.native as string) || '' : ''
         const shortName = typeof item === 'object' ? (item.shortName as string) || itemValue : itemValue
+
+        const {
+            native: _n, shortName: _sn, id: _id,
+            ...domProps
+        } = restProps as Record<string, unknown>
 
         return (
             <li
                 ref={ref}
                 className={`LexicalEditor__emojiItem ${selected ? 'LexicalEditor__emojiItem--selected' : ''}`}
-                {...props}
+                {...domProps}
             >
                 <span className='LexicalEditor__emojiItem__emoji'>{native}</span>
                 <span className='LexicalEditor__emojiItem__name'>:{shortName}:</span>
@@ -143,10 +155,16 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
     const loadSuggestions = useCallback(async (query?: string | null): Promise<BeautifulMentionsItem[]> => {
         const term = query || ''
         let users: IUser[]
+        let boardMemberIds: Set<string>
 
         if (!me?.is_guest && (allowManageBoardRoles || (board && board.type === BoardTypeOpen))) {
             const excludeBots = true
-            users = await octoClient.searchTeamUsers(term, excludeBots)
+            const [searchedUsers, members] = await Promise.all([
+                octoClient.searchTeamUsers(term, excludeBots),
+                board ? octoClient.getBoardMembers(board.teamId, board.id) : Promise.resolve([]),
+            ])
+            users = searchedUsers
+            boardMemberIds = new Set(members.map((m) => m.userId))
         } else {
             users = boardUsers
                 .filter((user) => {
@@ -158,6 +176,7 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
                         .includes(term.toLowerCase())
                 })
                 .slice(0, 10)
+            boardMemberIds = new Set(boardUsers.map((u) => u.id))
         }
 
         users.forEach((user) => {
@@ -167,11 +186,11 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
         return users.map((user: IUser): BeautifulMentionsItem => ({
             value: user.username,
             id: user.id,
-            avatar: imageURLForUser ? imageURLForUser(user.id) : '',
+            avatar: Utils.getProfilePicture(user.id),
             is_bot: user.is_bot,
             is_guest: user.is_guest,
             displayName: Utils.getUserDisplayName(user, clientConfig.teammateNameDisplay),
-            isBoardMember: Boolean(boardUsers.find((u) => u.id === user.id)),
+            isBoardMember: boardMemberIds.has(user.id),
         }))
     }, [me, allowManageBoardRoles, board, boardUsers, clientConfig.teammateNameDisplay])
 
@@ -322,6 +341,7 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
                             return handleMentionSearch(trigger, query)
                         }}
                         searchDelay={0}
+                        menuAnchorClassName='LexicalEditor__mentionsAnchor'
                         menuComponent={(menuProps) => {
                             if (menuProps.trigger === ':') {
                                 return <EmojiMenu {...menuProps}/>

@@ -1,3 +1,9 @@
+// Anchor div is appended to document.body by LexicalTypeaheadMenuPlugin,
+// needs high z-index to appear above card detail dialog (z-index: 200)
+.LexicalEditor__mentionsAnchor {
+    z-index: 9999;
+}
+
 .LexicalEditor {
     width: 100%;
 
