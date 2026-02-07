@@ -65,11 +65,13 @@ const MentionsMenu = ({loading, ...props}: BeautifulMentionsMenuProps) => {
 
 const MentionsMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
     ({selected, item, itemValue, ...restProps}, ref) => {
-        const avatar = typeof item === 'object' ? (item.avatar as string) || '' : ''
-        const displayName = typeof item === 'object' ? (item.displayName as string) || itemValue : itemValue
-        const isBoardMember = typeof item === 'object' ? item.isBoardMember as boolean : true
-        const isBot = typeof item === 'object' ? item.is_bot as boolean : false
-        const isGuest = typeof item === 'object' ? item.is_guest as boolean : false
+        // item.data contains our custom fields (BeautifulMentionsPlugin nests them under data)
+        const data = typeof item === 'object' ? (item.data as Record<string, unknown>) || {} : {}
+        const avatar = (data.avatar as string) || ''
+        const displayName = (data.displayName as string) || itemValue
+        const isBoardMember = data.isBoardMember as boolean ?? true
+        const isBot = data.is_bot as boolean ?? false
+        const isGuest = data.is_guest as boolean ?? false
 
         // BeautifulMentionsPlugin spreads item data as individual props via Object.assign().
         // Filter custom data props to prevent React DOM warnings.
@@ -118,8 +120,9 @@ const EmojiMenu = ({loading, ...props}: BeautifulMentionsMenuProps) => {
 
 const EmojiMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
     ({selected, item, itemValue, ...restProps}, ref) => {
-        const native = typeof item === 'object' ? (item.native as string) || '' : ''
-        const shortName = typeof item === 'object' ? (item.shortName as string) || itemValue : itemValue
+        const data = typeof item === 'object' ? (item.data as Record<string, unknown>) || {} : {}
+        const native = (data.native as string) || ''
+        const shortName = (data.shortName as string) || itemValue
 
         const {
             native: _n, shortName: _sn, id: _id,
