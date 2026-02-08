@@ -7,7 +7,6 @@ import {Provider as ReduxProvider} from 'react-redux'
 import thunk from 'redux-thunk'
 
 import React from 'react'
-import {MemoryRouter} from 'react-router'
 import {mocked} from 'jest-mock'
 
 import {BoardMember} from '../../blocks/board'
@@ -93,14 +92,14 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -125,14 +124,14 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -154,14 +153,14 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -193,14 +192,14 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                             onUpdateBoardMember={() => {}}
                         />
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })

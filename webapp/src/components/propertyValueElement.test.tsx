@@ -18,7 +18,7 @@ describe('components/propertyValueElement', () => {
     const board = TestBlockFactory.createBoard()
     const card = TestBlockFactory.createCard(board)
 
-    test('should match snapshot, select', async () => {
+    test('should match snapshot, select', () => {
         const propertyTemplate = board.cardProperties.find((p) => p.id === 'property1')
         const component = wrapDNDIntl(
             <PropertyValueElement
@@ -34,7 +34,7 @@ describe('components/propertyValueElement', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('should match snapshot, select, read-only', async () => {
+    test('should match snapshot, select, read-only', () => {
         const propertyTemplate = board.cardProperties.find((p) => p.id === 'property1')
         const component = wrapDNDIntl(
             <PropertyValueElement

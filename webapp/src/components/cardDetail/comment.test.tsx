@@ -62,7 +62,7 @@ describe('components/cardDetail/comment', () => {
         }
     })
 
-    test('return comment', () => {
+    test('return comment', async () => {
         const {container} = render(wrapIntl(
             <ReduxProvider store={store}>
                 <Comment
@@ -73,8 +73,8 @@ describe('components/cardDetail/comment', () => {
                 />
             </ReduxProvider>,
         ))
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
     })
 
@@ -92,7 +92,7 @@ describe('components/cardDetail/comment', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('return comment and delete comment', () => {
+    test('return comment and delete comment', async () => {
         const {container} = render(wrapIntl(
             <ReduxProvider store={store}>
                 <Comment
@@ -103,16 +103,16 @@ describe('components/cardDetail/comment', () => {
                 />
             </ReduxProvider>,
         ))
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
-        const buttonDelete = screen.getByRole('button', {name: 'Delete'})
-        userEvent.click(buttonDelete)
+        const buttonDelete = await screen.findByRole('button', {name: 'Delete'})
+        await userEvent.click(buttonDelete)
         expect(mockedMutator.deleteBlock).toBeCalledTimes(1)
         expect(mockedMutator.deleteBlock).toBeCalledWith(comment)
     })
 
-    test('return guest comment', () => {
+    test('return guest comment', async () => {
         const localStore = mockStateStore([], {
             users: {
                 boardUsers: {
@@ -144,8 +144,8 @@ describe('components/cardDetail/comment', () => {
                 />
             </ReduxProvider>,
         ))
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
     })
 
@@ -184,7 +184,7 @@ describe('components/cardDetail/comment', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('return guest comment and delete comment', () => {
+    test('return guest comment and delete comment', async () => {
         const localStore = mockStateStore([], {
             users: {
                 boardUsers: {
@@ -216,11 +216,11 @@ describe('components/cardDetail/comment', () => {
                 />
             </ReduxProvider>,
         ))
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
-        const buttonDelete = screen.getByRole('button', {name: 'Delete'})
-        userEvent.click(buttonDelete)
+        const buttonDelete = await screen.findByRole('button', {name: 'Delete'})
+        await userEvent.click(buttonDelete)
         expect(mockedMutator.deleteBlock).toBeCalledTimes(1)
         expect(mockedMutator.deleteBlock).toBeCalledWith(comment)
     })

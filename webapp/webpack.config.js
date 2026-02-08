@@ -92,6 +92,9 @@ const config = {
                     loader: 'ts-loader',
                     options: {
                         transpileOnly: true,
+                        compilerOptions: TARGET_IS_PRODUCT ? {} : {
+                            jsx: 'react',
+                        },
                         getCustomTransformers: {
                             before: [
                                 tsTransformer.transform({
@@ -211,6 +214,8 @@ if (TARGET_IS_PRODUCT) {
     };
 } else {
     config.resolve.alias['react-intl'] = path.resolve(__dirname, './node_modules/react-intl/');
+    config.resolve.alias['react/jsx-runtime'] = path.resolve(__dirname, './src/jsxShim.js');
+    config.resolve.alias['react/jsx-dev-runtime'] = path.resolve(__dirname, './src/jsxShim.js');
 
     config.externals = {
         react: 'React',

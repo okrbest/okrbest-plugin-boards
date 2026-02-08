@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState, useCallback, useMemo} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {useHistory, useRouteMatch} from 'react-router-dom'
+import {useNavigate, useParams, useLocation} from 'react-router-dom'
 import {useHotkeys} from 'react-hotkeys-hook'
 
 import CompassIcon from '../../widgets/icons/compassIcon'
@@ -47,18 +47,19 @@ const BoardTemplateSelector = (props: Props) => {
     const {title, description, onClose} = props
     const dispatch = useAppDispatch()
     const intl = useIntl()
-    const history = useHistory()
-    const match = useRouteMatch<{boardId: string, viewId?: string}>()
+    const navigate = useNavigate()
+    const params = useParams<{boardId: string, viewId?: string}>()
+    const location = useLocation()
     const me = useAppSelector<IUser|null>(getMe)
 
     useHotkeys('esc', () => props.onClose?.())
 
-    const showBoard = useCallback(async (boardId) => {
-        Utils.showBoard(boardId, match, history)
+    const showBoard = useCallback(async (boardId: string) => {
+        Utils.showBoard(boardId, params, navigate, location.pathname)
         if (onClose) {
             onClose()
         }
-    }, [match, history, onClose])
+    }, [params, navigate, location.pathname, onClose])
 
     useEffect(() => {
         if (octoClient.teamId !== Constants.globalTeamId && globalTemplates.length === 0) {
@@ -108,7 +109,7 @@ const BoardTemplateSelector = (props: Props) => {
             TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.CreateBoardViaTemplate, {boardTemplateId: activeTemplate.properties.trackingTemplateId as string, channelID: props.channelId})
         }
 
-        const boardsAndBlocks = await mutator.addBoardFromTemplate(currentTeam?.id || Constants.globalTeamId, intl, showBoard, () => showBoard(currentBoardId), activeTemplate.id, currentTeam?.id)
+        const boardsAndBlocks = await mutator.addBoardFromTemplate(currentTeam?.id || Constants.globalTeamId, intl, showBoard, () => showBoard(currentBoardId || ''), activeTemplate.id, currentTeam?.id || '')
         const board = boardsAndBlocks.boards[0]
         await mutator.updateBoard({...board, channelId: props.channelId || ''}, board, 'linked channel')
         if (activeTemplate.title === OnboardingBoardTitle) {
@@ -171,7 +172,7 @@ const BoardTemplateSelector = (props: Props) => {
                                 size='medium'
                                 icon={<CompassIcon icon='plus'/>}
                                 className='new-template'
-                                onClick={() => mutator.addEmptyBoardTemplate(currentTeam?.id || '', intl, showBoard, () => showBoard(currentBoardId))}
+                                onClick={() => mutator.addEmptyBoardTemplate(currentTeam?.id || '', intl, showBoard, () => showBoard(currentBoardId || ''))}
                             >
                                 <FormattedMessage
                                     id='BoardTemplateSelector.add-template'
@@ -195,7 +196,7 @@ const BoardTemplateSelector = (props: Props) => {
                                 size={'medium'}
                                 icon={<CompassIcon icon='kanban'/>}
                                 onClick={async () => {
-                                    const boardsAndBlocks = await mutator.addEmptyBoard(currentTeam?.id || '', intl, showBoard, () => showBoard(currentBoardId))
+                                    const boardsAndBlocks = await mutator.addEmptyBoard(currentTeam?.id || '', intl, showBoard, () => showBoard(currentBoardId || ''))
                                     const board = boardsAndBlocks.boards[0]
                                     await mutator.updateBoard({...board, channelId: props.channelId || ''}, board, 'linked channel')
                                 }}

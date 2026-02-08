@@ -90,7 +90,7 @@ const ViewHeaderGroupByMenu = (props: Props) => {
                             id={''}
                             name={intl.formatMessage({id: 'GroupBy.ungroup', defaultMessage: 'Ungroup'})}
                             rightIcon={activeView.fields.groupById === '' ? <CheckIcon/> : undefined}
-                            onClick={(id) => {
+                            onClick={(id: string) => {
                                 if (activeView.fields.groupById === id) {
                                     return
                                 }
@@ -105,7 +105,7 @@ const ViewHeaderGroupByMenu = (props: Props) => {
                         id={option.id}
                         name={option.name}
                         rightIcon={groupByProperty?.id === option.id ? <CheckIcon/> : undefined}
-                        onClick={(id) => {
+                        onClick={(id: string) => {
                             if (activeView.fields.groupById === id) {
                                 return
                             }

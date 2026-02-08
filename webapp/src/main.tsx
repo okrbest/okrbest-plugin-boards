@@ -2,14 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react'
-import ReactDOM from 'react-dom'
+import {createRoot} from 'react-dom/client'
 import {Provider as ReduxProvider} from 'react-redux'
-import {store as emojiMartStore} from 'emoji-mart'
+import data from '@emoji-mart/data'
+import {init as initEmojiMart} from 'emoji-mart'
 
 import App from './app'
 import {initThemes} from './theme'
 import {importNativeAppSettings} from './nativeApp'
-import {UserSettings} from './userSettings'
 
 import {IUser} from './user'
 import {getMe} from './store/users'
@@ -25,7 +25,7 @@ import './styles/_markdown.scss'
 import store from './store'
 import WithWebSockets from './components/withWebSockets'
 
-emojiMartStore.setHandlers({getter: UserSettings.getEmojiMartSetting, setter: UserSettings.setEmojiMartSetting})
+initEmojiMart({data})
 importNativeAppSettings()
 
 initThemes()
@@ -40,11 +40,12 @@ const MainApp = () => {
     )
 }
 
-ReactDOM.render(
-    (
+const container = document.getElementById('focalboard-app')
+if (container) {
+    const root = createRoot(container)
+    root.render(
         <ReduxProvider store={store}>
             <MainApp/>
-        </ReduxProvider>
-    ),
-    document.getElementById('focalboard-app'),
-)
+        </ReduxProvider>,
+    )
+}

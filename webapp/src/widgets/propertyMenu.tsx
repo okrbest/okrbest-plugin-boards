@@ -46,7 +46,7 @@ type TypesProps = {
     onTypeSelected: (type: PropertyType) => void
 }
 
-export const PropertyTypes = (props: TypesProps): JSX.Element => {
+export const PropertyTypes = (props: TypesProps): React.JSX.Element => {
     const intl = useIntl()
     return (
         <>
@@ -151,11 +151,11 @@ const PropertyMenu = (props: Props) => {
         <Menu>
             <Menu.TextInput
                 initialValue={props.propertyName}
-                onConfirmValue={(n) => {
+                onConfirmValue={(n: string) => {
                     props.onTypeAndNameChanged(props.propertyType, n)
                     currentPropertyName = n
                 }}
-                onValueChanged={(n) => {
+                onValueChanged={(n: string) => {
                     currentPropertyName = n
                 }}
             />

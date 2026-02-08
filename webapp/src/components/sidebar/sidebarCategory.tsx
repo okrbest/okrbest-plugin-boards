@@ -3,11 +3,11 @@
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
+import {generatePath, useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import {debounce} from 'lodash'
 
-import {Draggable, Droppable} from 'react-beautiful-dnd'
+import {Draggable, Droppable} from '@hello-pangea/dnd'
 
 import {HandRightIcon} from '@mattermost/compass-icons/components'
 
@@ -67,13 +67,13 @@ export const ClassForManageCategoriesTourStep = 'manageCategoriesTourStep'
 const SidebarCategory = (props: Props) => {
     const [collapsed, setCollapsed] = useState(props.categoryBoards.collapsed)
     const intl = useIntl()
-    const history = useHistory()
+    const navigate = useNavigate()
+    const params = useParams<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
+    const location = useLocation()
 
     const [deleteBoard, setDeleteBoard] = useState<Board|null>()
     const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState<boolean>(false)
     const [categoryMenuOpen, setCategoryMenuOpen] = useState<boolean>(false)
-
-    const match = useRouteMatch<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
     const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false)
     const [showUpdateCategoryModal, setShowUpdateCategoryModal] = useState(false)
 
@@ -104,29 +104,29 @@ const SidebarCategory = (props: Props) => {
         }
     }, [shouldViewManageCatergoriesTour])
 
-    const showBoard = useCallback((boardId) => {
+    const showBoard = useCallback((boardId: string) => {
         if (boardId === props.activeBoardID && props.onBoardTemplateSelectorClose) {
             props.onBoardTemplateSelectorClose()
         }
-        Utils.showBoard(boardId, match, history)
+        Utils.showBoard(boardId, params, navigate, location.pathname)
         props.hideSidebar()
-    }, [match, history])
+    }, [params, navigate, location.pathname, props.activeBoardID, props.onBoardTemplateSelectorClose, props.hideSidebar])
 
-    const showView = useCallback((viewId, boardId) => {
+    const showView = useCallback((viewId: string, boardId: string) => {
         if (viewId === props.activeViewID && props.onBoardTemplateSelectorClose) {
             props.onBoardTemplateSelectorClose()
         }
 
-        // if the same board, reuse the match params
-        // otherwise remove viewId and cardId, results in first view being selected
-        const params = {...match.params, boardId: boardId || '', viewId: viewId || ''}
-        if (boardId !== match.params.boardId && viewId !== match.params.viewId) {
-            params.cardId = undefined
-        }
-        const newPath = generatePath(Utils.getBoardPagePath(match.path), params)
-        history.push(newPath)
+        const cardId = (boardId !== params.boardId && viewId !== params.viewId) ? undefined : params.cardId
+        const newPath = Utils.buildBoardPath(location.pathname, {
+            teamId: params.teamId,
+            boardId: boardId || '',
+            viewId: viewId || '',
+            cardId,
+        })
+        navigate(newPath)
         props.hideSidebar()
-    }, [match, history])
+    }, [params, navigate, location.pathname, props.activeViewID, props.onBoardTemplateSelectorClose, props.hideSidebar])
 
     const isBoardVisible = (boardID: string, existingBoardMetadata?: CategoryBoardMetadata): boolean => {
         const categoryBoardMetadata = existingBoardMetadata || sidebarBoardMetadata.find((metadata) => metadata.boardID === boardID)
@@ -167,7 +167,7 @@ const SidebarCategory = (props: Props) => {
             },
             {
                 categoryName: props.categoryBoards.name,
-                b: (...chunks) => <b>{chunks}</b>,
+                b: (chunks: string[]) => chunks.join(''),
             },
         ),
         onConfirm: () => handleDeleteCategory(),

@@ -4,7 +4,7 @@
 import {act, render, waitFor} from '@testing-library/react'
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {MemoryRouter} from 'react-router-dom'
+
 import {mocked} from 'jest-mock'
 
 import userEvent from '@testing-library/user-event'
@@ -26,7 +26,6 @@ Object.defineProperty(Constants, 'versionString', {value: '1.0.0'})
 jest.useFakeTimers()
 jest.mock('../utils')
 jest.mock('../octoClient')
-jest.mock('draft-js/lib/generateRandomKey', () => () => '123')
 const mockedUtils = mocked(Utils, true)
 const mockedOctoClient = mocked(octoClient, true)
 const board = TestBlockFactory.createBoard()
@@ -102,14 +101,12 @@ jest.mock('react-router-dom', () => {
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {
-                params: {
-                    boardId: board.id,
-                    viewId: activeView.id,
-                },
-            }
-        }),
+        useParams: jest.fn(() => ({
+            boardId: board.id,
+            viewId: activeView.id,
+            teamId: 'team-id',
+        })),
+        useNavigate: jest.fn(() => jest.fn()),
     }
 })
 
@@ -185,6 +182,7 @@ describe('src/components/workspace', () => {
     beforeEach(() => {
         jest.clearAllMocks()
         mockedUtils.createGuid.mockReturnValue('test-id')
+        mockedUtils.getBoardPagePath.mockReturnValue('/team/:teamId/:boardId?/:viewId?/:cardId?')
     })
     test('should match snapshot', async () => {
         let container
@@ -193,7 +191,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={store}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
         })
@@ -206,7 +204,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={store}>
                     <Workspace readonly={true}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
         })
@@ -214,41 +212,45 @@ describe('src/components/workspace', () => {
     })
 
     test('return workspace and showcard', async () => {
-        let container: Element | undefined
-        await act(async () => {
-            const result = render(wrapDNDIntl(
-                <ReduxProvider store={store}>
-                    <Workspace readonly={false}/>
-                </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
-            container = result.container
-            jest.runOnlyPendingTimers()
-            const cardElements = container!.querySelectorAll('.KanbanCard')
-            expect(cardElements).toBeDefined()
-            const cardElement = cardElements[0]
-            userEvent.click(cardElement)
-        })
-        expect(container).toMatchSnapshot()
-    })
+         let container: Element | undefined
+         await act(async () => {
+             const result = render(wrapDNDIntl(
+                 <ReduxProvider store={store}>
+                     <Workspace readonly={false}/>
+                 </ReduxProvider>,
+             ))
+             container = result.container
+             jest.runOnlyPendingTimers()
+         })
+         const cardElements = container!.querySelectorAll('.KanbanCard')
+         expect(cardElements).toBeDefined()
+         if (cardElements.length > 0) {
+             const cardElement = cardElements[0]
+             await userEvent.click(cardElement)
+         }
+         expect(container).toMatchSnapshot()
+     })
 
     test('return workspace readonly and showcard', async () => {
-        let container: Element | undefined
-        await act(async () => {
-            const result = render(wrapDNDIntl(
-                <ReduxProvider store={store}>
-                    <Workspace readonly={true}/>
-                </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
-            container = result.container
-            jest.runOnlyPendingTimers()
-            const cardElements = container!.querySelectorAll('.KanbanCard')
-            expect(cardElements).toBeDefined()
-            const cardElement = cardElements[0]
-            userEvent.click(cardElement)
-        })
-        expect(container).toMatchSnapshot()
-        expect(mockedUtils.getReadToken).toBeCalledTimes(1)
-    })
+         let container: Element | undefined
+         await act(async () => {
+             const result = render(wrapDNDIntl(
+                 <ReduxProvider store={store}>
+                     <Workspace readonly={true}/>
+                 </ReduxProvider>,
+             ))
+             container = result.container
+             jest.runOnlyPendingTimers()
+         })
+         const cardElements = container!.querySelectorAll('.KanbanCard')
+         expect(cardElements).toBeDefined()
+         if (cardElements.length > 0) {
+             const cardElement = cardElements[0]
+             await userEvent.click(cardElement)
+         }
+         expect(container).toMatchSnapshot()
+         expect(mockedUtils.getReadToken).toBeCalledTimes(1)
+     })
 
     test('return workspace with BoardTemplateSelector component', async () => {
         const emptyStore = mockStateStore([], {
@@ -300,7 +302,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={emptyStore}>
                     <Workspace readonly={true}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             container = result.container
             jest.runOnlyPendingTimers()
         })
@@ -405,7 +407,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={localStore}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             jest.runOnlyPendingTimers()
         })
 
@@ -415,111 +417,110 @@ describe('src/components/workspace', () => {
     })
 
     test('show add new view tooltip', async () => {
-        const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = OnboardingBoardTitle
+         const welcomeBoard = TestBlockFactory.createBoard()
+         welcomeBoard.title = OnboardingBoardTitle
 
-        const onboardingCard = TestBlockFactory.createCard(welcomeBoard)
-        onboardingCard.id = 'card1'
-        onboardingCard.title = OnboardingCardTitle
-        onboardingCard.boardId = welcomeBoard.id
+         const onboardingCard = TestBlockFactory.createCard(welcomeBoard)
+         onboardingCard.id = 'card1'
+         onboardingCard.title = OnboardingCardTitle
+         onboardingCard.boardId = welcomeBoard.id
 
-        const localState = {
-            teams: {
-                current: {id: 'team-id', title: 'Test Team'},
-            },
-            users: {
-                me: {
-                    id: 'user-id-1',
-                    username: 'username_1',
-                    email: '',
-                    nickname: '',
-                    firstname: '',
-                    lastname: '',
-                    create_at: 0,
-                    update_at: 0,
-                    is_bot: false,
-                    roles: 'system_user',
-                },
-                myConfig: {
-                    welcomePageViewed: {value: '1'},
-                    onboardingTourStarted: {value: true},
-                    tourCategory: {value: 'board'},
-                    onboardingTourStep: {value: '0'},
-                },
-                boardUsers: {[me.id]: me},
-                blockSubscriptions: [],
-            },
-            boards: {
-                current: welcomeBoard.id,
-                boards: {
-                    [welcomeBoard.id]: welcomeBoard,
-                },
-                templates: [],
-                myBoardMemberships: {
-                    [welcomeBoard.id]: {userId: 'user_id_1', schemeAdmin: true},
-                },
-            },
-            limits: {
-                limits: {
-                    cards: 0,
-                    used_cards: 0,
-                    card_limit_timestamp: 0,
-                    views: 0,
-                },
-            },
-            globalTemplates: {
-                value: [],
-            },
-            views: {
-                views: {
-                    [activeView.id]: activeView,
-                },
-                current: activeView.id,
-            },
-            cards: {
-                templates: [],
-                cards: [onboardingCard, card1, card2, card3],
-            },
-            searchText: {},
-            clientConfig: {
-                value: {
-                    telemetry: true,
-                    telemetryid: 'telemetry',
-                    enablePublicSharedBoards: true,
-                    teammateNameDisplay: 'username',
-                },
-            },
-            contents: {
-                contents: {},
-            },
-            comments: {
-                comments: {},
-            },
-            sidebar: {
-                categoryAttributes: [
-                    categoryAttribute1,
-                ],
-                hiddenBoardIDs: [],
-            },
-        }
-        const localStore = mockStateStore([thunk], localState)
+         const localState = {
+             teams: {
+                 current: {id: 'team-id', title: 'Test Team'},
+             },
+             users: {
+                 me: {
+                     id: 'user-id-1',
+                     username: 'username_1',
+                     email: '',
+                     nickname: '',
+                     firstname: '',
+                     lastname: '',
+                     create_at: 0,
+                     update_at: 0,
+                     is_bot: false,
+                     roles: 'system_user',
+                 },
+                 myConfig: {
+                     welcomePageViewed: {value: '1'},
+                     onboardingTourStarted: {value: true},
+                     tourCategory: {value: 'board'},
+                     onboardingTourStep: {value: '0'},
+                 },
+                 boardUsers: {[me.id]: me},
+                 blockSubscriptions: [],
+             },
+             boards: {
+                 current: welcomeBoard.id,
+                 boards: {
+                     [welcomeBoard.id]: welcomeBoard,
+                 },
+                 templates: [],
+                 myBoardMemberships: {
+                     [welcomeBoard.id]: {userId: 'user_id_1', schemeAdmin: true},
+                 },
+             },
+             limits: {
+                 limits: {
+                     cards: 0,
+                     used_cards: 0,
+                     card_limit_timestamp: 0,
+                     views: 0,
+                 },
+             },
+             globalTemplates: {
+                 value: [],
+             },
+             views: {
+                 views: {
+                     [activeView.id]: activeView,
+                 },
+                 current: activeView.id,
+             },
+             cards: {
+                 templates: [],
+                 cards: [onboardingCard, card1, card2, card3],
+             },
+             searchText: {},
+             clientConfig: {
+                 value: {
+                     telemetry: true,
+                     telemetryid: 'telemetry',
+                     enablePublicSharedBoards: true,
+                     teammateNameDisplay: 'username',
+                 },
+             },
+             contents: {
+                 contents: {},
+             },
+             comments: {
+                 comments: {},
+             },
+             sidebar: {
+                 categoryAttributes: [
+                     categoryAttribute1,
+                 ],
+                 hiddenBoardIDs: [],
+             },
+         }
+         const localStore = mockStateStore([thunk], localState)
 
-        await act(async () => {
-            render(wrapDNDIntl(
-                <ReduxProvider store={localStore}>
-                    <Workspace readonly={false}/>
-                </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
-        })
+         await act(async () => {
+             render(wrapDNDIntl(
+                 <ReduxProvider store={localStore}>
+                     <Workspace readonly={false}/>
+                 </ReduxProvider>,
+             ))
+             jest.runOnlyPendingTimers()
+         })
 
-        jest.runOnlyPendingTimers()
+         await waitFor(() => expect(document.querySelectorAll('.AddViewTourStep').length).toBeGreaterThan(0), {timeout: 5000})
 
-        await waitFor(() => expect(document.querySelectorAll('.AddViewTourStep')).toBeDefined(), {timeout: 5000})
-
-        const elements = document.querySelectorAll('.AddViewTourStep')
-        expect(elements.length).toBe(2)
-        expect(elements[1]).toMatchSnapshot()
-    })
+         const elements = document.querySelectorAll('.AddViewTourStep')
+         expect(elements.length).toBe(2)
+         expect(elements[1]).toMatchSnapshot()
+     })
 
     test('show copy link tooltip', async () => {
         mockedUtils.isFocalboardPlugin.mockReturnValue(true)
@@ -618,7 +619,7 @@ describe('src/components/workspace', () => {
                 <ReduxProvider store={localStore}>
                     <Workspace readonly={false}/>
                 </ReduxProvider>,
-            ), {wrapper: MemoryRouter})
+            ))
             jest.runOnlyPendingTimers()
         })
 

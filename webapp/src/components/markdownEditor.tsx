@@ -6,7 +6,7 @@ import React, {useState, Suspense} from 'react'
 import {Utils} from '../utils'
 import './markdownEditor.scss'
 
-const MarkdownEditorInput = React.lazy(() => import('./markdownEditorInput/markdownEditorInput'))
+const LexicalEditorInput = React.lazy(() => import('./lexicalEditor/LexicalEditorInput'))
 
 type Props = {
     id?: string
@@ -24,7 +24,7 @@ type Props = {
     saveOnEnter?: boolean
 }
 
-const MarkdownEditor = (props: Props): JSX.Element => {
+const MarkdownEditor = (props: Props): React.JSX.Element => {
     const {placeholderText, onFocus, onEditorCancel, onBlur, onChange, text, id, saveOnEnter} = props
     const [isEditing, setIsEditing] = useState(Boolean(props.autofocus))
     const html: string = Utils.htmlFromMarkdown(text || placeholderText || '')
@@ -56,7 +56,7 @@ const MarkdownEditor = (props: Props): JSX.Element => {
 
     const editorElement = (
         <Suspense fallback={<></>}>
-            <MarkdownEditorInput
+            <LexicalEditorInput
                 id={id}
                 onChange={onChange}
                 onFocus={onFocus}

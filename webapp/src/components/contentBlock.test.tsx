@@ -25,7 +25,6 @@ import {CardDetailContext, CardDetailContextType} from './cardDetail/cardDetailC
 jest.mock('../mutator')
 jest.mock('../utils')
 jest.mock('../octoClient')
-jest.mock('draft-js/lib/generateRandomKey', () => () => '123')
 
 beforeAll(mockDOM)
 
@@ -194,106 +193,106 @@ describe('components/contentBlock', () => {
     })
 
     test('return commentBlock and click on menuwrapper', async () => {
-        let container
-        await act(async () => {
-            const result = render(wrap(
-                <ContentBlock
-                    block={commentBlock}
-                    card={card}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    width={undefined}
-                    cords={{x: 1, y: 0, z: 0}}
-                />,
-            ))
-            container = result.container
-        })
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+         let container
+         await act(async () => {
+             const result = render(wrap(
+                 <ContentBlock
+                     block={commentBlock}
+                     card={card}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     width={undefined}
+                     cords={{x: 1, y: 0, z: 0}}
+                 />,
+             ))
+             container = result.container
+         })
+         const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElement)
 
-        expect(container).toMatchSnapshot()
-    })
+         expect(container).toMatchSnapshot()
+     })
 
     test('return commentBlock and click move up', async () => {
-        await act(async () => {
-            render(wrap(
-                <ContentBlock
-                    block={commentBlock}
-                    card={card}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    width={undefined}
-                    cords={{x: 1, y: 0, z: 0}}
-                />,
-            ))
-        })
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
-        const buttonMoveUp = screen.getByRole('button', {name: 'Move up'})
-        userEvent.click(buttonMoveUp)
-        expect(mockedUtils.arrayMove).toBeCalledTimes(1)
-        expect(mockedMutator.changeCardContentOrder).toBeCalledTimes(1)
-    })
+         await act(async () => {
+             render(wrap(
+                 <ContentBlock
+                     block={commentBlock}
+                     card={card}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     width={undefined}
+                     cords={{x: 1, y: 0, z: 0}}
+                 />,
+             ))
+         })
+         const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElement)
+         const buttonMoveUp = await screen.findByRole('button', {name: 'Move up'})
+         userEvent.click(buttonMoveUp)
+         expect(mockedUtils.arrayMove).toBeCalledTimes(1)
+         expect(mockedMutator.changeCardContentOrder).toBeCalledTimes(1)
+     })
 
     test('return commentBlock and click move down', async () => {
-        await act(async () => {
-            render(wrap(
-                <ContentBlock
-                    block={commentBlock}
-                    card={card}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    width={undefined}
-                    cords={{x: 1, y: 0, z: 0}}
-                />,
-            ))
-        })
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
-        const buttonMoveUp = screen.getByRole('button', {name: 'Move down'})
-        userEvent.click(buttonMoveUp)
-        expect(mockedUtils.arrayMove).toBeCalledTimes(1)
-        expect(mockedMutator.changeCardContentOrder).toBeCalledTimes(1)
-    })
+         await act(async () => {
+             render(wrap(
+                 <ContentBlock
+                     block={commentBlock}
+                     card={card}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     width={undefined}
+                     cords={{x: 1, y: 0, z: 0}}
+                 />,
+             ))
+         })
+         const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElement)
+         const buttonMoveUp = await screen.findByRole('button', {name: 'Move down'})
+         userEvent.click(buttonMoveUp)
+         expect(mockedUtils.arrayMove).toBeCalledTimes(1)
+         expect(mockedMutator.changeCardContentOrder).toBeCalledTimes(1)
+     })
 
     test('return commentBlock and click delete', async () => {
-        await act(async () => {
-            render(wrap(
-                <ContentBlock
-                    block={commentBlock}
-                    card={card}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    width={undefined}
-                    cords={{x: 1, y: -1, z: 0}}
-                />,
-            ))
-        })
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
-        const buttonMoveUp = screen.getByRole('button', {name: 'Delete'})
-        userEvent.click(buttonMoveUp)
-        expect(mockedMutator.performAsUndoGroup).toBeCalledTimes(1)
-    })
+         await act(async () => {
+             render(wrap(
+                 <ContentBlock
+                     block={commentBlock}
+                     card={card}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     width={undefined}
+                     cords={{x: 1, y: -1, z: 0}}
+                 />,
+             ))
+         })
+         const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElement)
+         const buttonMoveUp = await screen.findByRole('button', {name: 'Delete'})
+         userEvent.click(buttonMoveUp)
+         expect(mockedMutator.performAsUndoGroup).toBeCalledTimes(1)
+     })
 
     test('return commentBlock and click delete with another contentOrder', async () => {
-        card.fields.contentOrder = [[textBlock.id], [dividerBlock.id], [commentBlock.id]]
-        await act(async () => {
-            render(wrap(
-                <ContentBlock
-                    block={commentBlock}
-                    card={card}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    width={undefined}
-                    cords={{x: 1, y: 0, z: 0}}
-                />,
-            ))
-        })
-        const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
-        const buttonMoveUp = screen.getByRole('button', {name: 'Delete'})
-        userEvent.click(buttonMoveUp)
-        expect(mockedMutator.performAsUndoGroup).toBeCalledTimes(1)
-    })
+         card.fields.contentOrder = [[textBlock.id], [dividerBlock.id], [commentBlock.id]]
+         await act(async () => {
+             render(wrap(
+                 <ContentBlock
+                     block={commentBlock}
+                     card={card}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     width={undefined}
+                     cords={{x: 1, y: 0, z: 0}}
+                 />,
+             ))
+         })
+         const buttonElement = await screen.findByRole('button', {name: 'menuwrapper'})
+         userEvent.click(buttonElement)
+         const buttonMoveUp = await screen.findByRole('button', {name: 'Delete'})
+         userEvent.click(buttonMoveUp)
+         expect(mockedMutator.performAsUndoGroup).toBeCalledTimes(1)
+     })
 })

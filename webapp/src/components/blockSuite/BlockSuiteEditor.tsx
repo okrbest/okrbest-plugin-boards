@@ -3,7 +3,7 @@
 
 import React, {useEffect, useRef, useCallback, useState} from 'react'
 import {useIntl} from 'react-intl'
-import {useHistory} from 'react-router-dom'
+import {useNavigate} from 'react-router-dom'
 
 import {AffineSchemas, PageEditorBlockSpecs} from '@blocksuite/blocks'
 import {DocModeExtension, type DocModeProvider} from '@blocksuite/affine-shared/services'
@@ -14,6 +14,12 @@ import {effects as presetsEffects} from '@blocksuite/presets/effects'
 import {effects as blocksEffects} from '@blocksuite/blocks/effects'
 
 import {Block} from '../../blocks/block'
+
+declare global {
+    interface Window {
+        __BLOCKSUITE_EFFECTS_INITIALIZED__?: boolean
+    }
+}
 import {Card} from '../../blocks/card'
 import {Board} from '../../blocks/board'
 import {Utils} from '../../utils'
@@ -33,8 +39,11 @@ import {patchImageDragOption, createImageDraggableObserver} from './imageDragPat
 import './blockSuiteTheme.css'
 import './blockSuite.scss'
 
-presetsEffects()
-blocksEffects()
+if (!window.__BLOCKSUITE_EFFECTS_INITIALIZED__) {
+    presetsEffects()
+    blocksEffects()
+    window.__BLOCKSUITE_EFFECTS_INITIALIZED__ = true
+}
 
 type Props = {
     card: Card
@@ -44,10 +53,10 @@ type Props = {
     viewId: string
 }
 
-function BlockSuiteEditor(props: Props): JSX.Element {
+function BlockSuiteEditor(props: Props): React.JSX.Element {
     const {card, contents, readonly, teamId, viewId} = props
     const intl = useIntl()
-    const history = useHistory()
+    const navigate = useNavigate()
     const dispatch = useAppDispatch()
 
     const allCards = useAppSelector(getSortedCards)
@@ -126,7 +135,7 @@ function BlockSuiteEditor(props: Props): JSX.Element {
         if (matchWithView) {
             e.preventDefault()
             e.stopPropagation()
-            history.push(`/team/${matchWithView[2]}/${matchWithView[3]}/${matchWithView[4]}/${matchWithView[5]}`)
+            navigate(`/team/${matchWithView[2]}/${matchWithView[3]}/${matchWithView[4]}/${matchWithView[5]}`)
             return
         }
 
@@ -134,9 +143,9 @@ function BlockSuiteEditor(props: Props): JSX.Element {
         if (matchWithoutView) {
             e.preventDefault()
             e.stopPropagation()
-            history.push(`/team/${matchWithoutView[2]}/${matchWithoutView[3]}/${matchWithoutView[4]}`)
+            navigate(`/team/${matchWithoutView[2]}/${matchWithoutView[3]}/${matchWithoutView[4]}`)
         }
-    }, [history])
+    }, [navigate])
 
     const handleDocUpdate = useCallback(async () => {
         if (readonly || !editorDocRef.current || !jobRef.current) {

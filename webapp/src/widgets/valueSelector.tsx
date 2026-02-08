@@ -72,7 +72,7 @@ type LabelProps = {
     showDragHandle?: boolean
 }
 
-const ValueSelectorLabel = (props: LabelProps): JSX.Element => {
+const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
     const { option, onDeleteValue, meta, isMulti, showDragHandle } = props
     const intl = useIntl()
     if (meta.context === 'value') {
@@ -218,7 +218,7 @@ type SortableOptionWrapperProps = {
 const SortableOptionWrapper = ({
     id,
     children,
-}: SortableOptionWrapperProps): JSX.Element => {
+}: SortableOptionWrapperProps): React.JSX.Element => {
     const {
         attributes,
         listeners,
@@ -248,7 +248,7 @@ const SortableOptionWrapper = ({
     )
 }
 
-function ValueSelector(props: Props): JSX.Element {
+function ValueSelector(props: Props): React.JSX.Element {
     const intl = useIntl()
     const [localOptions, setLocalOptions] = useState(props.options)
 

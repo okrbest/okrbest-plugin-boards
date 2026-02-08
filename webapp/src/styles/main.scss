@@ -24,6 +24,16 @@ html {
     height: 100%;
 }
 
+.focalboard-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 14px;
+}
+
 .focalboard-body {
     --cursor-color: rgb(var(--center-channel-color-rgb));
 
@@ -242,8 +252,4 @@ html {
         }
     }
 
-    .emoji-mart-category-list {
-        display: flex;
-        flex-wrap: wrap;
-    }
 }

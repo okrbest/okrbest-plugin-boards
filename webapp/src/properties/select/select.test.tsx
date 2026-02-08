@@ -96,7 +96,7 @@ describe('properties/select', () => {
         expect(container).toMatchSnapshot()
     })
 
-    it('shows the menu with options when preview is clicked', () => {
+    it('shows the menu with options when preview is clicked', async () => {
         const propertyTemplate = selectPropertyTemplate()
         const selected = propertyTemplate.options[1]
 
@@ -112,11 +112,11 @@ describe('properties/select', () => {
             />,
         ))
 
-        userEvent.click(screen.getByTestId(nonEditableSelectTestId))
+        await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
 
         // check that all options are visible
         for (const option of propertyTemplate.options) {
-            const elements = screen.getAllByText(option.value)
+            const elements = await screen.findAllByText(option.value)
 
             // selected option is rendered twice: in the input and inside the menu
             const expected = option.id === selected.id ? 2 : 1
@@ -126,7 +126,7 @@ describe('properties/select', () => {
         expect(clearButton()).toBeInTheDocument()
     })
 
-    it('can select the option from menu', () => {
+    it('can select the option from menu', async () => {
         const propertyTemplate = selectPropertyTemplate()
         const optionToSelect = propertyTemplate.options[2]
 
@@ -142,14 +142,14 @@ describe('properties/select', () => {
             />,
         ))
 
-        userEvent.click(screen.getByTestId(nonEditableSelectTestId))
-        userEvent.click(screen.getByText(optionToSelect.value))
+        await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
+        await userEvent.click(await screen.findByText(optionToSelect.value))
 
         expect(clearButton()).not.toBeInTheDocument()
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, optionToSelect.id)
     })
 
-    it('can clear the selected option', () => {
+    it('can clear the selected option', async () => {
         const propertyTemplate = selectPropertyTemplate()
         const selected = propertyTemplate.options[1]
 
@@ -165,16 +165,16 @@ describe('properties/select', () => {
             />,
         ))
 
-        userEvent.click(screen.getByTestId(nonEditableSelectTestId))
+        await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
 
         const clear = clearButton()
         expect(clear).toBeInTheDocument()
-        userEvent.click(clear!)
+        await userEvent.click(clear!)
 
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, '')
     })
 
-    it('can create new option', () => {
+    it('can create new option', async () => {
         const propertyTemplate = selectPropertyTemplate()
         const initialOption = propertyTemplate.options[0]
         const newOption = 'new-option'
@@ -193,8 +193,8 @@ describe('properties/select', () => {
 
         mockedMutator.insertPropertyOption.mockResolvedValue()
 
-        userEvent.click(screen.getByTestId(nonEditableSelectTestId))
-        userEvent.type(screen.getByRole('combobox', {name: /value selector/i}), `${newOption}{enter}`)
+        await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
+        await userEvent.type(await screen.findByRole('combobox', {name: /value selector/i}), `${newOption}{enter}`)
 
         expect(mockedMutator.insertPropertyOption).toHaveBeenCalledWith(board.id, board.cardProperties, propertyTemplate, expect.objectContaining({value: newOption}), 'add property option')
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, 'option-3')

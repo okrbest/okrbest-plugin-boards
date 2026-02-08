@@ -24,7 +24,7 @@ type Props = {
     readonly: boolean
 }
 
-const ScheduledComment: React.FC<Props> = ({comment, boardId, readonly}) => {
+const ScheduledComment: React.FC<React.PropsWithChildren<Props>> = ({comment, boardId, readonly}) => {
     const intl = useIntl()
     const user = useAppSelector(getUser(comment.createdBy))
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)

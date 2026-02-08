@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useCallback} from 'react'
-import {useHistory, useLocation} from 'react-router-dom'
+import {useNavigate, useLocation} from 'react-router-dom'
 import {FormattedMessage} from 'react-intl'
 
 import ErrorIllustration from '../svg/error-illustration'
@@ -14,7 +14,7 @@ import {errorDefFromId, ErrorId} from '../errors'
 import {Utils} from '../utils'
 
 const ErrorPage = () => {
-    const history = useHistory()
+    const navigate = useNavigate()
     const queryParams = new URLSearchParams(useLocation().search)
     const errid = queryParams.get('id')
     const errorDef = errorDefFromId(errid as ErrorId)
@@ -29,9 +29,9 @@ const ErrorPage = () => {
         if (url === window.location.origin) {
             window.location.href = url
         } else {
-            history.push(url)
+            navigate(url)
         }
-    }, [history])
+    }, [navigate, queryParams])
 
     const makeButton = ((path: string | ((params: URLSearchParams) => string), txt: string, fill: boolean) => {
         return (

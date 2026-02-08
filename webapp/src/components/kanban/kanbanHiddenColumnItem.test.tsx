@@ -62,7 +62,7 @@ describe('src/components/kanban/kanbanHiddenColumnItem', () => {
         ))
         expect(container).toMatchSnapshot()
     })
-    test('return kanbanHiddenColumnItem and click menuwrapper', () => {
+    test('return kanbanHiddenColumnItem and click menuwrapper', async () => {
         const {container} = render(wrapDNDIntl(
             <KanbanHiddenColumnItem
                 activeView={activeView}
@@ -75,12 +75,12 @@ describe('src/components/kanban/kanbanHiddenColumnItem', () => {
                 intl={intl}
             />,
         ))
-        const buttonMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
+        const buttonMenuWrapper = await screen.findByRole('button', {name: 'menuwrapper'})
         expect(buttonMenuWrapper).not.toBeNull()
-        userEvent.click(buttonMenuWrapper)
+        await userEvent.click(buttonMenuWrapper)
         expect(container).toMatchSnapshot()
     })
-    test('return kanbanHiddenColumnItem, click menuwrapper and click show', () => {
+    test('return kanbanHiddenColumnItem, click menuwrapper and click show', async () => {
         const {container} = render(wrapDNDIntl(
             <KanbanHiddenColumnItem
                 activeView={activeView}
@@ -93,12 +93,12 @@ describe('src/components/kanban/kanbanHiddenColumnItem', () => {
                 intl={intl}
             />,
         ))
-        const buttonMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
+        const buttonMenuWrapper = await screen.findByRole('button', {name: 'menuwrapper'})
         expect(buttonMenuWrapper).not.toBeNull()
-        userEvent.click(buttonMenuWrapper)
+        await userEvent.click(buttonMenuWrapper)
         expect(container).toMatchSnapshot()
-        const buttonShow = within(buttonMenuWrapper).getByRole('button', {name: 'Show'})
-        userEvent.click(buttonShow)
+        const buttonShow = await within(buttonMenuWrapper).findByRole('button', {name: 'Show'})
+        await userEvent.click(buttonShow)
         expect(mockedMutator.unhideViewColumn).toBeCalledWith(activeView.boardId, activeView, option.id)
     })
 

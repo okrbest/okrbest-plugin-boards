@@ -104,7 +104,6 @@ exports[`components/cardActionsMenu should match snapshot 1`] = `
             />
           </div>
         </div>
-        <div />
       </div>
       <div
         class="menu-spacer hideOnWidescreen"
@@ -421,7 +420,6 @@ exports[`components/cardActionsMenu should match snapshot w/ onClickDuplicate pr
             />
           </div>
         </div>
-        <div />
       </div>
       <div
         class="menu-spacer hideOnWidescreen"

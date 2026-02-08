@@ -12,7 +12,7 @@ type Props = {
     onCancel: () => void
 }
 
-const ScheduledCommentPicker: React.FC<Props> = ({onSchedule, onCancel}) => {
+const ScheduledCommentPicker: React.FC<React.PropsWithChildren<Props>> = ({onSchedule, onCancel}) => {
     const intl = useIntl()
 
     // Default: tomorrow at 9 AM
