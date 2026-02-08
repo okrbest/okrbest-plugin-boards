@@ -25,8 +25,15 @@ const TeamToBoardAndViewRedirect = (): null => {
     useEffect(() => {
         let boardID = match.params.boardId
         if (!match.params.boardId) {
-            // first preference is for last visited board
-            boardID = UserSettings.lastBoardId[teamId]
+            // first preference is for last visited board, but only if it exists in the current team's boards
+            const lastBoardID = UserSettings.lastBoardId[teamId]
+            const boardsLoaded = Object.keys(boards).length > 0
+            if (lastBoardID && boards[lastBoardID]) {
+                boardID = lastBoardID
+            } else if (lastBoardID && boardsLoaded && !boards[lastBoardID]) {
+                // Board list is loaded but the saved board doesn't exist — clear stale/cross-contaminated entry
+                UserSettings.setLastBoardID(teamId, null)
+            }
 
             // if last visited board is unavailable, use the first board in categories list
             if (!boardID && categories.length > 0) {
