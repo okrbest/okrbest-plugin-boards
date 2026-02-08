@@ -304,37 +304,31 @@ class OctoClient {
     }
 
     async getAllBlocks(boardID: string): Promise<Block[]> {
-        console.log('[API] getAllBlocks called for board:', boardID)
         let path = `/api/v2/boards/${boardID}/blocks?all=true`
         const readToken = Utils.getReadToken()
         if (readToken) {
             path += `&read_token=${readToken}`
-            console.log('[API] Using read token:', readToken.substring(0, 10) + '...')
         }
-        console.log('[API] Full path:', path)
-        const blocks = await this.getBlocksWithPath(path)
-        console.log('[API] getAllBlocks returned:', blocks.length, 'blocks')
-        return blocks
+        return this.getBlocksWithPath(path)
     }
 
     private async getBlocksWithPath(path: string): Promise<Block[]> {
-        const fullUrl = this.getBaseURL() + path
-        console.log('[API] getBlocksWithPath fetching:', fullUrl)
-        const response = await fetch(fullUrl, {headers: this.headers()})
-        console.log('[API] Response status:', response.status)
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
         if (response.status !== 200) {
-            console.warn('[API] ⚠️ getBlocksWithPath failed with status:', response.status)
             return []
         }
         const blocks = (await this.getJson(response, [])) as Block[]
-        console.log('[API] Fetched raw blocks:', blocks.length)
-        const fixedBlocks = this.fixBlocks(blocks)
-        console.log('[API] Fixed blocks:', fixedBlocks.length)
-        return fixedBlocks
+        return this.fixBlocks(blocks)
     }
 
     private async getBoardsWithPath(path: string): Promise<Board[]> {
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
         if (response.status !== 200) {
             return []
         }
@@ -343,7 +337,10 @@ class OctoClient {
     }
 
     private async getBoardMembersWithPath(path: string): Promise<BoardMember[]> {
-        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
         if (response.status !== 200) {
             return []
         }
@@ -795,10 +792,10 @@ class OctoClient {
         if (readToken) {
             path += `?read_token=${readToken}`
         }
-        const response = await fetch(this.getBaseURL() + path, {
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
             method: 'GET',
             headers: this.headers(),
-        })
+        }))
 
         if (response.status !== 200) {
             return undefined
