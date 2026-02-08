@@ -30,7 +30,7 @@ type Props = {
     propertyType: PropertyType
 }
 
-const filterValue = (props: Props): JSX.Element|null => {
+const filterValue = (props: Props): React.JSX.Element|null => {
     const {filter, template, view, propertyType} = props
     const [value, setValue] = useState(filter.values.length > 0 ? filter.values[0] : '')
     const intl = useIntl()
@@ -128,7 +128,7 @@ const filterValue = (props: Props): JSX.Element|null => {
                         name={o.value}
                         isOn={filter.values.includes(o.id)}
                         suppressItemClicked={true}
-                        onClick={(optionId) => {
+                        onClick={(optionId: string) => {
                             const filterIndex = view.fields.filter.filters.indexOf(filter)
                             Utils.assert(filterIndex >= 0, "Can't find filter")
 

@@ -1,17 +1,18 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useMemo} from 'react'
+import React, {useEffect, useCallback, useMemo} from 'react'
 import {
-    Router,
-    Redirect,
-    Switch,
-    useRouteMatch,
-    useHistory,
+    createBrowserRouter,
+    RouterProvider,
+    Navigate,
+    useParams,
+    useNavigate,
     generatePath,
     useLocation,
+    useMatch,
+    Outlet,
 } from 'react-router-dom'
-import {createBrowserHistory, History} from 'history'
 
 import {IAppWindow} from './types'
 import BoardPage from './pages/boardPage/boardPage'
@@ -29,178 +30,290 @@ import FBRoute from './route'
 
 declare let window: IAppWindow
 
-function HomeToCurrentTeam(props: {path: string, exact: boolean}) {
-    return (
-        <FBRoute
-            path={props.path}
-            exact={props.exact}
-            loginRequired={true}
-            component={() => {
-                const firstTeam = useAppSelector<Team|null>(getFirstTeam)
-                const dispatch = useAppDispatch()
-                useEffect(() => {
-                    dispatch(fetchTeams())
-                }, [])
+export const NAVIGATION_EVENT = 'focalboard:navigate'
+export const NAVIGATION_REPLACE_EVENT = 'focalboard:navigate:replace'
 
-                let teamID = (window.getCurrentTeamId && window.getCurrentTeamId()) || ''
-                const lastTeamID = UserSettings.lastTeamId
-                if (!teamID && !firstTeam && !lastTeamID) {
-                    return <></>
-                }
-                teamID = teamID || lastTeamID || firstTeam?.id || ''
+interface NavigationEventDetail {
+    path: string
+    state?: unknown
+}
 
-                if (UserSettings.lastBoardId) {
-                    const lastBoardID = UserSettings.lastBoardId[teamID]
-                    const lastViewID = UserSettings.lastViewId[lastBoardID]
+function HomeToCurrentTeamContent() {
+    const firstTeam = useAppSelector<Team|null>(getFirstTeam)
+    const dispatch = useAppDispatch()
+    const categories = useAppSelector<CategoryBoards[]>(getSidebarCategories)
+    const myBoards = useAppSelector(getMySortedBoards)
 
-                    if (lastBoardID) {
-                        const categories = useAppSelector<CategoryBoards[]>(getSidebarCategories)
-                        const myBoards = useAppSelector(getMySortedBoards)
-                        const validBoardIds = new Set(myBoards.filter((b) => !b.deleteAt).map((b) => b.id))
+    useEffect(() => {
+        dispatch(fetchTeams())
+    }, [dispatch])
 
-                        if (!validBoardIds.has(lastBoardID)) {
-                            let fallbackBoardId: string | null = null
-                            for (const category of categories) {
-                                const visible = category.boardMetadata.find((m) => !m.hidden && validBoardIds.has(m.boardID))
-                                if (visible) {
-                                    fallbackBoardId = visible.boardID
-                                    break
-                                }
-                            }
+    let teamID = (window.getCurrentTeamId && window.getCurrentTeamId()) || ''
+    const lastTeamID = UserSettings.lastTeamId
+    
+    if (!teamID && !firstTeam && !lastTeamID) {
+        return <div className='focalboard-loading'>Loading...</div>
+    }
+    teamID = teamID || lastTeamID || firstTeam?.id || ''
 
-                            if (fallbackBoardId) {
-                                UserSettings.setLastBoardID(teamID, fallbackBoardId)
-                                return <Redirect to={`/team/${teamID}/${fallbackBoardId}`}/>
-                            }
+    if (UserSettings.lastBoardId) {
+        const lastBoardID = UserSettings.lastBoardId[teamID]
+        const lastViewID = UserSettings.lastViewId[lastBoardID]
 
-                            UserSettings.setLastBoardID(teamID, null)
-                            return <Redirect to={`/team/${teamID}`}/>
-                        }
-                    }
+        if (lastBoardID) {
+            const validBoardIds = new Set(myBoards.filter((b) => !b.deleteAt).map((b) => b.id))
 
-                    if (lastBoardID && lastViewID) {
-                        return <Redirect to={`/team/${teamID}/${lastBoardID}/${lastViewID}`}/>
-                    }
-                    if (lastBoardID) {
-                        return <Redirect to={`/team/${teamID}/${lastBoardID}`}/>
+            if (!validBoardIds.has(lastBoardID)) {
+                let fallbackBoardId: string | null = null
+                for (const category of categories) {
+                    const visible = category.boardMetadata.find((m) => !m.hidden && validBoardIds.has(m.boardID))
+                    if (visible) {
+                        fallbackBoardId = visible.boardID
+                        break
                     }
                 }
 
-                return <Redirect to={`/team/${teamID}`}/>
-            }}
-        />
-    )
+                if (fallbackBoardId) {
+                    UserSettings.setLastBoardID(teamID, fallbackBoardId)
+                    return <Navigate to={`/team/${teamID}/${fallbackBoardId}`} replace/>
+                }
+
+                UserSettings.setLastBoardID(teamID, null)
+                return <Navigate to={`/team/${teamID}`} replace/>
+            }
+        }
+
+        if (lastBoardID && lastViewID) {
+            return <Navigate to={`/team/${teamID}/${lastBoardID}/${lastViewID}`} replace/>
+        }
+        if (lastBoardID) {
+            return <Navigate to={`/team/${teamID}/${lastBoardID}`} replace/>
+        }
+    }
+
+    return <Navigate to={`/team/${teamID}`} replace/>
 }
 
 function WorkspaceToTeamRedirect() {
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string, workspaceId?: string}>()
-    const queryParams = new URLSearchParams(useLocation().search)
-    const history = useHistory()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string, workspaceId?: string}>()
+    const location = useLocation()
+    const queryParams = new URLSearchParams(location.search)
+    const navigate = useNavigate()
+    const match = useMatch('/workspace/:workspaceId/:boardId?/:viewId?/:cardId?')
+
     useEffect(() => {
-        octoClient.getBoard(match.params.boardId).then((board) => {
+        if (!params.boardId) {
+            return
+        }
+        octoClient.getBoard(params.boardId).then((board) => {
             if (board) {
-                let newPath = generatePath(match.path.replace('/workspace/:workspaceId', '/team/:teamId'), {
+                const pathTemplate = match?.pattern.path.replace('/workspace/:workspaceId', '/team/:teamId') || '/team/:teamId/:boardId?/:viewId?/:cardId?'
+                let newPath = generatePath(pathTemplate, {
                     teamId: board?.teamId,
                     boardId: board?.id,
-                    viewId: match.params.viewId,
-                    cardId: match.params.cardId,
+                    viewId: params.viewId || undefined,
+                    cardId: params.cardId || undefined,
                 })
-                if (queryParams) {
-                    newPath += '?' + queryParams
+                if (queryParams.toString()) {
+                    newPath += '?' + queryParams.toString()
                 }
-                history.replace(newPath)
+                navigate(newPath, {replace: true})
             }
         })
-    }, [])
+    }, [params.boardId, params.viewId, params.cardId, navigate, match, queryParams])
     return null
 }
 
 function GlobalErrorRedirect() {
     const globalError = useAppSelector<string>(getGlobalError)
     const dispatch = useAppDispatch()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (globalError) {
             dispatch(setGlobalError(''))
-            history.replace(`/error?id=${globalError}`)
+            navigate(`/error?id=${globalError}`, {replace: true})
         }
-    }, [globalError, history])
+    }, [globalError, navigate, dispatch])
 
     return null
 }
 
-type Props = {
-    history?: History<unknown>
-}
+function NavigationEventHandler() {
+    const navigate = useNavigate()
 
-const FocalboardRouter = (props: Props): JSX.Element => {
+    const handleNavigate = useCallback((event: Event) => {
+        const customEvent = event as CustomEvent<NavigationEventDetail>
+        if (customEvent.detail?.path) {
+            Utils.log(`Navigation event: ${customEvent.detail.path}`)
+            navigate(customEvent.detail.path, {state: customEvent.detail.state})
+        }
+    }, [navigate])
 
-    let browserHistory: History<unknown>
-    if (props.history) {
-        browserHistory = props.history
-    } else {
-        browserHistory = useMemo(() => {
-            return createBrowserHistory({basename: Utils.getFrontendBaseURL()})
-        }, [])
-    }
+    const handleNavigateReplace = useCallback((event: Event) => {
+        const customEvent = event as CustomEvent<NavigationEventDetail>
+        if (customEvent.detail?.path) {
+            Utils.log(`Navigation replace event: ${customEvent.detail.path}`)
+            navigate(customEvent.detail.path, {replace: true, state: customEvent.detail.state})
+        }
+    }, [navigate])
 
     useEffect(() => {
-        if (window.frontendBaseURL) {
-            browserHistory.replace(window.location.pathname.replace(window.frontendBaseURL, ''))
+        window.addEventListener(NAVIGATION_EVENT, handleNavigate)
+        window.addEventListener(NAVIGATION_REPLACE_EVENT, handleNavigateReplace)
+
+        return () => {
+            window.removeEventListener(NAVIGATION_EVENT, handleNavigate)
+            window.removeEventListener(NAVIGATION_REPLACE_EVENT, handleNavigateReplace)
         }
+    }, [handleNavigate, handleNavigateReplace])
+
+    return null
+}
+
+function RootLayout() {
+    return (
+        <>
+            <GlobalErrorRedirect/>
+            <NavigationEventHandler/>
+            <Outlet/>
+        </>
+    )
+}
+
+export function navigateTo(path: string, state?: unknown): void {
+    window.dispatchEvent(new CustomEvent<NavigationEventDetail>(NAVIGATION_EVENT, {
+        detail: {path, state},
+    }))
+}
+
+export function navigateReplace(path: string, state?: unknown): void {
+    window.dispatchEvent(new CustomEvent<NavigationEventDetail>(NAVIGATION_REPLACE_EVENT, {
+        detail: {path, state},
+    }))
+}
+
+function getBasename(): string {
+    return Utils.isFocalboardPlugin() ? (window.frontendBaseURL || '') : ('/' + Utils.getFrontendBaseURL())
+}
+
+function createRoutes() {
+    return [
+        {
+            path: '/',
+            element: <RootLayout/>,
+            children: [
+                {
+                    path: 'boards',
+                    element: <Navigate to='/' replace/>,
+                },
+                {
+                    index: true,
+                    element: (
+                        <FBRoute loginRequired={true}>
+                            <HomeToCurrentTeamContent/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'welcome',
+                    element: (
+                        <FBRoute>
+                            <WelcomePage/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'error',
+                    element: (
+                        <FBRoute>
+                            <ErrorPage/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'team/:teamId/new/:channelId',
+                    element: (
+                        <FBRoute>
+                            <BoardPage new={true}/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'team/:teamId/shared/:boardId?/:viewId?/:cardId?',
+                    element: (
+                        <FBRoute>
+                            <BoardPage readonly={true}/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'shared/:boardId?/:viewId?/:cardId?',
+                    element: (
+                        <FBRoute>
+                            <BoardPage readonly={true}/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'board/:boardId?/:viewId?/:cardId?',
+                    element: (
+                        <FBRoute
+                            loginRequired={true}
+                            getOriginalPath={(params) => {
+                                return `/board/${Utils.buildOriginalPath('', params.boardId, params.viewId, params.cardId)}`
+                            }}
+                        >
+                            <BoardPage/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?',
+                    element: (
+                        <FBRoute>
+                            <WorkspaceToTeamRedirect/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'workspace/:workspaceId/:boardId?/:viewId?/:cardId?',
+                    element: (
+                        <FBRoute>
+                            <WorkspaceToTeamRedirect/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: 'team/:teamId/:boardId?/:viewId?/:cardId?',
+                    element: (
+                        <FBRoute
+                            loginRequired={true}
+                            getOriginalPath={(params) => {
+                                return `/team/${Utils.buildOriginalPath(params.teamId, params.boardId, params.viewId, params.cardId)}`
+                            }}
+                        >
+                            <BoardPage/>
+                        </FBRoute>
+                    ),
+                },
+                {
+                    path: '*',
+                    element: null,
+                },
+            ],
+        },
+    ]
+}
+
+const FocalboardRouter = (): React.JSX.Element => {
+    const router = useMemo(() => {
+        const basename = getBasename()
+        Utils.log(`Creating router with basename: ${basename}`)
+        return createBrowserRouter(createRoutes(), {basename})
     }, [])
 
-    return (
-        <Router history={browserHistory}>
-            <GlobalErrorRedirect/>
-            <Switch>
-                <HomeToCurrentTeam
-                    path='/'
-                    exact={true}
-                />
-                <FBRoute
-                    exact={true}
-                    path='/welcome'
-                >
-                    <WelcomePage/>
-                </FBRoute>
-
-                <FBRoute path='/error'>
-                    <ErrorPage/>
-                </FBRoute>
-                <FBRoute path={['/team/:teamId/new/:channelId']}>
-                    <BoardPage new={true}/>
-                </FBRoute>
-
-                <FBRoute path={['/team/:teamId/shared/:boardId?/:viewId?/:cardId?', '/shared/:boardId?/:viewId?/:cardId?']}>
-                    <BoardPage readonly={true}/>
-                </FBRoute>
-
-                <FBRoute
-                    loginRequired={true}
-                    path='/board/:boardId?/:viewId?/:cardId?'
-                    getOriginalPath={({params: {boardId, viewId, cardId}}) => {
-                        return `/board/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
-                    }}
-                >
-                    <BoardPage/>
-                </FBRoute>
-                <FBRoute path={['/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?', '/workspace/:workspaceId/:boardId?/:viewId?/:cardId?']}>
-                    <WorkspaceToTeamRedirect/>
-                </FBRoute>
-                <FBRoute
-                    loginRequired={true}
-                    path='/team/:teamId/:boardId?/:viewId?/:cardId?'
-                    getOriginalPath={({params: {teamId, boardId, viewId, cardId}}) => {
-                        return `/team/${Utils.buildOriginalPath(teamId, boardId, viewId, cardId)}`
-                    }}
-                >
-                    <BoardPage/>
-                </FBRoute>
-            </Switch>
-        </Router>
-    )
+    return <RouterProvider router={router}/>
 }
 
 export default React.memo(FocalboardRouter)

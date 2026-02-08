@@ -110,12 +110,12 @@ const RHSBoardCards = (props: Props) => {
         
         // 카테고리에서 클릭할 때와 동일하게 첫 번째 view로 이동 (viewId 없이)
         // Utils.showBoard와 동일한 로직: viewId를 undefined로 설정하여 첫 번째 view 선택
-        const params = {
+        const pathParams = {
             teamId: currentTeamId,
             boardId: board.id,
-            viewId: undefined  // 첫 번째 view로 이동
+            viewId: ''  // 첫 번째 view로 이동
         }
-        const boardPath = generatePath('/team/:teamId/:boardId?/:viewId?', params)
+        const boardPath = generatePath('/team/:teamId/:boardId?/:viewId?', pathParams)
         const boardUrl = `${windowAny.frontendBaseURL}${boardPath}`
         window.open(boardUrl, '_blank', 'noopener')
     }

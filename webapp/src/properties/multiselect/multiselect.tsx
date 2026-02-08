@@ -15,7 +15,7 @@ import RenameOptionDialog from '../../widgets/renameOptionDialog'
 
 import { PropertyProps } from '../types'
 
-const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
+const MultiSelectProperty = (props: PropertyProps): React.JSX.Element => {
     const { propertyTemplate, propertyValue, board, card } = props
     const isEditable = !props.readOnly && Boolean(board)
     const [open, setOpen] = useState(false)
@@ -26,13 +26,13 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
 
     const emptyDisplayValue = props.showEmptyPlaceholder
         ? intl.formatMessage({
-              id: 'PropertyValueElement.empty',
-              defaultMessage: 'Empty',
-          })
+            id: 'PropertyValueElement.empty',
+            defaultMessage: 'Empty',
+        })
         : ''
 
     const onChange = useCallback(
-        (newValue) =>
+        (newValue: string | string[]) =>
             mutator.changePropertyValue(
                 board.id,
                 card,
@@ -131,8 +131,8 @@ const MultiSelectProperty = (props: PropertyProps): JSX.Element => {
     const values =
         Array.isArray(propertyValue) && propertyValue.length > 0
             ? propertyValue
-                  .map((v) => propertyTemplate.options.find((o) => o!.id === v))
-                  .filter((v): v is IPropertyOption => Boolean(v))
+                .map((v) => propertyTemplate.options.find((o) => o!.id === v))
+                .filter((v): v is IPropertyOption => Boolean(v))
             : []
 
     const renameDialog = renameOption && (

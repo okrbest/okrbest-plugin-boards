@@ -572,7 +572,6 @@ exports[`src/components/shareBoard/userPermissionsRow should match snapshot in t
                   />
                 </div>
               </div>
-              <div />
               <div>
                 <div
                   aria-label="Editor"

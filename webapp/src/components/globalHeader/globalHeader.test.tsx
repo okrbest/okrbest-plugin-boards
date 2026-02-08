@@ -4,7 +4,6 @@
 
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {createMemoryHistory} from 'history'
 
 import {render} from '@testing-library/react'
 
@@ -16,7 +15,6 @@ import GlobalHeader from './globalHeader'
 
 describe('components/sidebar/GlobalHeader', () => {
     const mockStore = configureStore([])
-    const history = createMemoryHistory()
 
     let store = mockStore({})
     beforeEach(() => {
@@ -25,7 +23,7 @@ describe('components/sidebar/GlobalHeader', () => {
     test('header menu should match snapshot', () => {
         const component = wrapIntl(
             <ReduxProvider store={store}>
-                <GlobalHeader history={history}/>
+                <GlobalHeader/>
             </ReduxProvider>,
         )
 

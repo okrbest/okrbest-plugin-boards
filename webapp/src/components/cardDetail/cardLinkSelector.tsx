@@ -21,7 +21,7 @@ type Props = {
     onClose: () => void
 }
 
-const CardLinkSelector = (props: Props): JSX.Element => {
+const CardLinkSelector = (props: Props): React.JSX.Element => {
     const {boardId, currentCardId, currentCardDepth, onSelect, onClose} = props
     const intl = useIntl()
 

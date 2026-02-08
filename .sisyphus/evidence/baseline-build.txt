@@ -1,0 +1,1134 @@
+
+> focalboard@9.0.0 build
+> webpack --mode=production
+
+assets by status 27.5 MiB [big]
+  assets by path *.gif 4.16 MiB
+    asset comment.gif 1.14 MiB [compared for emit] [from: static/comment.gif] [big] (auxiliary name: main) (auxiliary id hint: vendors)
+    + 4 assets
+  asset main.js 19.8 MiB [emitted] [minimized] [big] (name: main) (id hint: vendors) 1 related asset
+  asset emoji_spirit.png 3.6 MiB [compared for emit] [from: static/emoji_spirit.png] [big] (auxiliary name: main) (auxiliary id hint: vendors)
+asset boards-screenshots.png 196 KiB [compared for emit] [from: static/boards-screenshots.png] (auxiliary name: main) (auxiliary id hint: vendors)
+asset boards-welcome.png 137 KiB [compared for emit] [from: static/boards-welcome.png] (auxiliary name: main) (auxiliary id hint: vendors)
+asset compass-icons.svg 116 KiB [compared for emit] [from: node_modules/@mattermost/compass-icons/font/compass-icons.svg?25139478] (auxiliary name: main) (auxiliary id hint: vendors)
+asset boards-welcome-small.png 80.2 KiB [compared for emit] [from: static/boards-welcome-small.png] (auxiliary name: main) (auxiliary id hint: vendors)
+asset compass-icons.eot 58.2 KiB [compared for emit] [from: node_modules/@mattermost/compass-icons/font/compass-icons.eot?25139478] (auxiliary name: main) (auxiliary id hint: vendors)
+asset compass-icons.ttf 58 KiB [compared for emit] [from: node_modules/@mattermost/compass-icons/font/compass-icons.ttf?25139478] (auxiliary name: main) (auxiliary id hint: vendors)
+asset compass-icons.woff 31.4 KiB [compared for emit] [from: node_modules/@mattermost/compass-icons/font/compass-icons.woff?25139478] (auxiliary name: main) (auxiliary id hint: vendors)
+asset compass-icons.woff2 25.9 KiB [compared for emit] [from: node_modules/@mattermost/compass-icons/font/compass-icons.woff2?25139478] (auxiliary name: main) (auxiliary id hint: vendors)
+asset app-bar-icon.png 17.9 KiB [compared for emit] [from: static/app-bar-icon.png] (auxiliary name: main) (auxiliary id hint: vendors)
+orphan modules 16.9 MiB [orphan] 3626 modules
+runtime modules 2.91 KiB 10 modules
+built modules 32.7 MiB (javascript) 8.46 MiB (asset) [built]
+  modules by path ./node_modules/ 19.3 MiB (javascript) 289 KiB (asset) 1589 modules
+  modules by path ./src/ 13.3 MiB 213 modules
+  modules by path ./static/ 8.18 MiB (asset) 420 bytes (javascript)
+    modules by path ./static/*.png 4.02 MiB (asset) 210 bytes (javascript) 5 modules
+    modules by path ./static/*.gif 4.16 MiB (asset) 210 bytes (javascript) 5 modules
+  modules by mime type image/svg+xml 10.2 KiB
+    data:image/svg+xml,%20%3Csvg%20widt.. 4.98 KiB [built] [code generated]
+    + 2 modules
+  modules by mime type image/png 1.19 KiB
+    data:image/png;base64,iVBORw0KGgoAAAAN.. 591 bytes [built] [code generated]
+    data:image/png;base64,iVBORw0KGgoAAAAN.. 632 bytes [built] [code generated]
+  + 6 modules
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/styles/main.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/plugin.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/styles/labels.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/styles/focalboard-variables.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardSelector.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/createBoardFromTemplate.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/globalHeader/globalHeader.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardsUnfurl/boardsUnfurl.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/rhsChannelBoards.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/logo.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/newVersionBanner.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/flashMessages.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardSelectorItem.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/dialog.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/globalHeader/globalHeaderSettingsMenu.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/rhsChannelBoardItem.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/confirmationDialogBox.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/buttons/button.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/add.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/searchDialog/searchDialog.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/rhsBoardCards.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/pages/errorPage.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/pages/welcome/welcomePage.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/pages/boardPage/boardPage.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/buttons/iconButton.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/menuWrapper.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/options.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/settings.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/tooltip.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/check.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/workspace.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/menu/menu.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/centerPanel.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/guestNoBoards.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardTemplateSelector/boardTemplateSelector.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/sidebar/sidebar.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/menu/separatorOption.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/menu/subMenuOption.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/menu/colorOption.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/menu/labelOption.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/topBar.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDialog.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardLimitNotification.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/shareBoard/shareBoardButton.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewTitle.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/shareBoard/shareBoardLoginButton.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewHeader/viewHeader.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/table/table.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/kanban/kanban.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/gallery/gallery.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/shareBoard/shareBoard.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/calendar/fullcalendar.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/hamburger.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardTemplateSelector/boardTemplateSelectorPreview.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/showSidebar.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/hideSidebar.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/sidebar/sidebarSettingsMenu.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardTemplateSelector/boardTemplateSelectorItem.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/sidebar/sidebarCategory.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/sidebar/sidebarUserMenu.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/cardDetail.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardsSwitcher/boardsSwitcher.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/switch.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/editable.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewMenu.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/modalWrapper.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/dropdown.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/markdownEditor.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/cardDetailProperties.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewHeader/filterComponent.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/notificationBox/notificationBox.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/shareBoard/shareBoard.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/kanban/kanbanColumn.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardBadges.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/kanban/kanbanCard.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/gallery/galleryCard.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardActionsMenu/cardActionsMenuIcon.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/delete.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/sidebar/deleteBoardDialog.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/hiddenCardCount/hiddenCardCount.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/sidebar/sidebarBoardItem.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/table/calculation/calculationRow.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/addView/add_view.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/sidebar/registrationLink.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/createCategory/createCategory.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/editableArea.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/focalboard_logo.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/commentsList.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/attachment.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/sidebarCategories/sidebarCategories.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/manageCategories/manageCategories.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/subCards.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/blockSuite/blockSuite.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/searchForBoards/searchForBoards.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/boardsSwitcherDialog/boardSwitcherDialog.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/properties/updatedTime/updatedTime.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/properties/createdTime/createdTime.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/properties/url/url.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/properties/date/date.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/properties/card/card.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/iconSelector.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/propertyMenu.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/guestBadge.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/board.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/calendar.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/gallery.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/grip.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/duplicate.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/table.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/modal.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/label.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/sortUp.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/buttons/buttonWithMenu.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/sortDown.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/markdownEditorInput/markdownEditorInput.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/link.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewHeader/filterEntry.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/addProperties/add_properties.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/adminBadge/adminBadge.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/text.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/show.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/hide.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/calculations/calculation.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/table/tableRow.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/tutorial_tour_tip/tutorial_tour_tip.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/openCard/open_card.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/copyLink/copy_link.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/kanban/calculation/calculation.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/comment.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/content/attachmentElement.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/valueSelector.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/renameOptionDialog.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/onboardingTour/addComments/add_comments.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/scheduledCommentPicker.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/cardDetail/cardLinkSelector.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/emojiPicker.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/confirmAddUserForNotifications.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/emoji.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewHeader/filterValue.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/card.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/table/horizontalGrip.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/image.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/content/dividerElement.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/content/checkboxElement.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/imagePreviewModal/imagePreviewModal.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/markdownEditorInput/entryComponent/entryComponent.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/content/archivedFile/archivedFile.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/pulsating_dot/pulsating_dot.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/kanban/calculation/calculationOption.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/personSelector.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewHeader/cardFilterValue.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewHeader/dateFilter.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/widgets/icons/divider.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./loaders/globalScssClassLoader.js!./src/components/viewHeader/multiperson.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+WARNING in asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  main.js (19.8 MiB)
+  addProperty.gif (1020 KiB)
+  changeViews.gif (793 KiB)
+  comment.gif (1.14 MiB)
+  copyLink.gif (633 KiB)
+  emoji_spirit.png (3.6 MiB)
+  share.gif (645 KiB)
+
+WARNING in entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  main (19.8 MiB)
+      main.js
+
+WARNING in webpack performance recommendations: 
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+
+webpack 5.105.0 compiled with 3 warnings in 38192 ms

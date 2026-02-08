@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useCallback, useEffect, useState} from 'react'
-import {generatePath, useRouteMatch, useHistory} from 'react-router-dom'
+import {useParams, useNavigate, useLocation} from 'react-router-dom'
 import {FormattedMessage} from 'react-intl'
 
 import {DatePropertyType} from '../properties/types'
@@ -44,7 +44,9 @@ type Props = {
 
 function CenterContent(props: Props) {
     const isLoading = useAppSelector(isLoadingBoard)
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string, channelId?: string}>()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string, channelId?: string}>()
+    const navigate = useNavigate()
+    const location = useLocation()
     const board = useAppSelector(getCurrentBoard)
     const templates = useAppSelector(getTemplates)
     const cards = useAppSelector(getCurrentViewCardsSortedFilteredAndGrouped)
@@ -55,7 +57,6 @@ function CenterContent(props: Props) {
     const clientConfig = useAppSelector(getClientConfig)
     const hiddenCardsCount = useAppSelector(getCurrentBoardHiddenCardsCount)
     const cardLimitTimestamp = useAppSelector(getCardLimitTimestamp)
-    const history = useHistory()
     const dispatch = useAppDispatch()
     const me = useAppSelector<IUser|null>(getMe)
     const hiddenBoardIDs = useAppSelector(getHiddenBoardIDs)
@@ -65,14 +66,13 @@ function CenterContent(props: Props) {
     }
 
     const showCard = useCallback((cardId?: string) => {
-        const params = {...match.params, cardId}
-        let newPath = generatePath(Utils.getBoardPagePath(match.path), params)
+        let newPath = Utils.buildBoardPath(location.pathname, {...params, cardId})
         if (props.readonly) {
             newPath += `?r=${Utils.getReadToken()}`
         }
-        history.push(newPath)
+        navigate(newPath)
         dispatch(setCurrentCard(cardId || ''))
-    }, [match, history])
+    }, [params, navigate, location.pathname, props.readonly, dispatch])
 
     useEffect(() => {
         const onConfigChangeHandler = (_: WSClient, config: ClientConfig) => {
@@ -91,7 +91,7 @@ function CenterContent(props: Props) {
         return () => {
             wsClient.removeOnConfigChange(onConfigChangeHandler)
         }
-    }, [cardLimitTimestamp, match.params.boardId, templates])
+    }, [cardLimitTimestamp, params.boardId, templates, dispatch])
 
     const templateSelector = (
         <BoardTemplateSelector
@@ -107,11 +107,11 @@ function CenterContent(props: Props) {
                     defaultMessage='Add a board to the sidebar using any of the templates defined below or start from scratch.'
                 />
             }
-            channelId={match.params.channelId}
+            channelId={params.channelId}
         />
     )
 
-    if (match.params.channelId) {
+    if (params.channelId) {
         if (me?.is_guest) {
             return <GuestNoBoards/>
         }
@@ -135,7 +135,7 @@ function CenterContent(props: Props) {
                 readonly={props.readonly}
                 board={board}
                 cards={cards}
-                shownCardId={match.params.cardId}
+                shownCardId={params.cardId}
                 showCard={showCard}
                 activeView={activeView}
                 groupByProperty={property}

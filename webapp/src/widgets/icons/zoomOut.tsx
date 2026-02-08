@@ -3,7 +3,7 @@
 
 import React from 'react'
 
-export default function ZoomOutIcon(): JSX.Element {
+export default function ZoomOutIcon(): React.JSX.Element {
     return (
         <svg
             xmlns='http://www.w3.org/2000/svg'

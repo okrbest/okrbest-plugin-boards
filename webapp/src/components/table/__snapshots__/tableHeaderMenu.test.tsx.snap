@@ -353,7 +353,6 @@ exports[`components/table/TableHeaderMenu should match snapshot, title column 1`
             />
           </div>
         </div>
-        <div />
       </div>
       <div
         class="menu-spacer hideOnWidescreen"

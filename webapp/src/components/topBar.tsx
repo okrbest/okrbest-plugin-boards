@@ -11,7 +11,7 @@ import './topBar.scss'
 import {Utils} from '../utils'
 // import {Constants} from '../constants' // 미사용
 
-const TopBar = (): JSX.Element => {
+const TopBar = (): React.JSX.Element => {
     if (Utils.isFocalboardPlugin()) {
         // const feedbackUrl = 'https://www.focalboard.com/fwlink/feedback-boards.html?v=' + Constants.versionString // 미사용
         return (

@@ -31,7 +31,7 @@ const KanbanColumn = (props: Props) => {
     }
     return (
         <div
-            ref={drop}
+            ref={(node) => { drop(node) }}
             className={className}
         >
             {props.children}

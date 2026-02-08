@@ -178,7 +178,6 @@ exports[`src/components/gallery/GalleryCard with a comment content should match 
                 />
               </div>
             </div>
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -245,7 +244,7 @@ exports[`src/components/gallery/GalleryCard with an image content should match s
   >
     <div
       aria-label="menuwrapper"
-      class="MenuWrapper override menuOpened optionsMenu"
+      class="MenuWrapper optionsMenu"
       role="button"
     >
       <button
@@ -255,173 +254,6 @@ exports[`src/components/gallery/GalleryCard with an image content should match s
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
-      <div
-        class="Menu noselect left "
-      >
-        <div
-          class="menu-contents"
-        >
-          <div
-            class="menu-options"
-          >
-            <div>
-              <div
-                aria-label="Delete"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Delete
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                aria-label="Duplicate"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-content-copy content-copy"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Duplicate
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                aria-label="Copy link"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-link-variant LinkIcon"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Copy link
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                aria-label="Send notification to channel"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-message-text-outline MessageIcon"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Send notification to channel
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-            </div>
-            <div />
-          </div>
-          <div
-            class="menu-spacer hideOnWidescreen"
-          />
-          <div
-            class="menu-options hideOnWidescreen"
-          >
-            <div
-              aria-label="Cancel"
-              class="MenuOption TextOption menu-option menu-cancel"
-              role="button"
-            >
-              <div
-                class="d-flex"
-              >
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Cancel
-                </div>
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     <div
       class="gallery-image"
@@ -633,7 +465,6 @@ exports[`src/components/gallery/GalleryCard with many contents should match snap
                 />
               </div>
             </div>
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -704,7 +535,7 @@ exports[`src/components/gallery/GalleryCard with many images content should matc
   >
     <div
       aria-label="menuwrapper"
-      class="MenuWrapper override menuOpened optionsMenu"
+      class="MenuWrapper optionsMenu"
       role="button"
     >
       <button
@@ -714,173 +545,6 @@ exports[`src/components/gallery/GalleryCard with many images content should matc
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
-      <div
-        class="Menu noselect left "
-      >
-        <div
-          class="menu-contents"
-        >
-          <div
-            class="menu-options"
-          >
-            <div>
-              <div
-                aria-label="Delete"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Delete
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                aria-label="Duplicate"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-content-copy content-copy"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Duplicate
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                aria-label="Copy link"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-link-variant LinkIcon"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Copy link
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                aria-label="Send notification to channel"
-                class="MenuOption TextOption menu-option"
-                role="button"
-              >
-                <div
-                  class="d-flex"
-                >
-                  <div
-                    class="menu-option__icon"
-                  >
-                    <i
-                      class="CompassIcon icon-message-text-outline MessageIcon"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="menu-option__content"
-                >
-                  <div
-                    class="menu-name"
-                  >
-                    Send notification to channel
-                  </div>
-                </div>
-                <div
-                  class="noicon"
-                />
-              </div>
-            </div>
-            <div />
-          </div>
-          <div
-            class="menu-spacer hideOnWidescreen"
-          />
-          <div
-            class="menu-options hideOnWidescreen"
-          >
-            <div
-              aria-label="Cancel"
-              class="MenuOption TextOption menu-option menu-cancel"
-              role="button"
-            >
-              <div
-                class="d-flex"
-              >
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Cancel
-                </div>
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     <div
       class="gallery-image"
@@ -1295,7 +959,6 @@ exports[`src/components/gallery/GalleryCard without block content should match s
                 />
               </div>
             </div>
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"

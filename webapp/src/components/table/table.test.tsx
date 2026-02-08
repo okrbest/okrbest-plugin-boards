@@ -214,67 +214,68 @@ describe('components/table/Table', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('limited card in table view', () => {
-        const callback = jest.fn()
-        const addCard = jest.fn()
-        const boardTest = TestBlockFactory.createBoard()
-        const card1 = TestBlockFactory.createCard(boardTest)
-        const card2 = TestBlockFactory.createCard(boardTest)
-        const mockStore = configureStore([])
+     test('limited card in table view', async () => {
+         const callback = jest.fn()
+         const addCard = jest.fn()
+         const boardTest = TestBlockFactory.createBoard()
+         const card1 = TestBlockFactory.createCard(boardTest)
+         const card2 = TestBlockFactory.createCard(boardTest)
+         const mockStore = configureStore([])
 
-        const stateTest = {
-            comments: {
-                comments: {},
-            },
-            contents: {
-                contents: {},
-            },
-            cards: {
-                cards: {
-                    [card1.id]: card1,
-                    [card2.id]: card2,
-                },
-            },
-            teams: {
-                current: {id: 'team-id'},
-            },
-            boards: {
-                current: boardTest.id,
-                boards: {
-                    [boardTest.id]: boardTest,
-                },
-                myBoardMemberships: {
-                    [boardTest.id]: {userId: 'user_id_1', schemeAdmin: true},
-                },
-            },
-        }
+         const stateTest = {
+             comments: {
+                 comments: {},
+             },
+             contents: {
+                 contents: {},
+             },
+             cards: {
+                 cards: {
+                     [card1.id]: card1,
+                     [card2.id]: card2,
+                 },
+             },
+             teams: {
+                 current: {id: 'team-id'},
+             },
+             boards: {
+                 current: boardTest.id,
+                 boards: {
+                     [boardTest.id]: boardTest,
+                 },
+                 myBoardMemberships: {
+                     [boardTest.id]: {userId: 'user_id_1', schemeAdmin: true},
+                 },
+             },
+         }
 
-        const storeTest = mockStore(stateTest)
-        card.limited = true
+         const storeTest = mockStore(stateTest)
+         card.limited = true
 
-        const component = wrapDNDIntl(
-            <ReduxProvider store={storeTest}>
-                <Table
-                    board={boardTest}
-                    activeView={view}
-                    visibleGroups={[]}
-                    cards={[card1, card2]}
-                    views={[view, view2]}
-                    selectedCardIds={[]}
-                    readonly={true}
-                    cardIdToFocusOnRender=''
-                    showCard={callback}
-                    addCard={addCard}
-                    onCardClicked={jest.fn()}
-                    hiddenCardsCount={2}
-                    showHiddenCardCountNotification={jest.fn()}
-                />
-            </ReduxProvider>,
-        )
-        const {container, getByTitle} = render(component)
-        expect(getByTitle('hidden-card-count')).toHaveTextContent('2')
-        expect(container).toMatchSnapshot()
-    })
+         const component = wrapDNDIntl(
+             <ReduxProvider store={storeTest}>
+                 <Table
+                     board={boardTest}
+                     activeView={view}
+                     visibleGroups={[]}
+                     cards={[card1, card2]}
+                     views={[view, view2]}
+                     selectedCardIds={[]}
+                     readonly={true}
+                     cardIdToFocusOnRender=''
+                     showCard={callback}
+                     addCard={addCard}
+                     onCardClicked={jest.fn()}
+                     hiddenCardsCount={2}
+                     showHiddenCardCountNotification={jest.fn()}
+                 />
+             </ReduxProvider>,
+         )
+         const {container} = render(component)
+         const hiddenCardElement = await screen.findByTitle('hidden-card-count')
+         expect(hiddenCardElement).toHaveTextContent('2')
+         expect(container).toMatchSnapshot()
+     })
 })
 
 describe('components/table/Table extended', () => {
@@ -626,125 +627,125 @@ describe('components/table/Table extended', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('should delete snapshot', async () => {
-        const board = TestBlockFactory.createBoard()
+     test('should delete snapshot', async () => {
+         const board = TestBlockFactory.createBoard()
 
-        const modifiedById = Utils.createGuid(IDType.User)
-        board.cardProperties.push({
-            id: modifiedById,
-            name: 'Last Modified By',
-            type: 'updatedBy',
-            options: [],
-        })
-        const card1 = TestBlockFactory.createCard(board)
-        card1.title = 'card1'
-        const card2 = TestBlockFactory.createCard(board)
-        card2.title = 'card2'
-        const view = TestBlockFactory.createBoardView(board)
-        view.fields.viewType = 'table'
-        view.fields.groupById = undefined
-        view.fields.visiblePropertyIds = ['property1', 'property2', modifiedById]
-        const mockStore = configureStore([])
-        const store = mockStore({
-            ...state,
-            cards: {
-                cards: {
-                    [card1.id]: card1,
-                    [card2.id]: card2,
-                },
-            },
-        })
+         const modifiedById = Utils.createGuid(IDType.User)
+         board.cardProperties.push({
+             id: modifiedById,
+             name: 'Last Modified By',
+             type: 'updatedBy',
+             options: [],
+         })
+         const card1 = TestBlockFactory.createCard(board)
+         card1.title = 'card1'
+         const card2 = TestBlockFactory.createCard(board)
+         card2.title = 'card2'
+         const view = TestBlockFactory.createBoardView(board)
+         view.fields.viewType = 'table'
+         view.fields.groupById = undefined
+         view.fields.visiblePropertyIds = ['property1', 'property2', modifiedById]
+         const mockStore = configureStore([])
+         const store = mockStore({
+             ...state,
+             cards: {
+                 cards: {
+                     [card1.id]: card1,
+                     [card2.id]: card2,
+                 },
+             },
+         })
 
-        const component = wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <Table
-                    board={board}
-                    activeView={view}
-                    visibleGroups={[]}
-                    cards={[card1, card2]}
-                    views={[view]}
-                    selectedCardIds={[]}
-                    readonly={false}
-                    cardIdToFocusOnRender=''
-                    showCard={jest.fn()}
-                    addCard={jest.fn()}
-                    onCardClicked={jest.fn()}
-                    hiddenCardsCount={0}
-                    showHiddenCardCountNotification={jest.fn()}
-                />
-            </ReduxProvider>,
-        )
+         const component = wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <Table
+                     board={board}
+                     activeView={view}
+                     visibleGroups={[]}
+                     cards={[card1, card2]}
+                     views={[view]}
+                     selectedCardIds={[]}
+                     readonly={false}
+                     cardIdToFocusOnRender=''
+                     showCard={jest.fn()}
+                     addCard={jest.fn()}
+                     onCardClicked={jest.fn()}
+                     hiddenCardsCount={0}
+                     showHiddenCardCountNotification={jest.fn()}
+                 />
+             </ReduxProvider>,
+         )
 
-        const {getByTitle, getByRole, getAllByTitle} = render(component)
-        const card1Name = getByTitle(card1.title)
-        userEvents.hover(card1Name)
-        const menuBtn = getAllByTitle('MenuBtn')
-        userEvents.click(menuBtn[0])
-        const deleteBtn = getByRole('button', {name: 'Delete'})
-        userEvents.click(deleteBtn)
-        const dailogDeleteBtn = screen.getByRole('button', {name: 'Delete'})
-        userEvents.click(dailogDeleteBtn)
-        expect(mockedMutator.deleteBlock).toBeCalledTimes(1)
-    })
+         render(component)
+         const card1Name = await screen.findByTitle(card1.title)
+         await userEvents.hover(card1Name)
+         const menuBtn = await screen.findAllByTitle('MenuBtn')
+         await userEvents.click(menuBtn[0])
+         const deleteBtn = await screen.findByRole('button', {name: 'Delete'})
+         await userEvents.click(deleteBtn)
+         const dailogDeleteBtn = await screen.findByRole('button', {name: 'Delete'})
+         await userEvents.click(dailogDeleteBtn)
+         expect(mockedMutator.deleteBlock).toBeCalledTimes(1)
+     })
 
-    test('should have Duplicate Button', async () => {
-        const board = TestBlockFactory.createBoard()
+     test('should have Duplicate Button', async () => {
+         const board = TestBlockFactory.createBoard()
 
-        const modifiedById = Utils.createGuid(IDType.User)
-        board.cardProperties.push({
-            id: modifiedById,
-            name: 'Last Modified By',
-            type: 'updatedBy',
-            options: [],
-        })
-        const card1 = TestBlockFactory.createCard(board)
-        card1.title = 'card1'
-        const card2 = TestBlockFactory.createCard(board)
-        card2.title = 'card2'
-        const view = TestBlockFactory.createBoardView(board)
-        view.fields.viewType = 'table'
-        view.fields.groupById = undefined
-        view.fields.visiblePropertyIds = ['property1', 'property2', modifiedById]
-        const mockStore = configureStore([])
-        const store = mockStore({
-            ...state,
-            cards: {
-                cards: {
-                    [card1.id]: card1,
-                    [card2.id]: card2,
-                },
-            },
-        })
+         const modifiedById = Utils.createGuid(IDType.User)
+         board.cardProperties.push({
+             id: modifiedById,
+             name: 'Last Modified By',
+             type: 'updatedBy',
+             options: [],
+         })
+         const card1 = TestBlockFactory.createCard(board)
+         card1.title = 'card1'
+         const card2 = TestBlockFactory.createCard(board)
+         card2.title = 'card2'
+         const view = TestBlockFactory.createBoardView(board)
+         view.fields.viewType = 'table'
+         view.fields.groupById = undefined
+         view.fields.visiblePropertyIds = ['property1', 'property2', modifiedById]
+         const mockStore = configureStore([])
+         const store = mockStore({
+             ...state,
+             cards: {
+                 cards: {
+                     [card1.id]: card1,
+                     [card2.id]: card2,
+                 },
+             },
+         })
 
-        const component = wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <Table
-                    board={board}
-                    activeView={view}
-                    visibleGroups={[]}
-                    cards={[card1, card2]}
-                    views={[view]}
-                    selectedCardIds={[]}
-                    readonly={false}
-                    cardIdToFocusOnRender=''
-                    showCard={jest.fn()}
-                    addCard={jest.fn()}
-                    onCardClicked={jest.fn()}
-                    hiddenCardsCount={0}
-                    showHiddenCardCountNotification={jest.fn()}
-                />
-            </ReduxProvider>,
-        )
+         const component = wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <Table
+                     board={board}
+                     activeView={view}
+                     visibleGroups={[]}
+                     cards={[card1, card2]}
+                     views={[view]}
+                     selectedCardIds={[]}
+                     readonly={false}
+                     cardIdToFocusOnRender=''
+                     showCard={jest.fn()}
+                     addCard={jest.fn()}
+                     onCardClicked={jest.fn()}
+                     hiddenCardsCount={0}
+                     showHiddenCardCountNotification={jest.fn()}
+                 />
+             </ReduxProvider>,
+         )
 
-        const {getByTitle, getByRole, getAllByTitle, container} = render(component)
-        const card1Name = getByTitle(card1.title)
-        userEvents.hover(card1Name)
-        const menuBtn = getAllByTitle('MenuBtn')
-        userEvents.click(menuBtn[0])
-        const duplicateBtn = getByRole('button', {name: 'Duplicate'})
-        expect(duplicateBtn).not.toBe(null)
-        userEvents.click(duplicateBtn)
-        expect(mockedMutator.duplicateCard).toBeCalledTimes(1)
-        expect(container).toMatchSnapshot()
-    })
+         const {container} = render(component)
+         const card1Name = await screen.findByTitle(card1.title)
+         await userEvents.hover(card1Name)
+         const menuBtn = await screen.findAllByTitle('MenuBtn')
+         await userEvents.click(menuBtn[0])
+         const duplicateBtn = await screen.findByRole('button', {name: 'Duplicate'})
+         expect(duplicateBtn).not.toBe(null)
+         await userEvents.click(duplicateBtn)
+         expect(mockedMutator.duplicateCard).toBeCalledTimes(1)
+         expect(container).toMatchSnapshot()
+     })
 })

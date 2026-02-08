@@ -24,7 +24,6 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu return properties menu 1
         <div
           class="menu-options"
         >
-          <div />
           <div>
             <div
               aria-label="Status"

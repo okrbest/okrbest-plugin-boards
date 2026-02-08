@@ -4,7 +4,7 @@
 import React from 'react'
 import {FormattedMessage} from 'react-intl'
 
-import {useLocation, useHistory} from 'react-router-dom'
+import {useLocation, useNavigate} from 'react-router-dom'
 
 import BoardWelcomePNG from '../../../static/boards-welcome.png'
 import BoardWelcomeSmallPNG from '../../../static/boards-welcome-small.png'
@@ -25,7 +25,7 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 import {UserSettingKey} from '../../userSettings'
 
 const WelcomePage = () => {
-    const history = useHistory()
+    const navigate = useNavigate()
     const queryString = new URLSearchParams(useLocation().search)
     const me = useAppSelector<IUser|null>(getMe)
     const myConfig = useAppSelector(getMyConfig)
@@ -47,13 +47,13 @@ const WelcomePage = () => {
 
     const goForward = () => {
         if (queryString.get('r')) {
-            history.replace(queryString.get('r')!)
+            navigate(queryString.get('r')!, {replace: true})
             return
         }
         if (currentTeam) {
-            history.replace(`/team/${currentTeam?.id}`)
+            navigate(`/team/${currentTeam?.id}`, {replace: true})
         } else {
-            history.replace('/')
+            navigate('/', {replace: true})
         }
     }
 
@@ -92,7 +92,7 @@ const WelcomePage = () => {
         const onboardingData = await octoClient.prepareOnboarding(currentTeam.id)
         await dispatch(fetchMe())
         const newPath = `/team/${onboardingData?.teamID}/${onboardingData?.boardID}`
-        history.replace(newPath)
+        navigate(newPath, {replace: true})
     }
 
     // It's still possible for a guest to end up at this route/page directly, so
