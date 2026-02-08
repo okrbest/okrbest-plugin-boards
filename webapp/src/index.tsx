@@ -8,9 +8,10 @@ import React, {useEffect} from 'react'
 import {createIntl, createIntlCache} from 'react-intl'
 import {Store, Action} from 'redux'
 import {Provider as ReduxProvider} from 'react-redux'
-import {createBrowserHistory, History} from 'history'
 import {GlobalState} from '@mattermost/types/store'
 import {selectTeam} from 'mattermost-redux/actions/teams'
+import data from '@emoji-mart/data'
+import {init as initEmojiMart} from 'emoji-mart'
 
 import appBarIcon from '../static/app-bar-icon.png'
 
@@ -18,6 +19,7 @@ import {setMattermostTheme} from './theme'
 import FocalboardIcon from './widgets/icons/logo'
 import GlobalHeader from './components/globalHeader/globalHeader'
 import App from './app'
+import {navigateTo, navigateReplace} from './router'
 import store from './store'
 import {setTeam} from './store/teams'
 import WithWebSockets from './components/withWebSockets'
@@ -86,45 +88,31 @@ const doBrowserHistoryPush = (path: string) => {
     }
 }
 
-const handleBrowserHistoryPush = (pathName: string, history: ReturnType<typeof createBrowserHistory>) => {
+const handleDesktopBrowserHistoryPush = (pathName: string) => {
     if (!pathName || !pathName.startsWith('/boards')) {
         return
     }
 
-    Utils.log(`Navigating Boards to ${pathName}`)
-    history.replace(pathName.replace('/boards', ''))
+    Utils.log(`Desktop navigation to ${pathName}`)
+    navigateReplace(pathName.replace('/boards', '') || '/')
 }
 
-function customHistory() {
-    const history = createBrowserHistory({ basename: Utils.getFrontendBaseURL() })
-
-    if (Utils.isDesktop()) {
-        if (windowAny.desktopAPI?.onBrowserHistoryPush) {
-            windowAny.desktopAPI.onBrowserHistoryPush((pathName) => handleBrowserHistoryPush(pathName, history))
-        } else {
-            window.addEventListener('message', (event: MessageEvent) => {
-                if (event.origin !== windowAny.location.origin) {
-                    return
-                }
-
-                handleBrowserHistoryPush(event.data.message?.pathName, history)
-            })
-        }
+function initDesktopNavigation() {
+    if (!Utils.isDesktop()) {
+        return
     }
 
-    return {
-        ...history,
-        push: (path: string, state?: unknown) => {
-            if (Utils.isDesktop()) {
-                doBrowserHistoryPush(`${windowAny.frontendBaseURL}${path}`)
-            } else {
-                history.push(path, state as Record<string, never>)
+    if (windowAny.desktopAPI?.onBrowserHistoryPush) {
+        windowAny.desktopAPI.onBrowserHistoryPush(handleDesktopBrowserHistoryPush)
+    } else {
+        window.addEventListener('message', (event: MessageEvent) => {
+            if (event.origin !== windowAny.location.origin) {
+                return
             }
-        },
+            handleDesktopBrowserHistoryPush(event.data.message?.pathName)
+        })
     }
 }
-
-let browserHistory: History<unknown>
 
 const MainApp = (props: Props) => {
     useEffect(() => {
@@ -149,7 +137,7 @@ const MainApp = (props: Props) => {
             <ReduxProvider store={store}>
                 <WithWebSockets manifest={manifest} webSocketClient={props.webSocketClient}>
                     <div id='focalboard-app'>
-                        <App history={browserHistory} />
+                        <App/>
                     </div>
                     <div id='focalboard-root-portal' />
                 </WithWebSockets>
@@ -161,7 +149,7 @@ const MainApp = (props: Props) => {
 const HeaderComponent = () => {
     return (
         <ErrorBoundary>
-            <GlobalHeader history={browserHistory} />
+            <GlobalHeader/>
         </ErrorBoundary>
     )
 }
@@ -173,14 +161,14 @@ export default class Plugin {
     registry?: PluginRegistry
 
     async initialize(registry: PluginRegistry, mmStore: Store<GlobalState, Action<Record<string, unknown>>>): Promise<void> {
-        // Patch BlockSuite configurations safely during initialization
         patchSlashMenu();
+        initEmojiMart({data})
 
         const siteURL = mmStore.getState().entities.general.config.SiteURL
         const subpath = siteURL ? getSubpath(siteURL) : ''
         windowAny.frontendBaseURL = subpath + windowAny.frontendBaseURL
         windowAny.baseURL = subpath + windowAny.baseURL
-        browserHistory = customHistory()
+        initDesktopNavigation()
         const cache = createIntlCache()
         const intl = createIntl({
             // modeled after <IntlProvider> in webapp/src/app.tsx
@@ -254,14 +242,16 @@ export default class Plugin {
                 store.dispatch(setChannel(currentChannelObj))
             }
 
-            // Watch for change in active team.
-            // This handles the user selecting a team from the team sidebar.
             const currentTeamID = mmStore.getState().entities.teams.currentTeamId
             if (currentTeamID && currentTeamID !== prevTeamID) {
                 if (prevTeamID && window.location.pathname.startsWith(windowAny.frontendBaseURL || '')) {
-                    // Don't re-push the URL if we're already on a URL for the current team
-                    if (!window.location.pathname.startsWith(`${(windowAny.frontendBaseURL || '')}/team/${currentTeamID}`))
-                        browserHistory.push(`/team/${currentTeamID}`)
+                    if (!window.location.pathname.startsWith(`${(windowAny.frontendBaseURL || '')}/team/${currentTeamID}`)) {
+                        if (Utils.isDesktop()) {
+                            doBrowserHistoryPush(`${windowAny.frontendBaseURL}/team/${currentTeamID}`)
+                        } else {
+                            navigateTo(`/team/${currentTeamID}`)
+                        }
+                    }
                 }
                 prevTeamID = currentTeamID
                 store.dispatch(setTeam(currentTeamID))

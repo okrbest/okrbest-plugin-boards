@@ -22,7 +22,7 @@ type Props = {
     block: ContentBlock
 }
 
-const ImageElement = (props: Props): JSX.Element|null => {
+const ImageElement = (props: Props): React.JSX.Element|null => {
     const [imageDataUrl, setImageDataUrl] = useState<string|null>(null)
     const [fileInfo, setFileInfo] = useState<FileInfo>({})
     const [showPreview, setShowPreview] = useState(false)

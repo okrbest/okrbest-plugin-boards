@@ -131,6 +131,10 @@ exports[`components/cardDialog already following card 1`] = `
             class="octo-propertylist CardDetailProperties"
           >
             <div
+              data-rfd-droppable-context-id="_r_r_"
+              data-rfd-droppable-id="property-list"
+            />
+            <div
               class="octo-propertyname add-property"
             >
               <div
@@ -145,6 +149,58 @@ exports[`components/cardDialog already following card 1`] = `
                     + Add a property
                   </span>
                 </button>
+              </div>
+            </div>
+          </div>
+          <div
+            class="SubCards"
+          >
+            <div
+              class="SubCards__header"
+            >
+              <i
+                class="CompassIcon icon-format-list-bulleted"
+              />
+              <span
+                class="SubCards__header-title"
+              >
+                Sub-tasks
+              </span>
+            </div>
+            <div
+              class="SubCards__content"
+            >
+              <div
+                class="SubCards__actions"
+              >
+                <div
+                  class="SubCards__add"
+                  role="button"
+                  tabindex="0"
+                >
+                  <i
+                    class="CompassIcon icon-plus"
+                  />
+                  <span>
+                    Add new page
+                  </span>
+                </div>
+                <div
+                  class="SubCards__link-wrapper"
+                >
+                  <div
+                    class="SubCards__link"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <i
+                      class="CompassIcon icon-link-variant"
+                    />
+                    <span>
+                      Link existing item
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -166,7 +222,6 @@ exports[`components/cardDialog already following card 1`] = `
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"
@@ -174,338 +229,17 @@ exports[`components/cardDialog already following card 1`] = `
           </div>
         </div>
         <div
-          class="CardDetail content-blocks"
+          class="CardDetail CardDetail--fullwidth content-blocks"
         >
           <div
-            class="blocksuite-editor-wrapper "
+            class="BlockSuiteEditor BlockSuiteEditor--error"
           >
-            <div
-              class="blocksuite-editor-mount octo-content"
-              style="height: 100%;"
-            >
-              <affine-editor-container
-                style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important;"
-              >
-                <!---->
-                <!--?lit$HASH$-->
-                
-        
-                <div
-                  class="affine-page-viewport"
-                  data-theme="light"
-                >
-                  
-          
-                  <!--?lit$HASH$-->
-                   
-                  <doc-title>
-                    <!---->
-                    
-      
-                    <div
-                      class="doc-title-container doc-title-container-empty"
-                      data-block-is-title="true"
-                    >
-                      
-        
-                      <rich-text>
-                        <!---->
-                        <div
-                          class=" inline-editor "
-                          contenteditable="true"
-                          data-v-root="true"
-                          style="outline: none;"
-                        >
-                          <!---->
-                          <!---->
-                          <v-line
-                            style="display: block;"
-                          >
-                            <!---->
-                            <div>
-                              <v-text>
-                                <!---->
-                                <span
-                                  data-v-text="true"
-                                  style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                >
-                                  <!--?lit$HASH$-->
-                                  ‌
-                                </span>
-                              </v-text>
-                            </div>
-                          </v-line>
-                          <!---->
-                        </div>
-                      </rich-text>
-                      
-      
-                    </div>
-                    
-    
-                  </doc-title>
-                   
-                  
-          
-                  <div
-                    class="page-editor playground-page-editor-container"
-                  >
-                    
-            
-                    <!--?lit$HASH$-->
-                    <editor-host
-                      tabindex="0"
-                    >
-                      <!---->
-                      <affine-page-root
-                        data-block-id="BLOCK_ID"
-                        style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important; outline: none;"
-                      >
-                        <!---->
-                        
-      
-                        <div
-                          class="affine-page-root-block-container"
-                        >
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-surface-void
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                          </affine-surface-void>
-                          <!---->
-                          <!---->
-                          <affine-note
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                            
-      
-                            <div
-                              class="affine-note-block-container"
-                            >
-                              
-        
-                              <div
-                                class="affine-block-children-container"
-                              >
-                                
-          
-                                <!--?lit$HASH$-->
-                                <!--?lit$HASH$-->
-                                <!---->
-                                <affine-paragraph
-                                  data-block-id="BLOCK_ID"
-                                >
-                                  <!---->
-                                  <div
-                                    class=" affine-block-component light "
-                                    style="position:relative;margin:var(--affine-paragraph-margin, 10px 0);"
-                                  >
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <!--?-->
-                                    
-      
-                                    <div
-                                      class="affine-paragraph-block-container"
-                                    >
-                                      
-        
-                                      <div
-                                        class=" affine-paragraph-rich-text-wrapper text blocksuite-toggle-button-parent "
-                                      >
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-          
-                                        <rich-text>
-                                          <!---->
-                                          <div
-                                            class=" inline-editor "
-                                            contenteditable="true"
-                                            data-v-root="true"
-                                          >
-                                            <!---->
-                                            <!---->
-                                            <v-line
-                                              style="display: block;"
-                                            >
-                                              <!---->
-                                              <div>
-                                                <v-text>
-                                                  <!---->
-                                                  <span
-                                                    data-v-text="true"
-                                                    style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                                  >
-                                                    <!--?lit$HASH$-->
-                                                    ‌
-                                                  </span>
-                                                </v-text>
-                                              </div>
-                                            </v-line>
-                                            <!---->
-                                          </div>
-                                        </rich-text>
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-                
-                                        <div
-                                          class=" affine-paragraph-placeholder "
-                                          contenteditable="false"
-                                        >
-                                          
-                  
-                                          <!--?lit$HASH$-->
-                                          Type '/' for commands
-                                          
-                
-                                        </div>
-                                        
-              
-                                        
-        
-                                      </div>
-                                      
-
-        
-                                      <!--?lit$HASH$-->
-                                      <div
-                                        class="affine-block-children-container"
-                                        style="padding-left:24px;"
-                                      >
-                                        
-      
-                                        <!--?lit$HASH$-->
-                                        <!--?lit$HASH$-->
-                                        <!--?-->
-                                        
-    
-                                      </div>
-                                      
-      
-                                    </div>
-                                    
-    
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <affine-block-selection
-                                      style="border-radius: 5px; border-width: 0px; display: none;"
-                                    />
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-    
-                                  </div>
-                                </affine-paragraph>
-                                <!---->
-                                <!--?-->
-                                
-        
-                              </div>
-                              
-      
-                            </div>
-                            
-    
-                          </affine-note>
-                          <!---->
-                          <!--?-->
-                           
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-keyboard-toolbar-widget
-                            data-widget-id="affine-keyboard-toolbar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-modal-widget
-                            data-widget-id="affine-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-inner-modal-widget
-                            data-widget-id="affine-inner-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-slash-menu-widget
-                            data-widget-id="affine-slash-menu-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-linked-doc-widget
-                            data-widget-id="affine-linked-doc-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-drag-handle-widget
-                            data-widget-id="affine-drag-handle-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-embed-card-toolbar
-                            data-widget-id="affine-embed-card-toolbar"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-format-bar-widget
-                            data-widget-id="affine-format-bar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-doc-remote-selection-widget
-                            data-widget-id="affine-doc-remote-selection-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-page-dragging-area-widget
-                            data-widget-id="affine-page-dragging-area-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-viewport-overlay-widget
-                            data-widget-id="affine-viewport-overlay-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-scroll-anchoring-widget
-                            data-widget-id="affine-scroll-anchoring-widget"
-                          />
-                          <!---->
-                          <!--?-->
-                        </div>
-                        
-    
-                      </affine-page-root>
-                    </editor-host>
-                    
-          
-                  </div>
-                  
-        
-                </div>
-                
-      
-                <!--?-->
-              </affine-editor-container>
-            </div>
+            <span>
+              Failed to load editor
+            </span>
+            <p>
+              Cannot read properties of undefined (reading 'replace')
+            </p>
           </div>
         </div>
       </div>
@@ -878,345 +612,54 @@ exports[`components/cardDialog return a cardDialog readonly 1`] = `
           </div>
           <div
             class="octo-propertylist CardDetailProperties"
-          />
+          >
+            <div
+              data-rfd-droppable-context-id="_r_6_"
+              data-rfd-droppable-id="property-list"
+            />
+          </div>
+          <div
+            class="SubCards"
+          >
+            <div
+              class="SubCards__header"
+            >
+              <i
+                class="CompassIcon icon-format-list-bulleted"
+              />
+              <span
+                class="SubCards__header-title"
+              >
+                Sub-tasks
+              </span>
+            </div>
+            <div
+              class="SubCards__content"
+            >
+              <div
+                class="SubCards__empty"
+              >
+                No sub-tasks
+              </div>
+            </div>
+          </div>
           <hr />
           <div
             class="CommentsList"
           />
         </div>
         <div
-          class="CardDetail content-blocks"
+          class="CardDetail CardDetail--fullwidth content-blocks"
         >
           <div
-            class="blocksuite-editor-wrapper "
+            class="BlockSuiteEditor BlockSuiteEditor--error"
           >
-            <div
-              class="blocksuite-editor-mount octo-content"
-              style="height: 100%;"
-            >
-              <affine-editor-container
-                style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important;"
-              >
-                <!---->
-                <!--?lit$HASH$-->
-                
-        
-                <div
-                  class="affine-page-viewport"
-                  data-theme="light"
-                >
-                  
-          
-                  <!--?lit$HASH$-->
-                   
-                  <doc-title>
-                    <!---->
-                    
-      
-                    <div
-                      class="doc-title-container doc-title-container-empty"
-                      data-block-is-title="true"
-                    >
-                      
-        
-                      <rich-text>
-                        <!---->
-                        <div
-                          class=" inline-editor "
-                          contenteditable="true"
-                          data-v-root="true"
-                          style="outline: none;"
-                        >
-                          <!---->
-                          <!---->
-                          <v-line
-                            style="display: block;"
-                          >
-                            <!---->
-                            <div>
-                              <v-text>
-                                <!---->
-                                <span
-                                  data-v-text="true"
-                                  style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                >
-                                  <!--?lit$HASH$-->
-                                  ‌
-                                </span>
-                              </v-text>
-                            </div>
-                          </v-line>
-                          <!---->
-                        </div>
-                      </rich-text>
-                      
-      
-                    </div>
-                    
-    
-                  </doc-title>
-                   
-                  
-          
-                  <div
-                    class="page-editor playground-page-editor-container"
-                  >
-                    
-            
-                    <!--?lit$HASH$-->
-                    <editor-host
-                      tabindex="0"
-                    >
-                      <!---->
-                      <affine-page-root
-                        data-block-id="BLOCK_ID"
-                        style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important; outline: none;"
-                      >
-                        <!---->
-                        
-      
-                        <div
-                          class="affine-page-root-block-container"
-                        >
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-surface-void
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                          </affine-surface-void>
-                          <!---->
-                          <!---->
-                          <affine-note
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                            
-      
-                            <div
-                              class="affine-note-block-container"
-                            >
-                              
-        
-                              <div
-                                class="affine-block-children-container"
-                              >
-                                
-          
-                                <!--?lit$HASH$-->
-                                <!--?lit$HASH$-->
-                                <!---->
-                                <affine-paragraph
-                                  data-block-id="BLOCK_ID"
-                                >
-                                  <!---->
-                                  <div
-                                    class=" affine-block-component light "
-                                    style="position:relative;margin:var(--affine-paragraph-margin, 10px 0);"
-                                  >
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <!--?-->
-                                    
-      
-                                    <div
-                                      class="affine-paragraph-block-container"
-                                    >
-                                      
-        
-                                      <div
-                                        class=" affine-paragraph-rich-text-wrapper text blocksuite-toggle-button-parent "
-                                      >
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-          
-                                        <rich-text>
-                                          <!---->
-                                          <div
-                                            class=" inline-editor "
-                                            contenteditable="true"
-                                            data-v-root="true"
-                                          >
-                                            <!---->
-                                            <!---->
-                                            <v-line
-                                              style="display: block;"
-                                            >
-                                              <!---->
-                                              <div>
-                                                <v-text>
-                                                  <!---->
-                                                  <span
-                                                    data-v-text="true"
-                                                    style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                                  >
-                                                    <!--?lit$HASH$-->
-                                                    ‌
-                                                  </span>
-                                                </v-text>
-                                              </div>
-                                            </v-line>
-                                            <!---->
-                                          </div>
-                                        </rich-text>
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-                
-                                        <div
-                                          class=" affine-paragraph-placeholder "
-                                          contenteditable="false"
-                                        >
-                                          
-                  
-                                          <!--?lit$HASH$-->
-                                          Type '/' for commands
-                                          
-                
-                                        </div>
-                                        
-              
-                                        
-        
-                                      </div>
-                                      
-
-        
-                                      <!--?lit$HASH$-->
-                                      <div
-                                        class="affine-block-children-container"
-                                        style="padding-left:24px;"
-                                      >
-                                        
-      
-                                        <!--?lit$HASH$-->
-                                        <!--?lit$HASH$-->
-                                        <!--?-->
-                                        
-    
-                                      </div>
-                                      
-      
-                                    </div>
-                                    
-    
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <affine-block-selection
-                                      style="border-radius: 5px; border-width: 0px; display: none;"
-                                    />
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-    
-                                  </div>
-                                </affine-paragraph>
-                                <!---->
-                                <!--?-->
-                                
-        
-                              </div>
-                              
-      
-                            </div>
-                            
-    
-                          </affine-note>
-                          <!---->
-                          <!--?-->
-                           
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-keyboard-toolbar-widget
-                            data-widget-id="affine-keyboard-toolbar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-modal-widget
-                            data-widget-id="affine-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-inner-modal-widget
-                            data-widget-id="affine-inner-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-slash-menu-widget
-                            data-widget-id="affine-slash-menu-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-linked-doc-widget
-                            data-widget-id="affine-linked-doc-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-drag-handle-widget
-                            data-widget-id="affine-drag-handle-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-embed-card-toolbar
-                            data-widget-id="affine-embed-card-toolbar"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-format-bar-widget
-                            data-widget-id="affine-format-bar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-doc-remote-selection-widget
-                            data-widget-id="affine-doc-remote-selection-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-page-dragging-area-widget
-                            data-widget-id="affine-page-dragging-area-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-viewport-overlay-widget
-                            data-widget-id="affine-viewport-overlay-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-scroll-anchoring-widget
-                            data-widget-id="affine-scroll-anchoring-widget"
-                          />
-                          <!---->
-                          <!--?-->
-                        </div>
-                        
-    
-                      </affine-page-root>
-                    </editor-host>
-                    
-          
-                  </div>
-                  
-        
-                </div>
-                
-      
-                <!--?-->
-              </affine-editor-container>
-            </div>
+            <span>
+              Failed to load editor
+            </span>
+            <p>
+              Cannot read properties of undefined (reading 'replace')
+            </p>
           </div>
         </div>
       </div>
@@ -1283,7 +726,7 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
             </div>
             <div
               aria-label="menuwrapper"
-              class="MenuWrapper override menuOpened"
+              class="MenuWrapper"
               role="button"
             >
               <button
@@ -1293,174 +736,6 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
-              <div
-                class="Menu noselect left "
-              >
-                <div
-                  class="menu-contents"
-                >
-                  <div
-                    class="menu-options"
-                  >
-                    <div>
-                      <div
-                        aria-label="Delete"
-                        class="MenuOption TextOption menu-option"
-                        role="button"
-                      >
-                        <div
-                          class="d-flex"
-                        >
-                          <div
-                            class="menu-option__icon"
-                          >
-                            <i
-                              class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
-                            />
-                          </div>
-                        </div>
-                        <div
-                          class="menu-option__content"
-                        >
-                          <div
-                            class="menu-name"
-                          >
-                            Delete
-                          </div>
-                        </div>
-                        <div
-                          class="noicon"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div
-                        aria-label="Copy link"
-                        class="MenuOption TextOption menu-option"
-                        role="button"
-                      >
-                        <div
-                          class="d-flex"
-                        >
-                          <div
-                            class="menu-option__icon"
-                          >
-                            <i
-                              class="CompassIcon icon-link-variant LinkIcon"
-                            />
-                          </div>
-                        </div>
-                        <div
-                          class="menu-option__content"
-                        >
-                          <div
-                            class="menu-name"
-                          >
-                            Copy link
-                          </div>
-                        </div>
-                        <div
-                          class="noicon"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div
-                        aria-label="Send notification to channel"
-                        class="MenuOption TextOption menu-option"
-                        role="button"
-                      >
-                        <div
-                          class="d-flex"
-                        >
-                          <div
-                            class="menu-option__icon"
-                          >
-                            <i
-                              class="CompassIcon icon-message-text-outline MessageIcon"
-                            />
-                          </div>
-                        </div>
-                        <div
-                          class="menu-option__content"
-                        >
-                          <div
-                            class="menu-name"
-                          >
-                            Send notification to channel
-                          </div>
-                        </div>
-                        <div
-                          class="noicon"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div
-                        aria-label="New template from card"
-                        class="MenuOption TextOption menu-option"
-                        role="button"
-                      >
-                        <div
-                          class="d-flex"
-                        >
-                          <div
-                            class="menu-option__icon"
-                          >
-                            <i
-                              class="CompassIcon icon-plus"
-                            />
-                          </div>
-                        </div>
-                        <div
-                          class="menu-option__content"
-                        >
-                          <div
-                            class="menu-name"
-                          >
-                            New template from card
-                          </div>
-                        </div>
-                        <div
-                          class="noicon"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    class="menu-spacer hideOnWidescreen"
-                  />
-                  <div
-                    class="menu-options hideOnWidescreen"
-                  >
-                    <div
-                      aria-label="Cancel"
-                      class="MenuOption TextOption menu-option menu-cancel"
-                      role="button"
-                    >
-                      <div
-                        class="d-flex"
-                      >
-                        <div
-                          class="noicon"
-                        />
-                      </div>
-                      <div
-                        class="menu-option__content"
-                      >
-                        <div
-                          class="menu-name"
-                        >
-                          Cancel
-                        </div>
-                      </div>
-                      <div
-                        class="noicon"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
             <button
               aria-label="Close dialog"
@@ -1524,6 +799,10 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
             class="octo-propertylist CardDetailProperties"
           >
             <div
+              data-rfd-droppable-context-id="_r_c_"
+              data-rfd-droppable-id="property-list"
+            />
+            <div
               class="octo-propertyname add-property"
             >
               <div
@@ -1538,6 +817,58 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
                     + Add a property
                   </span>
                 </button>
+              </div>
+            </div>
+          </div>
+          <div
+            class="SubCards"
+          >
+            <div
+              class="SubCards__header"
+            >
+              <i
+                class="CompassIcon icon-format-list-bulleted"
+              />
+              <span
+                class="SubCards__header-title"
+              >
+                Sub-tasks
+              </span>
+            </div>
+            <div
+              class="SubCards__content"
+            >
+              <div
+                class="SubCards__actions"
+              >
+                <div
+                  class="SubCards__add"
+                  role="button"
+                  tabindex="0"
+                >
+                  <i
+                    class="CompassIcon icon-plus"
+                  />
+                  <span>
+                    Add new page
+                  </span>
+                </div>
+                <div
+                  class="SubCards__link-wrapper"
+                >
+                  <div
+                    class="SubCards__link"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <i
+                      class="CompassIcon icon-link-variant"
+                    />
+                    <span>
+                      Link existing item
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1559,7 +890,6 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"
@@ -1567,335 +897,17 @@ exports[`components/cardDialog return cardDialog menu content 1`] = `
           </div>
         </div>
         <div
-          class="CardDetail content-blocks"
+          class="CardDetail CardDetail--fullwidth content-blocks"
         >
           <div
-            class="blocksuite-editor-wrapper "
+            class="BlockSuiteEditor BlockSuiteEditor--error"
           >
-            <div
-              class="blocksuite-editor-mount octo-content"
-              style="height: 100%;"
-            >
-              <affine-editor-container
-                style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important;"
-              >
-                <!---->
-                <!--?lit$HASH$-->
-                
-        
-                <div
-                  class="affine-page-viewport"
-                  data-theme="light"
-                >
-                  
-          
-                  <!--?lit$HASH$-->
-                   
-                  <doc-title>
-                    <!---->
-                    
-      
-                    <div
-                      class="doc-title-container doc-title-container-empty"
-                      data-block-is-title="true"
-                    >
-                      
-        
-                      <rich-text>
-                        <!---->
-                        <div
-                          class=" inline-editor "
-                          contenteditable="true"
-                          data-v-root="true"
-                          style="outline: none;"
-                        >
-                          <!---->
-                          <!---->
-                          <v-line
-                            style="display: block;"
-                          >
-                            <!---->
-                            <div>
-                              <v-text>
-                                <!---->
-                                <span
-                                  data-v-text="true"
-                                  style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                >
-                                  <!--?lit$HASH$-->
-                                  ‌
-                                </span>
-                              </v-text>
-                            </div>
-                          </v-line>
-                          <!---->
-                        </div>
-                      </rich-text>
-                      
-      
-                    </div>
-                    
-    
-                  </doc-title>
-                   
-                  
-          
-                  <div
-                    class="page-editor playground-page-editor-container"
-                  >
-                    
-            
-                    <!--?lit$HASH$-->
-                    <editor-host
-                      tabindex="0"
-                    >
-                      <!---->
-                      <affine-page-root
-                        data-block-id="BLOCK_ID"
-                        style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important; outline: none;"
-                      >
-                        <!---->
-                        
-      
-                        <div
-                          class="affine-page-root-block-container"
-                        >
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-surface-void
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                          </affine-surface-void>
-                          <!---->
-                          <!---->
-                          <affine-note
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                            
-      
-                            <div
-                              class="affine-note-block-container"
-                            >
-                              
-        
-                              <div
-                                class="affine-block-children-container"
-                              >
-                                
-          
-                                <!--?lit$HASH$-->
-                                <!--?lit$HASH$-->
-                                <!---->
-                                <affine-paragraph
-                                  data-block-id="BLOCK_ID"
-                                >
-                                  <!---->
-                                  <div
-                                    class=" affine-block-component light "
-                                    style="position:relative;margin:var(--affine-paragraph-margin, 10px 0);"
-                                  >
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <!--?-->
-                                    
-      
-                                    <div
-                                      class="affine-paragraph-block-container"
-                                    >
-                                      
-        
-                                      <div
-                                        class=" affine-paragraph-rich-text-wrapper text blocksuite-toggle-button-parent "
-                                      >
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-          
-                                        <rich-text>
-                                          <!---->
-                                          <div
-                                            class=" inline-editor "
-                                            contenteditable="true"
-                                            data-v-root="true"
-                                          >
-                                            <!---->
-                                            <!---->
-                                            <v-line
-                                              style="display: block;"
-                                            >
-                                              <!---->
-                                              <div>
-                                                <v-text>
-                                                  <!---->
-                                                  <span
-                                                    data-v-text="true"
-                                                    style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                                  >
-                                                    <!--?lit$HASH$-->
-                                                    ‌
-                                                  </span>
-                                                </v-text>
-                                              </div>
-                                            </v-line>
-                                            <!---->
-                                          </div>
-                                        </rich-text>
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-                
-                                        <div
-                                          class=" affine-paragraph-placeholder "
-                                          contenteditable="false"
-                                        >
-                                          
-                  
-                                          <!--?lit$HASH$-->
-                                          Type '/' for commands
-                                          
-                
-                                        </div>
-                                        
-              
-                                        
-        
-                                      </div>
-                                      
-
-        
-                                      <!--?lit$HASH$-->
-                                      <div
-                                        class="affine-block-children-container"
-                                        style="padding-left:24px;"
-                                      >
-                                        
-      
-                                        <!--?lit$HASH$-->
-                                        <!--?lit$HASH$-->
-                                        <!--?-->
-                                        
-    
-                                      </div>
-                                      
-      
-                                    </div>
-                                    
-    
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <affine-block-selection
-                                      style="border-radius: 5px; border-width: 0px; display: none;"
-                                    />
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-    
-                                  </div>
-                                </affine-paragraph>
-                                <!---->
-                                <!--?-->
-                                
-        
-                              </div>
-                              
-      
-                            </div>
-                            
-    
-                          </affine-note>
-                          <!---->
-                          <!--?-->
-                           
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-keyboard-toolbar-widget
-                            data-widget-id="affine-keyboard-toolbar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-modal-widget
-                            data-widget-id="affine-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-inner-modal-widget
-                            data-widget-id="affine-inner-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-slash-menu-widget
-                            data-widget-id="affine-slash-menu-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-linked-doc-widget
-                            data-widget-id="affine-linked-doc-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-drag-handle-widget
-                            data-widget-id="affine-drag-handle-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-embed-card-toolbar
-                            data-widget-id="affine-embed-card-toolbar"
-                          />
-                          <!---->
-                          <!---->
-                          <!---->
-                          <!---->
-                          <affine-doc-remote-selection-widget
-                            data-widget-id="affine-doc-remote-selection-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-page-dragging-area-widget
-                            data-widget-id="affine-page-dragging-area-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-viewport-overlay-widget
-                            data-widget-id="affine-viewport-overlay-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-scroll-anchoring-widget
-                            data-widget-id="affine-scroll-anchoring-widget"
-                          />
-                          <!---->
-                          <!--?-->
-                        </div>
-                        
-    
-                      </affine-page-root>
-                    </editor-host>
-                    
-          
-                  </div>
-                  
-        
-                </div>
-                
-      
-                <!--?-->
-              </affine-editor-container>
-            </div>
+            <span>
+              Failed to load editor
+            </span>
+            <p>
+              Cannot read properties of undefined (reading 'replace')
+            </p>
           </div>
         </div>
       </div>
@@ -2035,6 +1047,10 @@ exports[`components/cardDialog return cardDialog menu content and cancel delete 
             class="octo-propertylist CardDetailProperties"
           >
             <div
+              data-rfd-droppable-context-id="_r_i_"
+              data-rfd-droppable-id="property-list"
+            />
+            <div
               class="octo-propertyname add-property"
             >
               <div
@@ -2049,6 +1065,58 @@ exports[`components/cardDialog return cardDialog menu content and cancel delete 
                     + Add a property
                   </span>
                 </button>
+              </div>
+            </div>
+          </div>
+          <div
+            class="SubCards"
+          >
+            <div
+              class="SubCards__header"
+            >
+              <i
+                class="CompassIcon icon-format-list-bulleted"
+              />
+              <span
+                class="SubCards__header-title"
+              >
+                Sub-tasks
+              </span>
+            </div>
+            <div
+              class="SubCards__content"
+            >
+              <div
+                class="SubCards__actions"
+              >
+                <div
+                  class="SubCards__add"
+                  role="button"
+                  tabindex="0"
+                >
+                  <i
+                    class="CompassIcon icon-plus"
+                  />
+                  <span>
+                    Add new page
+                  </span>
+                </div>
+                <div
+                  class="SubCards__link-wrapper"
+                >
+                  <div
+                    class="SubCards__link"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <i
+                      class="CompassIcon icon-link-variant"
+                    />
+                    <span>
+                      Link existing item
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2070,7 +1138,6 @@ exports[`components/cardDialog return cardDialog menu content and cancel delete 
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"
@@ -2078,335 +1145,88 @@ exports[`components/cardDialog return cardDialog menu content and cancel delete 
           </div>
         </div>
         <div
-          class="CardDetail content-blocks"
+          class="CardDetail CardDetail--fullwidth content-blocks"
         >
           <div
-            class="blocksuite-editor-wrapper "
+            class="BlockSuiteEditor BlockSuiteEditor--error"
           >
-            <div
-              class="blocksuite-editor-mount octo-content"
-              style="height: 100%;"
+            <span>
+              Failed to load editor
+            </span>
+            <p>
+              Cannot read properties of undefined (reading 'replace')
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="Dialog dialog-back confirmation-dialog-box size--small"
+  >
+    <div
+      class="backdrop"
+    />
+    <div
+      class="wrapper"
+    >
+      <div
+        class="dialog"
+        role="dialog"
+      >
+        <div
+          class="toolbar"
+        >
+          <div>
+            <h1
+              class="dialog-title"
+            />
+          </div>
+          <div
+            class="toolbar--right"
+          >
+            <button
+              aria-label="Close dialog"
+              title="Close dialog"
+              type="button"
             >
-              <affine-editor-container
-                style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important;"
-              >
-                <!---->
-                <!--?lit$HASH$-->
-                
-        
-                <div
-                  class="affine-page-viewport"
-                  data-theme="light"
-                >
-                  
-          
-                  <!--?lit$HASH$-->
-                   
-                  <doc-title>
-                    <!---->
-                    
-      
-                    <div
-                      class="doc-title-container doc-title-container-empty"
-                      data-block-is-title="true"
-                    >
-                      
-        
-                      <rich-text>
-                        <!---->
-                        <div
-                          class=" inline-editor "
-                          contenteditable="true"
-                          data-v-root="true"
-                          style="outline: none;"
-                        >
-                          <!---->
-                          <!---->
-                          <v-line
-                            style="display: block;"
-                          >
-                            <!---->
-                            <div>
-                              <v-text>
-                                <!---->
-                                <span
-                                  data-v-text="true"
-                                  style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                >
-                                  <!--?lit$HASH$-->
-                                  ‌
-                                </span>
-                              </v-text>
-                            </div>
-                          </v-line>
-                          <!---->
-                        </div>
-                      </rich-text>
-                      
-      
-                    </div>
-                    
-    
-                  </doc-title>
-                   
-                  
-          
-                  <div
-                    class="page-editor playground-page-editor-container"
-                  >
-                    
-            
-                    <!--?lit$HASH$-->
-                    <editor-host
-                      tabindex="0"
-                    >
-                      <!---->
-                      <affine-page-root
-                        data-block-id="BLOCK_ID"
-                        style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important; outline: none;"
-                      >
-                        <!---->
-                        
-      
-                        <div
-                          class="affine-page-root-block-container"
-                        >
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-surface-void
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                          </affine-surface-void>
-                          <!---->
-                          <!---->
-                          <affine-note
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                            
-      
-                            <div
-                              class="affine-note-block-container"
-                            >
-                              
-        
-                              <div
-                                class="affine-block-children-container"
-                              >
-                                
-          
-                                <!--?lit$HASH$-->
-                                <!--?lit$HASH$-->
-                                <!---->
-                                <affine-paragraph
-                                  data-block-id="BLOCK_ID"
-                                >
-                                  <!---->
-                                  <div
-                                    class=" affine-block-component light "
-                                    style="position:relative;margin:var(--affine-paragraph-margin, 10px 0);"
-                                  >
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <!--?-->
-                                    
-      
-                                    <div
-                                      class="affine-paragraph-block-container"
-                                    >
-                                      
-        
-                                      <div
-                                        class=" affine-paragraph-rich-text-wrapper text blocksuite-toggle-button-parent "
-                                      >
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-          
-                                        <rich-text>
-                                          <!---->
-                                          <div
-                                            class=" inline-editor "
-                                            contenteditable="true"
-                                            data-v-root="true"
-                                          >
-                                            <!---->
-                                            <!---->
-                                            <v-line
-                                              style="display: block;"
-                                            >
-                                              <!---->
-                                              <div>
-                                                <v-text>
-                                                  <!---->
-                                                  <span
-                                                    data-v-text="true"
-                                                    style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                                  >
-                                                    <!--?lit$HASH$-->
-                                                    ‌
-                                                  </span>
-                                                </v-text>
-                                              </div>
-                                            </v-line>
-                                            <!---->
-                                          </div>
-                                        </rich-text>
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-                
-                                        <div
-                                          class=" affine-paragraph-placeholder "
-                                          contenteditable="false"
-                                        >
-                                          
-                  
-                                          <!--?lit$HASH$-->
-                                          Type '/' for commands
-                                          
-                
-                                        </div>
-                                        
-              
-                                        
-        
-                                      </div>
-                                      
-
-        
-                                      <!--?lit$HASH$-->
-                                      <div
-                                        class="affine-block-children-container"
-                                        style="padding-left:24px;"
-                                      >
-                                        
-      
-                                        <!--?lit$HASH$-->
-                                        <!--?lit$HASH$-->
-                                        <!--?-->
-                                        
-    
-                                      </div>
-                                      
-      
-                                    </div>
-                                    
-    
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <affine-block-selection
-                                      style="border-radius: 5px; border-width: 0px; display: none;"
-                                    />
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-    
-                                  </div>
-                                </affine-paragraph>
-                                <!---->
-                                <!--?-->
-                                
-        
-                              </div>
-                              
-      
-                            </div>
-                            
-    
-                          </affine-note>
-                          <!---->
-                          <!--?-->
-                           
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-keyboard-toolbar-widget
-                            data-widget-id="affine-keyboard-toolbar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-modal-widget
-                            data-widget-id="affine-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-inner-modal-widget
-                            data-widget-id="affine-inner-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-slash-menu-widget
-                            data-widget-id="affine-slash-menu-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-linked-doc-widget
-                            data-widget-id="affine-linked-doc-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-drag-handle-widget
-                            data-widget-id="affine-drag-handle-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-embed-card-toolbar
-                            data-widget-id="affine-embed-card-toolbar"
-                          />
-                          <!---->
-                          <!---->
-                          <!---->
-                          <!---->
-                          <affine-doc-remote-selection-widget
-                            data-widget-id="affine-doc-remote-selection-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-page-dragging-area-widget
-                            data-widget-id="affine-page-dragging-area-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-viewport-overlay-widget
-                            data-widget-id="affine-viewport-overlay-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-scroll-anchoring-widget
-                            data-widget-id="affine-scroll-anchoring-widget"
-                          />
-                          <!---->
-                          <!--?-->
-                        </div>
-                        
-    
-                      </affine-page-root>
-                    </editor-host>
-                    
-          
-                  </div>
-                  
-        
-                </div>
-                
-      
-                <!--?-->
-              </affine-editor-container>
-            </div>
+              <i
+                class="CompassIcon icon-close CloseIcon"
+              />
+            </button>
+          </div>
+        </div>
+        <div
+          class="box-area"
+          title="Confirmation Dialog Box"
+        >
+          <h3
+            class="text-heading5"
+          >
+            Confirm card delete!
+          </h3>
+          <div
+            class="sub-text"
+          />
+          <div
+            class="action-buttons"
+          >
+            <button
+              title="Cancel"
+              type="button"
+            >
+              <span>
+                Cancel
+              </span>
+            </button>
+            <button
+              title="Delete"
+              type="submit"
+            >
+              <span>
+                Delete
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -2546,6 +1366,10 @@ exports[`components/cardDialog should match snapshot 1`] = `
             class="octo-propertylist CardDetailProperties"
           >
             <div
+              data-rfd-droppable-context-id="_r_0_"
+              data-rfd-droppable-id="property-list"
+            />
+            <div
               class="octo-propertyname add-property"
             >
               <div
@@ -2560,6 +1384,58 @@ exports[`components/cardDialog should match snapshot 1`] = `
                     + Add a property
                   </span>
                 </button>
+              </div>
+            </div>
+          </div>
+          <div
+            class="SubCards"
+          >
+            <div
+              class="SubCards__header"
+            >
+              <i
+                class="CompassIcon icon-format-list-bulleted"
+              />
+              <span
+                class="SubCards__header-title"
+              >
+                Sub-tasks
+              </span>
+            </div>
+            <div
+              class="SubCards__content"
+            >
+              <div
+                class="SubCards__actions"
+              >
+                <div
+                  class="SubCards__add"
+                  role="button"
+                  tabindex="0"
+                >
+                  <i
+                    class="CompassIcon icon-plus"
+                  />
+                  <span>
+                    Add new page
+                  </span>
+                </div>
+                <div
+                  class="SubCards__link-wrapper"
+                >
+                  <div
+                    class="SubCards__link"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <i
+                      class="CompassIcon icon-link-variant"
+                    />
+                    <span>
+                      Link existing item
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2581,7 +1457,6 @@ exports[`components/cardDialog should match snapshot 1`] = `
                   data-testid="preview-element"
                 />
               </div>
-              
             </div>
             <hr
               class="CommentsList__divider"
@@ -2589,338 +1464,17 @@ exports[`components/cardDialog should match snapshot 1`] = `
           </div>
         </div>
         <div
-          class="CardDetail content-blocks"
+          class="CardDetail CardDetail--fullwidth content-blocks"
         >
           <div
-            class="blocksuite-editor-wrapper "
+            class="BlockSuiteEditor BlockSuiteEditor--error"
           >
-            <div
-              class="blocksuite-editor-mount octo-content"
-              style="height: 100%;"
-            >
-              <affine-editor-container
-                style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important;"
-              >
-                <!---->
-                <!--?lit$HASH$-->
-                
-        
-                <div
-                  class="affine-page-viewport"
-                  data-theme="light"
-                >
-                  
-          
-                  <!--?lit$HASH$-->
-                   
-                  <doc-title>
-                    <!---->
-                    
-      
-                    <div
-                      class="doc-title-container doc-title-container-empty"
-                      data-block-is-title="true"
-                    >
-                      
-        
-                      <rich-text>
-                        <!---->
-                        <div
-                          class=" inline-editor "
-                          contenteditable="true"
-                          data-v-root="true"
-                          style="outline: none;"
-                        >
-                          <!---->
-                          <!---->
-                          <v-line
-                            style="display: block;"
-                          >
-                            <!---->
-                            <div>
-                              <v-text>
-                                <!---->
-                                <span
-                                  data-v-text="true"
-                                  style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                >
-                                  <!--?lit$HASH$-->
-                                  ‌
-                                </span>
-                              </v-text>
-                            </div>
-                          </v-line>
-                          <!---->
-                        </div>
-                      </rich-text>
-                      
-      
-                    </div>
-                    
-    
-                  </doc-title>
-                   
-                  
-          
-                  <div
-                    class="page-editor playground-page-editor-container"
-                  >
-                    
-            
-                    <!--?lit$HASH$-->
-                    <editor-host
-                      tabindex="0"
-                    >
-                      <!---->
-                      <affine-page-root
-                        data-block-id="BLOCK_ID"
-                        style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important; outline: none;"
-                      >
-                        <!---->
-                        
-      
-                        <div
-                          class="affine-page-root-block-container"
-                        >
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-surface-void
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                          </affine-surface-void>
-                          <!---->
-                          <!---->
-                          <affine-note
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                            
-      
-                            <div
-                              class="affine-note-block-container"
-                            >
-                              
-        
-                              <div
-                                class="affine-block-children-container"
-                              >
-                                
-          
-                                <!--?lit$HASH$-->
-                                <!--?lit$HASH$-->
-                                <!---->
-                                <affine-paragraph
-                                  data-block-id="BLOCK_ID"
-                                >
-                                  <!---->
-                                  <div
-                                    class=" affine-block-component light "
-                                    style="position:relative;margin:var(--affine-paragraph-margin, 10px 0);"
-                                  >
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <!--?-->
-                                    
-      
-                                    <div
-                                      class="affine-paragraph-block-container"
-                                    >
-                                      
-        
-                                      <div
-                                        class=" affine-paragraph-rich-text-wrapper text blocksuite-toggle-button-parent "
-                                      >
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-          
-                                        <rich-text>
-                                          <!---->
-                                          <div
-                                            class=" inline-editor "
-                                            contenteditable="true"
-                                            data-v-root="true"
-                                          >
-                                            <!---->
-                                            <!---->
-                                            <v-line
-                                              style="display: block;"
-                                            >
-                                              <!---->
-                                              <div>
-                                                <v-text>
-                                                  <!---->
-                                                  <span
-                                                    data-v-text="true"
-                                                    style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                                  >
-                                                    <!--?lit$HASH$-->
-                                                    ‌
-                                                  </span>
-                                                </v-text>
-                                              </div>
-                                            </v-line>
-                                            <!---->
-                                          </div>
-                                        </rich-text>
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-                
-                                        <div
-                                          class=" affine-paragraph-placeholder "
-                                          contenteditable="false"
-                                        >
-                                          
-                  
-                                          <!--?lit$HASH$-->
-                                          Type '/' for commands
-                                          
-                
-                                        </div>
-                                        
-              
-                                        
-        
-                                      </div>
-                                      
-
-        
-                                      <!--?lit$HASH$-->
-                                      <div
-                                        class="affine-block-children-container"
-                                        style="padding-left:24px;"
-                                      >
-                                        
-      
-                                        <!--?lit$HASH$-->
-                                        <!--?lit$HASH$-->
-                                        <!--?-->
-                                        
-    
-                                      </div>
-                                      
-      
-                                    </div>
-                                    
-    
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <affine-block-selection
-                                      style="border-radius: 5px; border-width: 0px; display: none;"
-                                    />
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-    
-                                  </div>
-                                </affine-paragraph>
-                                <!---->
-                                <!--?-->
-                                
-        
-                              </div>
-                              
-      
-                            </div>
-                            
-    
-                          </affine-note>
-                          <!---->
-                          <!--?-->
-                           
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-keyboard-toolbar-widget
-                            data-widget-id="affine-keyboard-toolbar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-modal-widget
-                            data-widget-id="affine-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-inner-modal-widget
-                            data-widget-id="affine-inner-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-slash-menu-widget
-                            data-widget-id="affine-slash-menu-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-linked-doc-widget
-                            data-widget-id="affine-linked-doc-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-drag-handle-widget
-                            data-widget-id="affine-drag-handle-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-embed-card-toolbar
-                            data-widget-id="affine-embed-card-toolbar"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-format-bar-widget
-                            data-widget-id="affine-format-bar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-doc-remote-selection-widget
-                            data-widget-id="affine-doc-remote-selection-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-page-dragging-area-widget
-                            data-widget-id="affine-page-dragging-area-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-viewport-overlay-widget
-                            data-widget-id="affine-viewport-overlay-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-scroll-anchoring-widget
-                            data-widget-id="affine-scroll-anchoring-widget"
-                          />
-                          <!---->
-                          <!--?-->
-                        </div>
-                        
-    
-                      </affine-page-root>
-                    </editor-host>
-                    
-          
-                  </div>
-                  
-        
-                </div>
-                
-      
-                <!--?-->
-              </affine-editor-container>
-            </div>
+            <span>
+              Failed to load editor
+            </span>
+            <p>
+              Cannot read properties of undefined (reading 'replace')
+            </p>
           </div>
         </div>
       </div>
@@ -3036,345 +1590,54 @@ exports[`components/cardDialog should match snapshot without permissions 1`] = `
           </div>
           <div
             class="octo-propertylist CardDetailProperties"
-          />
+          >
+            <div
+              data-rfd-droppable-context-id="_r_3_"
+              data-rfd-droppable-id="property-list"
+            />
+          </div>
+          <div
+            class="SubCards"
+          >
+            <div
+              class="SubCards__header"
+            >
+              <i
+                class="CompassIcon icon-format-list-bulleted"
+              />
+              <span
+                class="SubCards__header-title"
+              >
+                Sub-tasks
+              </span>
+            </div>
+            <div
+              class="SubCards__content"
+            >
+              <div
+                class="SubCards__empty"
+              >
+                No sub-tasks
+              </div>
+            </div>
+          </div>
           <hr />
           <div
             class="CommentsList"
           />
         </div>
         <div
-          class="CardDetail content-blocks"
+          class="CardDetail CardDetail--fullwidth content-blocks"
         >
           <div
-            class="blocksuite-editor-wrapper "
+            class="BlockSuiteEditor BlockSuiteEditor--error"
           >
-            <div
-              class="blocksuite-editor-mount octo-content"
-              style="height: 100%;"
-            >
-              <affine-editor-container
-                style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important;"
-              >
-                <!---->
-                <!--?lit$HASH$-->
-                
-        
-                <div
-                  class="affine-page-viewport"
-                  data-theme="light"
-                >
-                  
-          
-                  <!--?lit$HASH$-->
-                   
-                  <doc-title>
-                    <!---->
-                    
-      
-                    <div
-                      class="doc-title-container doc-title-container-empty"
-                      data-block-is-title="true"
-                    >
-                      
-        
-                      <rich-text>
-                        <!---->
-                        <div
-                          class=" inline-editor "
-                          contenteditable="true"
-                          data-v-root="true"
-                          style="outline: none;"
-                        >
-                          <!---->
-                          <!---->
-                          <v-line
-                            style="display: block;"
-                          >
-                            <!---->
-                            <div>
-                              <v-text>
-                                <!---->
-                                <span
-                                  data-v-text="true"
-                                  style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                >
-                                  <!--?lit$HASH$-->
-                                  ‌
-                                </span>
-                              </v-text>
-                            </div>
-                          </v-line>
-                          <!---->
-                        </div>
-                      </rich-text>
-                      
-      
-                    </div>
-                    
-    
-                  </doc-title>
-                   
-                  
-          
-                  <div
-                    class="page-editor playground-page-editor-container"
-                  >
-                    
-            
-                    <!--?lit$HASH$-->
-                    <editor-host
-                      tabindex="0"
-                    >
-                      <!---->
-                      <affine-page-root
-                        data-block-id="BLOCK_ID"
-                        style="background-color: rgb(255, 255, 255) !important; color: rgb(0, 0, 0); border-radius: 8px !important; outline: none;"
-                      >
-                        <!---->
-                        
-      
-                        <div
-                          class="affine-page-root-block-container"
-                        >
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-surface-void
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                          </affine-surface-void>
-                          <!---->
-                          <!---->
-                          <affine-note
-                            data-block-id="BLOCK_ID"
-                          >
-                            <!---->
-                            
-      
-                            <div
-                              class="affine-note-block-container"
-                            >
-                              
-        
-                              <div
-                                class="affine-block-children-container"
-                              >
-                                
-          
-                                <!--?lit$HASH$-->
-                                <!--?lit$HASH$-->
-                                <!---->
-                                <affine-paragraph
-                                  data-block-id="BLOCK_ID"
-                                >
-                                  <!---->
-                                  <div
-                                    class=" affine-block-component light "
-                                    style="position:relative;margin:var(--affine-paragraph-margin, 10px 0);"
-                                  >
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <!--?-->
-                                    
-      
-                                    <div
-                                      class="affine-paragraph-block-container"
-                                    >
-                                      
-        
-                                      <div
-                                        class=" affine-paragraph-rich-text-wrapper text blocksuite-toggle-button-parent "
-                                      >
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-          
-                                        <rich-text>
-                                          <!---->
-                                          <div
-                                            class=" inline-editor "
-                                            contenteditable="true"
-                                            data-v-root="true"
-                                          >
-                                            <!---->
-                                            <!---->
-                                            <v-line
-                                              style="display: block;"
-                                            >
-                                              <!---->
-                                              <div>
-                                                <v-text>
-                                                  <!---->
-                                                  <span
-                                                    data-v-text="true"
-                                                    style="word-break:break-word;text-wrap:wrap;white-space-collapse:break-spaces;"
-                                                  >
-                                                    <!--?lit$HASH$-->
-                                                    ‌
-                                                  </span>
-                                                </v-text>
-                                              </div>
-                                            </v-line>
-                                            <!---->
-                                          </div>
-                                        </rich-text>
-                                        
-          
-                                        <!--?lit$HASH$-->
-                                        
-                
-                                        <div
-                                          class=" affine-paragraph-placeholder "
-                                          contenteditable="false"
-                                        >
-                                          
-                  
-                                          <!--?lit$HASH$-->
-                                          Type '/' for commands
-                                          
-                
-                                        </div>
-                                        
-              
-                                        
-        
-                                      </div>
-                                      
-
-        
-                                      <!--?lit$HASH$-->
-                                      <div
-                                        class="affine-block-children-container"
-                                        style="padding-left:24px;"
-                                      >
-                                        
-      
-                                        <!--?lit$HASH$-->
-                                        <!--?lit$HASH$-->
-                                        <!--?-->
-                                        
-    
-                                      </div>
-                                      
-      
-                                    </div>
-                                    
-    
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    <affine-block-selection
-                                      style="border-radius: 5px; border-width: 0px; display: none;"
-                                    />
-                                    
-      
-                                    <!--?lit$HASH$-->
-                                    
-    
-                                  </div>
-                                </affine-paragraph>
-                                <!---->
-                                <!--?-->
-                                
-        
-                              </div>
-                              
-      
-                            </div>
-                            
-    
-                          </affine-note>
-                          <!---->
-                          <!--?-->
-                           
-                          <!--?lit$HASH$-->
-                          <!--?lit$HASH$-->
-                          <!---->
-                          <affine-keyboard-toolbar-widget
-                            data-widget-id="affine-keyboard-toolbar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-modal-widget
-                            data-widget-id="affine-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-inner-modal-widget
-                            data-widget-id="affine-inner-modal-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-slash-menu-widget
-                            data-widget-id="affine-slash-menu-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-linked-doc-widget
-                            data-widget-id="affine-linked-doc-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-drag-handle-widget
-                            data-widget-id="affine-drag-handle-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-embed-card-toolbar
-                            data-widget-id="affine-embed-card-toolbar"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-format-bar-widget
-                            data-widget-id="affine-format-bar-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-doc-remote-selection-widget
-                            data-widget-id="affine-doc-remote-selection-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-page-dragging-area-widget
-                            data-widget-id="affine-page-dragging-area-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-viewport-overlay-widget
-                            data-widget-id="affine-viewport-overlay-widget"
-                          />
-                          <!---->
-                          <!---->
-                          <affine-scroll-anchoring-widget
-                            data-widget-id="affine-scroll-anchoring-widget"
-                          />
-                          <!---->
-                          <!--?-->
-                        </div>
-                        
-    
-                      </affine-page-root>
-                    </editor-host>
-                    
-          
-                  </div>
-                  
-        
-                </div>
-                
-      
-                <!--?-->
-              </affine-editor-container>
-            </div>
+            <span>
+              Failed to load editor
+            </span>
+            <p>
+              Cannot read properties of undefined (reading 'replace')
+            </p>
           </div>
         </div>
       </div>

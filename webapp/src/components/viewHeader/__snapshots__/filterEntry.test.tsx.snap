@@ -384,13 +384,6 @@ exports[`components/viewHeader/filterEntry return filterEntry and click on delet
                 />
               </div>
             </div>
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -1067,13 +1060,6 @@ exports[`components/viewHeader/filterEntry return filterEntry and click on doesn
                 />
               </div>
             </div>
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -1282,13 +1268,6 @@ exports[`components/viewHeader/filterEntry return filterEntry and click on inclu
                 />
               </div>
             </div>
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -1497,13 +1476,6 @@ exports[`components/viewHeader/filterEntry return filterEntry and click on is em
                 />
               </div>
             </div>
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -1712,13 +1684,6 @@ exports[`components/viewHeader/filterEntry return filterEntry and click on is no
                 />
               </div>
             </div>
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -2100,10 +2065,6 @@ exports[`components/viewHeader/filterEntry return filterEntry for boolean field 
           <div
             class="menu-options"
           >
-            <div />
-            <div />
-            <div />
-            <div />
             <div>
               <div
                 aria-label="is set"
@@ -2156,9 +2117,6 @@ exports[`components/viewHeader/filterEntry return filterEntry for boolean field 
                 />
               </div>
             </div>
-            <div />
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"
@@ -2311,12 +2269,6 @@ exports[`components/viewHeader/filterEntry return filterEntry for date field 2`]
           <div
             class="menu-options"
           >
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
             <div>
               <div
                 aria-label="is"
@@ -2604,11 +2556,6 @@ exports[`components/viewHeader/filterEntry return filterEntry for text field 2`]
           <div
             class="menu-options"
           >
-            <div />
-            <div />
-            <div />
-            <div />
-            <div />
             <div>
               <div
                 aria-label="is"
@@ -2786,8 +2733,6 @@ exports[`components/viewHeader/filterEntry return filterEntry for text field 2`]
                 />
               </div>
             </div>
-            <div />
-            <div />
           </div>
           <div
             class="menu-spacer hideOnWidescreen"

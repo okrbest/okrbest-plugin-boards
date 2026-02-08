@@ -10,9 +10,7 @@ import {Provider as ReduxProvider} from 'react-redux'
 
 import {render} from '@testing-library/react'
 
-import {createMemoryHistory, History} from 'history'
 
-import {Router} from 'react-router-dom'
 
 import {Team} from '../../store/teams'
 import {TestBlockFactory} from '../../test/testBlockFactory'
@@ -56,21 +54,17 @@ describe('component/BoardSwitcherDialog', () => {
     }
 
     let store: MockStoreEnhanced<unknown, unknown>
-    let history: History
 
     beforeEach(() => {
         store = mockStateStore([], state)
-        history = createMemoryHistory()
     })
 
     test('base case', () => {
         const onCloseHandler = jest.fn()
         const component = wrapDNDIntl(
-            <Router history={history}>
-                <ReduxProvider store={store}>
-                    <BoardSwitcherDialog onClose={onCloseHandler}/>
-                </ReduxProvider>
-            </Router>,
+            <ReduxProvider store={store}>
+                <BoardSwitcherDialog onClose={onCloseHandler}/>
+            </ReduxProvider>,
         )
 
         const {container} = render(component)

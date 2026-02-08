@@ -6,70 +6,125 @@ exports[`components/cardDetail/CardDetailProperties cancel on delete dialog shou
     class="octo-propertylist CardDetailProperties"
   >
     <div
-      class="octo-propertyrow"
+      data-rfd-droppable-context-id="_r_1j_"
+      data-rfd-droppable-id="property-list"
     >
       <div
-        aria-label="menuwrapper"
-        class="MenuWrapper"
-        role="button"
+        class="octo-propertyrow"
+        data-rfd-draggable-context-id="_r_1j_"
+        data-rfd-draggable-id="property_id_1"
       >
         <div
-          class="octo-propertyname"
+          aria-describedby="rfd-hidden-text-_r_1j_-hidden-text-_r_1k_"
+          class="drag-handle"
+          data-rfd-drag-handle-context-id="_r_1j_"
+          data-rfd-drag-handle-draggable-id="property_id_1"
+          draggable="false"
+          role="button"
+          tabindex="0"
         >
-          <button
-            class="Button"
-            type="button"
+          <svg
+            class="GripIcon Icon"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <span>
-              Owner
-            </span>
-          </button>
+            <path
+              d="M0 0h24v24H0V0z"
+              fill="none"
+            />
+            <path
+              d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+            />
+          </svg>
         </div>
-      </div>
-      <div
-        class="octo-propertyvalue"
-        data-testid="select-non-editable"
-        tabindex="0"
-      >
-        <span
-          class="Label propColorDefault "
+        <div
+          aria-label="menuwrapper"
+          class="MenuWrapper"
+          role="button"
+        >
+          <div
+            class="octo-propertyname"
+          >
+            <button
+              class="Button"
+              type="button"
+            >
+              <span>
+                Owner
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          class="octo-propertyvalue"
+          data-testid="select-non-editable"
+          tabindex="0"
         >
           <span
-            class="Label-text"
+            class="Label propColorDefault "
           >
-            Jean-Luc Picard
-          </span>
-        </span>
-      </div>
-    </div>
-    <div
-      class="octo-propertyrow"
-    >
-      <div
-        aria-label="menuwrapper"
-        class="MenuWrapper"
-        role="button"
-      >
-        <div
-          class="octo-propertyname"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            <span>
-              MockStatus
+            <span
+              class="Label-text"
+            >
+              Jean-Luc Picard
             </span>
-          </button>
+          </span>
         </div>
       </div>
-      <input
-        class="Editable octo-propertyvalue"
-        placeholder="Empty"
-        style="width: 100%;"
-        title="1234"
-        value="1234"
-      />
+      <div
+        class="octo-propertyrow"
+        data-rfd-draggable-context-id="_r_1j_"
+        data-rfd-draggable-id="property_id_2"
+      >
+        <div
+          aria-describedby="rfd-hidden-text-_r_1j_-hidden-text-_r_1k_"
+          class="drag-handle"
+          data-rfd-drag-handle-context-id="_r_1j_"
+          data-rfd-drag-handle-draggable-id="property_id_2"
+          draggable="false"
+          role="button"
+          tabindex="0"
+        >
+          <svg
+            class="GripIcon Icon"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0 0h24v24H0V0z"
+              fill="none"
+            />
+            <path
+              d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+            />
+          </svg>
+        </div>
+        <div
+          aria-label="menuwrapper"
+          class="MenuWrapper"
+          role="button"
+        >
+          <div
+            class="octo-propertyname"
+          >
+            <button
+              class="Button"
+              type="button"
+            >
+              <span>
+                MockStatus
+              </span>
+            </button>
+          </div>
+        </div>
+        <input
+          class="Editable octo-propertyvalue"
+          placeholder="Empty"
+          style="width: 100%;"
+          title="1234"
+          value="1234"
+        />
+      </div>
     </div>
     <div
       class="octo-propertyname add-property"
@@ -99,70 +154,125 @@ exports[`components/cardDetail/CardDetailProperties should match snapshot 1`] = 
     class="octo-propertylist CardDetailProperties"
   >
     <div
-      class="octo-propertyrow"
+      data-rfd-droppable-context-id="_r_2_"
+      data-rfd-droppable-id="property-list"
     >
       <div
-        aria-label="menuwrapper"
-        class="MenuWrapper"
-        role="button"
+        class="octo-propertyrow"
+        data-rfd-draggable-context-id="_r_2_"
+        data-rfd-draggable-id="property_id_1"
       >
         <div
-          class="octo-propertyname"
+          aria-describedby="rfd-hidden-text-_r_2_-hidden-text-_r_3_"
+          class="drag-handle"
+          data-rfd-drag-handle-context-id="_r_2_"
+          data-rfd-drag-handle-draggable-id="property_id_1"
+          draggable="false"
+          role="button"
+          tabindex="0"
         >
-          <button
-            class="Button"
-            type="button"
+          <svg
+            class="GripIcon Icon"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <span>
-              Owner
-            </span>
-          </button>
+            <path
+              d="M0 0h24v24H0V0z"
+              fill="none"
+            />
+            <path
+              d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+            />
+          </svg>
         </div>
-      </div>
-      <div
-        class="octo-propertyvalue"
-        data-testid="select-non-editable"
-        tabindex="0"
-      >
-        <span
-          class="Label propColorDefault "
+        <div
+          aria-label="menuwrapper"
+          class="MenuWrapper"
+          role="button"
+        >
+          <div
+            class="octo-propertyname"
+          >
+            <button
+              class="Button"
+              type="button"
+            >
+              <span>
+                Owner
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          class="octo-propertyvalue"
+          data-testid="select-non-editable"
+          tabindex="0"
         >
           <span
-            class="Label-text"
+            class="Label propColorDefault "
           >
-            Jean-Luc Picard
-          </span>
-        </span>
-      </div>
-    </div>
-    <div
-      class="octo-propertyrow"
-    >
-      <div
-        aria-label="menuwrapper"
-        class="MenuWrapper"
-        role="button"
-      >
-        <div
-          class="octo-propertyname"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            <span>
-              MockStatus
+            <span
+              class="Label-text"
+            >
+              Jean-Luc Picard
             </span>
-          </button>
+          </span>
         </div>
       </div>
-      <input
-        class="Editable octo-propertyvalue"
-        placeholder="Empty"
-        style="width: 100%;"
-        title="1234"
-        value="1234"
-      />
+      <div
+        class="octo-propertyrow"
+        data-rfd-draggable-context-id="_r_2_"
+        data-rfd-draggable-id="property_id_2"
+      >
+        <div
+          aria-describedby="rfd-hidden-text-_r_2_-hidden-text-_r_3_"
+          class="drag-handle"
+          data-rfd-drag-handle-context-id="_r_2_"
+          data-rfd-drag-handle-draggable-id="property_id_2"
+          draggable="false"
+          role="button"
+          tabindex="0"
+        >
+          <svg
+            class="GripIcon Icon"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0 0h24v24H0V0z"
+              fill="none"
+            />
+            <path
+              d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+            />
+          </svg>
+        </div>
+        <div
+          aria-label="menuwrapper"
+          class="MenuWrapper"
+          role="button"
+        >
+          <div
+            class="octo-propertyname"
+          >
+            <button
+              class="Button"
+              type="button"
+            >
+              <span>
+                MockStatus
+              </span>
+            </button>
+          </div>
+        </div>
+        <input
+          class="Editable octo-propertyvalue"
+          placeholder="Empty"
+          style="width: 100%;"
+          title="1234"
+          value="1234"
+        />
+      </div>
     </div>
     <div
       class="octo-propertyname add-property"
@@ -192,70 +302,125 @@ exports[`components/cardDetail/CardDetailProperties should show property types m
     class="octo-propertylist CardDetailProperties"
   >
     <div
-      class="octo-propertyrow"
+      data-rfd-droppable-context-id="_r_g_"
+      data-rfd-droppable-id="property-list"
     >
       <div
-        aria-label="menuwrapper"
-        class="MenuWrapper"
-        role="button"
+        class="octo-propertyrow"
+        data-rfd-draggable-context-id="_r_g_"
+        data-rfd-draggable-id="property_id_1"
       >
         <div
-          class="octo-propertyname"
+          aria-describedby="rfd-hidden-text-_r_g_-hidden-text-_r_h_"
+          class="drag-handle"
+          data-rfd-drag-handle-context-id="_r_g_"
+          data-rfd-drag-handle-draggable-id="property_id_1"
+          draggable="false"
+          role="button"
+          tabindex="0"
         >
-          <button
-            class="Button"
-            type="button"
+          <svg
+            class="GripIcon Icon"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <span>
-              Owner
-            </span>
-          </button>
+            <path
+              d="M0 0h24v24H0V0z"
+              fill="none"
+            />
+            <path
+              d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+            />
+          </svg>
         </div>
-      </div>
-      <div
-        class="octo-propertyvalue"
-        data-testid="select-non-editable"
-        tabindex="0"
-      >
-        <span
-          class="Label propColorDefault "
+        <div
+          aria-label="menuwrapper"
+          class="MenuWrapper"
+          role="button"
+        >
+          <div
+            class="octo-propertyname"
+          >
+            <button
+              class="Button"
+              type="button"
+            >
+              <span>
+                Owner
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          class="octo-propertyvalue"
+          data-testid="select-non-editable"
+          tabindex="0"
         >
           <span
-            class="Label-text"
+            class="Label propColorDefault "
           >
-            Jean-Luc Picard
-          </span>
-        </span>
-      </div>
-    </div>
-    <div
-      class="octo-propertyrow"
-    >
-      <div
-        aria-label="menuwrapper"
-        class="MenuWrapper"
-        role="button"
-      >
-        <div
-          class="octo-propertyname"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            <span>
-              MockStatus
+            <span
+              class="Label-text"
+            >
+              Jean-Luc Picard
             </span>
-          </button>
+          </span>
         </div>
       </div>
-      <input
-        class="Editable octo-propertyvalue"
-        placeholder="Empty"
-        style="width: 100%;"
-        title="1234"
-        value="1234"
-      />
+      <div
+        class="octo-propertyrow"
+        data-rfd-draggable-context-id="_r_g_"
+        data-rfd-draggable-id="property_id_2"
+      >
+        <div
+          aria-describedby="rfd-hidden-text-_r_g_-hidden-text-_r_h_"
+          class="drag-handle"
+          data-rfd-drag-handle-context-id="_r_g_"
+          data-rfd-drag-handle-draggable-id="property_id_2"
+          draggable="false"
+          role="button"
+          tabindex="0"
+        >
+          <svg
+            class="GripIcon Icon"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0 0h24v24H0V0z"
+              fill="none"
+            />
+            <path
+              d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+            />
+          </svg>
+        </div>
+        <div
+          aria-label="menuwrapper"
+          class="MenuWrapper"
+          role="button"
+        >
+          <div
+            class="octo-propertyname"
+          >
+            <button
+              class="Button"
+              type="button"
+            >
+              <span>
+                MockStatus
+              </span>
+            </button>
+          </div>
+        </div>
+        <input
+          class="Editable octo-propertyvalue"
+          placeholder="Empty"
+          style="width: 100%;"
+          title="1234"
+          value="1234"
+        />
+      </div>
     </div>
     <div
       class="octo-propertyname add-property"

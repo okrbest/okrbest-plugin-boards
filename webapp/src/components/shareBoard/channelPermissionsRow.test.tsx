@@ -7,7 +7,6 @@ import {Provider as ReduxProvider} from 'react-redux'
 import thunk from 'redux-thunk'
 
 import React from 'react'
-import {MemoryRouter} from 'react-router'
 import {mocked} from 'jest-mock'
 
 import {IUser} from '../../user'
@@ -89,7 +88,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -108,7 +107,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -126,14 +125,14 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -148,7 +147,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -175,7 +174,7 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
@@ -193,14 +192,14 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })
@@ -225,14 +224,14 @@ describe('src/components/shareBoard/channelPermissionsRow', () => {
                     <ReduxProvider store={store}>
                         <ChannelPermissionsRow/>
                     </ReduxProvider>),
-                {wrapper: MemoryRouter},
+
             )
             container = result.container
         })
 
         const buttonElement = container?.querySelector('.user-item__button')
         expect(buttonElement).toBeDefined()
-        userEvent.click(buttonElement!)
+        await userEvent.click(buttonElement!)
 
         expect(container).toMatchSnapshot()
     })

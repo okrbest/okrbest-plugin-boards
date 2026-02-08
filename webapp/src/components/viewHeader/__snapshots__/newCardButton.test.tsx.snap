@@ -31,7 +31,6 @@ exports[`components/viewHeader/newCardButton return NewCardButton 1`] = `
           <div
             class="menu-options"
           >
-            <div />
             <div>
               <div
                 aria-label="Empty card"
@@ -187,7 +186,6 @@ exports[`components/viewHeader/newCardButton return NewCardButton and addCard 1`
           <div
             class="menu-options"
           >
-            <div />
             <div>
               <div
                 aria-label="Empty card"
@@ -343,7 +341,6 @@ exports[`components/viewHeader/newCardButton return NewCardButton and addCardTem
           <div
             class="menu-options"
           >
-            <div />
             <div>
               <div
                 aria-label="Empty card"

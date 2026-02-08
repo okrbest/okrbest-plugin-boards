@@ -22,49 +22,30 @@ exports[`components/blocksEditor/blocks/text should match Input snapshot 1`] = `
       class="MarkdownEditor octo-editor  active"
     >
       <div
-        class="MarkdownEditorInput"
+        class="LexicalEditor"
       >
         <div
-          class="DraftEditor-root"
+          class="LexicalEditor__container"
         >
           <div
-            class="DraftEditor-editorContainer"
+            aria-label="Editor"
+            class="LexicalEditor__input"
+            contenteditable="true"
+            data-lexical-editor="true"
+            role="textbox"
+            spellcheck="true"
+            style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           >
-            <div
-              aria-autocomplete="list"
-              aria-expanded="false"
-              class="notranslate public-DraftEditor-content"
-              contenteditable="true"
-              role="combobox"
-              spellcheck="false"
-              style="outline: none; user-select: text; white-space: pre-wrap; word-wrap: break-word;"
+            <p
+              class="lexical-paragraph"
+              dir="auto"
             >
-              <div
-                data-contents="true"
+              <span
+                data-lexical-text="true"
               >
-                <div
-                  class=""
-                  data-block="true"
-                  data-editor="123"
-                  data-offset-key="123-0-0"
-                >
-                  <div
-                    class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"
-                    data-offset-key="123-0-0"
-                  >
-                    <span
-                      data-offset-key="123-0-0"
-                    >
-                      <span
-                        data-text="true"
-                      >
-                        test-value
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+                test-value
+              </span>
+            </p>
           </div>
         </div>
       </div>

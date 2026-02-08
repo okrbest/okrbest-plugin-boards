@@ -30,19 +30,7 @@ exports[`component/BoardSwitcherDialog base case 1`] = `
               class="dialog-subtitle"
             >
               <div>
-                Type to find a board. Use 
-                <b>
-                  UP/DOWN
-                </b>
-                 to browse. 
-                <b>
-                  ENTER
-                </b>
-                 to select, 
-                <b>
-                  ESC
-                </b>
-                 to dismiss
+                Type to find a board. Use UP/DOWN to browse. ENTER to select, ESC to dismiss
               </div>
             </h5>
           </div>

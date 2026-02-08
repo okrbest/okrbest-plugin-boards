@@ -4,7 +4,7 @@
 import React, {useEffect, useState, useMemo, useCallback} from 'react'
 import {batch} from 'react-redux'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {useRouteMatch, useHistory} from 'react-router-dom'
+import {useParams, useNavigate} from 'react-router-dom'
 
 import Workspace from '../../components/workspace'
 // import VersionMessage from '../../components/messages/versionMessage' // 미사용
@@ -66,20 +66,20 @@ type Props = {
     new?: boolean
 }
 
-const BoardPage = (props: Props): JSX.Element => {
+const BoardPage = (props: Props): React.JSX.Element => {
     const intl = useIntl()
     const activeBoardId = useAppSelector(getCurrentBoardId)
     const activeViewId = useAppSelector(getCurrentViewId)
     const dispatch = useAppDispatch()
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string, teamId?: string}>()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string, teamId?: string}>()
+    const navigate = useNavigate()
     const [mobileWarningClosed, setMobileWarningClosed] = useState(UserSettings.mobileWarningClosed)
-    const teamId = match.params.teamId || UserSettings.lastTeamId || Constants.globalTeamId
-    const viewId = match.params.viewId
+    const teamId = params.teamId || UserSettings.lastTeamId || Constants.globalTeamId
+    const viewId = params.viewId
     const me = useAppSelector<IUser|null>(getMe)
     const hiddenBoardIDs = useAppSelector(getHiddenBoardIDs)
     const category = useAppSelector(getCategoryOfBoard(activeBoardId))
     const [showJoinBoardDialog, setShowJoinBoardDialog] = useState<boolean>(false)
-    const history = useHistory()
 
     // if we're in a legacy route and not showing a shared board,
     // redirect to the new URL schema equivalent
@@ -108,11 +108,11 @@ const BoardPage = (props: Props): JSX.Element => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [teamId])
 
-    const loadAction: (boardId: string) => any = useMemo(() => {
+    const loadAction = useMemo(() => {
         if (props.readonly) {
-            return initialReadOnlyLoad
+            return initialReadOnlyLoad as (boardId?: string) => any
         }
-        return initialLoad
+        return initialLoad as (boardId?: string) => any
     }, [props.readonly])
 
     useWebsockets(teamId, (wsClient) => {
@@ -157,7 +157,7 @@ const BoardPage = (props: Props): JSX.Element => {
         }
 
         const dispatchLoadAction = () => {
-            dispatch(loadAction(match.params.boardId))
+            dispatch(loadAction(params.boardId))
         }
 
         Utils.log('useWEbsocket adding onChange handler')
@@ -187,8 +187,8 @@ const BoardPage = (props: Props): JSX.Element => {
     }, [me?.id, activeBoardId])
 
     const onConfirmJoin = async () => {
-        if (me) {
-            joinBoard(me, teamId, match.params.boardId, true)
+        if (me && params.boardId) {
+            joinBoard(me, teamId, params.boardId, true)
             setShowJoinBoardDialog(false)
         }
     }
@@ -236,28 +236,25 @@ const BoardPage = (props: Props): JSX.Element => {
     }, [])
 
     useEffect(() => {
-        dispatch(loadAction(match.params.boardId))
+        dispatch(loadAction(params.boardId))
 
-        if (match.params.boardId) {
-            // set the active board
-            dispatch(setCurrentBoard(match.params.boardId))
+        if (params.boardId) {
+            dispatch(setCurrentBoard(params.boardId))
 
-            if (viewId !== Constants.globalTeamId) {
-                // reset current, even if empty string
+            if (viewId && viewId !== Constants.globalTeamId) {
                 dispatch(setCurrentView(viewId))
-                if (viewId) {
-                    // don't reset per board if empty string
-                    UserSettings.setLastViewId(match.params.boardId, viewId)
+                if (params.boardId) {
+                    UserSettings.setLastViewId(params.boardId, viewId)
                 }
             }
         }
-    }, [teamId, match.params.boardId, viewId, me?.id])
+    }, [teamId, params.boardId, viewId, me?.id, dispatch, loadAction])
 
     useEffect(() => {
-        if (match.params.boardId && !props.readonly && me) {
-            loadOrJoinBoard(me, teamId, match.params.boardId)
+        if (params.boardId && !props.readonly && me) {
+            loadOrJoinBoard(me, teamId, params.boardId)
         }
-    }, [teamId, match.params.boardId, me?.id])
+    }, [teamId, params.boardId, me?.id, props.readonly, loadOrJoinBoard])
 
     const handleUnhideBoard = async (boardID: string) => {
         if (!me || !category) {
@@ -268,14 +265,14 @@ const BoardPage = (props: Props): JSX.Element => {
     }
 
     useEffect(() => {
-        if (!teamId || !match.params.boardId) {
+        if (!teamId || !params.boardId) {
             return
         }
 
-        if (hiddenBoardIDs.indexOf(match.params.boardId) >= 0) {
-            handleUnhideBoard(match.params.boardId)
+        if (hiddenBoardIDs.indexOf(params.boardId) >= 0) {
+            handleUnhideBoard(params.boardId)
         }
-    }, [me?.id, teamId, match.params.boardId])
+    }, [me?.id, teamId, params.boardId, hiddenBoardIDs])
 
     if (props.readonly) {
         useEffect(() => {
@@ -301,7 +298,7 @@ const BoardPage = (props: Props): JSX.Element => {
                         onConfirm: onConfirmJoin,
                         onClose: () => {
                             setShowJoinBoardDialog(false)
-                            history.goBack()
+                            navigate(-1)
                         },
                     }}
                 />}

@@ -89,7 +89,7 @@ type Props = {
     template: IPropertyTemplate
 }
 
-const CardFilterValue = (props: Props): JSX.Element => {
+const CardFilterValue = (props: Props): React.JSX.Element => {
     const {filter, view, template} = props
     const intl = useIntl()
     const emptyDisplayValue = intl.formatMessage({id: 'FilterValue.empty', defaultMessage: '(empty)'})
@@ -274,7 +274,7 @@ const CardFilterValue = (props: Props): JSX.Element => {
                         name={card.title}
                         isOn={filterCardIds.includes(card.id)}
                         suppressItemClicked={true}
-                        onClick={(cardId) => {
+                        onClick={(cardId: string) => {
                             const filterIndex = view.fields.filter.filters.indexOf(filter)
                             Utils.assert(filterIndex >= 0, "Can't find filter")
 

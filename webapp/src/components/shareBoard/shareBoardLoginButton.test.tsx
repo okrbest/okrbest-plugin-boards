@@ -20,14 +20,13 @@ jest.mock('react-router-dom', () => {
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {
-                teamId: 'team1',
-                boardId: 'boardId1',
-                viewId: 'viewId1',
-                cardId: 'cardId1',
-            }
-        }),
+        useParams: jest.fn(() => ({
+            teamId: 'team1',
+            boardId: 'boardId1',
+            viewId: 'viewId1',
+            cardId: 'cardId1',
+        })),
+        useNavigate: jest.fn(() => jest.fn()),
     }
 })
 

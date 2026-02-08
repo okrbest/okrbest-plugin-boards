@@ -22,7 +22,7 @@ type SubMenuOptionProps = {
     className?: string
 }
 
-function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
+function SubMenuOption(props: SubMenuOptionProps): React.JSX.Element {
     const [isOpen, setIsOpen] = useState(false)
     const isHovering = useContext(HoveringContext)
     const ref = useRef<HTMLDivElement>(null)
@@ -90,10 +90,10 @@ function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
 
     const styleRef = useRef<CSSProperties>({})
 
-    useEffect(() => {
-        const newStyle: CSSProperties = {}
-        if (props.position === 'auto' && ref.current) {
-            const openUp = MenuUtil.openUp(ref)
+     useEffect(() => {
+         const newStyle: CSSProperties = {}
+         if (props.position === 'auto' && ref.current) {
+             const openUp = MenuUtil.openUp(ref as React.RefObject<HTMLElement>)
             if (openUp.openUp) {
                 newStyle.bottom = 0
             } else {

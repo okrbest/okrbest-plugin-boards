@@ -3,10 +3,9 @@
 
 import React from 'react'
 
-import {createMemoryHistory} from 'history'
-import {Router} from 'react-router-dom'
+import {MemoryRouter} from 'react-router-dom'
 
-import {render} from '@testing-library/react'
+import {render, screen, waitFor, act} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import {Provider as ReduxProvider} from 'react-redux'
@@ -25,7 +24,6 @@ describe('components/sidebarBoardItem', () => {
 
     const view = TestBlockFactory.createBoardView(board)
     view.fields.sortOptions = []
-    const history = createMemoryHistory()
 
     const categoryBoards1 = TestBlockFactory.createCategoryBoards()
     categoryBoards1.name = 'Category 1'
@@ -71,13 +69,13 @@ describe('components/sidebarBoardItem', () => {
         },
     }
 
-    test('sidebar board item', () => {
+    test('sidebar board item', async () => {
         const mockStore = configureStore([])
         const store = mockStore(state)
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id/board_id_1']}>
                     <SidebarBoardItem
                         index={0}
                         categoryBoards={categoryBoards1}
@@ -88,13 +86,17 @@ describe('components/sidebarBoardItem', () => {
                         showView={jest.fn()}
                         onDeleteRequest={jest.fn()}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
-        const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
-        expect(elementMenuWrapper).not.toBeNull()
-        userEvent.click(elementMenuWrapper!)
+        await waitFor(async () => {
+            const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
+            expect(elementMenuWrapper).not.toBeNull()
+            await act(async () => {
+                userEvent.click(elementMenuWrapper!)
+            })
+        })
         expect(container).toMatchSnapshot()
     })
 
@@ -105,7 +107,7 @@ describe('components/sidebarBoardItem', () => {
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id/board_id_1']}>
                     <SidebarBoardItem
                         index={0}
                         categoryBoards={categoryBoards1}
@@ -116,20 +118,20 @@ describe('components/sidebarBoardItem', () => {
                         showView={jest.fn()}
                         onDeleteRequest={jest.fn()}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
         expect(container).toMatchSnapshot()
     })
 
-    test('sidebar board item for guest', () => {
+    test('sidebar board item for guest', async () => {
         const mockStore = configureStore([])
         const store = mockStore({...state, users: {me: {is_guest: true}}})
 
         const component = wrapRBDNDDroppable(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
+                <MemoryRouter initialEntries={['/team/team-id/board_id_1']}>
                     <SidebarBoardItem
                         index={0}
                         categoryBoards={categoryBoards1}
@@ -140,13 +142,17 @@ describe('components/sidebarBoardItem', () => {
                         showView={jest.fn()}
                         onDeleteRequest={jest.fn()}
                     />
-                </Router>
+                </MemoryRouter>
             </ReduxProvider>,
         ))
         const {container} = render(component)
-        const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
-        expect(elementMenuWrapper).not.toBeNull()
-        userEvent.click(elementMenuWrapper!)
+        await waitFor(async () => {
+            const elementMenuWrapper = container.querySelector('.SidebarBoardItem div.MenuWrapper')
+            expect(elementMenuWrapper).not.toBeNull()
+            await act(async () => {
+                userEvent.click(elementMenuWrapper!)
+            })
+        })
         expect(container).toMatchSnapshot()
     })
 })

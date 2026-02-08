@@ -1,15 +1,30 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {getEmojiDataFromNative, BaseEmoji} from 'emoji-mart'
-import data from 'emoji-mart/data/all.json'
+import {getEmojiDataFromNative} from 'emoji-mart'
 
-const EMOJI_SET = 'apple' as const // Single source of truth
+export type EmojiData = {
+    id: string
+    name: string
+    native: string
+    unified: string
+    keywords: string[]
+    shortcodes: string
+    skin?: number
+}
 
-export function getValidEmojiData(native: string): BaseEmoji | null {
-    try {
-        return getEmojiDataFromNative(native, EMOJI_SET, data)
-    } catch (err) {
-        return null
+let emojiCache: Map<string, EmojiData | null> = new Map()
+
+export function getValidEmojiData(native: string): EmojiData | null {
+    if (emojiCache.has(native)) {
+        return emojiCache.get(native) || null
     }
+
+    getEmojiDataFromNative(native).then((data: EmojiData | null) => {
+        emojiCache.set(native, data)
+    }).catch(() => {
+        emojiCache.set(native, null)
+    })
+
+    return null
 }

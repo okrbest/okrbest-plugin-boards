@@ -17,9 +17,12 @@ jest.mock('react-router-dom', () => {
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {url: '/board/view'}
-        }),
+        useParams: jest.fn(() => ({
+            boardId: 'board-id',
+            viewId: 'view-id',
+        })),
+        useNavigate: jest.fn(() => jest.fn()),
+        useLocation: jest.fn(() => ({pathname: '/board/view', search: ''})),
     }
 })
 
