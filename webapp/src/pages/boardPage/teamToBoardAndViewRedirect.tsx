@@ -24,8 +24,8 @@ const TeamToBoardAndViewRedirect = (): null => {
     const teamId = params.teamId || UserSettings.lastTeamId || Constants.globalTeamId
 
     useEffect(() => {
-        let boardID = match.params.boardId
-        if (!match.params.boardId) {
+        let boardID = params.boardId
+        if (!params.boardId) {
             // first preference is for last visited board, but only if it exists in the current team's boards
             const lastBoardID = UserSettings.lastBoardId[teamId]
             const boardsLoaded = Object.keys(boards).length > 0
