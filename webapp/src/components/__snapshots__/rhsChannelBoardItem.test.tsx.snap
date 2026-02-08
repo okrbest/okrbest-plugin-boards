@@ -8,7 +8,6 @@ exports[`components/rhsChannelBoardItem render board 1`] = `
     <div
       class="board-info"
     >
-      
       <span
         class="title"
       >

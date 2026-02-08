@@ -3,7 +3,7 @@
 
 
 import React from 'react'
-import {render} from '@testing-library/react'
+import {render, screen, act} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {IntlProvider} from 'react-intl'
 import {mocked} from 'jest-mock'
@@ -95,7 +95,7 @@ describe('components/viewHeader/dateFilter', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('returns local correctly - es local', () => {
+    test('returns local correctly - es local', async () => {
         const todayFilterClause = createFilterClause(emptyFilterClause)
         todayFilterClause.values = [June15.getTime().toString()]
         activeView.fields.filter = createFilterGroup()
@@ -110,13 +110,13 @@ describe('components/viewHeader/dateFilter', () => {
             </IntlProvider>
         )
 
-        const {container, getByText} = render(component)
-        const input = getByText('15 de junio')
+        const {container} = render(component)
+        const input = await screen.findByText('15 de junio')
         expect(input).not.toBeNull()
         expect(container).toMatchSnapshot()
     })
 
-    test('handles calendar click event', () => {
+    test('handles calendar click event', async () => {
         activeView.fields.filter = createFilterGroup()
         activeView.fields.filter.filters = [emptyFilterClause]
 
@@ -128,15 +128,21 @@ describe('components/viewHeader/dateFilter', () => {
                 />,
             )
         expect(component).toMatchSnapshot()
-        const {getByText, getByTitle} = render(component)
+        render(component)
 
-        const dayDisplay = getByText('Empty')
-        userEvent.click(dayDisplay)
+        const dayDisplay = await screen.findByText('Empty')
+        await act(async () => {
+            userEvent.click(dayDisplay)
+        })
 
-        const day = getByText('15')
-        const modal = getByTitle('Close').children[0]
-        userEvent.click(day)
-        userEvent.click(modal)
+        const day = await screen.findByText('15')
+        const modal = await screen.findByTitle('Close')
+        await act(async () => {
+            userEvent.click(day)
+        })
+        await act(async () => {
+            userEvent.click(modal.children[0])
+        })
 
         const newFilterGroup = createFilterGroup(activeView.fields.filter)
         const date = new Date()
@@ -147,7 +153,7 @@ describe('components/viewHeader/dateFilter', () => {
         expect(mockedMutator.changeViewFilter).toHaveBeenCalledWith(board.id, activeView.id, activeView.fields.filter, newFilterGroup)
     })
 
-    test('handle clear', () => {
+    test('handle clear', async () => {
         const todayFilterClause = createFilterClause(emptyFilterClause)
         todayFilterClause.values = [June15.getTime().toString()]
         activeView.fields.filter = createFilterGroup()
@@ -160,17 +166,23 @@ describe('components/viewHeader/dateFilter', () => {
                     filter={todayFilterClause}
                 />,
             )
-        const {container, getByText, getByTitle} = render(component)
+        const {container} = render(component)
         expect(container).toMatchSnapshot()
 
         // open modal
-        const dayDisplay = getByText('June 15')
-        userEvent.click(dayDisplay)
+        const dayDisplay = await screen.findByText('June 15')
+        await act(async () => {
+            userEvent.click(dayDisplay)
+        })
 
-        const clear = getByText('Clear')
-        const modal = getByTitle('Close').children[0]
-        userEvent.click(clear)
-        userEvent.click(modal)
+        const clear = await screen.findByText('Clear')
+        const modal = await screen.findByTitle('Close')
+        await act(async () => {
+            userEvent.click(clear)
+        })
+        await act(async () => {
+            userEvent.click(modal.children[0])
+        })
 
         const newFilterGroup = createFilterGroup(activeView.fields.filter)
         const v = newFilterGroup.filters[0] as FilterClause
@@ -178,7 +190,7 @@ describe('components/viewHeader/dateFilter', () => {
         expect(mockedMutator.changeViewFilter).toHaveBeenCalledWith(board.id, activeView.id, activeView.fields.filter, newFilterGroup)
     })
 
-    test('set via text input', () => {
+    test('set via text input', async () => {
         activeView.fields.filter = createFilterGroup()
         activeView.fields.filter.filters = [emptyFilterClause]
 
@@ -190,19 +202,23 @@ describe('components/viewHeader/dateFilter', () => {
                 />,
             )
 
-        const {container, getByText, getByTitle, getByPlaceholderText} = render(component)
+        const {container} = render(component)
         expect(container).toMatchSnapshot()
 
         // open modal
-        const dayDisplay = getByText('Empty')
-        userEvent.click(dayDisplay)
+        const dayDisplay = await screen.findByText('Empty')
+        await act(async () => {
+            userEvent.click(dayDisplay)
+        })
 
-        const input = getByPlaceholderText('MM/DD/YYYY')
+        const input = await screen.findByPlaceholderText('MM/DD/YYYY')
         userEvent.type(input, '{selectall}{delay}07/15/2021{enter}')
 
         const July15 = new Date(Date.UTC(2021, 6, 15, 12))
-        const modal = getByTitle('Close').children[0]
-        userEvent.click(modal)
+        const modal = await screen.findByTitle('Close')
+        await act(async () => {
+            userEvent.click(modal.children[0])
+        })
 
         const newFilterGroup = createFilterGroup(activeView.fields.filter)
         const v = newFilterGroup.filters[0] as FilterClause
@@ -210,7 +226,7 @@ describe('components/viewHeader/dateFilter', () => {
         expect(mockedMutator.changeViewFilter).toHaveBeenCalledWith(board.id, activeView.id, activeView.fields.filter, newFilterGroup)
     })
 
-    test('handles `Today` button click event', () => {
+    test('handles `Today` button click event', async () => {
         const component =
             wrapIntl(
                 <DateFilter
@@ -221,7 +237,7 @@ describe('components/viewHeader/dateFilter', () => {
 
         console.log('handle today')
 
-        const {container, getByText, getByTitle} = render(component)
+        const {container} = render(component)
         expect(container).toMatchSnapshot()
 
         // To see if 'Today' button correctly selects today's date,
@@ -232,13 +248,19 @@ describe('components/viewHeader/dateFilter', () => {
         const today = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12)
 
         // open modal
-        const dayDisplay = getByText('Empty')
-        userEvent.click(dayDisplay)
+        const dayDisplay = await screen.findByText('Empty')
+        await act(async () => {
+            userEvent.click(dayDisplay)
+        })
 
-        const day = getByText('Today')
-        const modal = getByTitle('Close').children[0]
-        userEvent.click(day)
-        userEvent.click(modal)
+        const day = await screen.findByText('Today')
+        const modal = await screen.findByTitle('Close')
+        await act(async () => {
+            userEvent.click(day)
+        })
+        await act(async () => {
+            userEvent.click(modal.children[0])
+        })
 
         const newFilterGroup = createFilterGroup(activeView.fields.filter)
         const v = newFilterGroup.filters[0] as FilterClause

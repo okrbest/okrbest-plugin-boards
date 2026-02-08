@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState, useCallback} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {DragDropContext, Droppable, Draggable, DropResult} from 'react-beautiful-dnd'
+import {DragDropContext, Droppable, Draggable, DropResult} from '@hello-pangea/dnd'
 
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {Card} from '../../blocks/card'

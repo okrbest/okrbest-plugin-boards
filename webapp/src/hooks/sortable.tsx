@@ -38,7 +38,7 @@ export function useSortable<T>(itemType: string, item: T, enabled: boolean, hand
     const ref = useRef<HTMLDivElement>(null)
     const [isDragging, isOver, drag, drop] = useSortableBase(itemType, item, enabled, handler)
     drop(drag(ref))
-    return [isDragging, isOver, ref]
+    return [isDragging, isOver, ref as React.RefObject<HTMLDivElement>]
 }
 
 export function useSortableWithGrip(itemType: string, item: ISortableWithGripItem, enabled: boolean, handler: (src: IContentBlockWithCords, st: IContentBlockWithCords) => void): [boolean, boolean, React.RefObject<HTMLDivElement>, React.RefObject<HTMLDivElement>] {
@@ -47,5 +47,5 @@ export function useSortableWithGrip(itemType: string, item: ISortableWithGripIte
     const [isDragging, isOver, drag, drop, preview] = useSortableBase(itemType, item as IContentBlockWithCords, enabled, handler)
     drag(ref)
     drop(preview(previewRef))
-    return [isDragging, isOver, ref, previewRef]
+    return [isDragging, isOver, ref as React.RefObject<HTMLDivElement>, previewRef as React.RefObject<HTMLDivElement>]
 }

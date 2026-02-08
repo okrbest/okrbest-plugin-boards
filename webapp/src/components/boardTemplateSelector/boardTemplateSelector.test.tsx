@@ -5,13 +5,13 @@ import {render, screen, act, waitFor, within} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import {MockStoreEnhanced} from 'redux-mock-store'
-import {createMemoryHistory} from 'history'
+
 
 import {mocked} from 'jest-mock'
 
 import {Provider as ReduxProvider} from 'react-redux'
 
-import {MemoryRouter, Router} from 'react-router-dom'
+
 
 import Mutator from '../../mutator'
 import {Utils} from '../../utils'
@@ -33,9 +33,13 @@ jest.mock('react-router-dom', () => {
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {url: '/'}
-        }),
+        useParams: jest.fn(() => ({
+            boardId: 'board-id',
+            viewId: 'view-id',
+            teamId: 'team-id',
+        })),
+        useNavigate: jest.fn(() => jest.fn()),
+        useLocation: jest.fn(() => ({pathname: '/', search: ''})),
     }
 })
 jest.mock('../../octoClient', () => {
@@ -172,7 +176,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             expect(container).toMatchSnapshot()
         })
     })
@@ -186,7 +190,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             expect(container).toMatchSnapshot()
         })
         test('should match snapshot without close', () => {
@@ -195,7 +199,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             expect(container).toMatchSnapshot()
         })
         test('should match snapshot with custom title and description', () => {
@@ -207,7 +211,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     />
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             expect(container).toMatchSnapshot()
         })
         test('return BoardTemplateSelector and click close call the onClose callback', () => {
@@ -217,7 +221,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={onClose}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             const divCloseButton = container.querySelector('div.toolbar .CloseIcon')
             expect(divCloseButton).not.toBeNull()
             userEvent.click(divCloseButton!)
@@ -229,7 +233,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             const divNewTemplate = screen.getByText('Create new template').parentElement
             expect(divNewTemplate).not.toBeNull()
             userEvent.click(divNewTemplate!)
@@ -244,7 +248,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
 
             const divEmptyboard = screen.getByText('Create empty board').parentElement
             expect(divEmptyboard).not.toBeNull()
@@ -260,7 +264,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter, container: document.body.appendChild(root)})
+            ), {container: document.body.appendChild(root)})
             const deleteIcon = screen.getByText(template1Title).parentElement?.querySelector('.DeleteIcon')
             expect(deleteIcon).not.toBeNull()
             act(() => {
@@ -278,14 +282,10 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
             expect(mockedMutator.deleteBoard).toBeCalledTimes(1)
         })
         test('return BoardTemplateSelector and click edit template icon', async () => {
-            const history = createMemoryHistory()
-            history.push = jest.fn()
             render(wrapDNDIntl(
-                <Router history={history}>
-                    <ReduxProvider store={store}>
-                        <BoardTemplateSelector onClose={jest.fn()}/>
-                    </ReduxProvider>
-                </Router>,
+                <ReduxProvider store={store}>
+                    <BoardTemplateSelector onClose={jest.fn()}/>
+                </ReduxProvider>,
             ))
             const editIcon = screen.getByText(template1Title).parentElement?.querySelector('.EditIcon')
             expect(editIcon).not.toBeNull()
@@ -300,7 +300,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             const divBoardToSelect = screen.getByText(template1Title).parentElement
             expect(divBoardToSelect).not.toBeNull()
 
@@ -331,7 +331,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     />
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             const divBoardToSelect = screen.getByText(template1Title).parentElement
             expect(divBoardToSelect).not.toBeNull()
 
@@ -359,7 +359,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             const divBoardToSelect = screen.getByText(globalTemplateTitle).parentElement
             expect(divBoardToSelect).not.toBeNull()
 
@@ -386,7 +386,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {wrapper: MemoryRouter})
+            ))
             const divBoardToSelect = screen.getByText(OnboardingBoardTitle).parentElement
             expect(divBoardToSelect).not.toBeNull()
 

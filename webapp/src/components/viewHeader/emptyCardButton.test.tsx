@@ -60,7 +60,7 @@ describe('components/viewHeader/emptyCardButton', () => {
         )
         expect(container).toMatchSnapshot()
     })
-    test('return EmptyCardButton and addCard', () => {
+    test('return EmptyCardButton and addCard', async () => {
         const {container} = render(
             wrapIntl(
                 <ReduxProvider store={store}>
@@ -72,10 +72,10 @@ describe('components/viewHeader/emptyCardButton', () => {
         )
         expect(container).toMatchSnapshot()
         const buttonEmpty = screen.getByRole('button', {name: 'Empty card'})
-        userEvent.click(buttonEmpty)
+        await userEvent.click(buttonEmpty)
         expect(mockFunction).toBeCalledTimes(1)
     })
-    test('return EmptyCardButton and Set Template', () => {
+    test('return EmptyCardButton and Set Template', async () => {
         const {container} = render(
             wrapIntl(
                 <ReduxProvider store={store}>
@@ -86,10 +86,10 @@ describe('components/viewHeader/emptyCardButton', () => {
             ),
         )
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
-        userEvent.click(buttonElement)
+        await userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
         const buttonDefault = screen.getByRole('button', {name: 'Set as default'})
-        userEvent.click(buttonDefault)
+        await userEvent.click(buttonDefault)
         expect(mockedMutator.clearDefaultTemplate).toBeCalledTimes(1)
     })
 })

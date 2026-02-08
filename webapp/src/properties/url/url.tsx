@@ -18,7 +18,7 @@ import {PropertyProps} from '../types'
 
 import './url.scss'
 
-const URLProperty = (props: PropertyProps): JSX.Element => {
+const URLProperty = (props: PropertyProps): React.JSX.Element => {
     if (!props.propertyTemplate) {
         return <></>
     }

@@ -4,10 +4,6 @@
 
 import {createIntl} from 'react-intl'
 
-import {createMemoryHistory} from 'history'
-
-import {match as routerMatch} from 'react-router-dom'
-
 import {Utils, IDType, ShowFullName, ShowNicknameFullName, ShowUsername} from './utils'
 import {IUser} from './user'
 
@@ -181,22 +177,19 @@ describe('utils', () => {
 
     describe('showBoard test', () => {
         it('should switch boards', () => {
-            const match = {
-                params: {
-                    boardId: 'board_id_1',
-                    viewId: 'view_id_1',
-                    cardId: 'card_id_1',
-                    teamId: 'team_id_1',
-                },
-                path: '/team/:teamId/:boardId?/:viewId?/:cardId?',
-            } as unknown as routerMatch<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>
+            const params = {
+                boardId: 'board_id_1',
+                viewId: 'view_id_1',
+                cardId: 'card_id_1',
+                teamId: 'team_id_1',
+            }
 
-            const history = createMemoryHistory()
-            history.push = jest.fn()
+            const navigate = jest.fn()
+            const currentPath = '/team/:teamId/:boardId?/:viewId?/:cardId?'
 
-            Utils.showBoard('board_id_2', match, history)
+            Utils.showBoard('board_id_2', params, navigate, currentPath)
 
-            expect(history.push).toBeCalledWith('/team/team_id_1/board_id_2')
+            expect(navigate).toBeCalledWith('/team/team_id_1/board_id_2')
         })
     })
 

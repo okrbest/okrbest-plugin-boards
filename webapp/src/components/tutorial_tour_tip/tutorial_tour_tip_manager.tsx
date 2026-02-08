@@ -81,7 +81,7 @@ const useTutorialTourTipManager = ({
         [dispatch],
     )
 
-    const trackEvent = useCallback((category, event, props?) => {
+    const trackEvent = useCallback((category: string, event: string, props?: Record<string, unknown>) => {
         TelemetryClient.trackEvent(category, event, props)
     }, [])
 

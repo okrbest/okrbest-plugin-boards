@@ -57,7 +57,7 @@ type Props = {
     onCardClick?: (cardId: string) => void
 }
 
-const CardDetail = (props: Props): JSX.Element|null => {
+const CardDetail = (props: Props): React.JSX.Element|null => {
     const {card, comments, attachments, onDelete, addAttachment} = props
     const {limited} = card
     const [title, setTitle] = useState(card.title)

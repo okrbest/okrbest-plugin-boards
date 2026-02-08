@@ -213,10 +213,7 @@ const sidebarSlice = createSlice({
     },
 })
 
-export const getSidebarCategories = createSelector(
-    (state: RootState): CategoryBoards[] => state.sidebar.categoryAttributes,
-    (sidebarCategories) => sidebarCategories,
-)
+export const getSidebarCategories = (state: RootState): CategoryBoards[] => state.sidebar.categoryAttributes
 
 export const getHiddenBoardIDs = (state: RootState): string[] => state.sidebar.hiddenBoardIDs
 

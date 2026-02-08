@@ -58,7 +58,7 @@ const ViewHeaderDisplayByMenu = (props: Props) => {
                         id={date.id}
                         name={date.name}
                         rightIcon={activeView.fields.dateDisplayPropertyId === date.id ? <CheckIcon/> : undefined}
-                        onClick={(id) => {
+                        onClick={(id: string) => {
                             if (activeView.fields.dateDisplayPropertyId === id) {
                                 return
                             }

@@ -4,7 +4,6 @@
 import React from 'react'
 import {render, screen, within} from '@testing-library/react'
 import '@testing-library/jest-dom'
-import {MemoryRouter} from 'react-router-dom'
 
 import {Provider as ReduxProvider} from 'react-redux'
 
@@ -91,7 +90,7 @@ describe('src/components/kanban/kanbanCard', () => {
                     isManualSort={false}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         expect(container).toMatchSnapshot()
     })
     test('should match snapshot with readonly', () => {
@@ -109,94 +108,94 @@ describe('src/components/kanban/kanbanCard', () => {
                     isManualSort={false}
                 />
             </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+        ))
         expect(container).toMatchSnapshot()
     })
-    test('return kanbanCard and click on delete menu ', () => {
-        const result = render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    showCard={jest.fn()}
-                    isManualSort={false}
-                />
-            </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
+    test('return kanbanCard and click on delete menu ', async () => {
+         const result = render(wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <KanbanCard
+                     card={card}
+                     board={board}
+                     visiblePropertyTemplates={[propertyTemplate]}
+                     visibleBadges={false}
+                     isSelected={false}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     showCard={jest.fn()}
+                     isManualSort={false}
+                 />
+             </ReduxProvider>,
+         ))
 
-        const {container} = result
+         const {container} = result
 
-        const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
-        expect(elementMenuWrapper).not.toBeNull()
-        userEvent.click(elementMenuWrapper)
-        expect(container).toMatchSnapshot()
-        const elementButtonDelete = within(elementMenuWrapper).getByRole('button', {name: 'Delete'})
-        expect(elementButtonDelete).not.toBeNull()
-        userEvent.click(elementButtonDelete)
+         const elementMenuWrapper = await screen.findByRole('button', {name: 'menuwrapper'})
+         expect(elementMenuWrapper).not.toBeNull()
+         userEvent.click(elementMenuWrapper)
+         expect(container).toMatchSnapshot()
+         const elementButtonDelete = await within(elementMenuWrapper).findByRole('button', {name: 'Delete'})
+         expect(elementButtonDelete).not.toBeNull()
+         userEvent.click(elementButtonDelete)
 
-        const confirmDialog = screen.getByTitle('Confirmation Dialog Box')
-        expect(confirmDialog).toBeDefined()
-        const confirmButton = within(confirmDialog).getByRole('button', {name: 'Delete'})
-        expect(confirmButton).toBeDefined()
-        userEvent.click(confirmButton)
+         const confirmDialog = await screen.findByTitle('Confirmation Dialog Box')
+         expect(confirmDialog).toBeDefined()
+         const confirmButton = await within(confirmDialog).findByRole('button', {name: 'Delete'})
+         expect(confirmButton).toBeDefined()
+         userEvent.click(confirmButton)
 
-        expect(mockedMutator.deleteBlock).toBeCalledWith(card, 'delete card')
-    })
+         expect(mockedMutator.deleteBlock).toBeCalledWith(card, 'delete card')
+     })
 
-    test('return kanbanCard and click on duplicate menu ', () => {
-        const {container} = render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    showCard={jest.fn()}
-                    isManualSort={false}
-                />
-            </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
-        const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
-        expect(elementMenuWrapper).not.toBeNull()
-        userEvent.click(elementMenuWrapper)
-        expect(container).toMatchSnapshot()
-        const elementButtonDuplicate = within(elementMenuWrapper).getByRole('button', {name: 'Duplicate'})
-        expect(elementButtonDuplicate).not.toBeNull()
-        userEvent.click(elementButtonDuplicate)
-        expect(mockedMutator.duplicateCard).toBeCalledTimes(1)
-    })
+    test('return kanbanCard and click on duplicate menu ', async () => {
+         const {container} = render(wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <KanbanCard
+                     card={card}
+                     board={board}
+                     visiblePropertyTemplates={[propertyTemplate]}
+                     visibleBadges={false}
+                     isSelected={false}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     showCard={jest.fn()}
+                     isManualSort={false}
+                 />
+             </ReduxProvider>,
+         ))
+         const elementMenuWrapper = await screen.findByRole('button', {name: 'menuwrapper'})
+         expect(elementMenuWrapper).not.toBeNull()
+         userEvent.click(elementMenuWrapper)
+         expect(container).toMatchSnapshot()
+         const elementButtonDuplicate = await within(elementMenuWrapper).findByRole('button', {name: 'Duplicate'})
+         expect(elementButtonDuplicate).not.toBeNull()
+         userEvent.click(elementButtonDuplicate)
+         expect(mockedMutator.duplicateCard).toBeCalledTimes(1)
+     })
 
-    test('return kanbanCard and click on copy link menu ', () => {
-        const {container} = render(wrapDNDIntl(
-            <ReduxProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={jest.fn()}
-                    showCard={jest.fn()}
-                    isManualSort={false}
-                />
-            </ReduxProvider>,
-        ), {wrapper: MemoryRouter})
-        const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
-        expect(elementMenuWrapper).not.toBeNull()
-        userEvent.click(elementMenuWrapper)
-        expect(container).toMatchSnapshot()
-        const elementButtonCopyLink = within(elementMenuWrapper).getByRole('button', {name: 'Copy link'})
-        expect(elementButtonCopyLink).not.toBeNull()
-        userEvent.click(elementButtonCopyLink)
-        expect(mockedUtils.copyTextToClipboard).toBeCalledTimes(1)
-    })
+    test('return kanbanCard and click on copy link menu ', async () => {
+         const {container} = render(wrapDNDIntl(
+             <ReduxProvider store={store}>
+                 <KanbanCard
+                     card={card}
+                     board={board}
+                     visiblePropertyTemplates={[propertyTemplate]}
+                     visibleBadges={false}
+                     isSelected={false}
+                     readonly={false}
+                     onDrop={jest.fn()}
+                     showCard={jest.fn()}
+                     isManualSort={false}
+                 />
+             </ReduxProvider>,
+         ))
+         const elementMenuWrapper = await screen.findByRole('button', {name: 'menuwrapper'})
+         expect(elementMenuWrapper).not.toBeNull()
+         userEvent.click(elementMenuWrapper)
+         expect(container).toMatchSnapshot()
+         const elementButtonCopyLink = await within(elementMenuWrapper).findByRole('button', {name: 'Copy link'})
+         expect(elementButtonCopyLink).not.toBeNull()
+         userEvent.click(elementButtonCopyLink)
+         expect(mockedUtils.copyTextToClipboard).toBeCalledTimes(1)
+     })
 })

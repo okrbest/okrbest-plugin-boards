@@ -5,9 +5,7 @@ import {marked} from 'marked'
 import {IntlShape} from 'react-intl'
 import moment from 'moment'
 
-import {generatePath, match as routerMatch} from 'react-router-dom'
-
-import {History} from 'history'
+import {generatePath, NavigateFunction} from 'react-router-dom'
 
 import {IUser} from './user'
 
@@ -809,27 +807,90 @@ class Utils {
         return (Utils.isMac() && e.metaKey) || (!Utils.isMac() && e.ctrlKey && !e.altKey)
     }
 
-    static getBoardPagePath(currentPath: string) {
-        if (currentPath === '/team/:teamId/new/:channelId') {
-            return '/team/:teamId/:boardId?/:viewId?/:cardId?'
+    static getBoardPagePath(currentPath: string): '/team/:teamId/:boardId?/:viewId?/:cardId?' | '/board/:boardId?/:viewId?/:cardId?' | '/shared/:boardId?/:viewId?/:cardId?' {
+        if (currentPath.startsWith('/board/') || currentPath.match(/^\/board\//)) {
+            return '/board/:boardId?/:viewId?/:cardId?'
         }
-        return currentPath
+        if (currentPath.startsWith('/shared/') || currentPath.match(/^\/shared\//)) {
+            return '/shared/:boardId?/:viewId?/:cardId?'
+        }
+        return '/team/:teamId/:boardId?/:viewId?/:cardId?'
+    }
+
+    static buildBoardPath(
+        currentPath: string,
+        params: {teamId?: string, boardId?: string, viewId?: string, cardId?: string},
+    ): string {
+        const {teamId = '', boardId = '', viewId, cardId} = params
+        const pathType = Utils.getBoardPagePath(currentPath)
+
+        let newPath: string
+
+        if (pathType === '/board/:boardId?/:viewId?/:cardId?') {
+            newPath = `/board/${boardId}`
+        } else if (pathType === '/shared/:boardId?/:viewId?/:cardId?') {
+            newPath = `/shared/${boardId}`
+        } else {
+            newPath = `/team/${teamId}/${boardId}`
+        }
+
+        if (viewId) {
+            newPath += `/${viewId}`
+        }
+        if (cardId) {
+            newPath += `/${cardId}`
+        }
+
+        return newPath
     }
 
     static showBoard(
         boardId: string,
-        match: routerMatch<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>,
-        history: History,
+        params: {boardId?: string, viewId?: string, cardId?: string, teamId?: string},
+        navigate: NavigateFunction,
+        currentPath: string,
     ) {
-        // if the same board, reuse the match params
-        // otherwise remove viewId and cardId, results in first view being selected
-        const params = {...match.params, boardId: boardId || ''}
-        if (boardId !== match.params.boardId) {
-            params.viewId = undefined
-            params.cardId = undefined
+        const teamId = params.teamId || ''
+        let viewId: string | undefined = params.viewId
+        let cardId: string | undefined = params.cardId
+
+        if (boardId !== params.boardId) {
+            viewId = undefined
+            cardId = undefined
         }
-        const newPath = generatePath(Utils.getBoardPagePath(match.path), params)
-        history.push(newPath)
+
+        const pathTemplate = Utils.getBoardPagePath(currentPath)
+        let newPath: string
+
+        if (pathTemplate.startsWith('/team/')) {
+            newPath = `/team/${teamId}/${boardId || ''}`
+            if (viewId) {
+                newPath += `/${viewId}`
+            }
+            if (cardId) {
+                newPath += `/${cardId}`
+            }
+        } else if (pathTemplate.startsWith('/board/')) {
+            newPath = `/board/${boardId || ''}`
+            if (viewId) {
+                newPath += `/${viewId}`
+            }
+            if (cardId) {
+                newPath += `/${cardId}`
+            }
+        } else if (pathTemplate.startsWith('/shared/')) {
+            newPath = `/shared/${boardId || ''}`
+            if (viewId) {
+                newPath += `/${viewId}`
+            }
+            if (cardId) {
+                newPath += `/${cardId}`
+            }
+        } else {
+            newPath = `/team/${teamId}/${boardId || ''}`
+        }
+
+        navigate(newPath)
     }
 
     static humanFileSize(bytesParam: number, si = false, dp = 1): string {

@@ -24,7 +24,7 @@ type Props = {
     onCardClick: (cardId: string) => void
 }
 
-const SubCards = (props: Props): JSX.Element => {
+const SubCards = (props: Props): React.JSX.Element => {
     const {board, card, readonly, onCardClick} = props
     const [isLoading, setIsLoading] = useState(true)
     const [isAdding, setIsAdding] = useState(false)

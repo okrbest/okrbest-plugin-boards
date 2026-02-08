@@ -110,26 +110,26 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
       </div>
       <div
         class="octo-sidebar-list"
-        data-rbd-droppable-context-id="1"
-        data-rbd-droppable-id="lhs-categories"
+        data-rfd-droppable-context-id="_r_6_"
+        data-rfd-droppable-id="lhs-categories"
       >
         <div
-          data-rbd-draggable-context-id="1"
+          data-rfd-draggable-context-id="_r_6_"
         >
           <div
             class="SidebarCategory"
           >
             <div
               class="categoryBoardsDroppableArea"
-              data-rbd-droppable-context-id="1"
+              data-rfd-droppable-context-id="_r_6_"
             >
               <div
                 class="octo-sidebar-item category expanded active"
               >
                 <div
-                  aria-describedby="rbd-hidden-text-1-hidden-text-5"
+                  aria-describedby="rfd-hidden-text-_r_6_-hidden-text-_r_7_"
                   class="octo-sidebar-title category-title"
-                  data-rbd-drag-handle-context-id="1"
+                  data-rfd-drag-handle-context-id="_r_6_"
                   draggable="false"
                   role="button"
                   tabindex="0"
@@ -162,14 +162,14 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
                 </div>
               </div>
               <div
-                data-rbd-draggable-context-id="1"
-                data-rbd-draggable-id="board1"
+                data-rfd-draggable-context-id="_r_6_"
+                data-rfd-draggable-id="board1"
               >
                 <div
-                  aria-describedby="rbd-hidden-text-1-hidden-text-5"
+                  aria-describedby="rfd-hidden-text-_r_6_-hidden-text-_r_7_"
                   class="SidebarBoardItem subitem active"
-                  data-rbd-drag-handle-context-id="1"
-                  data-rbd-drag-handle-draggable-id="board1"
+                  data-rfd-drag-handle-context-id="_r_6_"
+                  data-rfd-drag-handle-draggable-id="board1"
                   draggable="false"
                   role="button"
                   tabindex="0"
@@ -409,6 +409,7 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
                   Group by: 
                   <span
                     id="groupByLabel"
+                    style="color: rgb(var(--center-channel-color-rgb));"
                   >
                     Property 2
                   </span>
@@ -448,7 +449,6 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
             <div
@@ -510,7 +510,6 @@ exports[`src/components/workspace return workspace and showcard 1`] = `
               >
                 No Property 2
               </span>
-              
               <div
                 class="KanbanCalculation"
               >
@@ -880,7 +879,6 @@ exports[`src/components/workspace return workspace readonly and showcard 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
           </div>
@@ -903,7 +901,6 @@ exports[`src/components/workspace return workspace readonly and showcard 1`] = `
               >
                 No Property 2
               </span>
-              
               <div
                 class="KanbanCalculation"
               >
@@ -1185,26 +1182,26 @@ exports[`src/components/workspace should match snapshot 1`] = `
       </div>
       <div
         class="octo-sidebar-list"
-        data-rbd-droppable-context-id="0"
-        data-rbd-droppable-id="lhs-categories"
+        data-rfd-droppable-context-id="_r_0_"
+        data-rfd-droppable-id="lhs-categories"
       >
         <div
-          data-rbd-draggable-context-id="0"
+          data-rfd-draggable-context-id="_r_0_"
         >
           <div
             class="SidebarCategory"
           >
             <div
               class="categoryBoardsDroppableArea"
-              data-rbd-droppable-context-id="0"
+              data-rfd-droppable-context-id="_r_0_"
             >
               <div
                 class="octo-sidebar-item category expanded active"
               >
                 <div
-                  aria-describedby="rbd-hidden-text-0-hidden-text-0"
+                  aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
                   class="octo-sidebar-title category-title"
-                  data-rbd-drag-handle-context-id="0"
+                  data-rfd-drag-handle-context-id="_r_0_"
                   draggable="false"
                   role="button"
                   tabindex="0"
@@ -1237,14 +1234,14 @@ exports[`src/components/workspace should match snapshot 1`] = `
                 </div>
               </div>
               <div
-                data-rbd-draggable-context-id="0"
-                data-rbd-draggable-id="board1"
+                data-rfd-draggable-context-id="_r_0_"
+                data-rfd-draggable-id="board1"
               >
                 <div
-                  aria-describedby="rbd-hidden-text-0-hidden-text-0"
+                  aria-describedby="rfd-hidden-text-_r_0_-hidden-text-_r_1_"
                   class="SidebarBoardItem subitem active"
-                  data-rbd-drag-handle-context-id="0"
-                  data-rbd-drag-handle-draggable-id="board1"
+                  data-rfd-drag-handle-context-id="_r_0_"
+                  data-rfd-drag-handle-draggable-id="board1"
                   draggable="false"
                   role="button"
                   tabindex="0"
@@ -1484,6 +1481,7 @@ exports[`src/components/workspace should match snapshot 1`] = `
                   Group by: 
                   <span
                     id="groupByLabel"
+                    style="color: rgb(var(--center-channel-color-rgb));"
                   >
                     Property 2
                   </span>
@@ -1523,7 +1521,6 @@ exports[`src/components/workspace should match snapshot 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
             <div
@@ -1585,7 +1582,6 @@ exports[`src/components/workspace should match snapshot 1`] = `
               >
                 No Property 2
               </span>
-              
               <div
                 class="KanbanCalculation"
               >
@@ -1955,7 +1951,6 @@ exports[`src/components/workspace should match snapshot with readonly 1`] = `
               <input
                 class="Editable "
                 placeholder="Search cards"
-                value=""
               />
             </div>
           </div>
@@ -1978,7 +1973,6 @@ exports[`src/components/workspace should match snapshot with readonly 1`] = `
               >
                 No Property 2
               </span>
-              
               <div
                 class="KanbanCalculation"
               >
@@ -2138,7 +2132,9 @@ exports[`src/components/workspace should match snapshot with readonly 1`] = `
 </div>
 `;
 
-exports[`src/components/workspace show add new view tooltip 1`] = `
+exports[`src/components/workspace show add new view tooltip 1`] = `<div />`;
+
+exports[`src/components/workspace show add new view tooltip 2`] = `
 <div
   class="tippy-box tutorial-tour-tip__box AddViewTourStep"
   data-animation="scale-subtle"
@@ -2355,7 +2351,9 @@ exports[`src/components/workspace show copy link tooltip 1`] = `
 </div>
 `;
 
-exports[`src/components/workspace show open card tooltip 1`] = `
+exports[`src/components/workspace show open card tooltip 1`] = `<div />`;
+
+exports[`src/components/workspace show open card tooltip 2`] = `
 <div
   class="tippy-box tutorial-tour-tip__box OpenCardTourStep"
   data-animation="scale-subtle"
