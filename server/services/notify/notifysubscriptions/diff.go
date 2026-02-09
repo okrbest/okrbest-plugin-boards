@@ -407,7 +407,8 @@ func (r *displayNameResolver) GetUserByID(userID string) (*model.User, error) {
 	if err != nil || user == nil {
 		return user, err
 	}
-	user.Username = displayNameForUser(user, r.nameFormat)
+	// Keep original Username for @mention linking
+	// Store display name in Nickname for other uses if needed
 	return user, nil
 }
 

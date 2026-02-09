@@ -239,7 +239,8 @@ func appendPropertyChanges(fields []*mm_model.SlackAttachmentField, cardDiff *Di
 
 		var val string
 		if propDiff.OldValue != "" {
-			val = fmt.Sprintf("%s  ~~`%s`~~", stripNewlines(propDiff.NewValue), stripNewlines(propDiff.OldValue))
+			// Don't use backticks for old value - it prevents @mention parsing
+			val = fmt.Sprintf("%s  ~~%s~~", stripNewlines(propDiff.NewValue), stripNewlines(propDiff.OldValue))
 		} else {
 			val = propDiff.NewValue
 		}
@@ -283,10 +284,12 @@ func appendCommentChanges(fields []*mm_model.SlackAttachmentField, cardDiff *Dif
 			}
 
 			if format != "" {
+				// Put author mention in Value (not Title) so Mattermost parses it as a mention
+				authorMention := makeAuthorsList(child.Authors, "알 수 없는 사용자")
 				fields = append(fields, &mm_model.SlackAttachmentField{
 					Short: false,
-					Title: makeAuthorsList(child.Authors, "알 수 없는 사용자") + "님의 댓글", // todo:  localize this when server has i18n
-					Value: fmt.Sprintf(format, msg),
+					Title: "댓글",
+					Value: fmt.Sprintf("%s님: %s", authorMention, fmt.Sprintf(format, msg)),
 				})
 			}
 		}
@@ -308,10 +311,12 @@ func appendAttachmentChanges(fields []*mm_model.SlackAttachmentField, cardDiff *
 			}
 
 			if format != "" {
+				// Put author mention in Value (not Title) so Mattermost parses it as a mention
+				authorMention := makeAuthorsList(child.Authors, "알 수 없는 사용자")
 				fields = append(fields, &mm_model.SlackAttachmentField{
 					Short: false,
-					Title: makeAuthorsList(child.Authors, "알 수 없는 사용자") + "님이 변경함", // TODO:  localize this when server has i18n
-					Value: fmt.Sprintf(format, msg),
+					Title: "첨부 파일",
+					Value: fmt.Sprintf("%s님: %s", authorMention, fmt.Sprintf(format, msg)),
 				})
 			}
 		}
