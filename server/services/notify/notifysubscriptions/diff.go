@@ -216,9 +216,10 @@ func (dg *diffGenerator) generateDiffsForCard(card *model.Block, schema model.Pr
 		})
 
 		// Add author from card's ModifiedBy
+		// Use Username instead of displayName for proper @mention linking in Mattermost
 		user, err := dg.store.GetUserByID(card.ModifiedBy)
 		if err == nil && user != nil {
-			cardDiff.Authors.Add(user.ID, displayNameForUser(user, dg.nameFormat))
+			cardDiff.Authors.Add(user.ID, user.Username)
 		}
 	}
 
@@ -301,7 +302,8 @@ func (dg *diffGenerator) generateDiffForBlock(newBlock *model.Block, schema mode
 			)
 			authors.Add(b.ModifiedBy, "unknown_user") // todo: localize this when server has i18n
 		} else {
-			authors.Add(user.ID, displayNameForUser(user, dg.nameFormat))
+			// Use Username instead of displayName for proper @mention linking in Mattermost
+			authors.Add(user.ID, user.Username)
 		}
 	}
 
@@ -405,7 +407,8 @@ func (r *displayNameResolver) GetUserByID(userID string) (*model.User, error) {
 	if err != nil || user == nil {
 		return user, err
 	}
-	user.Username = displayNameForUser(user, r.nameFormat)
+	// Keep original Username for @mention linking
+	// Store display name in Nickname for other uses if needed
 	return user, nil
 }
 

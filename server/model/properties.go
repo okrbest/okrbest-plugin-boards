@@ -149,7 +149,8 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 			if user == nil {
 				return userID, nil
 			}
-			return user.Username, nil
+			// Add @ prefix for Mattermost mention linking
+			return "@" + user.Username, nil
 		}
 		return userID, nil
 
@@ -192,7 +193,8 @@ func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, e
 			if user == nil {
 				usernames[i] = userID
 			} else {
-				usernames[i] = user.Username
+				// Add @ prefix for Mattermost mention linking
+				usernames[i] = "@" + user.Username
 			}
 		}
 
