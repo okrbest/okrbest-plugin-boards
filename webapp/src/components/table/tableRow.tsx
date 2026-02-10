@@ -44,6 +44,10 @@ type Props = {
     addCard: (groupByOptionId?: string) => Promise<void>
     onClick?: (e: React.MouseEvent<HTMLDivElement>, card: Card) => void
     onDrop: (srcCard: Card, dstCard: Card) => void
+    hasSubCards?: boolean
+    isExpanded?: boolean
+    onToggleExpand?: (e: React.MouseEvent) => void
+    isSubCard?: boolean
 }
 
 const TableRow = (props: Props) => {
@@ -167,6 +171,17 @@ const TableRow = (props: Props) => {
                 style={{width: columnResize.width(Constants.titleColumnId)}}
                 ref={(ref) => columnResize.updateRef(card.id, Constants.titleColumnId, ref)}
             >
+                {props.hasSubCards && (
+                    <button
+                        className={`expand-toggle ${props.isExpanded ? 'expand-toggle--expanded' : ''}`}
+                        onClick={props.onToggleExpand}
+                    >
+                        <i className='CompassIcon icon-chevron-right'/>
+                    </button>
+                )}
+                {props.isSubCard && !props.hasSubCards && (
+                    <span className='sub-card-indent'/>
+                )}
                 <div className='octo-icontitle'>
                     <div className='octo-icon'>{card.fields.icon}</div>
                     <Editable

@@ -360,6 +360,9 @@ func CardPatch2BlockPatch(cardPatch *CardPatch) (*BlockPatch, error) {
 	if cardPatch.Icon != nil {
 		updatedFields["icon"] = cardPatch.Icon
 	}
+	if cardPatch.ParentCardID != nil {
+		updatedFields["parentCardId"] = *cardPatch.ParentCardID
+	}
 	if cardPatch.Depth != nil {
 		updatedFields["depth"] = *cardPatch.Depth
 	}
