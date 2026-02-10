@@ -1,0 +1,39 @@
+.KanbanSubCardChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+
+    &__chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        max-width: 100%;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background-color: rgba(var(--center-channel-color-rgb), 0.06);
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 20px;
+        transition: background-color 100ms ease-out;
+
+        &:hover {
+            background-color: rgba(var(--center-channel-color-rgb), 0.12);
+        }
+    }
+
+    &__chip-icon {
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+
+    &__chip-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+}
