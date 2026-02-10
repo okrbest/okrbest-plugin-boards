@@ -22,6 +22,7 @@ import CopyLinkTourStep from '../onboardingTour/copyLink/copy_link'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import {getValidEmojiData} from '../../utils/emojiUtils'
+import KanbanSubCardChips from './kanbanSubCardChips'
 
 export const OnboardingCardClassName = 'onboardingCard'
 
@@ -159,6 +160,10 @@ const KanbanCard = (props: Props) => {
                     </Tooltip>
                 ))}
                 {props.visibleBadges && <CardBadges card={card}/>}
+                <KanbanSubCardChips
+                    parentCardId={card.id}
+                    showCard={props.showCard}
+                />
                 {showOnboarding && !params.cardId && <OpenCardTourStep/>}
                 {showOnboarding && !params.cardId && <CopyLinkTourStep/>}
             </div>

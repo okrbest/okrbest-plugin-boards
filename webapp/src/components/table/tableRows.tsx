@@ -9,7 +9,7 @@ import {BoardView} from '../../blocks/boardView'
 
 import './table.scss'
 
-import TableRow from './tableRow'
+import TableRowExpandable from './tableRowExpandable'
 
 type Props = {
     board: Board
@@ -27,7 +27,7 @@ type Props = {
 const TableRows = (props: Props): React.JSX.Element => {
     const {board, cards, activeView} = props
 
-    const onClickRow = useCallback((e: React.MouseEvent<HTMLDivElement>, card: Card) => {
+    const onClickRow = useCallback((e: React.MouseEvent, card: Card) => {
         props.onCardClicked(e, card)
     }, [props.onCardClicked])
 
@@ -35,22 +35,18 @@ const TableRows = (props: Props): React.JSX.Element => {
         <>
             {cards.map((card, idx) => {
                 return (
-                    <TableRow
+                    <TableRowExpandable
                         key={card.id + card.updateAt}
                         board={board}
-                        columnWidths={activeView.fields.columnWidths}
-                        isManualSort={activeView.fields.sortOptions.length === 0}
-                        groupById={activeView.fields.groupById}
-                        visiblePropertyIds={activeView.fields.visiblePropertyIds}
-                        collapsedOptionIds={activeView.fields.collapsedOptionIds}
+                        activeView={activeView}
                         card={card}
-                        addCard={props.addCard}
-                        isSelected={props.selectedCardIds.includes(card.id)}
-                        focusOnMount={props.cardIdToFocusOnRender === card.id}
-                        isLastCard={idx === (cards.length - 1)}
-                        onClick={onClickRow}
-                        showCard={props.showCard}
+                        selectedCardIds={props.selectedCardIds}
                         readonly={props.readonly}
+                        cardIdToFocusOnRender={props.cardIdToFocusOnRender}
+                        isLastCard={idx === (cards.length - 1)}
+                        showCard={props.showCard}
+                        addCard={props.addCard}
+                        onCardClicked={onClickRow}
                         onDrop={props.onDrop}
                     />)
             })}
