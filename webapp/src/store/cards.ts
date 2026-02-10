@@ -125,11 +125,36 @@ const cardsSlice = createSlice({
         },
         setSubCards: (state, action: PayloadAction<{parentCardId: string, subCards: Card[]}>) => {
             state.subCardsByParent[action.payload.parentCardId] = action.payload.subCards
+
+            // 메인 카드 스토어의 parentCardId도 동기화
+            for (const subCard of action.payload.subCards) {
+                if (state.cards[subCard.id]) {
+                    state.cards[subCard.id] = {
+                        ...state.cards[subCard.id],
+                        fields: {
+                            ...state.cards[subCard.id].fields,
+                            parentCardId: action.payload.parentCardId,
+                        },
+                    }
+                }
+            }
         },
         addSubCard: (state, action: PayloadAction<{parentCardId: string, subCard: Card}>) => {
             const existing = state.subCardsByParent[action.payload.parentCardId] || []
             state.subCardsByParent[action.payload.parentCardId] = [...existing, action.payload.subCard]
             state.subCardCountByParent[action.payload.parentCardId] = (state.subCardCountByParent[action.payload.parentCardId] || 0) + 1
+
+            // 메인 카드 스토어의 parentCardId도 동기화
+            const subCard = action.payload.subCard
+            if (state.cards[subCard.id]) {
+                state.cards[subCard.id] = {
+                    ...state.cards[subCard.id],
+                    fields: {
+                        ...state.cards[subCard.id].fields,
+                        parentCardId: action.payload.parentCardId,
+                    },
+                }
+            }
         },
         setSubCardCount: (state, action: PayloadAction<{parentCardId: string, count: number}>) => {
             state.subCardCountByParent[action.payload.parentCardId] = action.payload.count
@@ -144,6 +169,17 @@ const cardsSlice = createSlice({
             const currentCount = state.subCardCountByParent[action.payload.parentCardId] || 0
             if (currentCount > 0) {
                 state.subCardCountByParent[action.payload.parentCardId] = currentCount - 1
+            }
+
+            // 메인 카드 스토어의 parentCardId 제거
+            if (state.cards[action.payload.cardId]) {
+                state.cards[action.payload.cardId] = {
+                    ...state.cards[action.payload.cardId],
+                    fields: {
+                        ...state.cards[action.payload.cardId].fields,
+                        parentCardId: '',
+                    },
+                }
             }
         },
     },
@@ -215,6 +251,40 @@ export const getCurrentBoardCards = createSelector(
     getCards,
     (boardId, cards) => {
         return Object.values(cards).filter((c) => c.boardId === boardId) as Card[]
+    },
+)
+
+export const getCurrentBoardParentCards = createSelector(
+    getCurrentBoardCards,
+    (cards) => {
+        return cards.filter((c) => !c.fields.parentCardId)
+    },
+)
+
+export const getCurrentBoardSubCardsByParent = createSelector(
+    getCurrentBoardCards,
+    (cards) => {
+        const map: {[parentCardId: string]: Card[]} = {}
+        for (const card of cards) {
+            if (card.fields.parentCardId) {
+                if (!map[card.fields.parentCardId]) {
+                    map[card.fields.parentCardId] = []
+                }
+                map[card.fields.parentCardId].push(card)
+            }
+        }
+        return map
+    },
+)
+
+export const getCurrentBoardSubCardCountByParent = createSelector(
+    getCurrentBoardSubCardsByParent,
+    (subCardsByParent) => {
+        const map: {[parentCardId: string]: number} = {}
+        for (const [parentId, subCards] of Object.entries(subCardsByParent)) {
+            map[parentId] = subCards.length
+        }
+        return map
     },
 )
 
@@ -462,7 +532,7 @@ function searchFilterCards(cards: Card[], board: Board, searchTextRaw: string): 
 }
 
 export const getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit = createSelector(
-    getCurrentBoardCards,
+    getCurrentBoardParentCards,
     getLastCommentByCard,
     getCurrentBoard,
     getCurrentView,

@@ -60,6 +60,42 @@
         width: 24px;
     }
 
+    .expand-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        margin-right: 2px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        border-radius: 2px;
+
+        i {
+            font-size: 16px;
+            transition: transform 150ms ease;
+        }
+
+        &:hover {
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+        }
+
+        &--expanded i {
+            transform: rotate(90deg);
+        }
+    }
+
+    .sub-card-indent {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 22px;
+    }
+
     .URLProperty:hover .Button_Copy {
         display: none;
     }
