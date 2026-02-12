@@ -562,11 +562,30 @@ class Mutator {
         const changedBlockIDs: string[] = []
 
         views.forEach((view) => {
-            if (view.fields.visiblePropertyIds.includes(propertyId)) {
+            const hasVisibleProperty = view.fields.visiblePropertyIds.includes(propertyId)
+            const hasSortOption = view.fields.sortOptions?.some((o) => o.propertyId === propertyId)
+            const hasFilter = view.fields.filter?.filters?.some((f) => f.propertyId === propertyId)
+            const hasGroupBy = view.fields.groupById === propertyId
+
+            if (hasVisibleProperty || hasSortOption || hasFilter || hasGroupBy) {
                 oldBlocks.push(view)
 
                 const newView = createBoardView(view)
-                newView.fields.visiblePropertyIds = view.fields.visiblePropertyIds.filter((o: string) => o !== propertyId)
+                if (hasVisibleProperty) {
+                    newView.fields.visiblePropertyIds = view.fields.visiblePropertyIds.filter((o: string) => o !== propertyId)
+                }
+                if (hasSortOption) {
+                    newView.fields.sortOptions = view.fields.sortOptions.filter((o) => o.propertyId !== propertyId)
+                }
+                if (hasFilter) {
+                    newView.fields.filter = {
+                        ...view.fields.filter,
+                        filters: view.fields.filter.filters.filter((f) => f.propertyId !== propertyId),
+                    }
+                }
+                if (hasGroupBy) {
+                    newView.fields.groupById = ''
+                }
                 changedBlocks.push(newView)
                 changedBlockIDs.push(newView.id)
             }

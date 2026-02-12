@@ -542,6 +542,10 @@ export const getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit = createSel
         if (!view || !board || !users || !cards) {
             return EMPTY_CARDS
         }
+        // 보드 전환 중 board와 view가 일치하지 않는 경우 방어
+        if (view.boardId !== board.id) {
+            return EMPTY_CARDS
+        }
         let result = cards.filter((c) => !c.limited)
         if (view.fields.filter) {
             result = CardFilter.applyFilterGroup(view.fields.filter, board.cardProperties, result)
