@@ -133,8 +133,9 @@ export const getCurrentBoardViews = createSelector(
     (state: RootState) => state.boards.current,
     getViews,
     (boardId, views) => {
-        Utils.log(`getCurrentBoardViews boardId: ${boardId} views: ${views.length}`)
-        return Object.values(views).filter((v) => v.boardId === boardId).sort((a, b) => a.title.localeCompare(b.title)).map((v) => createBoardView(v))
+        const viewsList = Object.values(views).filter((v) => v.boardId === boardId)
+        Utils.log(`getCurrentBoardViews boardId: ${boardId} views: ${viewsList.length}`)
+        return viewsList.sort((a, b) => a.title.localeCompare(b.title)).map((v) => createBoardView(v))
     },
 )
 
