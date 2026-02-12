@@ -28,11 +28,22 @@ const TeamToBoardAndViewRedirect = (): null => {
         if (!params.boardId) {
             // first preference is for last visited board, but only if it exists in the current team's boards
             const lastBoardID = UserSettings.lastBoardId[teamId]
-            const boardsLoaded = Object.keys(boards).length > 0
+            const boardsList = Object.values(boards)
+            // 현재 팀의 보드가 로드되었는지 확인 (이전 팀의 보드가 아닌지)
+            const currentTeamBoardsLoaded = boardsList.some((b) => b.teamId === teamId)
+            Utils.log(`TeamToBoardAndViewRedirect: teamId=${teamId}, lastBoardID=${lastBoardID}, currentTeamBoardsLoaded=${currentTeamBoardsLoaded}, boardsCount=${boardsList.length}, categoriesCount=${categories.length}`)
+
+            // 현재 팀의 보드가 아직 로드되지 않았으면 기다림
+            if (!currentTeamBoardsLoaded && boardsList.length > 0) {
+                Utils.log(`TeamToBoardAndViewRedirect: waiting for current team boards to load...`)
+                return
+            }
+
             if (lastBoardID && boards[lastBoardID]) {
                 boardID = lastBoardID
-            } else if (lastBoardID && boardsLoaded && !boards[lastBoardID]) {
-                // Board list is loaded but the saved board doesn't exist — clear stale/cross-contaminated entry
+            } else if (lastBoardID && currentTeamBoardsLoaded && !boards[lastBoardID]) {
+                // Board list is loaded for current team but the saved board doesn't exist — clear stale entry
+                Utils.log(`TeamToBoardAndViewRedirect: clearing stale lastBoardID=${lastBoardID}`)
                 UserSettings.setLastBoardID(teamId, null)
             }
 
