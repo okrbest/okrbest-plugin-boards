@@ -6,6 +6,8 @@ import React, {useState, Suspense} from 'react'
 import {Utils} from '../utils'
 import './markdownEditor.scss'
 
+import type {MentionMapping} from './lexicalEditor/LexicalEditorInput'
+
 const LexicalEditorInput = React.lazy(() => import('./lexicalEditor/LexicalEditorInput'))
 
 type Props = {
@@ -16,6 +18,7 @@ type Props = {
     readonly?: boolean
 
     onChange?: (text: string) => void
+    onMentionMappingsChange?: (mappings: Record<string, MentionMapping>) => void
     onFocus?: () => void
     onBlur?: (text: string) => void
     onKeyDown?: (e: React.KeyboardEvent) => void
@@ -25,7 +28,7 @@ type Props = {
 }
 
 const MarkdownEditor = (props: Props): React.JSX.Element => {
-    const {placeholderText, onFocus, onEditorCancel, onBlur, onChange, text, id, saveOnEnter} = props
+    const {placeholderText, onFocus, onEditorCancel, onBlur, onChange, onMentionMappingsChange, text, id, saveOnEnter} = props
     const [isEditing, setIsEditing] = useState(Boolean(props.autofocus))
     const html: string = Utils.htmlFromMarkdown(text || placeholderText || '')
 
@@ -59,6 +62,7 @@ const MarkdownEditor = (props: Props): React.JSX.Element => {
             <LexicalEditorInput
                 id={id}
                 onChange={onChange}
+                onMentionMappingsChange={onMentionMappingsChange}
                 onFocus={onFocus}
                 onEditorCancel={onEditorCancel}
                 onBlur={editorOnBlur}
