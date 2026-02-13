@@ -44,8 +44,16 @@ import './lexicalEditor.scss'
 
 const BotBadge = (window as any).Components?.BotBadge
 
+// 멘션 매핑 타입: displayname -> username 매핑
+export type MentionMapping = {
+    userId: string
+    username: string
+    displayName: string
+}
+
 type Props = {
     onChange?: (text: string) => void
+    onMentionMappingsChange?: (mappings: Record<string, MentionMapping>) => void
     onFocus?: () => void
     onBlur?: (text: string) => void
     onEditorCancel?: () => void
@@ -144,7 +152,7 @@ const EmojiMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemP
 EmojiMenuItem.displayName = 'EmojiMenuItem'
 
 const LexicalEditorInput = (props: Props): React.ReactElement => {
-    const {onChange, onFocus, onBlur, initialText, id, saveOnEnter, onEditorCancel} = props
+    const {onChange, onMentionMappingsChange, onFocus, onBlur, initialText, id, saveOnEnter, onEditorCancel} = props
     const boardUsers = useAppSelector<IUser[]>(getBoardUsersList)
     const board = useAppSelector(getCurrentBoard)
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
@@ -154,6 +162,8 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
     const editorRef = useRef<LexicalEditor | null>(null)
 
     const userMapRef = useRef<Map<string, IUser>>(new Map())
+    // mentionMappings: displayName을 키로 사용하여 username 저장
+    const mentionMappingsRef = useRef<Record<string, MentionMapping>>({})
 
     const loadSuggestions = useCallback(async (query?: string | null): Promise<BeautifulMentionsItem[]> => {
         const term = query || ''
@@ -186,15 +196,21 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
             userMapRef.current.set(user.id, user)
         })
 
-        return users.map((user: IUser): BeautifulMentionsItem => ({
-            value: user.username,
-            id: user.id,
-            avatar: Utils.getProfilePicture(user.id),
-            is_bot: user.is_bot,
-            is_guest: user.is_guest,
-            displayName: Utils.getUserDisplayName(user, clientConfig.teammateNameDisplay),
-            isBoardMember: boardMemberIds.has(user.id),
-        }))
+        return users.map((user: IUser): BeautifulMentionsItem => {
+            const displayName = Utils.getUserDisplayName(user, clientConfig.teammateNameDisplay)
+            return {
+                // value는 화면에 표시되는 값: displayName으로 표시
+                value: displayName,
+                id: user.id,
+                avatar: Utils.getProfilePicture(user.id),
+                is_bot: user.is_bot,
+                is_guest: user.is_guest,
+                displayName,
+                // username을 별도로 저장하여 전송 시 변환에 사용
+                username: user.username,
+                isBoardMember: boardMemberIds.has(user.id),
+            }
+        })
     }, [me, allowManageBoardRoles, board, boardUsers, clientConfig.teammateNameDisplay])
 
     const debouncedSearch = useMemo(
@@ -222,6 +238,19 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
         (menuItem: BeautifulMentionsMenuItem) => {
             const userId = menuItem.data?.id as string | undefined
             const isBoardMember = menuItem.data?.isBoardMember as boolean | undefined
+            const displayName = menuItem.data?.displayName as string | undefined
+            const username = menuItem.data?.username as string | undefined
+
+            // mentionMappings에 displayName -> username 매핑 저장
+            if (userId && displayName && username) {
+                mentionMappingsRef.current[displayName] = {
+                    userId,
+                    username,
+                    displayName,
+                }
+                // 부모 컴포넌트에 매핑 정보 전달
+                onMentionMappingsChange?.({...mentionMappingsRef.current})
+            }
 
             if (userId && isBoardMember === false) {
                 const user = userMapRef.current.get(userId)
@@ -230,7 +259,7 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
                 }
             }
         },
-        [],
+        [onMentionMappingsChange],
     )
 
     const handleEmojiSearch = useCallback(
