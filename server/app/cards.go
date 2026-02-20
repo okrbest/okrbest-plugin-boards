@@ -8,6 +8,8 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost-plugin-boards/server/utils"
+
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 const (
@@ -187,6 +189,59 @@ func (a *App) GetSubCardCount(parentCardID string) (int, error) {
 	return len(blocks), nil
 }
 
+// getMaxSubCardDepth returns the maximum depth among all descendants of a card.
+// Returns 0 if the card has no sub-cards.
+func (a *App) getMaxSubCardDepth(cardID string) (int, error) {
+	subCards, err := a.GetSubCards(cardID, 0, -1)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(subCards) == 0 {
+		return 0, nil
+	}
+
+	maxDepth := 0
+	for _, subCard := range subCards {
+		subMaxDepth, err := a.getMaxSubCardDepth(subCard.ID)
+		if err != nil {
+			return 0, err
+		}
+		depth := 1 + subMaxDepth
+		if depth > maxDepth {
+			maxDepth = depth
+		}
+	}
+	return maxDepth, nil
+}
+
+// updateSubCardsDepth recursively updates the depth of all sub-cards by depthDelta.
+func (a *App) updateSubCardsDepth(cardID string, depthDelta int, userID string) error {
+	subCards, err := a.GetSubCards(cardID, 0, -1)
+	if err != nil {
+		return err
+	}
+
+	for _, subCard := range subCards {
+		newDepth := subCard.Depth + depthDelta
+		cardPatch := &model.CardPatch{
+			Depth: &newDepth,
+		}
+
+		_, err := a.PatchCard(cardPatch, subCard.ID, userID, true) // disableNotify=true for bulk update
+		if err != nil {
+			return fmt.Errorf("failed to update sub-card depth: %w", err)
+		}
+
+		// Recursively update children
+		if err := a.updateSubCardsDepth(subCard.ID, depthDelta, userID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Card, error) {
 	if cardID == parentCardID {
 		return nil, model.NewErrBadRequest("cannot link card to itself")
@@ -211,8 +266,17 @@ func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Car
 	}
 
 	newDepth := parentCard.Depth + 1
-	if newDepth > model.MaxCardDepth {
-		return nil, model.NewErrBadRequest(fmt.Sprintf("maximum card depth (%d) exceeded", model.MaxCardDepth))
+
+	// Check if linking would exceed max depth including existing sub-cards
+	maxSubDepth, err := a.getMaxSubCardDepth(cardID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate max sub-card depth: %w", err)
+	}
+
+	if newDepth+maxSubDepth > model.MaxCardDepth {
+		return nil, model.NewErrBadRequest(fmt.Sprintf(
+			"maximum card depth (%d) exceeded: this card has sub-cards with depth %d",
+			model.MaxCardDepth, maxSubDepth))
 	}
 
 	if err := a.checkCircularReference(cardID, parentCardID); err != nil {
@@ -227,6 +291,15 @@ func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Car
 	updatedCard, err := a.PatchCard(cardPatch, cardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to link card: %w", err)
+	}
+
+	// Update depth of all sub-cards recursively
+	if maxSubDepth > 0 {
+		depthDelta := newDepth - card.Depth // how much depth increased
+		if err := a.updateSubCardsDepth(cardID, depthDelta, userID); err != nil {
+			// Log error but don't fail the operation
+			a.logger.Error("failed to update sub-cards depth", mlog.Err(err))
+		}
 	}
 
 	// Send channel notification if board is linked to a channel
@@ -291,6 +364,7 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 		return nil, model.NewErrBadRequest("card is not a sub-card")
 	}
 
+	oldDepth := card.Depth
 	emptyParent := ""
 	zeroDepth := 0
 	cardPatch := &model.CardPatch{
@@ -301,6 +375,14 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 	updatedCard, err := a.PatchCard(cardPatch, cardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unlink card: %w", err)
+	}
+
+	// Update depth of all sub-cards recursively
+	if oldDepth > 0 {
+		depthDelta := zeroDepth - oldDepth // negative value (e.g., 0 - 2 = -2)
+		if err := a.updateSubCardsDepth(cardID, depthDelta, userID); err != nil {
+			a.logger.Error("failed to update sub-cards depth on unlink", mlog.Err(err))
+		}
 	}
 
 	// Send channel notification if board is linked to a channel

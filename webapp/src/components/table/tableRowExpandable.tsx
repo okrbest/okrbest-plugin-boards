@@ -17,12 +17,13 @@ type Props = {
     card: Card
     selectedCardIds: string[]
     readonly: boolean
-    cardIdToFocusOnRender: string
+    cardIdToFocusOnRender?: string
     isLastCard: boolean
     showCard: (cardId?: string) => void
     addCard: (groupByOptionId?: string) => Promise<void>
     onCardClicked: (e: React.MouseEvent, card: Card) => void
     onDrop: (srcCard: Card, dstCard: Card) => void
+    isSubCard?: boolean
 }
 
 const TableRowExpandable = (props: Props): React.JSX.Element => {
@@ -62,6 +63,7 @@ const TableRowExpandable = (props: Props): React.JSX.Element => {
                 hasSubCards={hasSubCards}
                 isExpanded={expanded}
                 onToggleExpand={handleToggle}
+                isSubCard={props.isSubCard}
             />
             {hasSubCards && expanded && (
                 <TableSubCardRows

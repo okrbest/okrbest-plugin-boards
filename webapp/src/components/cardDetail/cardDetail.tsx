@@ -23,7 +23,7 @@ import BlockIconSelector from '../blockIconSelector'
 
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {setCurrent as setCurrentCard} from '../../store/cards'
-import {Permission} from '../../constants'
+import {Constants, Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import BlockSuiteEditor from '../blockSuite/BlockSuiteEditor'
 
@@ -206,7 +206,7 @@ const CardDetail = (props: Props): React.JSX.Element|null => {
                     readonly={props.readonly}
                 />}
 
-                {!limited && props.onCardClick && (card.fields.depth === undefined || card.fields.depth < 2) && (
+                {!limited && props.onCardClick && (card.fields.depth === undefined || card.fields.depth < Constants.maxCardDepth) && (
                     <SubCards
                         board={props.board}
                         card={card}

@@ -93,7 +93,13 @@
     .sub-card-indent {
         display: inline-block;
         flex-shrink: 0;
-        width: 22px;
+    }
+
+    .expand-toggle-placeholder {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
     }
 
     .URLProperty:hover .Button_Copy {

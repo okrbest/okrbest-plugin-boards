@@ -8,10 +8,9 @@ import {Block} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import octoClient from '../../octoClient'
 import CompassIcon from '../../widgets/icons/compassIcon'
+import {Constants} from '../../constants'
 
 import './cardLinkSelector.scss'
-
-const MAX_CARD_DEPTH = 2
 
 type Props = {
     boardId: string
@@ -124,7 +123,7 @@ const CardLinkSelector = (props: Props): React.JSX.Element => {
             }
         }
 
-        if (currentCardDepth + 1 > MAX_CARD_DEPTH) {
+        if (currentCardDepth + 1 > Constants.maxCardDepth) {
             return {
                 canLink: false,
                 reason: intl.formatMessage({id: 'CardLinkSelector.depthExceeded', defaultMessage: 'Depth limit exceeded'}),
