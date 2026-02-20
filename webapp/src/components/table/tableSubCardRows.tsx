@@ -7,7 +7,7 @@ import {Card} from '../../blocks/card'
 import {Board} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
 
-import TableRow from './tableRow'
+import TableRowExpandable from './tableRowExpandable'
 
 type Props = {
     board: Board
@@ -27,22 +27,17 @@ const TableSubCardRows = (props: Props): React.JSX.Element => {
     return (
         <>
             {subCards.map((card, idx) => (
-                <TableRow
+                <TableRowExpandable
                     key={card.id}
                     board={board}
-                    columnWidths={activeView.fields.columnWidths}
-                    isManualSort={activeView.fields.sortOptions.length === 0}
-                    groupById={activeView.fields.groupById}
-                    visiblePropertyIds={activeView.fields.visiblePropertyIds}
-                    collapsedOptionIds={activeView.fields.collapsedOptionIds}
+                    activeView={activeView}
                     card={card}
-                    addCard={props.addCard}
-                    isSelected={props.selectedCardIds.includes(card.id)}
-                    focusOnMount={false}
-                    isLastCard={idx === subCards.length - 1}
-                    onClick={(e) => props.onCardClicked(e, card)}
-                    showCard={props.showCard}
+                    selectedCardIds={props.selectedCardIds}
                     readonly={props.readonly}
+                    isLastCard={idx === subCards.length - 1}
+                    showCard={props.showCard}
+                    addCard={props.addCard}
+                    onCardClicked={props.onCardClicked}
                     onDrop={props.onDrop}
                     isSubCard={true}
                 />

@@ -171,16 +171,23 @@ const TableRow = (props: Props) => {
                 style={{width: columnResize.width(Constants.titleColumnId)}}
                 ref={(ref) => columnResize.updateRef(card.id, Constants.titleColumnId, ref)}
             >
-                {props.hasSubCards && (
+                {/* 깊이에 따라 들여쓰기 추가 (card.fields.depth 사용) */}
+                {(card.fields.depth || 0) > 0 && (
+                    <span
+                        className='sub-card-indent'
+                        style={{width: (card.fields.depth || 0) * 22}}
+                    />
+                )}
+                {/* 하위 카드가 있으면 확장 버튼 추가, 없으면 같은 크기의 placeholder */}
+                {props.hasSubCards ? (
                     <button
                         className={`expand-toggle ${props.isExpanded ? 'expand-toggle--expanded' : ''}`}
                         onClick={props.onToggleExpand}
                     >
                         <i className='CompassIcon icon-chevron-right'/>
                     </button>
-                )}
-                {props.isSubCard && !props.hasSubCards && (
-                    <span className='sub-card-indent'/>
+                ) : props.isSubCard && (
+                    <span className='expand-toggle-placeholder'/>
                 )}
                 <div className='octo-icontitle'>
                     <div className='octo-icon'>{card.fields.icon}</div>
