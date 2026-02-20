@@ -38,7 +38,7 @@ func (e ErrInvalidFieldType) Error() string {
 }
 
 // MaxCardDepth is the maximum nesting depth for sub-cards (0, 1, 2)
-const MaxCardDepth = 2
+const MaxCardDepth = 5
 
 // Card represents a group of content blocks and properties.
 // swagger:model

@@ -38,6 +38,9 @@ class Constants {
     static readonly titleColumnId = '__title'
     static readonly badgesColumnId = '__badges'
 
+    // 하위 카드 최대 깊이 (0 = 최상위, 5 = 최대 depth 4까지 허용)
+    static readonly maxCardDepth = 5
+
     static readonly versionString = '9.2.1'
 
     static readonly archiveHelpPage = 'https://docs.okrbest.com/boards/migrate-to-boards.html'

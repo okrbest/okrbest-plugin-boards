@@ -11,7 +11,8 @@ import {useAppDispatch} from '../../store/hooks'
 import {setSubCards, addSubCard, setSubCardCount, removeSubCard} from '../../store/cards'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
-import {Permission} from '../../constants'
+import {Constants, Permission} from '../../constants'
+import {sendFlashMessage} from '../flashMessages'
 
 import CardLinkSelector from './cardLinkSelector'
 
@@ -36,7 +37,7 @@ const SubCards = (props: Props): React.JSX.Element => {
     const intl = useIntl()
 
     const currentDepth = card.fields.depth || 0
-    const canAddSubCard = currentDepth < 2
+    const canAddSubCard = currentDepth < Constants.maxCardDepth
 
     useEffect(() => {
         const loadSubCards = async () => {
@@ -81,6 +82,40 @@ const SubCards = (props: Props): React.JSX.Element => {
         onCardClick(subCardId)
     }, [onCardClick])
 
+    const getLocalizedErrorMessage = useCallback((errorMessage: string): string => {
+        if (errorMessage.includes('maximum card depth')) {
+            return intl.formatMessage(
+                {
+                    id: 'SubCards.error.maxDepthExceeded',
+                    defaultMessage: 'Cannot link: maximum sub-card depth ({maxDepth}) exceeded',
+                },
+                {maxDepth: Constants.maxCardDepth},
+            )
+        }
+        if (errorMessage.includes('already a sub-card')) {
+            return intl.formatMessage({
+                id: 'SubCards.error.alreadySubCard',
+                defaultMessage: 'This card is already a sub-card',
+            })
+        }
+        if (errorMessage.includes('circular reference')) {
+            return intl.formatMessage({
+                id: 'SubCards.error.circularReference',
+                defaultMessage: 'Cannot link: circular reference detected',
+            })
+        }
+        if (errorMessage.includes('same board')) {
+            return intl.formatMessage({
+                id: 'SubCards.error.differentBoard',
+                defaultMessage: 'Cards must be in the same board',
+            })
+        }
+        return intl.formatMessage(
+            {id: 'SubCards.error.generic', defaultMessage: 'Failed to link card: {error}'},
+            {error: errorMessage},
+        )
+    }, [intl])
+
     const handleLinkCard = useCallback(async (cardToLink: Card) => {
         if (isLinking) {
             return
@@ -96,10 +131,16 @@ const SubCards = (props: Props): React.JSX.Element => {
                     dispatch(addSubCard({parentCardId: card.id, subCard: linkedCard}))
                 },
             )
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err)
+            sendFlashMessage({
+                content: getLocalizedErrorMessage(message),
+                severity: 'high',
+            })
         } finally {
             setIsLinking(false)
         }
-    }, [card.id, dispatch, isLinking])
+    }, [card.id, dispatch, getLocalizedErrorMessage, isLinking])
 
     const handleUnlinkCard = useCallback(async (subCardId: string, e: React.MouseEvent) => {
         e.stopPropagation()

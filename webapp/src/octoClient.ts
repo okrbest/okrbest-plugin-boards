@@ -1459,7 +1459,8 @@ class OctoClient {
             body,
         }))
         if (response.status !== 200) {
-            return undefined
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.error || `Failed to link card (status: ${response.status})`)
         }
         return (await this.getJson(response, undefined)) as Block | undefined
     }
