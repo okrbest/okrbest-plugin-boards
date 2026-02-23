@@ -377,6 +377,15 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 		return nil, fmt.Errorf("failed to unlink card: %w", err)
 	}
 
+	// parent_id를 board_id로 설정 (최상위 카드는 parent_id = board_id여야 함)
+	blockPatch := &model.BlockPatch{
+		ParentID: &card.BoardID,
+	}
+	_, err = a.PatchBlockAndNotify(cardID, blockPatch, userID, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update parent_id to board_id: %w", err)
+	}
+
 	// Update depth of all sub-cards recursively
 	if oldDepth > 0 {
 		depthDelta := zeroDepth - oldDepth // negative value (e.g., 0 - 2 = -2)
