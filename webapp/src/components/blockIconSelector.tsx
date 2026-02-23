@@ -25,7 +25,11 @@ const BlockIconSelector = (props: Props) => {
         document.body.click()
     }, [block.id, block.fields.icon])
     const onAddRandomIcon = useCallback(() => mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, BlockIcons.shared.randomIcon()), [block.id, block.fields.icon])
-    const onRemoveIcon = useCallback(() => mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, '', 'remove icon'), [block.id, block.fields.icon])
+    const onRemoveIcon = useCallback(async () => {
+        await mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, '', 'remove icon')
+        // 아이콘 삭제 후 포커스를 body로 이동하여 Delete 키 핫키가 작동하도록 함
+        document.body.focus()
+    }, [block.id, block.fields.icon])
 
     if (!block.fields.icon) {
         return null
