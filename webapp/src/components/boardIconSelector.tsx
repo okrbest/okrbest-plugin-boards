@@ -26,7 +26,11 @@ const BoardIconSelector = React.memo((props: Props) => {
         document.body.click()
     }, [board.id, board.icon])
     const onAddRandomIcon = useCallback(() => mutator.changeBoardIcon(board.id, board.icon, BlockIcons.shared.randomIcon()), [board.id, board.icon])
-    const onRemoveIcon = useCallback(() => mutator.changeBoardIcon(board.id, board.icon, '', 'remove board icon'), [board.id, board.icon])
+    const onRemoveIcon = useCallback(async () => {
+        await mutator.changeBoardIcon(board.id, board.icon, '', 'remove board icon')
+        // 아이콘 삭제 후 포커스를 body로 이동하여 Delete 키 핫키가 작동하도록 함
+        document.body.focus()
+    }, [board.id, board.icon])
 
     if (!board.icon) {
         return null
