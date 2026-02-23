@@ -1,0 +1,173 @@
+---
+description: 텍스트 프로퍼티 저장 시 가끔 저장되지 않는 버그 수정
+globs: ["webapp/src/properties/baseTextEditor.tsx", "webapp/src/properties/url/url.tsx"]
+---
+
+# 텍스트 프로퍼티 저장 버그 수정
+
+## 문제 상황
+
+텍스트 기반 프로퍼티(text, number, email, phone, url 등)를 편집할 때 가끔씩 값이 저장되지 않는 문제가 발생했습니다.
+
+### 증상
+
+1. 프로퍼티 값을 수정하고 다른 카드로 이동하면 저장되지 않음
+2. 같은 카드라도 서버에서 업데이트가 오면 편집 중인 값이 사라짐
+3. 드물게 다른 카드에 값이 저장되는 데이터 손상 발생
+
+## 원인 분석
+
+### 버그 1: 빈 useEffect 의존성 배열
+
+```typescript
+// 문제 코드
+useEffect(() => {
+    return () => {
+        saveTextPropertyRef.current && saveTextPropertyRef.current()
+    }
+}, [])  // ← 빈 배열! 카드 변경 시 cleanup이 호출되지 않음
+```
+
+- 컴포넌트가 완전히 언마운트될 때만 cleanup 호출
+- **같은 컴포넌트가 다른 카드로 재사용**되면 cleanup이 호출되지 않아 저장 실패
+
+### 버그 2: 렌더링 중 ref 업데이트로 인한 stale closure
+
+```typescript
+// 문제 코드
+const saveTextPropertyRef = useRef<() => void>(saveTextProperty)
+if (props.readOnly) {
+    saveTextPropertyRef.current = () => null
+} else {
+    saveTextPropertyRef.current = saveTextProperty  // 렌더링 중에 업데이트!
+}
+```
+
+React 실행 순서:
+1. 새 props로 렌더링 → `saveTextPropertyRef.current`에 **새 콜백** 저장
+2. 이전 useEffect cleanup 실행 → **새 콜백**이 호출됨 (이전 값을 새 카드에 저장!)
+
+### 버그 3: card 객체 참조로 인한 stale 데이터
+
+```typescript
+// 문제 코드
+pendingSaveRef.current = {
+    card: props.card,  // ← 참조만 저장!
+    ...
+}
+```
+
+- Redux store가 업데이트되면 `props.card` 참조가 가리키는 데이터가 변경됨
+- cleanup 시 stale card 데이터로 저장 시도
+
+### 버그 4: 서버 값 변경 미감지
+
+```typescript
+// 문제 코드
+useEffect(() => {
+    setValue(props.card.fields.properties[propertyId] || '')
+}, [props.card.id, props.propertyTemplate?.id])  // ← 서버 값 변경 미감지
+```
+
+- 같은 ID의 카드라도 서버에서 업데이트되면 값이 변경됨
+- 서버 값이 변경되어도 로컬 state는 이전 값 유지
+
+## 해결 방법
+
+### 수정된 코드 구조
+
+```typescript
+const BaseTextEditor = (props: PropertyProps) => {
+    const [value, setValue] = useState(...)
+
+    // 1. 저장 대기 데이터를 ref로 관리 (card 깊은 복사)
+    const pendingSaveRef = useRef<{
+        boardId: string
+        card: typeof props.card  // 깊은 복사본
+        propertyId: string
+        value: string
+        originalValue: string | string[]
+        readOnly: boolean
+    } | null>(null)
+
+    // 2. 값 변경 시 저장 대기 데이터 업데이트
+    useEffect(() => {
+        const propertyId = props.propertyTemplate?.id || ''
+        const originalValue = props.card.fields.properties[propertyId] ?? ''
+        pendingSaveRef.current = {
+            boardId: props.board.id,
+            // card 객체 깊은 복사 (Redux 업데이트로 인한 stale 참조 방지)
+            card: {
+                ...props.card,
+                fields: {
+                    ...props.card.fields,
+                    properties: {...props.card.fields.properties},
+                },
+            },
+            propertyId,
+            value: value as string,
+            originalValue,
+            readOnly: props.readOnly,
+        }
+    }, [props.board.id, props.card, props.propertyTemplate?.id, value, props.readOnly])
+
+    // 3. 카드/프로퍼티 변경 시 cleanup에서 이전 값 저장
+    useEffect(() => {
+        return () => {
+            const pending = pendingSaveRef.current
+            if (pending && !pending.readOnly && pending.value !== pending.originalValue) {
+                mutator.changePropertyValue(pending.boardId, pending.card, pending.propertyId, pending.value)
+            }
+        }
+    }, [props.card.id, props.propertyTemplate?.id])
+
+    // 4. 서버 값 변경 감지하여 로컬 state 동기화
+    const serverValue = props.card.fields.properties[props.propertyTemplate?.id || ''] || ''
+    useEffect(() => {
+        setValue(serverValue)
+    }, [props.card.id, props.propertyTemplate?.id, serverValue])
+
+    // ...
+}
+```
+
+### 핵심 수정 포인트
+
+| 문제 | 해결 |
+|------|------|
+| 빈 의존성 배열 | `[props.card.id, props.propertyTemplate?.id]` 추가 |
+| 렌더링 중 ref 업데이트 | useEffect 내에서만 업데이트 |
+| card 참조 문제 | 깊은 복사하여 스냅샷 저장 |
+| 서버 값 미감지 | `serverValue`를 의존성에 추가 |
+
+## 영향 범위
+
+### 수정된 파일
+
+| 파일 | 설명 |
+|------|------|
+| `webapp/src/properties/baseTextEditor.tsx` | text, number, email, phone 프로퍼티 |
+| `webapp/src/properties/url/url.tsx` | URL 프로퍼티 |
+
+### 영향받지 않는 프로퍼티
+
+| 프로퍼티 | 이유 |
+|---------|------|
+| select, multiselect | 선택 시 즉시 저장 (로컬 state 없음) |
+| checkbox | 클릭 시 즉시 저장 |
+| date | 다이얼로그 닫을 때 저장 |
+| person, multiperson | 선택 시 즉시 저장 |
+
+## 주의사항
+
+### 사용자 경험
+
+- 서버 값이 변경되면 편집 중인 로컬 값이 서버 값으로 덮어씌워짐
+- 이는 의도된 동작으로, 다른 사용자의 변경사항을 반영함
+- 충돌 방지를 위해 onBlur에서 즉시 저장하는 것이 권장됨
+
+### 테스트 시나리오
+
+1. 텍스트 프로퍼티 편집 후 다른 카드로 이동 → 저장 확인
+2. 편집 중 WebSocket으로 서버 업데이트 수신 → 서버 값 반영 확인
+3. 테이블 뷰에서 여러 카드의 같은 프로퍼티 빠르게 편집 → 각 카드에 올바른 값 저장 확인

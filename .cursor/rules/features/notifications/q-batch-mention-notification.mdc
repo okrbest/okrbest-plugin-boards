@@ -1,0 +1,153 @@
+---
+description: 댓글에서 여러 사용자를 멘션할 때 배치 알림 처리 방식
+globs: ["server/services/notify/**"]
+---
+
+# 배치 멘션 알림 (Batch Mention Notification)
+
+## 배경
+
+댓글에서 여러 사용자를 동시에 멘션할 때 (`@user1 @user2 @user3`), 기존에는 각 사용자마다 개별 알림 메시지가 생성되어 채널에 3개의 알림이 게시되는 문제가 있었습니다.
+
+### 기존 문제
+
+```
+댓글: "@홍길동 @김철수 @이영희 확인 부탁드립니다"
+
+채널에 게시된 알림:
+1. "@작성자님이 @홍길동님을 카드 [카드명] 댓글에서 언급했습니다"
+2. "@작성자님이 @김철수님을 카드 [카드명] 댓글에서 언급했습니다"  
+3. "@작성자님이 @이영희님을 카드 [카드명] 댓글에서 언급했습니다"
+```
+
+## 해결 방안
+
+**채널 연결 보드**와 **채널 미연결 보드(DM 모드)**를 구분하여 처리합니다.
+
+### 채널 연결 보드 (배치 모드)
+
+여러 멘션을 모아서 **한 개의 메시지**로 채널에 전송합니다.
+
+```
+채널에 게시된 알림 (1개):
+"@작성자님이 @홍길동, @김철수, @이영희님을 카드 [카드명] 댓글에서 언급했습니다"
+```
+
+### 채널 미연결 보드 (DM 모드)
+
+각 사용자에게 **개별 DM**으로 전송합니다. (기존 동작 유지)
+
+```
+홍길동 DM: "@작성자님이 @홍길동님을 카드 [카드명] 댓글에서 언급했습니다"
+김철수 DM: "@작성자님이 @김철수님을 카드 [카드명] 댓글에서 언급했습니다"
+이영희 DM: "@작성자님이 @이영희님을 카드 [카드명] 댓글에서 언급했습니다"
+```
+
+## 구현 상세
+
+### 관련 파일
+
+| 파일 | 역할 |
+|------|------|
+| `server/services/notify/notifymentions/delivery.go` | `BatchMentionDeliver` 인터페이스 정의 |
+| `server/services/notify/notifymentions/mentions_backend.go` | 배치/개별 처리 분기 로직 |
+| `server/services/notify/plugindelivery/mention_deliver.go` | `BatchMentionDeliver` 구현 |
+| `server/services/notify/plugindelivery/message.go` | 다중 멘션 메시지 포맷 |
+
+### 핵심 로직
+
+```go
+// mentions_backend.go
+func (b *Backend) BlockChanged(evt notify.BlockChangeEvent) error {
+    // ... 멘션 추출 ...
+
+    // 채널 연결 보드인 경우 배치 처리
+    if evt.Board.ChannelID != "" {
+        return b.processBatchMentions(newMentions, evt, listeners)
+    }
+
+    // DM 모드: 기존대로 개별 처리
+    return b.processIndividualMentions(newMentions, evt, listeners)
+}
+```
+
+### 배치 처리 흐름
+
+```
+1. BlockChanged() 호출
+   ↓
+2. 새로운 멘션 추출 (기존 멘션 제외)
+   ↓
+3. evt.Board.ChannelID 확인
+   ├─ 있음 → processBatchMentions()
+   │         ├─ 유효한 사용자 수집 (validateAndProcessMention)
+   │         ├─ 권한 검사 & 자동 멤버 추가
+   │         └─ BatchMentionDeliver() → 채널에 1개 메시지
+   │
+   └─ 없음 → processIndividualMentions()
+             └─ 각 사용자에게 개별 DM
+```
+
+### 인터페이스
+
+```go
+// delivery.go
+type MentionDelivery interface {
+    MentionDeliver(mentionedUser *mm_model.User, extract string, evt notify.BlockChangeEvent) (string, error)
+    UserByUsername(mentionUsername string) (*mm_model.User, error)
+    // BatchMentionDeliver sends a single notification for multiple mentioned users.
+    BatchMentionDeliver(mentionedUsers []*mm_model.User, extract string, evt notify.BlockChangeEvent) ([]string, error)
+}
+```
+
+### 메시지 포맷
+
+```go
+// message.go
+const (
+    // 단일 멘션 (DM용)
+    defCommentTemplate = "@%s님이 @%s님을 카드 [%s](%s) 댓글에서 언급했습니다 (보드: [%s](%s))\n> %s"
+    
+    // 다중 멘션 (채널용)
+    defBatchCommentTemplate = "@%s님이 %s님을 카드 [%s](%s) 댓글에서 언급했습니다 (보드: [%s](%s))\n> %s"
+)
+
+// formatUserList: ["user1", "user2"] → "@user1, @user2"
+```
+
+## 동작 예시
+
+### 입력
+
+```
+보드: 채널 연결됨 (channel_id: "ch123")
+댓글: "@홍길동 @김철수 @이영희 내일까지 확인 부탁드립니다"
+```
+
+### 출력
+
+**채널 (ch123)**:
+```
+@작성자님이 @홍길동, @김철수, @이영희님을 카드 [프로젝트 일정](link) 댓글에서 언급했습니다 (보드: [개발 보드](link))
+> @홍길동 @김철수 @이영희 내일까지 확인 부탁드립니다
+```
+
+## 권한 처리
+
+배치 모드에서도 각 멘션된 사용자에 대해 개별적으로 권한 검사를 수행합니다:
+
+1. **공개 보드**: 팀 멤버만 멘션 가능, 멘션 시 자동으로 보드 멤버로 추가
+2. **비공개 보드**: 보드 멤버만 멘션 가능
+3. **Viewer 권한**: 멘션 불가 (댓글 작성 권한 없음)
+
+권한이 없는 사용자는 배치에서 제외되고, 유효한 사용자들만 알림에 포함됩니다.
+
+## 테스트 시나리오
+
+| 시나리오 | 예상 결과 |
+|----------|-----------|
+| 채널 연결 보드에서 3명 멘션 | 채널에 1개 메시지 |
+| 채널 미연결 보드에서 3명 멘션 | 각 사용자에게 DM 3개 |
+| 3명 중 1명이 권한 없음 | 채널에 2명만 포함된 1개 메시지 |
+| 이미 멘션된 사용자 다시 멘션 | 알림 안 감 (중복 방지) |
+| 존재하지 않는 @username | 무시됨 |
