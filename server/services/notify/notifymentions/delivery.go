@@ -15,4 +15,8 @@ import (
 type MentionDelivery interface {
 	MentionDeliver(mentionedUser *mm_model.User, extract string, evt notify.BlockChangeEvent) (string, error)
 	UserByUsername(mentionUsername string) (*mm_model.User, error)
+	// BatchMentionDeliver sends a single notification for multiple mentioned users.
+	// Used when board is linked to a channel to avoid duplicate messages.
+	// Returns the list of user IDs that were successfully notified.
+	BatchMentionDeliver(mentionedUsers []*mm_model.User, extract string, evt notify.BlockChangeEvent) ([]string, error)
 }
