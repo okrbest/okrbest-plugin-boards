@@ -175,3 +175,4 @@ curl http://localhost:8067/plugins/boards/api/v2/metrics
 | 문제 | 파일 |
 |------|------|
 | 카드 정렬 시 localeCompare 에러 및 무한 리다이렉션 | `q-sort-localecompare-error.mdc` |
+| 카드 아이콘 삭제 후 제목/프로퍼티에서 Backspace/Delete 키가 작동하지 않는 버그 | `q-icon-delete-backspace-bug.mdc` |

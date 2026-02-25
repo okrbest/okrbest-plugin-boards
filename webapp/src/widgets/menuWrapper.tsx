@@ -75,11 +75,12 @@ const MenuWrapper = (props: Props) => {
             document.addEventListener('keyup', keyboardClose, true)
         }
         return () => {
-            if (open) {
-                document.removeEventListener('menuItemClicked', close, true)
-                document.removeEventListener('click', closeOnBlur, true)
-                document.removeEventListener('keyup', keyboardClose, true)
-            }
+            // open 상태와 관계없이 항상 리스너 제거
+            // 메뉴가 닫히면서 컴포넌트가 unmount되면 open이 false가 되어
+            // 리스너가 제거되지 않는 버그 수정
+            document.removeEventListener('menuItemClicked', close, true)
+            document.removeEventListener('click', closeOnBlur, true)
+            document.removeEventListener('keyup', keyboardClose, true)
         }
     }, [open, close, closeOnBlur, keyboardClose])
 
