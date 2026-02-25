@@ -6,4 +6,29 @@
         --color-border: rgba(var(--center-channel-color-rgb), 0.16);
         --color-border-over: rgba(var(--center-channel-color-rgb), 0.24);
     }
+
+    &--loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 352px;
+        height: 435px;
+        background: rgb(var(--center-channel-bg-rgb));
+        border-radius: 8px;
+    }
+
+    &__spinner {
+        width: 24px;
+        height: 24px;
+        border: 2px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-top-color: rgb(var(--button-bg-rgb));
+        border-radius: 50%;
+        animation: emoji-picker-spin 0.8s linear infinite;
+    }
+}
+
+@keyframes emoji-picker-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
