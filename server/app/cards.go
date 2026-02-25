@@ -365,25 +365,28 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 	}
 
 	oldDepth := card.Depth
-	emptyParent := ""
 	zeroDepth := 0
-	cardPatch := &model.CardPatch{
-		ParentCardID: &emptyParent,
-		Depth:        &zeroDepth,
+
+	// 모든 필드를 하나의 BlockPatch로 업데이트하여 트랜잭션 불일치 방지
+	// - ParentID: board_id로 설정 (최상위 카드는 parent_id = board_id여야 함)
+	// - parentCardId: 빈 문자열로 설정
+	// - depth: 0으로 설정
+	blockPatch := &model.BlockPatch{
+		ParentID: &card.BoardID,
+		UpdatedFields: map[string]any{
+			"parentCardId": "",
+			"depth":        zeroDepth,
+		},
 	}
 
-	updatedCard, err := a.PatchCard(cardPatch, cardID, userID, false)
+	updatedBlock, err := a.PatchBlockAndNotify(cardID, blockPatch, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unlink card: %w", err)
 	}
 
-	// parent_id를 board_id로 설정 (최상위 카드는 parent_id = board_id여야 함)
-	blockPatch := &model.BlockPatch{
-		ParentID: &card.BoardID,
-	}
-	_, err = a.PatchBlockAndNotify(cardID, blockPatch, userID, true)
+	updatedCard, err := model.Block2Card(updatedBlock)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update parent_id to board_id: %w", err)
+		return nil, fmt.Errorf("failed to convert block to card: %w", err)
 	}
 
 	// Update depth of all sub-cards recursively
