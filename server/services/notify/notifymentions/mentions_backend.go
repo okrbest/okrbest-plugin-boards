@@ -142,7 +142,6 @@ func (b *Backend) BlockChanged(evt notify.BlockChangeEvent) error {
 func (b *Backend) processBatchMentions(newMentions map[string]struct{}, evt notify.BlockChangeEvent, listeners []MentionListener) error {
 	merr := merror.New()
 	validUsers := make([]*mm_model.User, 0, len(newMentions))
-	validUserIDs := make([]string, 0, len(newMentions))
 
 	// 유효한 멘션 사용자들 수집
 	for username := range newMentions {
@@ -157,7 +156,6 @@ func (b *Backend) processBatchMentions(newMentions map[string]struct{}, evt noti
 		}
 		if user != nil {
 			validUsers = append(validUsers, user)
-			validUserIDs = append(validUserIDs, user.Id)
 		}
 	}
 
