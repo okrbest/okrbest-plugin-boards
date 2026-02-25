@@ -351,3 +351,4 @@ function extractCardIds(propertyValue: string): string[] {
 |------|------|
 | 카드 속성 필터링은 어떻게 구현되어 있나요? | `q-card-filtering.mdc` |
 | 카드 타입 속성에서 보드 변경 시 어떻게 동작하나요? | `q-card-property-board-change.mdc` |
+| 텍스트 프로퍼티가 가끔 저장되지 않는 버그는 어떻게 수정했나요? | `q-text-property-save-bug.mdc` |

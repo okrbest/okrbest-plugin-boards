@@ -1,0 +1,119 @@
+---
+description: 카드 아이콘 삭제 후 제목/프로퍼티에서 Backspace/Delete 키가 작동하지 않는 버그 해결
+globs:
+  - webapp/src/components/blockIconSelector.tsx
+  - webapp/src/widgets/menuWrapper.tsx
+alwaysApply: false
+---
+
+# 카드 아이콘 삭제 후 Backspace/Delete 키 작동 안 함 버그
+
+## 증상
+
+1. 카드 생성
+2. 아이콘 삭제
+3. 제목 또는 Property 입력
+4. Backspace/Delete 키로 텍스트 삭제 시도
+5. **텍스트가 삭제되지 않음** ❌
+
+### 임시 해결 방법 (버그 발생 시)
+- 새로고침
+- 카드를 닫고 다시 열기
+- BlockSuite 에디터 영역을 클릭한 후 다시 제목/Property 클릭
+
+## 원인
+
+### 브라우저 Selection이 삭제된 DOM 노드를 참조
+
+아이콘 삭제 시 다음과 같은 일이 발생:
+
+1. 아이콘 메뉴에서 "Remove icon" 클릭
+2. `mutator.changeBlockIcon()` 호출 → 아이콘 데이터 삭제
+3. `BlockIconSelector` 컴포넌트가 `null` 반환 → **아이콘 DOM 요소 삭제**
+4. **`window.getSelection()`의 `anchorNode`가 여전히 삭제된 DOM 노드를 참조**
+5. 사용자가 textarea를 클릭해서 포커스 이동
+6. textarea에 포커스는 되지만, 브라우저의 Selection 상태가 "죽은" 노드를 참조
+7. Backspace/Delete 키 입력 시 `keydown` 이벤트는 발생하지만 **`input` 이벤트가 발생하지 않음**
+8. 브라우저가 텍스트를 삭제하지 못함
+
+### 왜 BlockSuite 에디터 클릭 시 복구되었나
+
+BlockSuite 에디터는 `contenteditable`을 사용합니다:
+- 클릭하면 Selection이 새로운 유효한 노드로 설정됨
+- "죽은" Selection 참조가 대체되어 정상 작동
+
+## 해결책
+
+### 1. 핵심 수정: Selection 리셋 (`blockIconSelector.tsx`)
+
+```typescript
+const onRemoveIcon = useCallback(async () => {
+    await mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, '', 'remove icon')
+    // 아이콘 삭제 후 Selection 리셋
+    // 아이콘 DOM이 삭제되면서 window.getSelection()의 anchorNode가
+    // 삭제된 노드를 참조하여 이후 textarea에서 Backspace/Delete가 작동하지 않는 버그 수정
+    window.getSelection()?.removeAllRanges()
+}, [block.id, block.fields.icon])
+```
+
+### 2. 추가 수정: MenuWrapper cleanup 개선 (`menuWrapper.tsx`)
+
+```typescript
+useEffect(() => {
+    if (open) {
+        document.addEventListener('menuItemClicked', close, true)
+        document.addEventListener('click', closeOnBlur, true)
+        document.addEventListener('keyup', keyboardClose, true)
+    }
+    return () => {
+        // open 상태와 관계없이 항상 리스너 제거
+        // 메뉴가 닫히면서 컴포넌트가 unmount되면 open이 false가 되어
+        // 리스너가 제거되지 않는 잠재적 버그 수정
+        document.removeEventListener('menuItemClicked', close, true)
+        document.removeEventListener('click', closeOnBlur, true)
+        document.removeEventListener('keyup', keyboardClose, true)
+    }
+}, [open, close, closeOnBlur, keyboardClose])
+```
+
+## 디버깅 과정
+
+### 확인된 사실들
+
+1. `keydown` 이벤트는 정상 발생 (Backspace, keyCode: 8)
+2. `defaultPrevented: false` - 이벤트가 막힌 것이 아님
+3. **버그 시: `input` 이벤트가 발생하지 않음** → 브라우저가 텍스트를 변경하지 못함
+4. **정상 시: `input` 이벤트 발생** (`inputType: 'deleteContentBackward'`)
+
+### 디버깅 코드 (필요시 사용)
+
+```typescript
+// Selection 상태 확인
+console.log('activeElement:', document.activeElement?.tagName)
+console.log('selection rangeCount:', window.getSelection()?.rangeCount)
+console.log('anchorNode:', window.getSelection()?.anchorNode?.nodeName)
+console.log('anchorNode parent:', window.getSelection()?.anchorNode?.parentElement?.className)
+```
+
+## 관련 파일
+
+| 파일 | 역할 |
+|------|------|
+| `webapp/src/components/blockIconSelector.tsx` | 카드 아이콘 선택/삭제 컴포넌트 |
+| `webapp/src/widgets/menuWrapper.tsx` | 메뉴 래퍼 (이벤트 리스너 관리) |
+| `webapp/src/widgets/editable.tsx` | 편집 가능한 텍스트 입력 컴포넌트 |
+| `webapp/src/components/cardDetail/cardDetail.tsx` | 카드 상세 화면 |
+
+## 핵심 교훈
+
+1. **DOM 요소 삭제 시 Selection 상태 확인 필요**
+   - `window.getSelection()`이 삭제된 노드를 참조할 수 있음
+   - `removeAllRanges()`로 명시적 리셋 필요
+
+2. **React useEffect cleanup에서 클로저 값 주의**
+   - cleanup 함수의 조건문이 예상과 다른 값을 가질 수 있음
+   - 컴포넌트 unmount 시 상태가 이미 변경되었을 수 있음
+
+3. **브라우저 네이티브 동작 디버깅**
+   - `keydown` → `input` → `change` 이벤트 순서 확인
+   - `input` 이벤트가 없으면 브라우저가 편집을 수행하지 못한 것
