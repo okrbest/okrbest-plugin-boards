@@ -27,8 +27,10 @@ const BlockIconSelector = (props: Props) => {
     const onAddRandomIcon = useCallback(() => mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, BlockIcons.shared.randomIcon()), [block.id, block.fields.icon])
     const onRemoveIcon = useCallback(async () => {
         await mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, '', 'remove icon')
-        // 아이콘 삭제 후 포커스를 body로 이동하여 Delete 키 핫키가 작동하도록 함
-        document.body.focus()
+        // 아이콘 삭제 후 Selection 리셋
+        // 아이콘 DOM이 삭제되면서 window.getSelection()의 anchorNode가
+        // 삭제된 노드를 참조하여 이후 textarea에서 Backspace/Delete가 작동하지 않는 버그 수정
+        window.getSelection()?.removeAllRanges()
     }, [block.id, block.fields.icon])
 
     if (!block.fields.icon) {
