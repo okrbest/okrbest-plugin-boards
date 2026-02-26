@@ -15,6 +15,7 @@ import Menu from '../widgets/menu'
 import MenuWrapper from '../widgets/menuWrapper'
 // import {SuiteWindow} from '../types/index' // 미사용
 import CompassIcon from '../widgets/icons/compassIcon'
+import EmojiIcon from './emojiIcon'
 
 import {Permission} from '../constants'
 
@@ -63,7 +64,7 @@ const RHSChannelBoardItem = (props: Props) => {
             className='RHSChannelBoardItem'
         >
             <div className='board-info'>
-                {board.icon && <span className='icon'>{board.icon}</span>}
+                {board.icon && <span className='icon'><EmojiIcon icon={board.icon} size='medium'/></span>}
                 <span className='title'>{board.title || untitledBoardTitle}</span>
                 <MenuWrapper stopPropagationOnToggle={true}>
                     <IconButton icon={<OptionsIcon/>}/>

@@ -1,62 +1,62 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect, useCallback} from 'react'
+import React, {FC, useCallback} from 'react'
+import {Provider as ReduxProvider} from 'react-redux'
 
-import data from '@emoji-mart/data'
-import {init as initEmojiMart} from 'emoji-mart'
+import {getMattermostStore} from '../mmStore'
 
 import './emojiPicker.scss'
 
 type Props = {
     onSelect: (emoji: string) => void
+    onClose?: () => void
 }
 
-type EmojiSelectData = {
-    native: string
-    id: string
+// Mattermost 채널의 Emoji 타입 (SystemEmoji | CustomEmoji)
+type MattermostEmoji = {
     name: string
-    unified: string
-    shortcodes: string
+    short_name?: string // SystemEmoji
+    unified?: string // SystemEmoji
+    id?: string // CustomEmoji
+    category?: string
 }
 
-// Picker 컴포넌트 타입
-type PickerComponent = React.ComponentType<{
-    data: typeof data
-    onEmojiSelect: (emoji: EmojiSelectData) => void
-}>
+// Mattermost 채널에서 제공하는 EmojiPickerTabs 타입
+type EmojiPickerTabsProps = {
+    onEmojiClose: () => void
+    onEmojiClick: (emoji: MattermostEmoji) => void
+    onGifClick?: (gif: string) => void
+    onAddCustomEmojiClick?: () => void
+    enableGifPicker?: boolean
+}
+
+// window.Components에서 EmojiPickerTabs 가져오기
+const getEmojiPickerTabs = (): React.ComponentType<EmojiPickerTabsProps> | null => {
+    const windowAny = window as any
+    return windowAny.Components?.EmojiPickerTabs || null
+}
 
 const EmojiPicker: FC<React.PropsWithChildren<Props>> = (props: Props): React.JSX.Element => {
-    const [Picker, setPicker] = useState<PickerComponent | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const EmojiPickerTabs = getEmojiPickerTabs()
+    const mmStore = getMattermostStore()
 
-    useEffect(() => {
-        let isMounted = true
-
-        const loadPicker = async () => {
-            // emoji-mart 초기화 보장
-            initEmojiMart({data})
-
-            // Picker 컴포넌트 동적 로드
-            const module = await import('@emoji-mart/react')
-            if (isMounted) {
-                setPicker(() => module.default as PickerComponent)
-                setIsLoading(false)
-            }
-        }
-
-        loadPicker()
-
-        return () => {
-            isMounted = false
-        }
-    }, [])
-
-    const handleEmojiSelect = useCallback((emoji: EmojiSelectData) => {
-        props.onSelect(emoji.native)
+    const handleEmojiClick = useCallback((emoji: MattermostEmoji) => {
+        // 이모지 이름(shortcode)으로 저장 - RenderEmoji에서 사용
+        // SystemEmoji: short_name 사용
+        // CustomEmoji: name 사용
+        const emojiName = emoji.short_name || emoji.name
+        props.onSelect(emojiName)
     }, [props.onSelect])
 
-    if (isLoading || !Picker) {
+    const handleClose = useCallback(() => {
+        props.onClose?.()
+        // 메뉴를 닫기 위해 body 클릭 이벤트 발생
+        document.body.click()
+    }, [props.onClose])
+
+    // EmojiPickerTabs 또는 mmStore가 없으면 로딩 표시
+    if (!EmojiPickerTabs || !mmStore) {
         return (
             <div
                 className='EmojiPicker EmojiPicker--loading'
@@ -69,13 +69,16 @@ const EmojiPicker: FC<React.PropsWithChildren<Props>> = (props: Props): React.JS
 
     return (
         <div
-            className='EmojiPicker'
+            className='EmojiPicker EmojiPicker--mattermost'
             onClick={(e) => e.stopPropagation()}
         >
-            <Picker
-                data={data}
-                onEmojiSelect={handleEmojiSelect}
-            />
+            <ReduxProvider store={mmStore}>
+                <EmojiPickerTabs
+                    onEmojiClose={handleClose}
+                    onEmojiClick={handleEmojiClick}
+                    enableGifPicker={false}
+                />
+            </ReduxProvider>
         </div>
     )
 }

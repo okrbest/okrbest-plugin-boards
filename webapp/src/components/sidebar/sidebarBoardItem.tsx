@@ -42,7 +42,7 @@ import octoClient from '../../octoClient'
 import {getCurrentBoardId} from '../../store/boards'
 import {UserSettings} from '../../userSettings'
 import {Archiver} from '../../archiver'
-import {getValidEmojiData, EmojiData} from '../../utils/emojiUtils'
+import EmojiIcon from '../emojiIcon'
 
 const iconForViewType = (viewType: IViewType): React.JSX.Element => {
     switch (viewType) {
@@ -198,10 +198,7 @@ const SidebarBoardItem = (props: Props) => {
     const boardItemRef = useRef<HTMLDivElement>(null)
 
     const title = board.title || intl.formatMessage({id: 'Sidebar.untitled-board', defaultMessage: '(Untitled Board)'})
-    let emojiData: EmojiData | null  = null
-    if (board.icon) {
-        emojiData = getValidEmojiData(board.icon)
-    }
+
     return (
         <Draggable
             draggableId={props.board.id}
@@ -220,7 +217,7 @@ const SidebarBoardItem = (props: Props) => {
                         ref={boardItemRef}
                     >
                         <div className='octo-sidebar-icon'>
-                            {emojiData?.native || board.icon || <CompassIcon icon='product-boards'/>}
+                            {board.icon ? <EmojiIcon icon={board.icon} size='small'/> : <CompassIcon icon='product-boards'/>}
                         </div>
                         <div
                             className='octo-sidebar-title'

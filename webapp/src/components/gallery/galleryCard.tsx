@@ -23,6 +23,7 @@ import CardBadges from '../cardBadges'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmationDialogBox'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
+import EmojiIcon from '../emojiIcon'
 
 type Props = {
     board: Board
@@ -135,7 +136,7 @@ const GalleryCard = (props: Props) => {
                     </CardDetailProvider>}
                 {props.visibleTitle &&
                     <div className='gallery-title'>
-                        { card.fields.icon ? <div className='octo-icon'>{card.fields.icon}</div> : undefined }
+                        { card.fields.icon ? <div className='octo-icon'><EmojiIcon icon={card.fields.icon} size='medium'/></div> : undefined }
                         <div
                             key='__title'
                             className='octo-titletext'

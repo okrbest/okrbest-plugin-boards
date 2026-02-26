@@ -19,6 +19,7 @@ import {loadBoardData} from '../store/initialLoad'
 import {getCurrentViewId, getViews} from '../store/views'
 import {getCurrentTeamId} from '../store/teams'
 import Tooltip from '../widgets/tooltip'
+import EmojiIcon from './emojiIcon'
 
 import './rhsBoardCards.scss'
 
@@ -187,7 +188,7 @@ const RHSBoardCards = (props: Props) => {
                                 className='board-title' 
                                 onClick={handleBoardTitleClick}
                             >
-                                {board.icon && <span className='icon'>{board.icon}</span>}
+                                {board.icon && <span className='icon'><EmojiIcon icon={board.icon} size='medium'/></span>}
                                 <span className='title'>{board.title || untitledBoardTitle}</span>
                             </div>
                         </Tooltip>
@@ -220,7 +221,7 @@ const RHSBoardCards = (props: Props) => {
                                             <div className='card-content-inner'>
                                                 <div className='card-title-row'>
                                                     <div className='card-icon'>
-                                                        {card.fields.icon || '📋'}
+                                                        <EmojiIcon icon={card.fields.icon || '📋'} size='small'/>
                                                     </div>
                                                     <div 
                                                         className='card-title'
