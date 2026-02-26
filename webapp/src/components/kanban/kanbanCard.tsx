@@ -21,7 +21,7 @@ import OpenCardTourStep from '../onboardingTour/openCard/open_card'
 import CopyLinkTourStep from '../onboardingTour/copyLink/copy_link'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
-import {getValidEmojiData} from '../../utils/emojiUtils'
+import EmojiIcon from '../emojiIcon'
 import KanbanSubCardChips from './kanbanSubCardChips'
 
 export const OnboardingCardClassName = 'onboardingCard'
@@ -91,10 +91,6 @@ const KanbanCard = (props: Props) => {
     // const isOnboardingCard = card.title === 'Create a new card'
     const isOnboardingCard = card.title === '새 카드 만들기'
     const showOnboarding = isOnboardingCard && !params.cardId && !board.isTemplate && Utils.isFocalboardPlugin()
-    let emojiData = null
-    if (card.fields.icon) {
-        emojiData = getValidEmojiData(card.fields.icon)
-    }
 
     return (
         <>
@@ -137,7 +133,7 @@ const KanbanCard = (props: Props) => {
                 }
 
                 <div className='octo-icontitle'>
-                    { card.fields.icon ? <div className='octo-icon'>{emojiData?.native || card.fields.icon}</div> : undefined }
+                    { card.fields.icon ? <div className='octo-icon'><EmojiIcon icon={card.fields.icon} size='medium'/></div> : undefined }
                     <div
                         key='__title'
                         className='octo-titletext'

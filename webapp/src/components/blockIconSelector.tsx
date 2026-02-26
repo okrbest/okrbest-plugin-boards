@@ -7,8 +7,7 @@ import {BlockIcons} from '../blockIcons'
 import {Card} from '../blocks/card'
 import mutator from '../mutator'
 
-import {getValidEmojiData} from '../utils/emojiUtils'
-
+import EmojiIcon from './emojiIcon'
 import IconSelector from './iconSelector'
 
 type Props = {
@@ -27,9 +26,6 @@ const BlockIconSelector = (props: Props) => {
     const onAddRandomIcon = useCallback(() => mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, BlockIcons.shared.randomIcon()), [block.id, block.fields.icon])
     const onRemoveIcon = useCallback(async () => {
         await mutator.changeBlockIcon(block.boardId, block.id, block.fields.icon, '', 'remove icon')
-        // 아이콘 삭제 후 Selection 리셋
-        // 아이콘 DOM이 삭제되면서 window.getSelection()의 anchorNode가
-        // 삭제된 노드를 참조하여 이후 textarea에서 Backspace/Delete가 작동하지 않는 버그 수정
         window.getSelection()?.removeAllRanges()
     }, [block.id, block.fields.icon])
 
@@ -37,13 +33,24 @@ const BlockIconSelector = (props: Props) => {
         return null
     }
 
-    const emojiData = getValidEmojiData(block.fields.icon)
+    // 아이콘 크기 매핑
+    const sizeMap = {
+        s: 20,
+        m: 22,
+        l: 64,
+    }
+    const iconSize = sizeMap[size || 'm']
 
     let className = `octo-icon size-${size || 'm'}`
     if (props.readonly) {
         className += ' readonly'
     }
-    const iconElement = <div className={className}><span>{emojiData?.native || block.fields.icon}</span></div>
+
+    const iconElement = (
+        <div className={className}>
+            <EmojiIcon icon={block.fields.icon} size={iconSize}/>
+        </div>
+    )
 
     return (
         <IconSelector
