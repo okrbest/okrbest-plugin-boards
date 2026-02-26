@@ -5,11 +5,9 @@ import React, {useCallback} from 'react'
 
 import {BlockIcons} from '../blockIcons'
 import {Board} from '../blocks/board'
-
 import mutator from '../mutator'
 
-import {getValidEmojiData} from '../utils/emojiUtils'
-
+import EmojiIcon from './emojiIcon'
 import IconSelector from './iconSelector'
 
 type Props = {
@@ -28,7 +26,6 @@ const BoardIconSelector = React.memo((props: Props) => {
     const onAddRandomIcon = useCallback(() => mutator.changeBoardIcon(board.id, board.icon, BlockIcons.shared.randomIcon()), [board.id, board.icon])
     const onRemoveIcon = useCallback(async () => {
         await mutator.changeBoardIcon(board.id, board.icon, '', 'remove board icon')
-        // 아이콘 삭제 후 포커스를 body로 이동하여 Delete 키 핫키가 작동하도록 함
         document.body.focus()
     }, [board.id, board.icon])
 
@@ -36,13 +33,24 @@ const BoardIconSelector = React.memo((props: Props) => {
         return null
     }
 
-    const emojiData = getValidEmojiData(board.icon)
+    // 아이콘 크기 매핑
+    const sizeMap = {
+        s: 20,
+        m: 22,
+        l: 64,
+    }
+    const iconSize = sizeMap[size || 'm']
 
     let className = `octo-icon size-${size || 'm'}`
     if (props.readonly) {
         className += ' readonly'
     }
-    const iconElement = <div className={className}><span>{emojiData?.native || board.icon}</span></div>
+
+    const iconElement = (
+        <div className={className}>
+            <EmojiIcon icon={board.icon} size={iconSize}/>
+        </div>
+    )
 
     return (
         <IconSelector

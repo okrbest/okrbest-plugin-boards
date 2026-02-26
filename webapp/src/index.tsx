@@ -10,8 +10,6 @@ import {Store, Action} from 'redux'
 import {Provider as ReduxProvider} from 'react-redux'
 import {GlobalState} from '@mattermost/types/store'
 import {selectTeam} from 'mattermost-redux/actions/teams'
-import data from '@emoji-mart/data'
-import {init as initEmojiMart} from 'emoji-mart'
 
 import appBarIcon from '../static/app-bar-icon.png'
 
@@ -57,6 +55,7 @@ import './plugin.scss'
 import CloudUpgradeNudge from "./components/cloudUpgradeNudge/cloudUpgradeNudge"
 import CreateBoardFromTemplate from './components/createBoardFromTemplate'
 import {patchSlashMenu} from 'blockSuitePatch'
+import {setMattermostStore} from './mmStore'
 
 const windowAny = (window as SuiteWindow)
 windowAny.baseURL = process.env.TARGET_IS_PRODUCT ? '/plugins/boards' : '/plugins/focalboard'
@@ -162,7 +161,9 @@ export default class Plugin {
 
     async initialize(registry: PluginRegistry, mmStore: Store<GlobalState, Action<Record<string, unknown>>>): Promise<void> {
         patchSlashMenu();
-        initEmojiMart({data})
+
+        // Mattermost store 저장 (채널 컴포넌트에서 사용)
+        setMattermostStore(mmStore)
 
         const siteURL = mmStore.getState().entities.general.config.SiteURL
         const subpath = siteURL ? getSubpath(siteURL) : ''

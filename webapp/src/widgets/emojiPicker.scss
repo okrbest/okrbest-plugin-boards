@@ -1,4 +1,5 @@
 .EmojiPicker {
+    // 기존 emoji-mart 스타일 (레거시 호환)
     em-emoji-picker {
         --rgb-background: var(--center-channel-bg-rgb);
         --rgb-color: var(--center-channel-color-rgb);
@@ -24,6 +25,21 @@
         border-top-color: rgb(var(--button-bg-rgb));
         border-radius: 50%;
         animation: emoji-picker-spin 0.8s linear infinite;
+    }
+
+    // Mattermost 채널 이모지 피커 스타일
+    &--mattermost {
+        // 메뉴 내에서 적절한 크기로 표시
+        .emoji-picker {
+            position: relative;
+            box-shadow: none;
+            border: none;
+        }
+
+        // 보드 메뉴 내에서 z-index 조정
+        .emoji-picker__header {
+            display: none; // 보드 메뉴에서는 헤더 숨김 (메뉴 자체가 닫기 역할)
+        }
     }
 }
 

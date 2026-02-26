@@ -31,6 +31,7 @@ import MenuWrapper from '../../widgets/menuWrapper'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../telemetry/telemetryClient'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
+import EmojiIcon from '../emojiIcon'
 
 const oneDay = 60 * 60 * 24 * 1000
 
@@ -179,7 +180,7 @@ const CalendarFullView = (props: Props): React.JSX.Element|null => {
                         />
                     </MenuWrapper>}
                     <div className='octo-icontitle'>
-                        { event.extendedProps.icon ? <div className='octo-icon'>{event.extendedProps.icon}</div> : undefined }
+                        { event.extendedProps.icon ? <div className='octo-icon'><EmojiIcon icon={event.extendedProps.icon} size='small'/></div> : undefined }
                         <div
                             className='fc-event-title'
                             key='__title'

@@ -5,6 +5,7 @@ import React, {useCallback} from 'react'
 
 import {Card} from '../../blocks/card'
 import useSubCardInfo from '../../hooks/useSubCardInfo'
+import EmojiIcon from '../emojiIcon'
 
 import './kanbanSubCardChips.scss'
 
@@ -46,7 +47,7 @@ const KanbanSubCardChips = (props: Props): React.JSX.Element | null => {
                     tabIndex={0}
                 >
                     <span className='KanbanSubCardChips__chip-icon'>
-                        {card.fields.icon || '\uD83D\uDCC4'}
+                        <EmojiIcon icon={card.fields.icon || '📄'} size='small'/>
                     </span>
                     <span className='KanbanSubCardChips__chip-title'>
                         {card.title || 'Untitled'}

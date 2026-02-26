@@ -15,6 +15,7 @@ import {Constants, Permission} from '../../constants'
 import {sendFlashMessage} from '../flashMessages'
 
 import CardLinkSelector from './cardLinkSelector'
+import EmojiIcon from '../emojiIcon'
 
 import './subCards.scss'
 
@@ -209,7 +210,7 @@ const SubCards = (props: Props): React.JSX.Element => {
                                 }}
                             >
                                 <span className='SubCards__item-icon'>
-                                    {subCard.fields.icon || '📄'}
+                                    <EmojiIcon icon={subCard.fields.icon || '📄'} size='small'/>
                                 </span>
                                 <span className='SubCards__item-title'>
                                     {subCard.title || intl.formatMessage({id: 'SubCards.untitled', defaultMessage: 'Untitled'})}
