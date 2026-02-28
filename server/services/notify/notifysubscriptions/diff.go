@@ -463,8 +463,8 @@ func (dg *diffGenerator) hasBlockSuiteContentChanged(card *model.Block) bool {
 	return false
 }
 
-// toInt64 converts an interface{} to int64, handling both int64 and float64 types
-// (JSON unmarshaling produces float64 for numbers)
+// toInt64 converts an interface{} to int64, handling both int64 and float64 types.
+// (JSON unmarshaling produces float64 for numbers).
 func toInt64(v interface{}) (int64, bool) {
 	switch val := v.(type) {
 	case int64:

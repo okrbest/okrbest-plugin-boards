@@ -43,9 +43,9 @@ import (
 )
 
 const (
-	cleanupSessionTaskFrequency         = 10 * time.Minute
-	updateMetricsTaskFrequency          = 15 * time.Minute
-	processScheduledCommentsFrequency   = 1 * time.Minute
+	cleanupSessionTaskFrequency       = 10 * time.Minute
+	updateMetricsTaskFrequency        = 15 * time.Minute
+	processScheduledCommentsFrequency = 1 * time.Minute
 )
 
 type noOpMutexAPIAdapter struct{}

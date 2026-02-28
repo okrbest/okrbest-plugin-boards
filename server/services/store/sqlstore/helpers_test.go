@@ -9,11 +9,10 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/services/store"
-	"github.com/stretchr/testify/require"
-
-	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	mmModel "github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
+	"github.com/stretchr/testify/require"
 )
 
 type noOpMutexAPIAdapter struct{}
@@ -41,8 +40,8 @@ func SetupTests(t *testing.T) (store.Store, func()) {
 
 	if dbType == "sqlite3" {
 		var result string
-		err := sqlDB.QueryRow("SELECT json_set('{}', '$.a', 1)").Scan(&result)
-		if err != nil {
+		jsonErr := sqlDB.QueryRow("SELECT json_set('{}', '$.a', 1)").Scan(&result)
+		if jsonErr != nil {
 			t.Skip("Skipping SQLite test: json1 extension not enabled (missing -tags 'json1'?)")
 			return nil, nil
 		}

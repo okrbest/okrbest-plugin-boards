@@ -175,8 +175,8 @@ func (a *App) CreateScheduledComment(boardID, cardID, userID, title string, sche
 		},
 	}
 
-	if err := a.store.InsertBlock(comment, userID); err != nil {
-		return nil, err
+	if insertErr := a.store.InsertBlock(comment, userID); insertErr != nil {
+		return nil, insertErr
 	}
 
 	a.metrics.IncrementBlocksInserted(1)
@@ -236,10 +236,10 @@ func (a *App) CancelScheduledComment(blockID, userID string) (*model.Block, erro
 		return nil, model.NewErrForbidden("can only cancel own scheduled comments")
 	}
 
-	// Update status to cancelled
+	// Update status to canceled.
 	patch := &model.BlockPatch{
 		UpdatedFields: map[string]interface{}{
-			model.BlockFieldScheduledStatus: model.ScheduledStatusCancelled,
+			model.BlockFieldScheduledStatus: model.ScheduledStatusCanceled,
 		},
 	}
 
@@ -248,7 +248,7 @@ func (a *App) CancelScheduledComment(blockID, userID string) (*model.Block, erro
 		return nil, err
 	}
 
-	a.logger.Info("Scheduled comment cancelled",
+	a.logger.Info("Scheduled comment canceled",
 		mlog.String("blockID", blockID),
 		mlog.String("userID", userID),
 	)

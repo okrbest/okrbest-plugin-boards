@@ -24,16 +24,16 @@ const (
 	BlockFieldFileId       = "fileId"
 	BlockFieldAttachmentId = "attachmentId"
 
-	// Scheduled comment fields
+	// Scheduled comment fields.
 	BlockFieldScheduledAt     = "scheduledAt"
 	BlockFieldScheduledStatus = "scheduledStatus"
 
-	// Scheduled status values
-	ScheduledStatusPending   = "pending"
-	ScheduledStatusSent      = "sent"
-	ScheduledStatusCancelled = "cancelled"
+	// Scheduled status values.
+	ScheduledStatusPending  = "pending"
+	ScheduledStatusSent     = "sent"
+	ScheduledStatusCanceled = "canceled"
 
-	// Scheduled comment limits
+	// Scheduled comment limits.
 	MaxScheduledCommentsPerUser = 100
 	MaxScheduleDays             = 30
 )

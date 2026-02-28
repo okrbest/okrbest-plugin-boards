@@ -47,17 +47,6 @@ const (
 	userGuest        string = "guest"
 )
 
-var (
-	userAnonID         = userAnon
-	userNoTeamMemberID = userNoTeamMember
-	userTeamMemberID   = userTeamMember
-	userViewerID       = userViewer
-	userCommenterID    = userCommenter
-	userEditorID       = userEditor
-	userAdminID        = userAdmin
-	userGuestID        = userGuest
-)
-
 type LicenseType int
 
 const (

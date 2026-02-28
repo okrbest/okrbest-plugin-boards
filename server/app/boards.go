@@ -20,9 +20,11 @@ var (
 
 const linkBoardMessage = "@%s님이 보드 [%s](%s)를 이 채널에 연결했습니다"
 const unlinkBoardMessage = "@%s님이 보드 [%s](%s)와 이 채널의 연결을 해제했습니다"
-const cardNotifyMessage = "@%s님이 보드 [%s](%s)의 카드 [%s](%s)에 대해 알림을 보냈습니다"
 
-var errNoDefaultCategoryFound = errors.New("no default category found for user")
+var (
+	errNoDefaultCategoryFound  = errors.New("no default category found for user")
+	errBoardNotLinkedToChannel = errors.New("board is not linked to any channel")
+)
 
 func (a *App) GetBoard(boardID string) (*model.Board, error) {
 	board, err := a.store.GetBoard(boardID)
@@ -429,7 +431,7 @@ func (a *App) SendCardNotification(boardID, userID, cardID string) error {
 	}
 
 	if board.ChannelID == "" {
-		return fmt.Errorf("board is not linked to any channel")
+		return errBoardNotLinkedToChannel
 	}
 
 	if a.subscriptionsBackend != nil {
