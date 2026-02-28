@@ -241,7 +241,10 @@ function BlockSuiteEditor(props: Props): React.JSX.Element {
                     viewId,
                 })
 
-                const editor = new PageEditor()
+                // 플러그인 재로드 시 import된 클래스와 customElements 등록 클래스가 달라질 수 있으므로
+                // 등록된 클래스를 우선 사용하여 'Illegal constructor' 에러 방지
+                const RegisteredPageEditor = customElements.get('page-editor') as (new () => PageEditor) | undefined
+                const editor = RegisteredPageEditor ? new RegisteredPageEditor() : new PageEditor()
                 editor.specs = [
                     ...PageEditorBlockSpecs,
                     DocModeExtension(pageModeProvider),
