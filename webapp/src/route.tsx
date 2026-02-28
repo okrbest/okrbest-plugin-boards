@@ -27,20 +27,7 @@ function FBRoute(props: RouteProps) {
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
     const params = useParams()
 
-    const disableTour = me?.is_guest || clientConfig?.featureFlags?.disableTour || false
-
-    const showWelcomePage = !disableTour &&
-        Utils.isFocalboardPlugin() &&
-        (me?.id !== 'single-user') &&
-        loggedIn === true &&
-        !myConfig[UserSettingKey.WelcomePageViewed]
-
-    if (showWelcomePage) {
-        if (props.getOriginalPath) {
-            return <Navigate to={`/welcome?r=${props.getOriginalPath(params)}`} replace/>
-        }
-        return <Navigate to='/welcome' replace/>
-    }
+    const disableTour = me?.is_guest || clientConfig?.featureFlags?.disableTour || true
 
     if (loggedIn === false && props.loginRequired) {
         if (props.getOriginalPath) {
