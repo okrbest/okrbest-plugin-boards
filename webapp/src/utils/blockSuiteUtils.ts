@@ -221,43 +221,27 @@ export function extractBadgesFromSnapshot(snapshot: any): {description: boolean,
     let checkboxTotal = 0
     let checkboxChecked = 0
 
+    function blockHasText(block: any): boolean {
+        const delta = block.props?.text?.delta
+        return Array.isArray(delta) && delta.some((op: any) =>
+            op.insert && typeof op.insert === 'string' && op.insert.trim() !== '',
+        )
+    }
+
     function walkBlock(block: any): void {
         if (!block) return
 
-        // affine:paragraph - 텍스트가 있으면 설명 존재
-        if (block.flavour === 'affine:paragraph') {
-            const delta = block.props?.text?.delta
-            if (Array.isArray(delta)) {
-                const hasText = delta.some((op: any) => op.insert && typeof op.insert === 'string' && op.insert.trim() !== '')
-                if (hasText) {
-                    hasDescription = true
-                }
+        // affine:paragraph / affine:list — 텍스트가 있으면 설명 존재
+        if (block.flavour === 'affine:paragraph' || block.flavour === 'affine:list') {
+            if (blockHasText(block)) {
+                hasDescription = true
             }
-        }
 
-        // affine:list type=todo → 체크박스
-        if (block.flavour === 'affine:list' && block.props?.type === 'todo') {
-            checkboxTotal++
-            if (block.props?.checked) {
-                checkboxChecked++
-            }
-            // todo 리스트의 텍스트도 설명으로 간주
-            const delta = block.props?.text?.delta
-            if (Array.isArray(delta)) {
-                const hasText = delta.some((op: any) => op.insert && typeof op.insert === 'string' && op.insert.trim() !== '')
-                if (hasText) {
-                    hasDescription = true
-                }
-            }
-        }
-
-        // affine:list (bulleted/numbered) - 텍스트가 있으면 설명 존재
-        if (block.flavour === 'affine:list' && block.props?.type !== 'todo') {
-            const delta = block.props?.text?.delta
-            if (Array.isArray(delta)) {
-                const hasText = delta.some((op: any) => op.insert && typeof op.insert === 'string' && op.insert.trim() !== '')
-                if (hasText) {
-                    hasDescription = true
+            // affine:list type=todo → 체크박스 카운트
+            if (block.flavour === 'affine:list' && block.props?.type === 'todo') {
+                checkboxTotal++
+                if (block.props?.checked) {
+                    checkboxChecked++
                 }
             }
         }

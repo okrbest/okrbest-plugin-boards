@@ -4,8 +4,7 @@
 import {useState, useEffect, useRef, useCallback} from 'react'
 import type {DocSnapshot} from '@blocksuite/store'
 
-import {Block} from '../../blocks/block'
-import {BlockPatch} from '../../blocks/block'
+import {Block, BlockPatch} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import {Utils} from '../../utils'
 import {extractTextFromSnapshot, extractBadgesFromSnapshot, formatDiffSummary} from '../../utils/blockSuiteUtils'
@@ -81,8 +80,9 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
                 },
             }))
 
-            // 서버에 카드 필드 저장
-            if (persist) {
+            // 서버에 카드 필드 저장 (빈 배지는 스킵하여 불필요한 서버 쓰기 방지)
+            const isEmpty = !badges.description && badges.checkboxTotal === 0
+            if (persist && !isEmpty) {
                 const blockPatch: BlockPatch = {
                     updatedFields: {blockSuiteBadges: badges},
                 }
@@ -227,7 +227,7 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
                 clearTimeout(saveTimeoutRef.current)
             }
         }
-    }, [cardId, card, contents, readonly])
+    }, [cardId, card, contents, readonly, updateBadges])
 
     return {
         snapshot,

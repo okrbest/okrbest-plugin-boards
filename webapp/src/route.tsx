@@ -5,12 +5,8 @@ import React from 'react'
 import {Navigate, useParams} from 'react-router-dom'
 
 import {Utils} from './utils'
-import {getLoggedIn, getMe, getMyConfig} from './store/users'
+import {getLoggedIn} from './store/users'
 import {useAppSelector} from './store/hooks'
-import {UserSettingKey} from './userSettings'
-import {IUser} from './user'
-import {getClientConfig} from './store/clientConfig'
-import {ClientConfig} from './config/clientConfig'
 
 type RouteParams = Record<string, string | undefined>
 
@@ -22,12 +18,7 @@ type RouteProps = {
 
 function FBRoute(props: RouteProps) {
     const loggedIn = useAppSelector<boolean|null>(getLoggedIn)
-    const me = useAppSelector<IUser|null>(getMe)
-    const myConfig = useAppSelector(getMyConfig)
-    const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
     const params = useParams()
-
-    const disableTour = me?.is_guest || clientConfig?.featureFlags?.disableTour || true
 
     if (loggedIn === false && props.loginRequired) {
         if (props.getOriginalPath) {
