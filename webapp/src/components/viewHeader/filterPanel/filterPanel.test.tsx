@@ -226,7 +226,7 @@ describe('components/viewHeader/filterPanel/filterPanel', () => {
         const newFilterGroup = callArgs[3]
         // When the last value is unchecked, the clause is removed entirely
         const remainingClauses = newFilterGroup.filters.filter(
-            (f: FilterClause) => f.propertyId === 'property1',
+            (f: FilterClause | Record<string, unknown>) => 'propertyId' in f && f.propertyId === 'property1',
         )
         expect(remainingClauses).toHaveLength(0)
     })
