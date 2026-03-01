@@ -42,7 +42,7 @@ import ViewHeaderDisplayByMenu from './viewHeaderDisplayByMenu'
 import ViewHeaderSortMenu from './viewHeaderSortMenu'
 import ViewHeaderActionsMenu from './viewHeaderActionsMenu'
 import ViewHeaderSearch from './viewHeaderSearch'
-import FilterComponent from './filterComponent'
+import FilterPanel from './filterPanel'
 
 import './viewHeader.scss'
 
@@ -191,7 +191,7 @@ const ViewHeader = (props: Props) => {
                         />
                     </Button>
                     {showFilter &&
-                    <FilterComponent
+                    <FilterPanel
                         board={board}
                         activeView={activeView}
                         onClose={() => {
