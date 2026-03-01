@@ -83,6 +83,7 @@ const FilterValuePanel = (props: Props): React.JSX.Element => {
     case 'date':
         return (
             <DateFilterPanel
+                board={board}
                 activeView={activeView}
                 propertyTemplate={propertyTemplate}
             />
@@ -476,35 +477,65 @@ const TextFilterPanel = (props: TextFilterPanelProps): React.JSX.Element => {
 // ---- Date Filter ----
 
 type DateFilterPanelProps = {
+    board: Board
     activeView: BoardView
     propertyTemplate: IPropertyTemplate
 }
 
 const DateFilterPanel = (props: DateFilterPanelProps): React.JSX.Element => {
-    const {activeView, propertyTemplate} = props
+    const {board, activeView, propertyTemplate} = props
+    const intl = useIntl()
 
     const existingClause = useMemo(() => {
         return findClauseForProperty(activeView, propertyTemplate.id)
     }, [activeView, propertyTemplate.id])
 
-    // The DateFilter component requires a filter clause to be present.
-    // If one doesn't exist yet, we create a temporary one for the DateFilter to use.
-    const clause = useMemo((): FilterClause => {
-        if (existingClause) {
-            return existingClause
-        }
+    // DateFilter internally uses view.fields.filter.filters.indexOf(filter) and
+    // asserts the result is >= 0. This means the filter clause must be an actual
+    // reference present in the filters array. When no clause exists yet, rendering
+    // DateFilter with a detached temporary clause causes a runtime assert failure.
+    // Instead, show a prompt to add the date filter first.
+    const handleAddDateFilter = useCallback(() => {
+        const filterGroup = createFilterGroup(activeView.fields.filter)
         const newClause = createFilterClause()
         newClause.propertyId = propertyTemplate.id
         newClause.condition = 'is'
-        return newClause
-    }, [existingClause, propertyTemplate.id])
+        filterGroup.filters.push(newClause)
+        mutator.changeViewFilter(board.id, activeView.id, activeView.fields.filter, filterGroup)
+    }, [board.id, activeView, propertyTemplate.id])
+
+    if (!existingClause) {
+        return (
+            <div className='FilterValuePanel'>
+                <div className='FilterValuePanel__date-wrapper'>
+                    <div
+                        className='FilterValuePanel__date-add'
+                        onClick={handleAddDateFilter}
+                        role='button'
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleAddDateFilter()
+                            }
+                        }}
+                    >
+                        {intl.formatMessage({
+                            id: 'FilterPanel.add-date-filter',
+                            defaultMessage: 'Click to set date filter',
+                        })}
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className='FilterValuePanel'>
             <div className='FilterValuePanel__date-wrapper'>
                 <DateFilter
                     view={activeView}
-                    filter={clause}
+                    filter={existingClause}
                 />
             </div>
         </div>

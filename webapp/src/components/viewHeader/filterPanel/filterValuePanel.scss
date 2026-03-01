@@ -124,6 +124,25 @@
         padding: 8px 12px;
     }
 
+    &__date-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        border: 1px dashed rgba(var(--center-channel-color-rgb), 0.24);
+        border-radius: 4px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+            background-color: rgba(var(--center-channel-color-rgb), 0.04);
+            border-color: rgba(var(--center-channel-color-rgb), 0.4);
+            color: rgba(var(--center-channel-color-rgb), 0.8);
+        }
+    }
+
     &__empty {
         display: flex;
         align-items: center;

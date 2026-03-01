@@ -6,6 +6,8 @@ import {useIntl} from 'react-intl'
 
 import {Board, IPropertyTemplate} from '../../../blocks/board'
 import {BoardView} from '../../../blocks/boardView'
+import {FilterClause} from '../../../blocks/filterClause'
+import {isAFilterGroupInstance} from '../../../blocks/filterGroup'
 import propsRegistry from '../../../properties'
 import Modal from '../../modal'
 
@@ -28,12 +30,18 @@ const FilterPanel = (props: Props): React.JSX.Element => {
         return board.cardProperties.filter((p) => propsRegistry.get(p.type).canFilter)
     }, [board.cardProperties])
 
-    // Default to first filterable property
+    // Prioritize the first filterable property that has an active filter clause
     const [activePropertyId, setActivePropertyId] = useState<string>(() => {
-        if (filterableProperties.length > 0) {
-            return filterableProperties[0].id
+        if (filterableProperties.length === 0) {
+            return ''
         }
-        return ''
+        const activeFilterIds = new Set(
+            (activeView.fields.filter?.filters || [])
+                .filter((f) => !isAFilterGroupInstance(f))
+                .map((f) => (f as FilterClause).propertyId),
+        )
+        const firstWithFilter = filterableProperties.find((p) => activeFilterIds.has(p.id))
+        return firstWithFilter?.id ?? filterableProperties[0].id
     })
 
     const activePropertyTemplate = useMemo((): IPropertyTemplate | undefined => {
