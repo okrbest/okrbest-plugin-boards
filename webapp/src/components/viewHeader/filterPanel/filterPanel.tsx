@@ -1,13 +1,14 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useMemo} from 'react'
+import React, {useState, useMemo, useCallback} from 'react'
 import {useIntl} from 'react-intl'
 
 import {Board, IPropertyTemplate} from '../../../blocks/board'
 import {BoardView} from '../../../blocks/boardView'
 import {FilterClause} from '../../../blocks/filterClause'
-import {isAFilterGroupInstance} from '../../../blocks/filterGroup'
+import {createFilterGroup, isAFilterGroupInstance} from '../../../blocks/filterGroup'
+import mutator from '../../../mutator'
 import propsRegistry from '../../../properties'
 import Modal from '../../modal'
 
@@ -48,6 +49,28 @@ const FilterPanel = (props: Props): React.JSX.Element => {
         return board.cardProperties.find((p) => p.id === activePropertyId)
     }, [board.cardProperties, activePropertyId])
 
+    const hasAnyFilter = useMemo(() => {
+        const filters = activeView.fields.filter?.filters || []
+        return filters.some((f) => !isAFilterGroupInstance(f))
+    }, [activeView.fields.filter])
+
+    const handleClearProperty = useCallback((propertyId: string) => {
+        const filterGroup = createFilterGroup(activeView.fields.filter)
+        filterGroup.filters = filterGroup.filters.filter((f) => {
+            if (isAFilterGroupInstance(f)) {
+                return true
+            }
+            return (f as FilterClause).propertyId !== propertyId
+        })
+        mutator.changeViewFilter(board.id, activeView.id, activeView.fields.filter, filterGroup)
+    }, [board.id, activeView])
+
+    const handleClearAll = useCallback(() => {
+        const filterGroup = createFilterGroup(activeView.fields.filter)
+        filterGroup.filters = []
+        mutator.changeViewFilter(board.id, activeView.id, activeView.fields.filter, filterGroup)
+    }, [board.id, activeView])
+
     if (filterableProperties.length === 0) {
         return (
             <Modal onClose={onClose}>
@@ -71,6 +94,9 @@ const FilterPanel = (props: Props): React.JSX.Element => {
                     activeView={activeView}
                     activePropertyId={activePropertyId}
                     onSelectProperty={setActivePropertyId}
+                    onClearProperty={handleClearProperty}
+                    onClearAll={handleClearAll}
+                    hasAnyFilter={hasAnyFilter}
                 />
                 <FilterValuePanel
                     board={board}

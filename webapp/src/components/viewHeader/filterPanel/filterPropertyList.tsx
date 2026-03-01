@@ -16,10 +16,13 @@ type Props = {
     activeView: BoardView
     activePropertyId: string
     onSelectProperty: (propertyId: string) => void
+    onClearProperty: (propertyId: string) => void
+    onClearAll: () => void
+    hasAnyFilter: boolean
 }
 
 const FilterPropertyList = (props: Props): React.JSX.Element => {
-    const {filterableProperties, activeView, activePropertyId, onSelectProperty} = props
+    const {filterableProperties, activeView, activePropertyId, onSelectProperty, onClearProperty, onClearAll, hasAnyFilter} = props
     const intl = useIntl()
 
     const filterCountByProperty = useMemo(() => {
@@ -78,9 +81,46 @@ const FilterPropertyList = (props: Props): React.JSX.Element => {
                                 {count}
                             </span>
                         )}
+                        {count > 0 && (
+                            <span
+                                className='FilterPropertyList__item-clear'
+                                role='button'
+                                tabIndex={0}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onClearProperty(property.id)
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        onClearProperty(property.id)
+                                    }
+                                }}
+                                title={intl.formatMessage({id: 'FilterPanel.clear-property', defaultMessage: 'Clear filter'})}
+                            >
+                                {'×'}
+                            </span>
+                        )}
                     </div>
                 )
             })}
+            {hasAnyFilter && (
+                <div
+                    className='FilterPropertyList__clear-all'
+                    role='button'
+                    tabIndex={0}
+                    onClick={onClearAll}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            onClearAll()
+                        }
+                    }}
+                >
+                    {intl.formatMessage({id: 'FilterPanel.clear-all', defaultMessage: 'Clear all filters'})}
+                </div>
+            )}
         </div>
     )
 }
