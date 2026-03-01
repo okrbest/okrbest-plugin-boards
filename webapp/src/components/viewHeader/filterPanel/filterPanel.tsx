@@ -67,7 +67,7 @@ const FilterPanel = (props: Props): React.JSX.Element => {
         <Modal onClose={onClose}>
             <div className='FilterPanel'>
                 <FilterPropertyList
-                    properties={board.cardProperties}
+                    filterableProperties={filterableProperties}
                     activeView={activeView}
                     activePropertyId={activePropertyId}
                     onSelectProperty={setActivePropertyId}

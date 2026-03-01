@@ -8,24 +8,19 @@ import {IPropertyTemplate} from '../../../blocks/board'
 import {FilterClause} from '../../../blocks/filterClause'
 import {isAFilterGroupInstance} from '../../../blocks/filterGroup'
 import {BoardView} from '../../../blocks/boardView'
-import propsRegistry from '../../../properties'
 
 import './filterPropertyList.scss'
 
 type Props = {
-    properties: IPropertyTemplate[]
+    filterableProperties: IPropertyTemplate[]
     activeView: BoardView
     activePropertyId: string
     onSelectProperty: (propertyId: string) => void
 }
 
 const FilterPropertyList = (props: Props): React.JSX.Element => {
-    const {properties, activeView, activePropertyId, onSelectProperty} = props
+    const {filterableProperties, activeView, activePropertyId, onSelectProperty} = props
     const intl = useIntl()
-
-    const filterableProperties = useMemo(() => {
-        return properties.filter((p) => propsRegistry.get(p.type).canFilter)
-    }, [properties])
 
     const filterCountByProperty = useMemo(() => {
         const counts: Record<string, number> = {}

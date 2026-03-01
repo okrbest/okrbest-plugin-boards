@@ -6,7 +6,7 @@
     background-color: rgb(var(--center-channel-bg-rgb));
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 4px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(var(--center-channel-color-rgb), 0.12);
     overflow: hidden;
 
     &__empty {

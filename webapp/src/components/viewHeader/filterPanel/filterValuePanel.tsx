@@ -12,7 +12,6 @@ import {createFilterGroup, isAFilterGroupInstance} from '../../../blocks/filterG
 import mutator from '../../../mutator'
 import propsRegistry from '../../../properties'
 import {getBoardUsersList} from '../../../store/users'
-import {IUser} from '../../../user'
 import Label from '../../../widgets/label'
 
 import DateFilter from '../dateFilter'
@@ -28,7 +27,6 @@ type Props = {
 const FilterValuePanel = (props: Props): React.JSX.Element => {
     const {board, activeView, propertyTemplate} = props
     const intl = useIntl()
-    const boardUsers = useSelector(getBoardUsersList)
 
     if (!propertyTemplate) {
         return (
@@ -61,7 +59,6 @@ const FilterValuePanel = (props: Props): React.JSX.Element => {
                 board={board}
                 activeView={activeView}
                 propertyTemplate={propertyTemplate}
-                boardUsers={boardUsers}
             />
         )
     case 'boolean':
@@ -209,11 +206,11 @@ type PersonFilterPanelProps = {
     board: Board
     activeView: BoardView
     propertyTemplate: IPropertyTemplate
-    boardUsers: IUser[]
 }
 
 const PersonFilterPanel = (props: PersonFilterPanelProps): React.JSX.Element => {
-    const {board, activeView, propertyTemplate, boardUsers} = props
+    const {board, activeView, propertyTemplate} = props
+    const boardUsers = useSelector(getBoardUsersList)
     const intl = useIntl()
     const [searchText, setSearchText] = useState('')
 
