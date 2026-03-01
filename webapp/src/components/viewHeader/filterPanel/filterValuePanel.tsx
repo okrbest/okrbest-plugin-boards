@@ -7,14 +7,19 @@ import {useSelector} from 'react-redux'
 
 import {Board, IPropertyTemplate, IPropertyOption} from '../../../blocks/board'
 import {BoardView} from '../../../blocks/boardView'
-import {FilterClause, createFilterClause} from '../../../blocks/filterClause'
+import {FilterClause, FilterCondition, createFilterClause} from '../../../blocks/filterClause'
 import {createFilterGroup, isAFilterGroupInstance} from '../../../blocks/filterGroup'
 import mutator from '../../../mutator'
 import propsRegistry from '../../../properties'
 import {getBoardUsersList} from '../../../store/users'
 import Label from '../../../widgets/label'
 
-import DateFilter from '../dateFilter'
+import MomentLocaleUtils from 'react-day-picker/moment'
+import DayPicker from 'react-day-picker/DayPicker'
+
+import 'react-day-picker/lib/style.css'
+
+import {Utils} from '../../../utils'
 
 import './filterValuePanel.scss'
 
@@ -479,6 +484,8 @@ type DateFilterPanelProps = {
     propertyTemplate: IPropertyTemplate
 }
 
+const dateLoadedLocales: Record<string, boolean> = {}
+
 const DateFilterPanel = (props: DateFilterPanelProps): React.JSX.Element => {
     const {board, activeView, propertyTemplate} = props
     const intl = useIntl()
@@ -487,53 +494,183 @@ const DateFilterPanel = (props: DateFilterPanelProps): React.JSX.Element => {
         return findClauseForProperty(activeView, propertyTemplate.id)
     }, [activeView, propertyTemplate.id])
 
-    // DateFilter internally uses view.fields.filter.filters.indexOf(filter) and
-    // asserts the result is >= 0. This means the filter clause must be an actual
-    // reference present in the filters array. When no clause exists yet, rendering
-    // DateFilter with a detached temporary clause causes a runtime assert failure.
-    // Instead, show a prompt to add the date filter first.
-    const handleAddDateFilter = useCallback(() => {
+    const currentCondition: FilterCondition = (existingClause?.condition as FilterCondition) || 'is'
+
+    const dateValue = useMemo((): Date | undefined => {
+        if (existingClause?.values?.[0]) {
+            return new Date(parseInt(existingClause.values[0], 10))
+        }
+        return undefined
+    }, [existingClause?.values])
+
+    const timeZoneOffset = (date: number): number => {
+        return new Date(date).getTimezoneOffset() * 60 * 1000
+    }
+
+    const offsetDate = dateValue ? new Date(dateValue.getTime() + timeZoneOffset(dateValue.getTime())) : undefined
+
+    const saveDateFilter = useCallback((newDate: Date | undefined, newCondition: FilterCondition) => {
         const filterGroup = createFilterGroup(activeView.fields.filter)
-        const newClause = createFilterClause()
-        newClause.propertyId = propertyTemplate.id
-        newClause.condition = 'is'
-        filterGroup.filters.push(newClause)
+        const clauseIndex = findClauseIndex(filterGroup.filters, propertyTemplate.id)
+
+        if (newDate) {
+            const adjustedDate = new Date(newDate.getTime() - timeZoneOffset(newDate.getTime()))
+            if (clauseIndex >= 0) {
+                const clause = filterGroup.filters[clauseIndex] as FilterClause
+                const updatedClause = createFilterClause(clause)
+                updatedClause.condition = newCondition
+                updatedClause.values = [adjustedDate.getTime().toString()]
+                filterGroup.filters[clauseIndex] = updatedClause
+            } else {
+                const newClause = createFilterClause()
+                newClause.propertyId = propertyTemplate.id
+                newClause.condition = newCondition
+                newClause.values = [adjustedDate.getTime().toString()]
+                filterGroup.filters.push(newClause)
+            }
+        } else if (clauseIndex >= 0) {
+            filterGroup.filters.splice(clauseIndex, 1)
+        }
+
         mutator.changeViewFilter(board.id, activeView.id, activeView.fields.filter, filterGroup)
     }, [board.id, activeView, propertyTemplate.id])
 
-    if (!existingClause) {
-        return (
-            <div className='FilterValuePanel'>
-                <div className='FilterValuePanel__date-wrapper'>
-                    <div
-                        className='FilterValuePanel__date-add'
-                        onClick={handleAddDateFilter}
-                        role='button'
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                handleAddDateFilter()
-                            }
-                        }}
-                    >
-                        {intl.formatMessage({
-                            id: 'FilterPanel.add-date-filter',
-                            defaultMessage: 'Click to set date filter',
-                        })}
-                    </div>
-                </div>
-            </div>
-        )
+    const handleConditionChange = useCallback((newCondition: FilterCondition) => {
+        if (offsetDate) {
+            saveDateFilter(offsetDate, newCondition)
+        }
+    }, [offsetDate, saveDateFilter])
+
+    const handleDayClick = useCallback((day: Date) => {
+        day.setHours(12, 0, 0, 0)
+        saveDateFilter(day, currentCondition)
+    }, [currentCondition, saveDateFilter])
+
+    const handlePresetClick = useCallback((preset: string) => {
+        const today = new Date()
+        today.setHours(12, 0, 0, 0)
+
+        switch (preset) {
+        case 'today':
+            saveDateFilter(today, 'is')
+            break
+        case 'yesterday': {
+            const yesterday = new Date(today)
+            yesterday.setDate(yesterday.getDate() - 1)
+            saveDateFilter(yesterday, 'is')
+            break
+        }
+        case 'last7days': {
+            const d = new Date(today)
+            d.setDate(d.getDate() - 7)
+            saveDateFilter(d, 'isAfter')
+            break
+        }
+        case 'last30days': {
+            const d = new Date(today)
+            d.setDate(d.getDate() - 30)
+            saveDateFilter(d, 'isAfter')
+            break
+        }
+        }
+    }, [saveDateFilter])
+
+    const handleClear = useCallback(() => {
+        saveDateFilter(undefined, 'is')
+    }, [saveDateFilter])
+
+    const locale = intl.locale.toLowerCase()
+    if (locale && locale !== 'en' && !dateLoadedLocales[locale]) {
+        try {
+            // eslint-disable-next-line global-require
+            require(`moment/locale/${locale}`)
+            dateLoadedLocales[locale] = true
+        } catch {
+            // Locale not available, fall back to English
+        }
     }
+
+    const conditions: Array<{value: FilterCondition, label: string}> = [
+        {value: 'is', label: intl.formatMessage({id: 'DateFilterPanel.is', defaultMessage: 'Is'})},
+        {value: 'isBefore', label: intl.formatMessage({id: 'DateFilterPanel.before', defaultMessage: 'Before'})},
+        {value: 'isAfter', label: intl.formatMessage({id: 'DateFilterPanel.after', defaultMessage: 'After'})},
+    ]
+
+    const presets = [
+        {id: 'today', label: intl.formatMessage({id: 'DateFilterPanel.today', defaultMessage: 'Today'})},
+        {id: 'yesterday', label: intl.formatMessage({id: 'DateFilterPanel.yesterday', defaultMessage: 'Yesterday'})},
+        {id: 'last7days', label: intl.formatMessage({id: 'DateFilterPanel.last7days', defaultMessage: 'Last 7 days'})},
+        {id: 'last30days', label: intl.formatMessage({id: 'DateFilterPanel.last30days', defaultMessage: 'Last 30 days'})},
+    ]
+
+    const conditionLabel = conditions.find((c) => c.value === currentCondition)?.label || ''
 
     return (
         <div className='FilterValuePanel'>
-            <div className='FilterValuePanel__date-wrapper'>
-                <DateFilter
-                    view={activeView}
-                    filter={existingClause}
-                />
+            <div className='FilterValuePanel__date-panel'>
+                <div className='FilterValuePanel__date-conditions'>
+                    <div className='FilterValuePanel__date-section-label'>
+                        {intl.formatMessage({id: 'DateFilterPanel.condition', defaultMessage: 'Condition'})}
+                    </div>
+                    <div className='FilterValuePanel__date-condition-group'>
+                        {conditions.map((c) => (
+                            <button
+                                key={c.value}
+                                className={`FilterValuePanel__date-condition-btn${currentCondition === c.value ? ' FilterValuePanel__date-condition-btn--active' : ''}`}
+                                onClick={() => handleConditionChange(c.value)}
+                            >
+                                {c.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className='FilterValuePanel__date-presets'>
+                    <div className='FilterValuePanel__date-section-label'>
+                        {intl.formatMessage({id: 'DateFilterPanel.presets', defaultMessage: 'Quick select'})}
+                    </div>
+                    <div className='FilterValuePanel__date-preset-group'>
+                        {presets.map((p) => (
+                            <button
+                                key={p.id}
+                                className='FilterValuePanel__date-preset-btn'
+                                onClick={() => handlePresetClick(p.id)}
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {offsetDate && (
+                    <div className='FilterValuePanel__date-selected'>
+                        <span className='FilterValuePanel__date-selected-label'>
+                            {conditionLabel}
+                        </span>
+                        <span className='FilterValuePanel__date-selected-value'>
+                            {Utils.displayDate(offsetDate, intl)}
+                        </span>
+                        <button
+                            className='FilterValuePanel__date-clear-btn'
+                            onClick={handleClear}
+                            title={intl.formatMessage({id: 'DateFilterPanel.clear', defaultMessage: 'Clear'})}
+                        >
+                            {'×'}
+                        </button>
+                    </div>
+                )}
+
+                <div className='FilterValuePanel__date-calendar'>
+                    <DayPicker
+                        key={offsetDate ? offsetDate.getTime() : 'none'}
+                        initialMonth={offsetDate || new Date()}
+                        showOutsideDays={false}
+                        locale={locale}
+                        localeUtils={MomentLocaleUtils}
+                        selectedDays={offsetDate}
+                        onDayClick={handleDayClick}
+                    />
+                </div>
             </div>
         </div>
     )
