@@ -4,6 +4,12 @@
 
 import {Block, createBlock} from './block'
 
+type BlockSuiteBadges = {
+    description: boolean
+    checkboxTotal: number
+    checkboxChecked: number
+}
+
 type CardFields = {
     icon?: string
     isTemplate?: boolean
@@ -11,6 +17,7 @@ type CardFields = {
     contentOrder?: Array<string | string[]>
     parentCardId?: string
     depth?: number
+    blockSuiteBadges?: BlockSuiteBadges
 }
 
 type Card = Block & {
@@ -41,8 +48,9 @@ function createCard(block?: Block): Card {
             isTemplate: block?.fields.isTemplate || false,
             parentCardId: block?.fields.parentCardId || '',
             depth: block?.fields.depth || 0,
+            ...(block?.fields.blockSuiteBadges && {blockSuiteBadges: block.fields.blockSuiteBadges}),
         },
     }
 }
 
-export {Card, createCard}
+export {Card, BlockSuiteBadges, createCard}

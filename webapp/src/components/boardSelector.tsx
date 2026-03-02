@@ -136,8 +136,12 @@ const BoardSelector = () => {
     }
 
     const newLinkedBoard = async (): Promise<void> => {
-        const windowAny = window as any
-        window.open(`${windowAny.frontendBaseURL}/team/${teamId}/new/${currentChannel}`, '_blank', 'noopener')
+        const result = await mutator.addEmptyBoard(teamId, intl)
+        if (result && result.boards && result.boards.length > 0) {
+            const newBoard = result.boards[0]
+            const linkedBoard = createBoard({...newBoard, channelId: currentChannel})
+            await mutator.updateBoard(linkedBoard, newBoard, 'linked channel')
+        }
         dispatch(setLinkToChannel(''))
     }
 

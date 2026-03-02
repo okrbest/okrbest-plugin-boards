@@ -4,12 +4,14 @@
 import {useState, useEffect, useRef, useCallback} from 'react'
 import type {DocSnapshot} from '@blocksuite/store'
 
-import {Block} from '../../blocks/block'
+import {Block, BlockPatch} from '../../blocks/block'
 import {Card} from '../../blocks/card'
 import {Utils} from '../../utils'
-import {extractTextFromSnapshot, formatDiffSummary} from '../../utils/blockSuiteUtils'
-import {markCardModified} from '../../store/cards'
-import {useAppDispatch} from '../../store/hooks'
+import {extractTextFromSnapshot, extractBadgesFromSnapshot, formatDiffSummary} from '../../utils/blockSuiteUtils'
+import {markCardModified, addCard} from '../../store/cards'
+import {useAppDispatch, useAppSelector} from '../../store/hooks'
+import {getCard} from '../../store/cards'
+import octoClient from '../../octoClient'
 
 import blockSuiteApi from './blockSuiteApi'
 import {createEmptyDocSnapshot} from './emptyDocSnapshot'
@@ -39,6 +41,7 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
     const {card, contents, readonly} = props
     const cardId = card.id
     const dispatch = useAppDispatch()
+    const currentCard = useAppSelector(getCard(cardId))
 
     const [snapshot, setSnapshot] = useState<DocSnapshot | null>(null)
     const [loading, setLoading] = useState(true)
@@ -50,6 +53,47 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
     const pendingSnapshotRef = useRef<DocSnapshot | null>(null)
     const savingRef = useRef(false)
     const initialTextRef = useRef<string>('')
+    const currentCardRef = useRef(currentCard)
+    currentCardRef.current = currentCard
+
+    // 배지 정보 업데이트 (Redux + 서버 저장)
+    const updateBadges = useCallback((docSnapshot: DocSnapshot, persist: boolean) => {
+        try {
+            const badges = extractBadgesFromSnapshot(docSnapshot)
+            const cardData = currentCardRef.current
+            if (!cardData) return
+
+            const existing = cardData.fields.blockSuiteBadges
+            const changed = !existing ||
+                existing.description !== badges.description ||
+                existing.checkboxTotal !== badges.checkboxTotal ||
+                existing.checkboxChecked !== badges.checkboxChecked
+
+            if (!changed) return
+
+            // Redux store 업데이트
+            dispatch(addCard({
+                ...cardData,
+                fields: {
+                    ...cardData.fields,
+                    blockSuiteBadges: badges,
+                },
+            }))
+
+            // 서버에 카드 필드 저장 (빈 배지는 스킵하여 불필요한 서버 쓰기 방지)
+            const isEmpty = !badges.description && badges.checkboxTotal === 0
+            if (persist && !isEmpty) {
+                const blockPatch: BlockPatch = {
+                    updatedFields: {blockSuiteBadges: badges},
+                }
+                octoClient.patchBlock(cardData.boardId, cardData.id, blockPatch).catch((err) => {
+                    Utils.logError(`Failed to persist badge info: ${err}`)
+                })
+            }
+        } catch (err) {
+            Utils.logError(`Failed to extract badges: ${err}`)
+        }
+    }, [dispatch])
 
     const saveSnapshot = useCallback(async (snapshotToSave: DocSnapshot) => {
         if (readonly || !ENABLE_API_SYNC) {
@@ -78,6 +122,9 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
             Utils.log(`BlockSuite snapshot saved for card: ${cardId}`)
             setSaveStatus('saved')
 
+            // 배지 정보 업데이트 (저장 시 서버에도 반영)
+            updateBadges(snapshotToSave, true)
+
             // 저장 후 초기 텍스트 업데이트
             initialTextRef.current = currentText
 
@@ -96,7 +143,7 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
         } finally {
             savingRef.current = false
         }
-    }, [cardId, card.boardId, readonly])
+    }, [cardId, card.boardId, readonly, updateBadges])
 
     const scheduleSave = useCallback((snapshotToSave: DocSnapshot) => {
         if (readonly || !ENABLE_API_SYNC) {
@@ -158,6 +205,9 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
                     initialTextRef.current = extractTextFromSnapshot(loadedSnapshot)
                 }
 
+                // 스냅샷 로드 시 배지 정보 업데이트 (서버에도 저장하여 칸반 보드에서 표시)
+                updateBadges(loadedSnapshot, true)
+
                 Utils.log(`useBlockSuiteEditor: Setting snapshot, type=${loadedSnapshot?.type}`)
                 setSnapshot(loadedSnapshot)
             } catch (err) {
@@ -177,7 +227,7 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
                 clearTimeout(saveTimeoutRef.current)
             }
         }
-    }, [cardId, card, contents, readonly])
+    }, [cardId, card, contents, readonly, updateBadges])
 
     return {
         snapshot,

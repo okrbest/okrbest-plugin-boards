@@ -78,3 +78,6 @@ issues:
       linters:
         - bodyclose
         - scopelint # https://github.com/kyoh86/scopelint/issues/4
+    - path: app/blocksuite_migration\.go
+      linters:
+        - misspell # Flavour is the BlockSuite API field name

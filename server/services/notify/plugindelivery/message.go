@@ -15,7 +15,7 @@ const (
 	defCommentTemplate     = "@%s님이 @%s님을 카드 [%s](%s) 댓글에서 언급했습니다 (보드: [%s](%s))\n> %s"
 	defDescriptionTemplate = "@%s님이 @%s님을 카드 [%s](%s)에서 언급했습니다 (보드: [%s](%s))\n> %s"
 
-	// Templates for batch mentions (multiple users in one message)
+	// Templates for batch mentions (multiple users in one message).
 	defBatchCommentTemplate     = "@%s님이 %s님을 카드 [%s](%s) 댓글에서 언급했습니다 (보드: [%s](%s))\n> %s"
 	defBatchDescriptionTemplate = "@%s님이 %s님을 카드 [%s](%s)에서 언급했습니다 (보드: [%s](%s))\n> %s"
 )
@@ -42,7 +42,7 @@ func formatBatchMessage(author string, mentionedUsernames []string, extract stri
 }
 
 // formatUserList formats a list of usernames with @ prefix.
-// e.g., ["user1", "user2", "user3"] -> "@user1, @user2, @user3"
+// e.g., ["user1", "user2", "user3"] -> "@user1, @user2, @user3".
 func formatUserList(usernames []string) string {
 	if len(usernames) == 0 {
 		return ""

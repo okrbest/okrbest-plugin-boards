@@ -182,6 +182,14 @@ func (s *SQLStore) duplicateBoard(db sq.BaseRunner, boardID string, userID strin
 		return nil, nil, nil, err
 	}
 
+	// Fix ParentID for top-level blocks (cards, views) to match the new BoardID.
+	// Template data may have stale ParentID values that don't match the board ID.
+	for _, block := range bab.Blocks {
+		if block.Type == model.TypeCard || block.Type == model.TypeView {
+			block.ParentID = block.BoardID
+		}
+	}
+
 	resultBab, members, err := s.createBoardsAndBlocksWithAdmin(db, bab, userID)
 	return resultBab, members, cardIDMapping, err
 }

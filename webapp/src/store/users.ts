@@ -112,6 +112,10 @@ const usersSlice = createSlice({
         })
 
         builder.addCase(initialLoad.fulfilled, (state, action) => {
+            if (action.payload.me) {
+                state.me = action.payload.me
+                state.loggedIn = true
+            }
             if (action.payload.myConfig) {
                 state.myConfig = parseUserProps(action.payload.myConfig)
             }

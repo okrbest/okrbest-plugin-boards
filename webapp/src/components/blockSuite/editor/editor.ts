@@ -77,7 +77,10 @@ export async function initEditor(cardId: string, boardId: string, card: Card): P
     console.log('[Editor] Data loaded, doc ID:', doc.id)
 
     // 5. 에디터 생성 및 설정 (데이터가 로드된 doc에 연결)
-    const editor = new PageEditor()
+    // 플러그인이 재로드될 때 import된 PageEditor 클래스와 customElements에 등록된 클래스가
+    // 달라질 수 있으므로, 등록된 클래스를 우선 사용하여 'Illegal constructor' 에러 방지
+    const RegisteredPageEditor = customElements.get('page-editor') as (new () => PageEditor) | undefined
+    const editor = RegisteredPageEditor ? new RegisteredPageEditor() : new PageEditor()
     editor.doc = doc
 
     console.log('[Editor] Editor initialized successfully')

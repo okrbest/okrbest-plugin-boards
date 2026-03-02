@@ -4,6 +4,7 @@
 package plugindelivery
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/services/notify"
@@ -11,6 +12,8 @@ import (
 
 	mm_model "github.com/mattermost/mattermost/server/public/model"
 )
+
+var errBatchRequiresChannel = errors.New("batch mention delivery requires board to be linked to a channel")
 
 // MentionDeliver notifies a user they have been mentioned in a block via the plugin API.
 // Used for DM notifications (when board is not linked to a channel).
@@ -51,7 +54,7 @@ func (pd *PluginDelivery) BatchMentionDeliver(mentionedUsers []*mm_model.User, e
 
 	// 채널 연결이 없으면 배치 전송 불가
 	if evt.Board.ChannelID == "" {
-		return nil, fmt.Errorf("batch mention delivery requires board to be linked to a channel")
+		return nil, errBatchRequiresChannel
 	}
 
 	author, err := pd.api.GetUserByID(evt.ModifiedBy.UserID)

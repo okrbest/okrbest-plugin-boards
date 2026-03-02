@@ -141,7 +141,6 @@ func TestApp_ImportArchive(t *testing.T) {
 		require.NoError(t, err, "import archive should not fail")
 		require.Equal(t, board.ID, newBoard.ID, "Board ID should be same")
 	})
-
 }
 
 func TestApp_FixImagesAttachments(t *testing.T) {

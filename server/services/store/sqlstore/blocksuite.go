@@ -5,12 +5,29 @@ package sqlstore
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"math"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
+
+var (
+	errCardNotFound      = errors.New("card not found")
+	errUnsupportedDBType = errors.New("unsupported database type")
+)
+
+func safeUint64(v int) uint64 {
+	if v < 0 {
+		return 0
+	}
+	if v > math.MaxInt {
+		return uint64(math.MaxInt)
+	}
+	return uint64(v)
+}
 
 func (s *SQLStore) getBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) (*model.BlockSuiteDoc, error) {
 	query := s.getQueryBuilder(db).
@@ -45,7 +62,7 @@ func (s *SQLStore) getBlockSuiteDocByCardID(db sq.BaseRunner, cardID string) (*m
 		&doc.LastDiffSummary,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, model.NewErrBlockSuiteDocNotFound(cardID)
 	}
 	if err != nil {
@@ -83,7 +100,7 @@ func (s *SQLStore) getBlockSuiteDocInfoByCardID(db sq.BaseRunner, cardID string)
 		&info.UpdatedBy,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, model.NewErrBlockSuiteDocNotFound(cardID)
 	}
 	if err != nil {
@@ -110,8 +127,8 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 
 	var exists int
 	err := cardExistsQuery.QueryRow().Scan(&exists)
-	if err == sql.ErrNoRows {
-		return fmt.Errorf("card not found: %s", doc.CardID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("%w: %s", errCardNotFound, doc.CardID)
 	}
 	if err != nil {
 		s.logger.Error("upsertBlockSuiteDoc card validation ERROR",
@@ -179,7 +196,7 @@ func (s *SQLStore) upsertBlockSuiteDoc(db sq.BaseRunner, doc *model.BlockSuiteDo
 				last_diff_summary = excluded.last_diff_summary
 		`)
 	default:
-		return fmt.Errorf("unsupported database type: %s", s.dbType)
+		return fmt.Errorf("%w: %s", errUnsupportedDBType, s.dbType)
 	}
 
 	_, err = query.Exec()
@@ -292,8 +309,8 @@ func (s *SQLStore) getUnmigratedCardsWithContentBlocks(db sq.BaseRunner, limit i
 		Where(sq.Eq{"b.type": model.TypeCard, "b.delete_at": 0}).
 		Where("d.card_id IS NULL").
 		OrderBy("b.create_at ASC").
-		Limit(uint64(limit)).
-		Offset(uint64(offset))
+		Limit(safeUint64(limit)).
+		Offset(safeUint64(offset))
 
 	rows, err := cardIDsQuery.Query()
 	if err != nil {
@@ -305,13 +322,13 @@ func (s *SQLStore) getUnmigratedCardsWithContentBlocks(db sq.BaseRunner, limit i
 	var cardIDs []string
 	for rows.Next() {
 		var cardID string
-		if err := rows.Scan(&cardID); err != nil {
-			return nil, 0, err
+		if scanErr := rows.Scan(&cardID); scanErr != nil {
+			return nil, 0, scanErr
 		}
 		cardIDs = append(cardIDs, cardID)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, err
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return nil, 0, rowsErr
 	}
 
 	if len(cardIDs) == 0 {

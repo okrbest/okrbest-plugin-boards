@@ -62,7 +62,7 @@ type PropDef struct {
 
 // GetValue resolves the value of a property if the passed value is an ID for an option,
 // otherwise returns the original value.
-func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, error) {
+func (pd PropDef) GetValue(v interface{}, resolver PropValueResolver) (string, error) { //nolint:gocyclo
 	switch pd.Type {
 	case "select":
 		// v is the id of an option

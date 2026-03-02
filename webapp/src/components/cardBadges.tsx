@@ -79,7 +79,24 @@ const CardBadges = (props: Props) => {
     const {card, className} = props
     const contents = useAppSelector(getCardContents(card.id))
     const comments = useAppSelector(getCardComments(card.id))
-    const badges = useMemo(() => calculateBadges(contents, comments), [contents, comments])
+    const badges = useMemo(() => {
+        const legacy = calculateBadges(contents, comments)
+
+        // BlockSuite 에디터로 작성된 카드의 경우 fields.blockSuiteBadges에서 배지 정보 읽기
+        const bsBadges = card.fields.blockSuiteBadges
+        if (bsBadges && !legacy.description && legacy.checkboxes.total === 0) {
+            return {
+                description: bsBadges.description,
+                comments: legacy.comments,
+                checkboxes: {
+                    total: bsBadges.checkboxTotal,
+                    checked: bsBadges.checkboxChecked,
+                },
+            }
+        }
+
+        return legacy
+    }, [contents, comments, card.fields.blockSuiteBadges])
     if (!hasBadges(badges)) {
         return null
     }
