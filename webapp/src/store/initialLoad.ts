@@ -34,6 +34,7 @@ export const initialLoad = createAsyncThunk(
             throw new Error(ErrorId.TeamUndefined)
         }
         return {
+            me,
             team,
             teams,
             boards,

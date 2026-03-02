@@ -213,6 +213,69 @@ function createEmptyDoc(cardId: string, collection: DocCollection): Doc {
 }
 
 /**
+ * DocSnapshot에서 칸반 보드 배지 정보 추출
+ * (설명 텍스트 존재 여부, 체크박스 총 수, 체크된 체크박스 수)
+ */
+export function extractBadgesFromSnapshot(snapshot: any): {description: boolean, checkboxTotal: number, checkboxChecked: number} {
+    let hasDescription = false
+    let checkboxTotal = 0
+    let checkboxChecked = 0
+
+    function blockHasText(block: any): boolean {
+        const delta = block.props?.text?.delta
+        return Array.isArray(delta) && delta.some((op: any) =>
+            op.insert && typeof op.insert === 'string' && op.insert.trim() !== '',
+        )
+    }
+
+    function walkBlock(block: any): void {
+        if (!block) return
+
+        // affine:paragraph / affine:list — 텍스트가 있으면 설명 존재
+        if (block.flavour === 'affine:paragraph' || block.flavour === 'affine:list') {
+            if (blockHasText(block)) {
+                hasDescription = true
+            }
+
+            // affine:list type=todo → 체크박스 카운트
+            if (block.flavour === 'affine:list' && block.props?.type === 'todo') {
+                checkboxTotal++
+                if (block.props?.checked) {
+                    checkboxChecked++
+                }
+            }
+        }
+
+        // 이미지, 첨부파일, 구분선 등도 설명 존재로 간주
+        if (block.flavour === 'affine:image' || block.flavour === 'affine:attachment' || block.flavour === 'affine:divider') {
+            hasDescription = true
+        }
+
+        // children 재귀 처리 (Job-style snapshot)
+        if (block.children && Array.isArray(block.children)) {
+            for (const child of block.children) {
+                walkBlock(child)
+            }
+        }
+    }
+
+    if (snapshot) {
+        // Job-style: snapshot.blocks가 루트 블록
+        if (snapshot.blocks && typeof snapshot.blocks === 'object' && !Array.isArray(snapshot.blocks)) {
+            walkBlock(snapshot.blocks)
+        } else if (Array.isArray(snapshot.blocks)) {
+            for (const block of snapshot.blocks) {
+                walkBlock(block)
+            }
+        } else {
+            walkBlock(snapshot)
+        }
+    }
+
+    return {description: hasDescription, checkboxTotal, checkboxChecked}
+}
+
+/**
  * DocSnapshot에서 검색용 plain text 추출
  * @param snapshot BlockSuite DocSnapshot
  * @returns 추출된 plain text (줄바꿈으로 구분)

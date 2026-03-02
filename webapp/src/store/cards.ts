@@ -257,12 +257,9 @@ export const getCurrentBoardCards = createSelector(
 export const getCurrentBoardParentCards = createSelector(
     getCurrentBoardCards,
     (cards) => {
-        // fields.parentCardId가 없고, parentId가 boardId와 같은 카드만 최상위 카드
-        return cards.filter((c) => {
-            const hasParentCardId = c.fields.parentCardId ||
-                (c.parentId && c.boardId && c.parentId !== c.boardId)
-            return !hasParentCardId
-        })
+        // fields.parentCardId가 없는 카드만 최상위 카드
+        // parentId !== boardId 체크는 사용하지 않음 (템플릿에서 복제된 카드의 parentId가 boardId와 다를 수 있음)
+        return cards.filter((c) => !c.fields.parentCardId)
     },
 )
 
@@ -271,11 +268,8 @@ export const getCurrentBoardSubCardsByParent = createSelector(
     (cards) => {
         const map: {[parentCardId: string]: Card[]} = {}
         for (const card of cards) {
-            // fields.parentCardId가 있거나, parentId가 boardId와 다르면 하위 카드
-            // boardId가 있고, parentId가 boardId와 다를 때만 하위 카드로 판단
-            const parentCardId = card.fields.parentCardId ||
-                (card.parentId && card.boardId && card.parentId !== card.boardId ? card.parentId : '')
-
+            // fields.parentCardId가 있는 카드만 하위 카드로 판단
+            const parentCardId = card.fields.parentCardId
             if (parentCardId) {
                 if (!map[parentCardId]) {
                     map[parentCardId] = []

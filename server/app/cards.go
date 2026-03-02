@@ -279,8 +279,8 @@ func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Car
 			model.MaxCardDepth, maxSubDepth))
 	}
 
-	if err := a.checkCircularReference(cardID, parentCardID); err != nil {
-		return nil, err
+	if circErr := a.checkCircularReference(cardID, parentCardID); circErr != nil {
+		return nil, circErr
 	}
 
 	cardPatch := &model.CardPatch{

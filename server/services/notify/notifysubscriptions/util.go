@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
-
-	mm_model "github.com/mattermost/mattermost/server/public/model"
 )
 
 func getBoardDescription(board *model.Block) string {
@@ -31,19 +29,6 @@ func getBoardDescription(board *model.Block) string {
 
 func stripNewlines(s string) string {
 	return strings.TrimSpace(strings.ReplaceAll(s, "\n", "¶ "))
-}
-
-func displayNameForUser(user *model.User, nameFormat string) string {
-	if user == nil {
-		return ""
-	}
-	mmUser := &mm_model.User{
-		Username:  user.Username,
-		Nickname:  user.Nickname,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-	}
-	return mmUser.GetDisplayName(nameFormat)
 }
 
 type StringMap map[string]string

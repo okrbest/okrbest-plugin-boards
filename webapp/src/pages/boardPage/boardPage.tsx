@@ -213,10 +213,16 @@ const BoardPage = (props: Props): React.JSX.Element => {
     }
 
     const loadOrJoinBoard = useCallback(async (myUser: IUser, boardTeamId: string, boardId: string) => {
-        // Verify the board belongs to the current team before attempting to load/join.
-        // This prevents cross-team board ID contamination when switching teams.
+        // Verify the board exists and belongs to the current team before attempting to load/join.
         const board = await octoClient.getBoard(boardId)
-        if (board && board.teamId !== boardTeamId && board.teamId !== Constants.globalTeamId) {
+        if (!board) {
+            Utils.log(`loadOrJoinBoard: board ${boardId} not found. Clearing saved state.`)
+            UserSettings.setLastBoardID(boardTeamId, null)
+            UserSettings.setLastViewId(boardId, null)
+            dispatch(setGlobalError('board-not-found'))
+            return
+        }
+        if (board.teamId !== boardTeamId && board.teamId !== Constants.globalTeamId) {
             Utils.log(`loadOrJoinBoard: board ${boardId} belongs to team ${board.teamId}, not ${boardTeamId}. Skipping.`)
             return
         }

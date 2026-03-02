@@ -13,7 +13,8 @@ import (
 )
 
 // jsonFieldExtract returns the SQL expression to extract a string field from JSON.
-func (s *SQLStore) jsonFieldExtract(column, key string) string {
+func (s *SQLStore) jsonFieldExtract(key string) string { //nolint:unparam
+	const column = "fields"
 	switch s.dbType {
 	case model.PostgresDBType:
 		return fmt.Sprintf("%s->>'%s'", column, key)
@@ -25,7 +26,8 @@ func (s *SQLStore) jsonFieldExtract(column, key string) string {
 }
 
 // jsonFieldExtractInt returns the SQL expression to extract and cast an integer field from JSON.
-func (s *SQLStore) jsonFieldExtractInt(column, key string) string {
+func (s *SQLStore) jsonFieldExtractInt(key string) string {
+	const column = "fields"
 	switch s.dbType {
 	case model.PostgresDBType:
 		return fmt.Sprintf("CAST(%s->>'%s' AS BIGINT)", column, key)
@@ -39,8 +41,8 @@ func (s *SQLStore) jsonFieldExtractInt(column, key string) string {
 }
 
 func (s *SQLStore) getScheduledComments(db sq.BaseRunner, beforeTime int64) ([]*model.Block, error) {
-	scheduledAtExpr := s.jsonFieldExtractInt("fields", model.BlockFieldScheduledAt)
-	scheduledStatusExpr := s.jsonFieldExtract("fields", model.BlockFieldScheduledStatus)
+	scheduledAtExpr := s.jsonFieldExtractInt(model.BlockFieldScheduledAt)
+	scheduledStatusExpr := s.jsonFieldExtract(model.BlockFieldScheduledStatus)
 
 	query := s.getQueryBuilder(db).
 		Select(s.blockFields("")...).
@@ -62,8 +64,8 @@ func (s *SQLStore) getScheduledComments(db sq.BaseRunner, beforeTime int64) ([]*
 }
 
 func (s *SQLStore) getScheduledCommentsByUser(db sq.BaseRunner, userID string) ([]*model.Block, error) {
-	scheduledAtExpr := s.jsonFieldExtractInt("fields", model.BlockFieldScheduledAt)
-	scheduledStatusExpr := s.jsonFieldExtract("fields", model.BlockFieldScheduledStatus)
+	scheduledAtExpr := s.jsonFieldExtractInt(model.BlockFieldScheduledAt)
+	scheduledStatusExpr := s.jsonFieldExtract(model.BlockFieldScheduledStatus)
 
 	query := s.getQueryBuilder(db).
 		Select(s.blockFields("")...).
@@ -85,8 +87,8 @@ func (s *SQLStore) getScheduledCommentsByUser(db sq.BaseRunner, userID string) (
 }
 
 func (s *SQLStore) getScheduledCommentsForCard(db sq.BaseRunner, cardID string) ([]*model.Block, error) {
-	scheduledAtExpr := s.jsonFieldExtractInt("fields", model.BlockFieldScheduledAt)
-	scheduledStatusExpr := s.jsonFieldExtract("fields", model.BlockFieldScheduledStatus)
+	scheduledAtExpr := s.jsonFieldExtractInt(model.BlockFieldScheduledAt)
+	scheduledStatusExpr := s.jsonFieldExtract(model.BlockFieldScheduledStatus)
 
 	query := s.getQueryBuilder(db).
 		Select(s.blockFields("")...).
@@ -108,7 +110,7 @@ func (s *SQLStore) getScheduledCommentsForCard(db sq.BaseRunner, cardID string) 
 }
 
 func (s *SQLStore) getScheduledCommentsCountByUser(db sq.BaseRunner, userID string) (int, error) {
-	scheduledStatusExpr := s.jsonFieldExtract("fields", model.BlockFieldScheduledStatus)
+	scheduledStatusExpr := s.jsonFieldExtract(model.BlockFieldScheduledStatus)
 
 	query := s.getQueryBuilder(db).
 		Select("COUNT(*)").

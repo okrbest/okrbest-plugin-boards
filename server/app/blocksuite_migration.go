@@ -420,11 +420,12 @@ func parseMultilineMarkdown(text, baseID string) []BlockSnapshot {
 		if match := headerPattern.FindStringSubmatch(line); match != nil {
 			level := len(match[1])
 			headerType := "text"
-			if level == 1 {
+			switch {
+			case level == 1:
 				headerType = "h1"
-			} else if level == 2 {
+			case level == 2:
 				headerType = "h2"
-			} else if level >= 3 {
+			case level >= 3:
 				headerType = "h3"
 			}
 			snapshots = append(snapshots, createParagraphSnapshot(blockID, headerType, match[2]))
@@ -480,23 +481,6 @@ func parseMultilineMarkdown(text, baseID string) []BlockSnapshot {
 	}
 
 	return snapshots
-}
-
-func getBlockSuiteFlavour(blockType string) string {
-	switch blockType {
-	case "text", "h1", "h2", "h3", "quote":
-		return "affine:paragraph"
-	case "checkbox", "list-item":
-		return "affine:list"
-	case "divider":
-		return "affine:divider"
-	case "image":
-		return "affine:image"
-	case "video", "attachment":
-		return "affine:paragraph"
-	default:
-		return "affine:paragraph"
-	}
 }
 
 var (

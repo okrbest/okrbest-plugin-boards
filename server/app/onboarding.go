@@ -14,11 +14,11 @@ const (
 	KeyOnboardingTourCategory = "tourCategory"
 	KeyOnboardingTourStep     = "onboardingTourStep"
 
-	ValueOnboardingFirstStep    = "0"
-	// ValueTourCategoryOnboarding = "onboarding"
+	ValueOnboardingFirstStep = "0"
+	// ValueTourCategoryOnboarding = "onboarding".
 	ValueTourCategoryOnboarding = "1. 온보딩"
 
-	// WelcomeBoardTitle = "Welcome to Boards!"
+	// WelcomeBoardTitle = "Welcome to Boards!".
 	WelcomeBoardTitle = "Boards에 오신 것을 환영합니다!"
 )
 
