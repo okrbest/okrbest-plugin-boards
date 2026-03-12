@@ -44,11 +44,6 @@ exports[`components/viewHeader/viewHeader return viewHeader 1`] = `
           >
             view title
           </span>
-          <span
-            class="ViewTab__arrow"
-          >
-            ▲
-          </span>
         </div>
       </div>
       <div
@@ -229,11 +224,6 @@ exports[`components/viewHeader/viewHeader return viewHeader readonly 1`] = `
           >
             view title
           </span>
-          <span
-            class="ViewTab__arrow"
-          >
-            ▲
-          </span>
         </div>
       </div>
     </div>
@@ -298,11 +288,6 @@ exports[`components/viewHeader/viewHeader return viewHeader without permissions 
             class="ViewTab__name"
           >
             view title
-          </span>
-          <span
-            class="ViewTab__arrow"
-          >
-            ▲
           </span>
         </div>
       </div>

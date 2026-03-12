@@ -43,11 +43,6 @@ const ViewTab = (props: Props): React.JSX.Element => {
             <span className='ViewTab__name'>
                 {view.title}
             </span>
-            {isActive && (
-                <span className='ViewTab__arrow'>
-                    {'▲'}
-                </span>
-            )}
         </div>
     )
 }
