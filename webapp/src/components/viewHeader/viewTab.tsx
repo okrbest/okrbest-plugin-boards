@@ -8,6 +8,7 @@ import BoardIcon from '../../widgets/icons/board'
 import TableIcon from '../../widgets/icons/table'
 import GalleryIcon from '../../widgets/icons/gallery'
 import CalendarIcon from '../../widgets/icons/calendar'
+import ChevronDown from '../../widgets/icons/chevronDown'
 
 type Props = {
     view: BoardView
@@ -43,6 +44,11 @@ const ViewTab = (props: Props): React.JSX.Element => {
             <span className='ViewTab__name'>
                 {view.title}
             </span>
+            {!props.readonly && (
+                <span className='ViewTab__chevron'>
+                    <ChevronDown/>
+                </span>
+            )}
         </div>
     )
 }

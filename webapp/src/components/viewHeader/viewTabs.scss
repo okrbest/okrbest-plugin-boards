@@ -49,6 +49,27 @@
         line-height: 20px;
     }
 
+    &__chevron {
+        display: flex;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        margin-left: -2px;
+
+        .Icon {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    &:hover &__chevron {
+        opacity: 1;
+    }
+
+    &--active &__chevron {
+        opacity: 1;
+    }
+
     &__editable {
         .Editable {
             font-size: 14px;
