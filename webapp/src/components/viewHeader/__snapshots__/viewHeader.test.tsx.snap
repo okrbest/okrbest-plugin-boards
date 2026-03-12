@@ -50,15 +50,9 @@ exports[`components/viewHeader/viewHeader return viewHeader 1`] = `
         class="ViewTabs__addMenu"
       >
         <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
+          class="ViewTabs__addButton"
         >
-          <div
-            class="ViewTabs__addButton"
-          >
-            +
-          </div>
+          +
         </div>
       </div>
     </div>

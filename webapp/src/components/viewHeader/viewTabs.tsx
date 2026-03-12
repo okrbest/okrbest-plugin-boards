@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback, useRef} from 'react'
+import React, {useState, useCallback, useRef, useEffect} from 'react'
 import {useIntl} from 'react-intl'
 import {useNavigate, useParams, useLocation} from 'react-router-dom'
 
@@ -18,8 +18,6 @@ import BoardIcon from '../../widgets/icons/board'
 import TableIcon from '../../widgets/icons/table'
 import GalleryIcon from '../../widgets/icons/gallery'
 import CalendarIcon from '../../widgets/icons/calendar'
-import Menu from '../../widgets/menu'
-import MenuWrapper from '../../widgets/menuWrapper'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import ViewTab from './viewTab'
@@ -43,9 +41,23 @@ const ViewTabs = (props: Props): React.JSX.Element => {
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
 
     const [menuOpen, setMenuOpen] = useState(false)
+    const [addMenuOpen, setAddMenuOpen] = useState(false)
     const [isRenaming, setIsRenaming] = useState(false)
     const [viewTitle, setViewTitle] = useState(activeView.title)
     const editableRef = useRef<{focus: (selectAll?: boolean) => void}>(null)
+    const addMenuRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+                setAddMenuOpen(false)
+            }
+        }
+        if (addMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [addMenuOpen])
 
     const showView = useCallback((viewId: string) => {
         let newPath = Utils.buildBoardPath(location.pathname, {...params, viewId: viewId || ''})
@@ -154,6 +166,7 @@ const ViewTabs = (props: Props): React.JSX.Element => {
                 showView(oldViewId)
             },
         )
+        setAddMenuOpen(false)
     }, [board, activeView.id, intl, showView])
 
     return (
@@ -202,42 +215,52 @@ const ViewTabs = (props: Props): React.JSX.Element => {
             })}
             {!readonly && (
                 <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
-                    <div className='ViewTabs__addMenu'>
-                        <MenuWrapper>
-                            <div className='ViewTabs__addButton'>
-                                {'+'}
-                            </div>
-                            <Menu>
-                                <Menu.Label>
-                                    <b>{intl.formatMessage({id: 'View.AddView', defaultMessage: 'Add view'})}</b>
-                                </Menu.Label>
-                                <Menu.Separator/>
-                                <Menu.Text
-                                    id='board'
-                                    name={intl.formatMessage({id: 'View.Board', defaultMessage: 'Board'})}
-                                    icon={<BoardIcon/>}
-                                    onClick={() => handleAddView('board')}
-                                />
-                                <Menu.Text
-                                    id='table'
-                                    name={intl.formatMessage({id: 'View.Table', defaultMessage: 'Table'})}
-                                    icon={<TableIcon/>}
+                    <div
+                        className='ViewTabs__addMenu'
+                        ref={addMenuRef}
+                    >
+                        <div
+                            className='ViewTabs__addButton'
+                            onClick={() => setAddMenuOpen((prev) => !prev)}
+                        >
+                            {'+'}
+                        </div>
+                        {addMenuOpen && (
+                            <div className='AddViewMenu'>
+                                <div className='AddViewMenu__header'>
+                                    {intl.formatMessage({id: 'View.NewView', defaultMessage: 'Add new view'})}
+                                </div>
+                                <div className='AddViewMenu__separator'/>
+                                <div
+                                    className='AddViewMenu__item'
                                     onClick={() => handleAddView('table')}
-                                />
-                                <Menu.Text
-                                    id='gallery'
-                                    name={intl.formatMessage({id: 'View.Gallery', defaultMessage: 'Gallery'})}
-                                    icon={<GalleryIcon/>}
+                                >
+                                    <span className='AddViewMenu__icon'><TableIcon/></span>
+                                    <span>{intl.formatMessage({id: 'View.Table', defaultMessage: 'Table'})}</span>
+                                </div>
+                                <div
+                                    className='AddViewMenu__item'
+                                    onClick={() => handleAddView('board')}
+                                >
+                                    <span className='AddViewMenu__icon'><BoardIcon/></span>
+                                    <span>{intl.formatMessage({id: 'View.Board', defaultMessage: 'Board'})}</span>
+                                </div>
+                                <div
+                                    className='AddViewMenu__item'
                                     onClick={() => handleAddView('gallery')}
-                                />
-                                <Menu.Text
-                                    id='calendar'
-                                    name='Calendar'
-                                    icon={<CalendarIcon/>}
+                                >
+                                    <span className='AddViewMenu__icon'><GalleryIcon/></span>
+                                    <span>{intl.formatMessage({id: 'View.Gallery', defaultMessage: 'Gallery'})}</span>
+                                </div>
+                                <div
+                                    className='AddViewMenu__item'
                                     onClick={() => handleAddView('calendar')}
-                                />
-                            </Menu>
-                        </MenuWrapper>
+                                >
+                                    <span className='AddViewMenu__icon'><CalendarIcon/></span>
+                                    <span>{intl.formatMessage({id: 'View.Calendar', defaultMessage: 'Calendar'})}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </BoardPermissionGate>
             )}

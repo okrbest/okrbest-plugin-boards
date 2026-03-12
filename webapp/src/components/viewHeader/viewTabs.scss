@@ -91,6 +91,60 @@
     flex-shrink: 0;
 }
 
+.AddViewMenu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 15;
+    min-width: 240px;
+    background: rgb(var(--center-channel-bg-rgb));
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: 16px 0 8px;
+
+    &__header {
+        padding: 0 20px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    }
+
+    &__separator {
+        height: 1px;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        margin: 0 0 8px;
+    }
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 15px;
+        color: rgb(var(--center-channel-color-rgb));
+        transition: background 0.12s ease;
+
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.06);
+        }
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+
+        .Icon {
+            width: 20px;
+            height: 20px;
+        }
+    }
+}
+
 .ViewTabMenu {
     position: absolute;
     top: 100%;
