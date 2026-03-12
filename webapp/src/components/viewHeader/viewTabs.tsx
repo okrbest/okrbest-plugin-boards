@@ -86,10 +86,10 @@ const ViewTabs = (props: Props): React.JSX.Element => {
 
     useEffect(() => {
         if (isRenaming) {
-            // Editable이 DOM에 마운트된 후 포커스 + 전체 선택
-            requestAnimationFrame(() => {
+            const frameId = requestAnimationFrame(() => {
                 editableRef.current?.focus(true)
             })
+            return () => cancelAnimationFrame(frameId)
         }
     }, [isRenaming])
 
