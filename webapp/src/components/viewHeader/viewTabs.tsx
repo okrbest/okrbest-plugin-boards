@@ -82,8 +82,16 @@ const ViewTabs = (props: Props): React.JSX.Element => {
         setViewTitle(activeView.title)
         setIsRenaming(true)
         setMenuOpen(false)
-        setTimeout(() => editableRef.current?.focus(true), 50)
     }, [activeView.title])
+
+    useEffect(() => {
+        if (isRenaming) {
+            // Editable이 DOM에 마운트된 후 포커스 + 전체 선택
+            requestAnimationFrame(() => {
+                editableRef.current?.focus(true)
+            })
+        }
+    }, [isRenaming])
 
     const handleRenameSave = useCallback(() => {
         mutator.changeBlockTitle(activeView.boardId, activeView.id, activeView.title, viewTitle)

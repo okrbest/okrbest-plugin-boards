@@ -74,13 +74,20 @@
         .Editable {
             font-size: 14px;
             font-weight: 600;
-            padding: 0;
-            margin: 0;
-            border: none;
-            background: transparent;
+            padding: 2px 6px;
+            margin: -2px -6px;
+            border: 1.5px solid rgb(var(--button-bg-rgb));
+            border-radius: 4px;
+            background: rgb(var(--center-channel-bg-rgb));
             color: rgb(var(--button-bg-rgb));
             width: auto;
             min-width: 40px;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(var(--button-bg-rgb), 0.16);
+
+            &::selection {
+                background: rgba(var(--button-bg-rgb), 0.2);
+            }
         }
     }
 }
