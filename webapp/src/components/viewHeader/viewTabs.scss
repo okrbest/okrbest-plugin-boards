@@ -1,0 +1,144 @@
+.ViewTabs {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    position: relative;
+
+    &::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(var(--center-channel-color-rgb), 0.2);
+        border-radius: 2px;
+    }
+}
+
+.ViewTab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: background 0.15s ease;
+    user-select: none;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    &--active {
+        color: rgb(var(--button-bg-rgb));
+        font-weight: 600;
+        background: rgba(var(--button-bg-rgb), 0.08);
+        border-bottom-color: rgb(var(--button-bg-rgb));
+        border-radius: 6px 6px 0 0;
+
+        &:hover {
+            background: rgba(var(--button-bg-rgb), 0.12);
+        }
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+
+        .Icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    &__name {
+        font-size: 14px;
+        line-height: 20px;
+    }
+
+    &__arrow {
+        font-size: 10px;
+        margin-left: 2px;
+    }
+
+    &__editable {
+        .Editable {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 0;
+            margin: 0;
+            border: none;
+            background: transparent;
+            color: rgb(var(--button-bg-rgb));
+            width: auto;
+            min-width: 40px;
+        }
+    }
+}
+
+.ViewTabs__addButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 8px;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+}
+
+.ViewTabs__addMenu {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.ViewTabMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 15;
+    min-width: 180px;
+    background: rgb(var(--center-channel-bg-rgb));
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    padding: 6px 0;
+    margin-top: 4px;
+
+    &__item {
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        color: rgb(var(--center-channel-color-rgb));
+
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        &--danger {
+            color: rgb(var(--error-text-color-rgb, 210, 75, 78));
+
+            &:hover {
+                background: rgba(var(--error-text-color-rgb, 210, 75, 78), 0.08);
+            }
+        }
+    }
+}
