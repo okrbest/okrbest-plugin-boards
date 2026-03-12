@@ -2,19 +2,8 @@
     display: flex;
     align-items: center;
     gap: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: thin;
+    overflow: visible;
     position: relative;
-
-    &::-webkit-scrollbar {
-        height: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: rgba(var(--center-channel-color-rgb), 0.2);
-        border-radius: 2px;
-    }
 }
 
 .ViewTab {
