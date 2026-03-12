@@ -230,7 +230,6 @@ const ViewTabs = (props: Props): React.JSX.Element => {
                                 <div className='AddViewMenu__header'>
                                     {intl.formatMessage({id: 'View.NewView', defaultMessage: 'Add new view'})}
                                 </div>
-                                <div className='AddViewMenu__separator'/>
                                 <div
                                     className='AddViewMenu__item'
                                     onClick={() => handleAddView('table')}
