@@ -21,6 +21,10 @@
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
+
+        .ViewTab__chevron {
+            opacity: 1;
+        }
     }
 
     &--active {
@@ -31,6 +35,10 @@
 
         &:hover {
             background: rgba(var(--button-bg-rgb), 0.12);
+        }
+
+        .ViewTab__chevron {
+            opacity: 1;
         }
     }
 
@@ -60,14 +68,6 @@
             width: 14px;
             height: 14px;
         }
-    }
-
-    &:hover &__chevron {
-        opacity: 1;
-    }
-
-    &--active &__chevron {
-        opacity: 1;
     }
 
     &__editable {
