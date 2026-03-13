@@ -2,18 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react'
-import {FormattedMessage, useIntl} from 'react-intl'
+import {FormattedMessage} from 'react-intl'
 
-import ViewMenu from '../../components/viewMenu'
-import mutator from '../../mutator'
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
 import {Card} from '../../blocks/card'
 import Button from '../../widgets/buttons/button'
-import IconButton from '../../widgets/buttons/iconButton'
-import DropdownIcon from '../../widgets/icons/dropdown'
-import MenuWrapper from '../../widgets/menuWrapper'
-import Editable from '../../widgets/editable'
 
 import ModalWrapper from '../modalWrapper'
 
@@ -35,6 +29,7 @@ import AddViewTourStep from '../onboardingTour/addView/add_view'
 import {getCurrentCard} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
+import ViewTabs from './viewTabs'
 import NewCardButton from './newCardButton'
 import ViewHeaderPropertiesMenu from './viewHeaderPropertiesMenu'
 import ViewHeaderGroupByMenu from './viewHeaderGroupByMenu'
@@ -63,7 +58,6 @@ type Props = {
 const ViewHeader = (props: Props) => {
     const [showFilter, setShowFilter] = useState(false)
     const [lockFilterOnClose, setLockFilterOnClose] = useState(false)
-    const intl = useIntl()
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
 
     const {board, activeView, views, groupByProperty, cards, dateDisplayProperty} = props
@@ -71,12 +65,6 @@ const ViewHeader = (props: Props) => {
     const withGroupBy = activeView.fields.viewType === 'board' || activeView.fields.viewType === 'table'
     const withDisplayBy = activeView.fields.viewType === 'calendar'
     const withSortBy = activeView.fields.viewType !== 'calendar'
-
-    const [viewTitle, setViewTitle] = useState(activeView.title)
-
-    useEffect(() => {
-        setViewTitle(activeView.title)
-    }, [activeView.title])
 
     const hasFilter = activeView.fields.filter && activeView.fields.filter.filters?.length > 0
 
@@ -116,36 +104,13 @@ const ViewHeader = (props: Props) => {
 
     return (
         <div className='ViewHeader'>
-            <div className='viewSelector'>
-                <Editable
-                    value={viewTitle}
-                    placeholderText='Untitled View'
-                    onSave={(): void => {
-                        mutator.changeBlockTitle(activeView.boardId, activeView.id, activeView.title, viewTitle)
-                    }}
-                    onCancel={(): void => {
-                        setViewTitle(activeView.title)
-                    }}
-                    onChange={setViewTitle}
-                    saveOnEsc={true}
-                    readonly={props.readonly || !canEditBoardProperties}
-                    spellCheck={true}
-                    autoExpand={false}
-                />
-                {!props.readonly && (<div>
-                    <MenuWrapper label={intl.formatMessage({id: 'ViewHeader.view-menu', defaultMessage: 'View menu'})}>
-                        <IconButton icon={<DropdownIcon/>}/>
-                        <ViewMenu
-                            board={board}
-                            activeView={activeView}
-                            views={views}
-                            readonly={props.readonly || !canEditBoardProperties}
-                        />
-                    </MenuWrapper>
-                    {showAddViewTourStep && <AddViewTourStep/>}
-                </div>)}
-
-            </div>
+            <ViewTabs
+                board={board}
+                activeView={activeView}
+                views={views}
+                readonly={props.readonly}
+            />
+            {showAddViewTourStep && <AddViewTourStep/>}
 
             <div className='octo-spacer'/>
 
