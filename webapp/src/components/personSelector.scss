@@ -1,4 +1,6 @@
-.Person {
+/* Person(단일), MultiPerson(다중) 공통 스타일 */
+.Person,
+.MultiPerson {
     display: flex;
     align-items: center;
     border-radius: 4px;
@@ -11,7 +13,8 @@
         min-width: unset;
     }
 
-    .Person-item {
+    .Person-item,
+    .MultiPerson-item {
         display: flex;
         align-items: center;
 
@@ -97,7 +100,8 @@
             color: rgba(var(--center-channel-color-rgb), 1);
         }
 
-        .Person-item {
+        .Person-item,
+        .MultiPerson-item {
             img {
                 margin-right: 12px;
             }
