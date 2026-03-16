@@ -5,13 +5,17 @@ import React, {useState, useMemo, useCallback, useEffect, useRef} from 'react'
 import {useIntl} from 'react-intl'
 import {useSelector} from 'react-redux'
 
+import {useAppSelector} from '../../../store/hooks'
 import {Board, IPropertyTemplate, IPropertyOption} from '../../../blocks/board'
 import {BoardView} from '../../../blocks/boardView'
 import {FilterClause, FilterCondition, createFilterClause} from '../../../blocks/filterClause'
 import {createFilterGroup, isAFilterGroupInstance} from '../../../blocks/filterGroup'
+import {Card} from '../../../blocks/card'
 import mutator from '../../../mutator'
 import propsRegistry from '../../../properties'
 import {getBoardUsersList} from '../../../store/users'
+import {getCards} from '../../../store/cards'
+import octoClient from '../../../octoClient'
 import Label from '../../../widgets/label'
 
 import MomentLocaleUtils from 'react-day-picker/moment'
@@ -85,6 +89,14 @@ const FilterValuePanel = (props: Props): React.JSX.Element => {
     case 'date':
         return (
             <DateFilterPanel
+                board={board}
+                activeView={activeView}
+                propertyTemplate={propertyTemplate}
+            />
+        )
+    case 'card':
+        return (
+            <CardFilterPanel
                 board={board}
                 activeView={activeView}
                 propertyTemplate={propertyTemplate}
@@ -287,6 +299,290 @@ const PersonFilterPanel = (props: PersonFilterPanelProps): React.JSX.Element => 
                         {intl.formatMessage({
                             id: 'FilterPanel.no-matching-users',
                             defaultMessage: 'No matching users',
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ---- Card Filter (card - linked cards) ----
+
+interface ReferencedCard {
+    id: string
+    title: string
+    boardId: string
+}
+
+function parseReferencedCards(propertyValue: string | string[] | undefined): ReferencedCard[] {
+    if (!propertyValue || typeof propertyValue !== 'string') {
+        return []
+    }
+    if (propertyValue.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(propertyValue)
+            const boardId = parsed.boardId || ''
+            const cards = parsed.cards || []
+            return cards.map((c: {id: string, title: string}) => ({
+                id: c.id,
+                title: c.title || 'Untitled',
+                boardId,
+            })).filter((c: ReferencedCard) => c.id)
+        } catch {
+            return []
+        }
+    }
+    if (propertyValue.includes('|')) {
+        const [boardId, cardsStr] = propertyValue.split('|')
+        if (!cardsStr || !boardId) {
+            return []
+        }
+        return cardsStr.split(',').map((cardStr) => {
+            const colonIndex = cardStr.indexOf(':')
+            if (colonIndex === -1) {
+                return {id: cardStr, title: 'Untitled', boardId}
+            }
+            return {
+                id: cardStr.substring(0, colonIndex),
+                title: cardStr.substring(colonIndex + 1) || 'Untitled',
+                boardId,
+            }
+        }).filter((c) => c.id)
+    }
+    const parts = propertyValue.split(':')
+    if (parts.length >= 3) {
+        return [{
+            id: parts[1],
+            title: parts.slice(2).join(':'),
+            boardId: parts[0],
+        }]
+    }
+    return []
+}
+
+function extractCardIdFromFilterValue(filterValue: string): string {
+    if (filterValue.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(filterValue)
+            return parsed.id || ''
+        } catch {
+            return ''
+        }
+    }
+    const colonIndex = filterValue.indexOf(':')
+    return colonIndex === -1 ? filterValue : filterValue.substring(0, colonIndex)
+}
+
+type CardFilterPanelProps = {
+    board: Board
+    activeView: BoardView
+    propertyTemplate: IPropertyTemplate
+}
+
+const CardFilterPanel = (props: CardFilterPanelProps): React.JSX.Element => {
+    const {board, activeView, propertyTemplate} = props
+    const intl = useIntl()
+    const [searchText, setSearchText] = useState('')
+    const allCards = useAppSelector(getCards)
+    const [referencedCardsMap, setReferencedCardsMap] = useState<Map<string, ReferencedCard>>(new Map())
+    const [loading, setLoading] = useState(false)
+
+    const existingClause = useMemo(() => {
+        const clause = findClauseForProperty(activeView, propertyTemplate.id)
+        if (clause && clause.condition !== 'includes' && clause.condition !== 'notIncludes') {
+            return undefined
+        }
+        return clause
+    }, [activeView, propertyTemplate.id])
+
+    const selectedCardIds = useMemo(() => {
+        return (existingClause?.values || []).map(extractCardIdFromFilterValue).filter(Boolean)
+    }, [existingClause])
+
+    const collectedCards = useMemo(() => {
+        const cardsMap = new Map<string, ReferencedCard>()
+        Object.values(allCards)
+            .filter((c: Card) => c.boardId === board.id)
+            .forEach((card: Card) => {
+                const propValue = card.fields.properties[propertyTemplate.id]
+                const refs = parseReferencedCards(propValue as string)
+                refs.forEach((ref) => {
+                    if (!cardsMap.has(ref.id)) {
+                        cardsMap.set(ref.id, ref)
+                    }
+                })
+            })
+        return cardsMap
+    }, [allCards, board.id, propertyTemplate.id])
+
+    const fetchCardDetails = useCallback(async () => {
+        if (collectedCards.size === 0) {
+            return
+        }
+        setLoading(true)
+        const boardGroups = new Map<string, string[]>()
+        collectedCards.forEach((card) => {
+            const cardIds = boardGroups.get(card.boardId) || []
+            cardIds.push(card.id)
+            boardGroups.set(card.boardId, cardIds)
+        })
+        const updatedMap = new Map<string, ReferencedCard>()
+        try {
+            for (const [boardId, cardIds] of boardGroups) {
+                try {
+                    const blocks = await octoClient.getAllBlocks(boardId)
+                    const cardBlocks = blocks.filter((b) => b.type === 'card') as Card[]
+                    cardIds.forEach((cardId) => {
+                        const foundCard = cardBlocks.find((c) => c.id === cardId)
+                        if (foundCard) {
+                            updatedMap.set(cardId, {
+                                id: cardId,
+                                title: foundCard.title || 'Untitled',
+                                boardId,
+                            })
+                        } else {
+                            const existing = collectedCards.get(cardId)
+                            if (existing) {
+                                updatedMap.set(cardId, existing)
+                            }
+                        }
+                    })
+                } catch {
+                    cardIds.forEach((cardId) => {
+                        const existing = collectedCards.get(cardId)
+                        if (existing) {
+                            updatedMap.set(cardId, existing)
+                        }
+                    })
+                }
+            }
+        } finally {
+            setReferencedCardsMap(updatedMap.size > 0 ? updatedMap : collectedCards)
+            setLoading(false)
+        }
+    }, [collectedCards])
+
+    useEffect(() => {
+        if (collectedCards.size > 0) {
+            fetchCardDetails()
+        } else {
+            setReferencedCardsMap(new Map())
+        }
+    }, [collectedCards, fetchCardDetails])
+
+    const availableCards = useMemo(() => {
+        return Array.from(referencedCardsMap.size > 0 ? referencedCardsMap.values() : collectedCards.values())
+            .sort((a, b) => a.title.localeCompare(b.title))
+    }, [referencedCardsMap, collectedCards])
+
+    const filteredCards = useMemo(() => {
+        if (!searchText) {
+            return availableCards
+        }
+        const lower = searchText.toLowerCase()
+        return availableCards.filter((c) => c.title.toLowerCase().includes(lower))
+    }, [availableCards, searchText])
+
+    const handleToggleCard = useCallback((card: ReferencedCard) => {
+        const filterGroup = createFilterGroup(activeView.fields.filter)
+        const clauseIndex = findClauseIndex(filterGroup.filters, propertyTemplate.id)
+
+        const cardValue = JSON.stringify({id: card.id, title: card.title})
+
+        if (clauseIndex >= 0) {
+            const clause = filterGroup.filters[clauseIndex] as FilterClause
+            const updatedClause = createFilterClause(clause)
+            updatedClause.condition = 'includes'
+
+            if (selectedCardIds.includes(card.id)) {
+                updatedClause.values = updatedClause.values.filter((v) => extractCardIdFromFilterValue(v) !== card.id)
+                if (updatedClause.values.length === 0) {
+                    filterGroup.filters.splice(clauseIndex, 1)
+                } else {
+                    filterGroup.filters[clauseIndex] = updatedClause
+                }
+            } else {
+                updatedClause.values.push(cardValue)
+                filterGroup.filters[clauseIndex] = updatedClause
+            }
+        } else {
+            const newClause = createFilterClause()
+            newClause.propertyId = propertyTemplate.id
+            newClause.condition = 'includes'
+            newClause.values = [cardValue]
+            filterGroup.filters.push(newClause)
+        }
+
+        mutator.changeViewFilter(board.id, activeView.id, activeView.fields.filter, filterGroup)
+    }, [board.id, activeView, propertyTemplate.id, selectedCardIds])
+
+    if (loading && availableCards.length === 0) {
+        return (
+            <div className='FilterValuePanel'>
+                <div className='FilterValuePanel__empty'>
+                    {intl.formatMessage({
+                        id: 'CardFilterValue.loading',
+                        defaultMessage: 'Loading...',
+                    })}
+                </div>
+            </div>
+        )
+    }
+
+    if (availableCards.length === 0) {
+        return (
+            <div className='FilterValuePanel'>
+                <div className='FilterValuePanel__empty'>
+                    {intl.formatMessage({
+                        id: 'CardFilterValue.noCards',
+                        defaultMessage: 'No cards referenced',
+                    })}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className='FilterValuePanel'>
+            <div className='FilterValuePanel__search'>
+                <input
+                    type='text'
+                    placeholder={intl.formatMessage({
+                        id: 'FilterPanel.search-cards',
+                        defaultMessage: 'Search cards...',
+                    })}
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                />
+            </div>
+            <div className='FilterValuePanel__list'>
+                {filteredCards.map((card) => (
+                    <div
+                        key={card.id}
+                        className='FilterValuePanel__option'
+                        onClick={() => handleToggleCard(card)}
+                        role='checkbox'
+                        aria-checked={selectedCardIds.includes(card.id)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleToggleCard(card)
+                            }
+                        }}
+                    >
+                        <div className={`FilterValuePanel__checkbox${selectedCardIds.includes(card.id) ? ' FilterValuePanel__checkbox--checked' : ''}`}/>
+                        <span className='FilterValuePanel__option-label'>
+                            {card.title}
+                        </span>
+                    </div>
+                ))}
+                {filteredCards.length === 0 && (
+                    <div className='FilterValuePanel__empty'>
+                        {intl.formatMessage({
+                            id: 'FilterPanel.no-matching-options',
+                            defaultMessage: 'No matching options',
                         })}
                     </div>
                 )}
