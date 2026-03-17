@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback} from 'react'
+import React, {useCallback, useMemo} from 'react'
 
 import {FormattedMessage} from 'react-intl'
 
@@ -51,9 +51,25 @@ const Table = (props: Props): React.JSX.Element => {
     const canEditCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
     const dispatch = useAppDispatch()
 
+    const columnMinWidths = useMemo(() => {
+        const min: Record<string, number> = {[Constants.titleColumnId]: Constants.minColumnWidth}
+        for (const propId of activeView.fields.visiblePropertyIds) {
+            const t = board.cardProperties.find((p) => p.id === propId)?.type
+            min[propId] = (t === 'person' || t === 'multiPerson')
+                ? Constants.minPersonColumnWidth
+                : t === 'card'
+                    ? Constants.minCardColumnWidth
+                    : (t === 'date' || t === 'createdTime' || t === 'updatedTime')
+                        ? Constants.minDateColumnWidth
+                        : Constants.minColumnWidth
+        }
+        return min
+    }, [board.cardProperties, activeView.fields.visiblePropertyIds])
+
     const resizeColumn = useCallback(async (columnId: string, width: number) => {
         const columnWidths = {...activeView.fields.columnWidths}
-        const newWidth = Math.max(Constants.minColumnWidth, width)
+        const minW = columnMinWidths[columnId] ?? Constants.minColumnWidth
+        const newWidth = Math.max(minW, width)
         if (newWidth !== columnWidths[columnId]) {
             Utils.log(`Resize of column finished: prev=${columnWidths[columnId]}, new=${newWidth}`)
 
@@ -68,7 +84,7 @@ const Table = (props: Props): React.JSX.Element => {
                 dispatch(updateView(activeView))
             }
         }
-    }, [activeView])
+    }, [activeView, columnMinWidths])
 
     const hideGroup = useCallback((groupById: string): void => {
         const index: number = activeView.fields.collapsedOptionIds.indexOf(groupById)
@@ -221,6 +237,7 @@ const Table = (props: Props): React.JSX.Element => {
         <div className='Table'>
             <ColumnResizeProvider
                 columnWidths={activeView.fields.columnWidths}
+                columnMinWidths={columnMinWidths}
                 onResizeColumn={resizeColumn}
             >
                 <div className='octo-table-body'>
