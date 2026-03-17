@@ -26,25 +26,36 @@ export function useColumnResize(): ColumnResizeContextType {
 export type ColumnResizeProviderProps = {
     children: ReactNode
     columnWidths: Record<string, number>
+    /** 열별 최소 너비 (미지정 시 minColumnWidth) */
+    columnMinWidths?: Record<string, number>
     onResizeColumn: (columnId: string, width: number) => void
 }
 
-const columnWidth = (columnId: string, columnWidths: Record<string, number>, offset: number): string => {
-    return `${Math.max(Constants.minColumnWidth, (columnWidths[columnId] || 0) + offset)}px`
+const getMinWidth = (columnId: string, columnMinWidths?: Record<string, number>): number =>
+    columnMinWidths?.[columnId] ?? Constants.minColumnWidth
+
+const columnWidth = (
+    columnId: string,
+    columnWidths: Record<string, number>,
+    offset: number,
+    columnMinWidths?: Record<string, number>
+): string => {
+    const minW = getMinWidth(columnId, columnMinWidths)
+    return `${Math.max(minW, (columnWidths[columnId] || 0) + offset)}px`
 }
 
 export const ColumnResizeProvider = (props: ColumnResizeProviderProps): ReactElement => {
-    const {children, columnWidths, onResizeColumn} = props
+    const {children, columnWidths, columnMinWidths, onResizeColumn} = props
 
     type ElementsMap = Map<string, HTMLDivElement>
     const columns = useMemo(() => new Map<string, ElementsMap>(), [])
 
     const updateWidth = useCallback((columnId: string, elements: ElementsMap, offset: number) => {
-        const width = columnWidth(columnId, columnWidths, offset)
+        const width = columnWidth(columnId, columnWidths, offset, columnMinWidths)
         for (const element of elements.values()) {
             element.style.width = width
         }
-    }, [columnWidths])
+    }, [columnWidths, columnMinWidths])
 
     const contextValue = useMemo((): ColumnResizeContextType => ({
         updateRef: (cardId, columnId, element) => {
@@ -68,7 +79,8 @@ export const ColumnResizeProvider = (props: ColumnResizeProviderProps): ReactEle
             return undefined
         },
         width: (columnId) => {
-            return Math.max(Constants.minColumnWidth, (columnWidths[columnId] || 0))
+            const minW = getMinWidth(columnId, columnMinWidths)
+            return Math.max(minW, (columnWidths[columnId] || 0))
         },
         updateOffset: (columnId, offset) => {
             const elements = columns.get(columnId)
@@ -79,7 +91,7 @@ export const ColumnResizeProvider = (props: ColumnResizeProviderProps): ReactEle
         updateWidth: (columnId, width) => {
             onResizeColumn(columnId, width)
         },
-    }), [columnWidths, onResizeColumn])
+    }), [columnWidths, columnMinWidths, onResizeColumn])
 
     return (
         <ColumnResizeContext.Provider value={contextValue}>

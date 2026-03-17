@@ -32,6 +32,12 @@ class Constants {
     }
 
     static readonly minColumnWidth = 100
+    /** Person/MultiPerson: 아바타+이름 pill 표시용 */
+    static readonly minPersonColumnWidth = 150
+    /** Card: 카드 태그 표시용 */
+    static readonly minCardColumnWidth = 150
+    /** Date: "YYYY년 MM월 DD일" 형식용 */
+    static readonly minDateColumnWidth = 130
     static readonly defaultTitleColumnWidth = 280
     static readonly tableHeaderId = '__header'
     static readonly tableCalculationId = '__calculation'

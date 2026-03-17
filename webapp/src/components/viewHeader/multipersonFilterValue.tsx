@@ -17,8 +17,6 @@ import {createFilterGroup} from '../../blocks/filterGroup'
 import PersonSelector from '../personSelector'
 import {IUser} from '../../user'
 
-import './multiperson.scss'
-
 type Props = {
     view: BoardView
     filter: FilterClause
