@@ -43,7 +43,7 @@ const NewCardButtonTemplateItem = (props: Props) => {
                 props.addCardFromTemplate(cardTemplate.id)
             }}
             rightIcon={
-                <MenuWrapper stopPropagationOnToggle={true}>
+                <MenuWrapper stopPropagationOnToggle={true} usePortal={true} menuPosition='left'>
                     <IconButton icon={<OptionsIcon/>}/>
                     <Menu position='left'>
                         <Menu.Text

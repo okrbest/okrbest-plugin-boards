@@ -16,7 +16,7 @@ import {CardFilter} from '../cardFilter'
 import mutator from '../mutator'
 import {Utils} from '../utils'
 import {UserSettings} from '../userSettings'
-import {getCurrentCard, addCard as addCardAction, addTemplate as addTemplateAction, showCardHiddenWarning} from '../store/cards'
+import {getCurrentCard, getCurrentBoardTemplates, addCard as addCardAction, addTemplate as addTemplateAction, showCardHiddenWarning} from '../store/cards'
 import {getCardLimitTimestamp} from '../store/limits'
 import {updateView} from '../store/views'
 import {getVisibleAndHiddenGroups} from '../boardUtils'
@@ -87,6 +87,7 @@ const CenterPanel = (props: Props) => {
     const cardLimitTimestamp = useAppSelector(getCardLimitTimestamp)
     const me = useAppSelector(getMe)
     const currentCard = useAppSelector(getCurrentCard)
+    const cardTemplates = useAppSelector(getCurrentBoardTemplates)
     const boardUsers = useAppSelector(getBoardUsers)
     const dispatch = useAppDispatch()
 
@@ -262,8 +263,9 @@ const CenterPanel = (props: Props) => {
         const {activeView, board, groupByProperty} = props
         
         // 기본 템플릿이 설정되어 있고 실제로 템플릿 카드가 존재하는지 확인
+        // (템플릿은 state.cards.templates에 있으므로 cardTemplates에서 조회)
         if (activeView.fields.defaultTemplateId) {
-            const templateCard = props.cards.find((card) => card.id === activeView.fields.defaultTemplateId && card.fields.isTemplate)
+            const templateCard = cardTemplates.find((card) => card.id === activeView.fields.defaultTemplateId)
             if (templateCard) {
                 return addCardFromTemplate(activeView.fields.defaultTemplateId, groupByOptionId)
             }
@@ -338,7 +340,7 @@ const CenterPanel = (props: Props) => {
             dispatch(showCardHiddenWarning(cardLimitTimestamp > 0))
             await mutator.changeViewCardOrder(board.id, activeView.id, activeView.fields.cardOrder, [...activeView.fields.cardOrder, newCard.id], 'add-card')
         })
-    }, [props.activeView, props.board.id, props.board.cardProperties, props.groupByProperty, showCard, addCardFromTemplate, dispatch, cardLimitTimestamp, setCardIdToFocusOnRender, getGroupByValue])
+    }, [props.activeView, props.board.id, props.board.cardProperties, props.groupByProperty, showCard, addCardFromTemplate, dispatch, cardLimitTimestamp, setCardIdToFocusOnRender, getGroupByValue, cardTemplates])
 
     const addEmptyCardAndShow = useCallback(() => addCard('', true), [addCard])
 

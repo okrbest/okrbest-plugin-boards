@@ -3,7 +3,6 @@
 
 import React, {useState, useMemo, useCallback, useEffect, useRef} from 'react'
 import {useIntl} from 'react-intl'
-import {useSelector} from 'react-redux'
 
 import {useAppSelector} from '../../../store/hooks'
 import {Board, IPropertyTemplate, IPropertyOption} from '../../../blocks/board'
@@ -227,7 +226,7 @@ type PersonFilterPanelProps = {
 
 const PersonFilterPanel = (props: PersonFilterPanelProps): React.JSX.Element => {
     const {board, activeView, propertyTemplate} = props
-    const boardUsers = useSelector(getBoardUsersList)
+    const boardUsers = useAppSelector(getBoardUsersList)
     const intl = useIntl()
     const [searchText, setSearchText] = useState('')
 

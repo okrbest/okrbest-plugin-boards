@@ -37,7 +37,7 @@ const EmptyCardButton = (props: Props) => {
                 props.addCard()
             }}
             rightIcon={
-                <MenuWrapper stopPropagationOnToggle={true}>
+                <MenuWrapper stopPropagationOnToggle={true} usePortal={true} menuPosition='left'>
                     <IconButton icon={<OptionsIcon/>}/>
                     <Menu position='left'>
                         <Menu.Text

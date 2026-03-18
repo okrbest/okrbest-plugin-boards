@@ -43,7 +43,7 @@ const ViewTab = (props: Props): React.JSX.Element => {
             <span className='ViewTab__name'>
                 {view.title}
             </span>
-            {!props.readonly && (
+            {isActive && !props.readonly && (
                 <span className='ViewTab__chevron'>
                     <svg
                         width='14'
