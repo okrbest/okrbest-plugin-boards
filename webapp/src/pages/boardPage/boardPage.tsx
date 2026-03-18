@@ -227,6 +227,10 @@ const BoardPage = (props: Props): React.JSX.Element => {
             return
         }
 
+        // Ensure board/template is in Redux state (critical for templates, esp. global templates
+        // which are not included in initialLoad's getTeamTemplates)
+        dispatch(updateBoards([board]))
+
         const result: any = await dispatch(loadBoardData(boardId))
         if (result.payload.blocks.length === 0 && myUser.id) {
             joinBoard(myUser, boardTeamId, boardId, false)
@@ -242,25 +246,27 @@ const BoardPage = (props: Props): React.JSX.Element => {
     }, [])
 
     useEffect(() => {
-        dispatch(loadAction(params.boardId))
+        const run = async () => {
+            await dispatch(loadAction(params.boardId))
 
-        if (params.boardId) {
-            dispatch(setCurrentBoard(params.boardId))
+            if (params.boardId) {
+                dispatch(setCurrentBoard(params.boardId))
 
-            if (viewId && viewId !== Constants.globalTeamId) {
-                dispatch(setCurrentView(viewId))
-                if (params.boardId) {
-                    UserSettings.setLastViewId(params.boardId, viewId)
+                if (viewId && viewId !== Constants.globalTeamId) {
+                    dispatch(setCurrentView(viewId))
+                    if (params.boardId) {
+                        UserSettings.setLastViewId(params.boardId, viewId)
+                    }
                 }
             }
-        }
-    }, [teamId, params.boardId, viewId, me?.id, dispatch, loadAction])
 
-    useEffect(() => {
-        if (params.boardId && !props.readonly && me) {
-            loadOrJoinBoard(me, teamId, params.boardId)
+            // Run after initialLoad so fetched board/template is not overwritten by initialLoad.fulfilled
+            if (params.boardId && !props.readonly && me) {
+                await loadOrJoinBoard(me, teamId, params.boardId)
+            }
         }
-    }, [teamId, params.boardId, me?.id, props.readonly, loadOrJoinBoard])
+        run()
+    }, [teamId, params.boardId, viewId, me?.id, dispatch, loadAction, props.readonly, loadOrJoinBoard])
 
     const handleUnhideBoard = async (boardID: string) => {
         if (!me || !category) {

@@ -48,7 +48,7 @@ const BoardTemplateSelector = (props: Props) => {
     const dispatch = useAppDispatch()
     const intl = useIntl()
     const navigate = useNavigate()
-    const params = useParams<{boardId: string, viewId?: string}>()
+    const params = useParams<{boardId: string, viewId?: string, teamId?: string}>()
     const location = useLocation()
     const me = useAppSelector<IUser|null>(getMe)
 
