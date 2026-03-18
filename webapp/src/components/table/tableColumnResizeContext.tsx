@@ -74,7 +74,7 @@ export const ColumnResizeProvider = (props: ColumnResizeProviderProps): ReactEle
             const iter = columns.get(columnId)?.values()
             if (iter) {
                 const {value, done} = iter.next()
-                return done ? value : iter.next().value
+                return !done ? value : undefined
             }
             return undefined
         },
