@@ -104,106 +104,108 @@ const ViewHeader = (props: Props) => {
 
     return (
         <div className='ViewHeader'>
-            <ViewTabs
-                board={board}
-                activeView={activeView}
-                views={views}
-                readonly={props.readonly}
-            />
-            {showAddViewTourStep && <AddViewTourStep/>}
-
-            <div className='octo-spacer'/>
-
-            {!props.readonly && canEditBoardProperties &&
-            <>
-                {/* Card properties */}
-
-                <ViewHeaderPropertiesMenu
-                    properties={board.cardProperties}
-                    activeView={activeView}
-                />
-
-                {/* Group by */}
-
-                {withGroupBy &&
-                <ViewHeaderGroupByMenu
-                    properties={board.cardProperties}
-                    activeView={activeView}
-                    groupByProperty={groupByProperty}
-                />}
-
-                {/* Display by */}
-
-                {withDisplayBy &&
-                <ViewHeaderDisplayByMenu
-                    properties={board.cardProperties}
-                    activeView={activeView}
-                    dateDisplayPropertyName={dateDisplayProperty?.name}
-                />}
-
-                {/* Filter */}
-
-                <ModalWrapper>
-                    <Button
-                        active={hasFilter}
-                        onClick={() => setShowFilter(!showFilter)}
-                        onMouseOver={() => setLockFilterOnClose(true)}
-                        onMouseLeave={() => setLockFilterOnClose(false)}
-                    >
-                        <FormattedMessage
-                            id='ViewHeader.filter'
-                            defaultMessage='Filter'
-                        />
-                    </Button>
-                    {showFilter &&
-                    <FilterPanel
-                        board={board}
-                        activeView={activeView}
-                        onClose={() => {
-                            if (!lockFilterOnClose) {
-                                setShowFilter(false)
-                            }
-                        }}
-                    />}
-                </ModalWrapper>
-
-                {/* Sort */}
-
-                {withSortBy &&
-                <ViewHeaderSortMenu
-                    properties={board.cardProperties}
-                    activeView={activeView}
-                    orderedCards={cards}
-                />
-                }
-            </>
-            }
-
-            {/* Search */}
-
-            <ViewHeaderSearch/>
-
-            {/* Options menu */}
-
-            {!props.readonly &&
-            <>
-                <ViewHeaderActionsMenu
+            <div className='ViewHeader__tabsRegion'>
+                <ViewTabs
                     board={board}
                     activeView={activeView}
-                    cards={cards}
+                    views={views}
+                    readonly={props.readonly}
                 />
+                {showAddViewTourStep && <AddViewTourStep/>}
+            </div>
 
-                {/* New card button */}
+            <div className='ViewHeader__toolbar'>
+                {!props.readonly && canEditBoardProperties &&
+                <>
+                    {/* Card properties */}
 
-                <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
-                    <NewCardButton
-                        addCard={props.addCard}
-                        addCardFromTemplate={props.addCardFromTemplate}
-                        addCardTemplate={props.addCardTemplate}
-                        editCardTemplate={props.editCardTemplate}
+                    <ViewHeaderPropertiesMenu
+                        properties={board.cardProperties}
+                        activeView={activeView}
                     />
-                </BoardPermissionGate>
-            </>}
+
+                    {/* Group by */}
+
+                    {withGroupBy &&
+                    <ViewHeaderGroupByMenu
+                        properties={board.cardProperties}
+                        activeView={activeView}
+                        groupByProperty={groupByProperty}
+                    />}
+
+                    {/* Display by */}
+
+                    {withDisplayBy &&
+                    <ViewHeaderDisplayByMenu
+                        properties={board.cardProperties}
+                        activeView={activeView}
+                        dateDisplayPropertyName={dateDisplayProperty?.name}
+                    />}
+
+                    {/* Filter */}
+
+                    <ModalWrapper>
+                        <Button
+                            active={hasFilter}
+                            onClick={() => setShowFilter(!showFilter)}
+                            onMouseOver={() => setLockFilterOnClose(true)}
+                            onMouseLeave={() => setLockFilterOnClose(false)}
+                        >
+                            <FormattedMessage
+                                id='ViewHeader.filter'
+                                defaultMessage='Filter'
+                            />
+                        </Button>
+                        {showFilter &&
+                        <FilterPanel
+                            board={board}
+                            activeView={activeView}
+                            onClose={() => {
+                                if (!lockFilterOnClose) {
+                                    setShowFilter(false)
+                                }
+                            }}
+                        />}
+                    </ModalWrapper>
+
+                    {/* Sort */}
+
+                    {withSortBy &&
+                    <ViewHeaderSortMenu
+                        properties={board.cardProperties}
+                        activeView={activeView}
+                        orderedCards={cards}
+                    />
+                    }
+                </>
+                }
+
+                {/* Search */}
+
+                <ViewHeaderSearch/>
+
+                {/* Options menu */}
+
+                {!props.readonly &&
+                <>
+                    <ViewHeaderActionsMenu
+                        board={board}
+                        activeView={activeView}
+                        cards={cards}
+                    />
+
+                    {/* New card button */}
+
+                    <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
+                        <NewCardButton
+                            addCard={props.addCard}
+                            addCardFromTemplate={props.addCardFromTemplate}
+                            addCardTemplate={props.addCardTemplate}
+                            editCardTemplate={props.editCardTemplate}
+                        />
+                    </BoardPermissionGate>
+                </>}
+            </div>
         </div>
     )
 }
