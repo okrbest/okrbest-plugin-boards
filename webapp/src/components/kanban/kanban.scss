@@ -3,6 +3,8 @@
 .Kanban {
     overflow: auto;
     flex: 1;
+    min-width: 0;
+    min-height: 0;
 
     .octo-board-header {
         @include z-index(kanban-board-header);

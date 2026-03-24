@@ -2,24 +2,50 @@
     flex: 0 0 auto;
     display: flex;
     flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+    // Narrow viewport: tabs + toolbar wider than the row — scroll the whole header.
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
 
     border-bottom: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
     margin: 16px 0 0;
     padding: 8px 0;
     color: rgba(var(--center-channel-color-rgb), 0.64);
-    align-items: center;
 
-    @media (max-width: 768px) {
-        overflow: auto;
+    &__tabsRegion {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        // Keep some strip for view tabs when the toolbar is wide; inner scroll still works above this width.
+        min-width: 10rem;
+        margin-right: 12px;
+        flex-wrap: nowrap;
+        // Many tabs: scroll inside this strip first; outer scroll only when the row still overflows.
+        overflow-x: auto;
+        overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
     }
 
-    > div {
-        margin-right: 12px;
-        white-space: nowrap;
+    &__toolbar {
+        display: flex;
+        flex: 0 0 auto;
+        flex-shrink: 0;
+        align-items: center;
+        flex-wrap: nowrap;
+        margin-left: auto;
 
-        &:last-child {
-            margin: 0;
+        > * {
+            margin-right: 12px;
+            white-space: nowrap;
+
+            &:last-child {
+                margin-right: 0;
+            }
         }
     }
 
