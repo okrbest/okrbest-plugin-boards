@@ -168,6 +168,19 @@
     }
 }
 
+.ViewTabs__tabMenuPortal {
+    .ViewTabMenu {
+        position: static;
+        margin-top: 0;
+    }
+}
+
+.ViewTabs__addViewPortal {
+    .AddViewMenu {
+        position: static;
+    }
+}
+
 .ViewTabMenu {
     position: absolute;
     top: 100%;

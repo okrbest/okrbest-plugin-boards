@@ -11,16 +11,11 @@ type Props = {
 
 const RootPortal = (props: Props): React.JSX.Element => {
     const [el] = useState(document.createElement('div'))
-    const rootPortal = document.getElementById('focalboard-root-portal')
 
     useLayoutEffect(() => {
-        if (rootPortal) {
-            rootPortal.appendChild(el)
-        }
+        document.body.appendChild(el)
         return () => {
-            if (rootPortal) {
-                rootPortal.removeChild(el)
-            }
+            document.body.removeChild(el)
         }
     }, [])
 

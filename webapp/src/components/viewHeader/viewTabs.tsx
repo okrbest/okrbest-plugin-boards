@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback, useRef, useEffect} from 'react'
+import React, {useState, useCallback, useRef, useEffect, useLayoutEffect} from 'react'
 import {useIntl} from 'react-intl'
 import {useNavigate, useParams, useLocation} from 'react-router-dom'
 
@@ -19,6 +19,7 @@ import TableIcon from '../../widgets/icons/table'
 import GalleryIcon from '../../widgets/icons/gallery'
 import CalendarIcon from '../../widgets/icons/calendar'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
+import RootPortal from '../rootPortal'
 
 import ViewTab from './viewTab'
 import ViewTabMenu from './viewTabMenu'
@@ -46,10 +47,73 @@ const ViewTabs = (props: Props): React.JSX.Element => {
     const [viewTitle, setViewTitle] = useState(activeView.title)
     const editableRef = useRef<{focus: (selectAll?: boolean) => void}>(null)
     const addMenuRef = useRef<HTMLDivElement>(null)
+    const addMenuPortalRef = useRef<HTMLDivElement>(null)
+    const activeTabRef = useRef<HTMLDivElement>(null)
+
+    const [tabMenuPos, setTabMenuPos] = useState<{top: number, left: number} | null>(null)
+    const [addMenuPos, setAddMenuPos] = useState<{top: number, left: number} | null>(null)
+
+    const updateTabMenuPos = useCallback(() => {
+        if (activeTabRef.current) {
+            const rect = activeTabRef.current.getBoundingClientRect()
+            setTabMenuPos({top: rect.bottom + 4, left: rect.left})
+        }
+    }, [])
+
+    const updateAddMenuPos = useCallback(() => {
+        if (addMenuRef.current) {
+            const rect = addMenuRef.current.getBoundingClientRect()
+            setAddMenuPos({top: rect.bottom + 8, left: rect.left})
+        }
+    }, [])
+
+    useLayoutEffect(() => {
+        if (menuOpen) {
+            updateTabMenuPos()
+        } else {
+            setTabMenuPos(null)
+        }
+    }, [menuOpen, updateTabMenuPos])
+
+    useEffect(() => {
+        if (!menuOpen) {
+            return undefined
+        }
+        window.addEventListener('scroll', updateTabMenuPos, true)
+        window.addEventListener('resize', updateTabMenuPos)
+        return () => {
+            window.removeEventListener('scroll', updateTabMenuPos, true)
+            window.removeEventListener('resize', updateTabMenuPos)
+        }
+    }, [menuOpen, updateTabMenuPos])
+
+    useLayoutEffect(() => {
+        if (addMenuOpen) {
+            updateAddMenuPos()
+        } else {
+            setAddMenuPos(null)
+        }
+    }, [addMenuOpen, updateAddMenuPos])
+
+    useEffect(() => {
+        if (!addMenuOpen) {
+            return undefined
+        }
+        window.addEventListener('scroll', updateAddMenuPos, true)
+        window.addEventListener('resize', updateAddMenuPos)
+        return () => {
+            window.removeEventListener('scroll', updateAddMenuPos, true)
+            window.removeEventListener('resize', updateAddMenuPos)
+        }
+    }, [addMenuOpen, updateAddMenuPos])
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+            const target = e.target as Node
+            if (
+                addMenuRef.current && !addMenuRef.current.contains(target) &&
+                (!addMenuPortalRef.current || !addMenuPortalRef.current.contains(target))
+            ) {
                 setAddMenuOpen(false)
             }
         }
@@ -201,7 +265,7 @@ const ViewTabs = (props: Props): React.JSX.Element => {
                 return (
                     <div
                         key={view.id}
-                        style={{position: 'relative'}}
+                        ref={isActive ? activeTabRef : undefined}
                     >
                         <ViewTab
                             view={view}
@@ -209,18 +273,32 @@ const ViewTabs = (props: Props): React.JSX.Element => {
                             readonly={readonly}
                             onClick={() => handleTabClick(view.id)}
                         />
-                        {isActive && menuOpen && (
-                            <ViewTabMenu
-                                onRename={handleRename}
-                                onDuplicate={handleDuplicate}
-                                onDelete={handleDelete}
-                                onClose={() => setMenuOpen(false)}
-                                canDelete={views.length > 1}
-                            />
-                        )}
                     </div>
                 )
             })}
+
+            {menuOpen && tabMenuPos && (
+                <RootPortal>
+                    <div
+                        className='ViewTabs__tabMenuPortal'
+                        style={{
+                            position: 'fixed',
+                            top: tabMenuPos.top,
+                            left: tabMenuPos.left,
+                            zIndex: 1000,
+                        }}
+                    >
+                        <ViewTabMenu
+                            onRename={handleRename}
+                            onDuplicate={handleDuplicate}
+                            onDelete={handleDelete}
+                            onClose={() => setMenuOpen(false)}
+                            canDelete={views.length > 1}
+                        />
+                    </div>
+                </RootPortal>
+            )}
+
             {!readonly && (
                 <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
                     <div
@@ -233,43 +311,57 @@ const ViewTabs = (props: Props): React.JSX.Element => {
                         >
                             {'+'}
                         </div>
-                        {addMenuOpen && (
-                            <div className='AddViewMenu'>
-                                <div className='AddViewMenu__header'>
-                                    {intl.formatMessage({id: 'View.NewView', defaultMessage: 'Add new view'})}
-                                </div>
-                                <div
-                                    className='AddViewMenu__item'
-                                    onClick={() => handleAddView('table')}
-                                >
-                                    <span className='AddViewMenu__icon'><TableIcon/></span>
-                                    <span>{intl.formatMessage({id: 'View.Table', defaultMessage: 'Table'})}</span>
-                                </div>
-                                <div
-                                    className='AddViewMenu__item'
-                                    onClick={() => handleAddView('board')}
-                                >
-                                    <span className='AddViewMenu__icon'><BoardIcon/></span>
-                                    <span>{intl.formatMessage({id: 'View.Board', defaultMessage: 'Board'})}</span>
-                                </div>
-                                <div
-                                    className='AddViewMenu__item'
-                                    onClick={() => handleAddView('gallery')}
-                                >
-                                    <span className='AddViewMenu__icon'><GalleryIcon/></span>
-                                    <span>{intl.formatMessage({id: 'View.Gallery', defaultMessage: 'Gallery'})}</span>
-                                </div>
-                                <div
-                                    className='AddViewMenu__item'
-                                    onClick={() => handleAddView('calendar')}
-                                >
-                                    <span className='AddViewMenu__icon'><CalendarIcon/></span>
-                                    <span>{intl.formatMessage({id: 'View.Calendar', defaultMessage: 'Calendar'})}</span>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </BoardPermissionGate>
+            )}
+
+            {addMenuOpen && addMenuPos && (
+                <RootPortal>
+                    <div
+                        ref={addMenuPortalRef}
+                        className='ViewTabs__addViewPortal'
+                        style={{
+                            position: 'fixed',
+                            top: addMenuPos.top,
+                            left: addMenuPos.left,
+                            zIndex: 1000,
+                        }}
+                    >
+                        <div className='AddViewMenu'>
+                            <div className='AddViewMenu__header'>
+                                {intl.formatMessage({id: 'View.NewView', defaultMessage: 'Add new view'})}
+                            </div>
+                            <div
+                                className='AddViewMenu__item'
+                                onClick={() => handleAddView('table')}
+                            >
+                                <span className='AddViewMenu__icon'><TableIcon/></span>
+                                <span>{intl.formatMessage({id: 'View.Table', defaultMessage: 'Table'})}</span>
+                            </div>
+                            <div
+                                className='AddViewMenu__item'
+                                onClick={() => handleAddView('board')}
+                            >
+                                <span className='AddViewMenu__icon'><BoardIcon/></span>
+                                <span>{intl.formatMessage({id: 'View.Board', defaultMessage: 'Board'})}</span>
+                            </div>
+                            <div
+                                className='AddViewMenu__item'
+                                onClick={() => handleAddView('gallery')}
+                            >
+                                <span className='AddViewMenu__icon'><GalleryIcon/></span>
+                                <span>{intl.formatMessage({id: 'View.Gallery', defaultMessage: 'Gallery'})}</span>
+                            </div>
+                            <div
+                                className='AddViewMenu__item'
+                                onClick={() => handleAddView('calendar')}
+                            >
+                                <span className='AddViewMenu__icon'><CalendarIcon/></span>
+                                <span>{intl.formatMessage({id: 'View.Calendar', defaultMessage: 'Calendar'})}</span>
+                            </div>
+                        </div>
+                    </div>
+                </RootPortal>
             )}
         </div>
     )

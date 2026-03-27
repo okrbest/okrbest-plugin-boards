@@ -1,11 +1,9 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState, useContext, CSSProperties, useRef} from 'react'
+import React, {useEffect, useLayoutEffect, useCallback, useState, useContext, CSSProperties, useRef} from 'react'
 
 import CompassIcon from '../../widgets/icons/compassIcon'
-
-import MenuUtil from './menuUtil'
 
 import Menu from '.'
 
@@ -88,21 +86,77 @@ function SubMenuOption(props: SubMenuOptionProps): React.JSX.Element {
         }
     }, [isOpen, props.id])
 
-    const styleRef = useRef<CSSProperties>({})
+    const [subMenuStyle, setSubMenuStyle] = useState<CSSProperties>({})
 
-     useEffect(() => {
-         const newStyle: CSSProperties = {}
-         if (props.position === 'auto' && ref.current) {
-             const openUp = MenuUtil.openUp(ref as React.RefObject<HTMLElement>)
-            if (openUp.openUp) {
-                newStyle.bottom = 0
-            } else {
-                newStyle.top = 0
-            }
+    const updateSubMenuStyle = useCallback(() => {
+        if (!ref.current) {
+            return
         }
 
-        styleRef.current = newStyle
-    }, [ref.current])
+        const isMobile = window.innerWidth <= 430
+        if (isMobile) {
+            setSubMenuStyle({})
+            return
+        }
+
+        const rect = ref.current.getBoundingClientRect()
+        const pos = props.position || 'bottom'
+        const newStyle: CSSProperties = {
+            position: 'fixed',
+            zIndex: 1000,
+        }
+
+        if (pos === 'left' || pos === 'left-bottom') {
+            newStyle.right = window.innerWidth - rect.left
+            newStyle.top = rect.top
+            newStyle.left = 'auto'
+            newStyle.bottom = 'auto'
+        } else if (pos === 'top') {
+            newStyle.left = rect.right
+            newStyle.bottom = window.innerHeight - rect.bottom
+            newStyle.right = 'auto'
+            newStyle.top = 'auto'
+        } else if (pos === 'auto') {
+            newStyle.left = rect.right
+            newStyle.right = 'auto'
+            const spaceBelow = window.innerHeight - rect.bottom
+            const spaceAbove = rect.top
+            if (spaceAbove > spaceBelow) {
+                newStyle.bottom = window.innerHeight - rect.top
+                newStyle.top = 'auto'
+            } else {
+                newStyle.top = rect.top
+                newStyle.bottom = 'auto'
+            }
+        } else {
+            newStyle.left = rect.right
+            newStyle.top = rect.top
+            newStyle.right = 'auto'
+            newStyle.bottom = 'auto'
+        }
+
+        setSubMenuStyle(newStyle)
+    }, [props.position])
+
+    useLayoutEffect(() => {
+        if (isOpen) {
+            updateSubMenuStyle()
+        } else {
+            setSubMenuStyle({})
+        }
+    }, [isOpen, updateSubMenuStyle])
+
+    useEffect(() => {
+        if (!isOpen) {
+            return undefined
+        }
+        window.addEventListener('scroll', updateSubMenuStyle, true)
+        window.addEventListener('resize', updateSubMenuStyle)
+        return () => {
+            window.removeEventListener('scroll', updateSubMenuStyle, true)
+            window.removeEventListener('resize', updateSubMenuStyle)
+        }
+    }, [isOpen, updateSubMenuStyle])
 
     return (
         <div
@@ -120,8 +174,8 @@ function SubMenuOption(props: SubMenuOptionProps): React.JSX.Element {
             <CompassIcon icon='chevron-right'/>
             {isOpen &&
                 <div
-                    className={'SubMenu Menu noselect ' + (props.position || 'bottom')}
-                    style={styleRef.current}
+                    className={'SubMenu Menu noselect'}
+                    style={subMenuStyle}
                     data-submenu-id={props.id}
                 >
                     <div className='menu-contents'>
