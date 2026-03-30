@@ -13,6 +13,8 @@ type Props = {
     children?: React.ReactNode
     title?: string
     text: React.ReactNode
+    usePortal?: boolean
+    menuPosition?: 'left' | 'right' | 'top' | 'bottom'
 }
 
 function ButtonWithMenu(props: Props): React.JSX.Element {
@@ -25,7 +27,11 @@ function ButtonWithMenu(props: Props): React.JSX.Element {
             <div className='button-text'>
                 {props.text}
             </div>
-            <MenuWrapper stopPropagationOnToggle={true}>
+            <MenuWrapper
+                stopPropagationOnToggle={true}
+                usePortal={props.usePortal}
+                menuPosition={props.menuPosition}
+            >
                 <div className='button-dropdown'>
                     <DropdownIcon/>
                 </div>

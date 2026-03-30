@@ -70,6 +70,15 @@
 
 }
 
+.ViewHeader__filterPortal {
+    .Modal {
+        position: static;
+        top: auto;
+        left: auto;
+        z-index: auto;
+    }
+}
+
 .board-search-field {
     position: relative;
 

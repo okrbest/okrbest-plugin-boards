@@ -56,7 +56,10 @@ const ViewHeaderSortMenu = (props: Props) => {
     }, [activeView.id, activeView.fields.sortOptions])
 
     return (
-        <MenuWrapper>
+        <MenuWrapper
+            usePortal={true}
+            menuPosition='bottom'
+        >
             <Button active={hasSort}>
                 <FormattedMessage
                     id='ViewHeader.sort'
