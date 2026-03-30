@@ -49,7 +49,10 @@ const ViewHeaderGroupByMenu = (props: Props) => {
     }
 
     return (
-        <MenuWrapper>
+        <MenuWrapper
+            usePortal={true}
+            menuPosition='bottom'
+        >
             <Button>
                 <FormattedMessage
                     id='ViewHeader.group-by'

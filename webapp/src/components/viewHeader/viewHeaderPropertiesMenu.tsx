@@ -33,7 +33,11 @@ const ViewHeaderPropertiesMenu = (props: Props) => {
     }
 
     return (
-        <MenuWrapper label={intl.formatMessage({id: 'ViewHeader.properties-menu', defaultMessage: 'Properties menu'})}>
+        <MenuWrapper
+            label={intl.formatMessage({id: 'ViewHeader.properties-menu', defaultMessage: 'Properties menu'})}
+            usePortal={true}
+            menuPosition='bottom'
+        >
             <Button>
                 <FormattedMessage
                     id='ViewHeader.properties'

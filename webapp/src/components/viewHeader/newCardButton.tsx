@@ -44,6 +44,8 @@ const NewCardButton = (props: Props): React.JSX.Element => {
                     defaultMessage='New'
                 />
             )}
+            usePortal={true}
+            menuPosition='bottom'
         >
             <Menu position='left'>
                 {cardTemplates.length > 0 && <>
