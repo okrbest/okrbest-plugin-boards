@@ -14,7 +14,7 @@ describe('components/sidebar/DeleteBoardDialog', () => {
     it('Cancel should not submit', async () => {
         const container = renderTest()
 
-        const cancelButton = container.querySelector('.dialog .footer button:not(.danger)')
+        const cancelButton = document.body.querySelector('.dialog .footer button:not(.danger)')
         expect(cancelButton).not.toBeFalsy()
         expect(cancelButton?.textContent).toBe('Cancel')
         await act(async () => userEvent.click(cancelButton as Element))
@@ -25,7 +25,7 @@ describe('components/sidebar/DeleteBoardDialog', () => {
     it('Delete should submit', async () => {
         const container = renderTest()
 
-        const deleteButton = container.querySelector('.dialog .footer button.danger')
+        const deleteButton = document.body.querySelector('.dialog .footer button.danger')
         expect(deleteButton).not.toBeFalsy()
         expect(deleteButton?.textContent).toBe('Delete')
         await act(async () => userEvent.click(deleteButton as Element))
@@ -34,10 +34,7 @@ describe('components/sidebar/DeleteBoardDialog', () => {
     })
 
     function renderTest() {
-        const rootPortalDiv = document.createElement('div')
-        rootPortalDiv.id = 'focalboard-root-portal'
-
-        const {container} = render(<TestComponent/>, {container: document.body.appendChild(rootPortalDiv)})
+        const {container} = render(<TestComponent/>)
         return container
     }
 

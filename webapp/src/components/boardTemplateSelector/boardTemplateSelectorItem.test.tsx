@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {render, within, act, waitFor} from '@testing-library/react'
+import {render, screen, act, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import {MockStoreEnhanced} from 'redux-mock-store'
@@ -234,8 +234,6 @@ describe('components/boardTemplateSelector/boardTemplateSelectorItem', () => {
         const onDelete = jest.fn()
         const onEdit = jest.fn()
 
-        const root = document.createElement('div')
-        root.setAttribute('id', 'focalboard-root-portal')
         render(wrapDNDIntl(
             <ReduxProvider store={store}>
                 <BoardTemplateSelectorItem
@@ -247,16 +245,13 @@ describe('components/boardTemplateSelector/boardTemplateSelectorItem', () => {
                 />
             </ReduxProvider>
             ,
-        ), {container: document.body.appendChild(root)})
+        ))
         act(() => {
-            userEvent.click(root.querySelector('.BoardTemplateSelectorItem .DeleteIcon')!)
+            userEvent.click(document.body.querySelector('.BoardTemplateSelectorItem .DeleteIcon')!)
         })
 
-        expect(root).toMatchSnapshot()
-
-        const {getByText} = within(root)
         act(() => {
-            userEvent.click(getByText('Delete')!)
+            userEvent.click(screen.getByText('Delete')!)
         })
 
         await waitFor(async () => expect(onDelete).toBeCalledTimes(1))

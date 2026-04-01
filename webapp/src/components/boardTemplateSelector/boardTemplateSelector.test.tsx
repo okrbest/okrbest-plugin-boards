@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {render, screen, act, waitFor, within} from '@testing-library/react'
+import {render, screen, act, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import {MockStoreEnhanced} from 'redux-mock-store'
@@ -257,22 +257,19 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
             await waitFor(() => expect(mockedMutator.updateBoard).toBeCalledWith(newBoard, newBoard, 'linked channel'))
         })
         test('return BoardTemplateSelector and click delete template icon', async () => {
-            const root = document.createElement('div')
-            root.setAttribute('id', 'focalboard-root-portal')
             render(wrapDNDIntl(
                 <ReduxProvider store={store}>
                     <BoardTemplateSelector onClose={jest.fn()}/>
                 </ReduxProvider>
                 ,
-            ), {container: document.body.appendChild(root)})
+            ))
             const deleteIcon = screen.getByText(template1Title).parentElement?.querySelector('.DeleteIcon')
             expect(deleteIcon).not.toBeNull()
             act(() => {
                 userEvent.click(deleteIcon!)
             })
 
-            const {getByText} = within(root)
-            const deleteConfirm = getByText('Delete')
+            const deleteConfirm = screen.getByText('Delete')
             expect(deleteConfirm).not.toBeNull()
 
             await act(async () => {
