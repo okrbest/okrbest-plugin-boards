@@ -87,6 +87,7 @@ function SubMenuOption(props: SubMenuOptionProps): React.JSX.Element {
     }, [isOpen, props.id])
 
     const [subMenuStyle, setSubMenuStyle] = useState<CSSProperties>({})
+    const subMenuRef = useRef<HTMLDivElement>(null)
 
     const updateSubMenuStyle = useCallback(() => {
         if (!ref.current) {
@@ -107,9 +108,15 @@ function SubMenuOption(props: SubMenuOptionProps): React.JSX.Element {
         }
 
         if (pos === 'left' || pos === 'left-bottom') {
-            newStyle.right = window.innerWidth - rect.left
+            const subMenuWidth = subMenuRef.current?.offsetWidth || 180
+            if (rect.left >= subMenuWidth) {
+                newStyle.right = window.innerWidth - rect.left
+                newStyle.left = 'auto'
+            } else {
+                newStyle.left = rect.right
+                newStyle.right = 'auto'
+            }
             newStyle.top = rect.top
-            newStyle.left = 'auto'
             newStyle.bottom = 'auto'
         } else if (pos === 'top') {
             newStyle.left = rect.right
@@ -174,6 +181,7 @@ function SubMenuOption(props: SubMenuOptionProps): React.JSX.Element {
             <CompassIcon icon='chevron-right'/>
             {isOpen &&
                 <div
+                    ref={subMenuRef}
                     className={'SubMenu Menu noselect'}
                     style={subMenuStyle}
                     data-submenu-id={props.id}

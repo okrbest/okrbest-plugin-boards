@@ -103,24 +103,40 @@ const ViewHeader = (props: Props) => {
     const showAddViewTourStep = showTourBaseCondition && delayComplete
 
     const filterBtnRef = useRef<HTMLDivElement>(null)
-    const filterPortalRef = useRef<HTMLDivElement>(null)
-    const [filterPos, setFilterPos] = useState<{top: number, left: number} | null>(null)
+    const [filterPos, setFilterPos] = useState<{top: number, left: number, maxHeight: number} | null>(null)
 
     const updateFilterPos = useCallback(() => {
-        if (filterBtnRef.current) {
-            const rect = filterBtnRef.current.getBoundingClientRect()
-            let left = rect.left
-
-            if (filterPortalRef.current) {
-                const portalWidth = filterPortalRef.current.offsetWidth
-                const maxLeft = window.innerWidth - portalWidth - 8
-                if (left > maxLeft) {
-                    left = Math.max(8, maxLeft)
-                }
-            }
-
-            setFilterPos({top: rect.bottom + 4, left})
+        if (!filterBtnRef.current) {
+            return
         }
+        const rect = filterBtnRef.current.getBoundingClientRect()
+        const gap = 4
+        const edgePad = 8
+        const panelW = 524
+
+        let left = rect.left
+        const maxLeft = window.innerWidth - panelW - edgePad
+        if (left > maxLeft) {
+            left = Math.max(edgePad, maxLeft)
+        }
+
+        const spaceBelow = window.innerHeight - rect.bottom - gap - edgePad
+        const spaceAbove = rect.top - gap - edgePad
+        const panelMaxH = 400
+
+        let top: number
+        let maxHeight: number
+
+        if (spaceBelow >= panelMaxH || spaceBelow >= spaceAbove) {
+            top = rect.bottom + gap
+            maxHeight = Math.min(panelMaxH, spaceBelow)
+        } else {
+            const h = Math.min(panelMaxH, spaceAbove)
+            top = rect.top - gap - h
+            maxHeight = h
+        }
+
+        setFilterPos({top, left, maxHeight})
     }, [])
 
     useLayoutEffect(() => {
@@ -130,19 +146,6 @@ const ViewHeader = (props: Props) => {
             setFilterPos(null)
         }
     }, [showFilter, updateFilterPos])
-
-    useLayoutEffect(() => {
-        if (filterPos && filterPortalRef.current) {
-            const portalWidth = filterPortalRef.current.offsetWidth
-            const rightEdge = filterPos.left + portalWidth
-            if (rightEdge > window.innerWidth - 8) {
-                const newLeft = Math.max(8, window.innerWidth - portalWidth - 8)
-                if (newLeft !== filterPos.left) {
-                    setFilterPos({top: filterPos.top, left: newLeft})
-                }
-            }
-        }
-    }, [filterPos])
 
     useEffect(() => {
         if (!showFilter) {
@@ -214,13 +217,13 @@ const ViewHeader = (props: Props) => {
                     {showFilter && filterPos &&
                     <RootPortal>
                         <div
-                            ref={filterPortalRef}
                             className='ViewHeader__filterPortal'
                             style={{
                                 position: 'fixed',
                                 top: filterPos.top,
                                 left: filterPos.left,
                                 zIndex: 1000,
+                                maxHeight: filterPos.maxHeight,
                             }}
                         >
                             <FilterPanel

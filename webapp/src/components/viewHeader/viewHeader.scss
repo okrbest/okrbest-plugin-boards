@@ -71,11 +71,27 @@
 }
 
 .ViewHeader__filterPortal {
+    overflow: hidden;
+
     .Modal {
         position: static;
         top: auto;
         left: auto;
         z-index: auto;
+        max-height: inherit;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    .Modal > .toolbar {
+        flex: 0 0 auto;
+    }
+
+    .FilterPanel {
+        flex: 1 1 auto;
+        min-height: 0;
     }
 }
 

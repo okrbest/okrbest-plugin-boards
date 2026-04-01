@@ -15,7 +15,9 @@ const RootPortal = (props: Props): React.JSX.Element => {
     useLayoutEffect(() => {
         document.body.appendChild(el)
         return () => {
-            document.body.removeChild(el)
+            if (el.parentNode === document.body) {
+                document.body.removeChild(el)
+            }
         }
     }, [])
 
