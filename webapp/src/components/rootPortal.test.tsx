@@ -14,18 +14,26 @@ describe('components/RootPortal', () => {
         console.error = jest.fn()
     })
 
-    test('should match snapshot', () => {
-        const rootPortalDiv = document.createElement('div')
-        rootPortalDiv.id = 'focalboard-root-portal'
-
-        const {getByText, container} = render(
+    test('should render portal content into document.body', () => {
+        const {getByText} = render(
             <RootPortal>
                 <div>{'Testing Portal'}</div>
             </RootPortal>,
-            {container: document.body.appendChild(rootPortalDiv)},
         )
 
         expect(getByText('Testing Portal')).toBeVisible()
-        expect(container).toMatchSnapshot()
+        expect(document.body.textContent).toContain('Testing Portal')
+    })
+
+    test('should remove portal element on unmount', () => {
+        const {unmount} = render(
+            <RootPortal>
+                <div>{'Unmount Test'}</div>
+            </RootPortal>,
+        )
+
+        expect(document.body.textContent).toContain('Unmount Test')
+        unmount()
+        expect(document.body.textContent).not.toContain('Unmount Test')
     })
 })
