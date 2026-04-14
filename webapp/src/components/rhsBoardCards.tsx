@@ -1,23 +1,26 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo, useEffect, useState} from 'react'
+import React, {useMemo, useEffect, useState, useCallback} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
 
 import {generatePath} from 'react-router-dom'
 
-import {Board} from '../blocks/board'
+import {Board, IPropertyTemplate} from '../blocks/board'
 import {Card} from '../blocks/card'
-// import {Block} from '../blocks/block' // 미사용
 import {sortBoardViewsAlphabetically} from '../blocks/boardView'
 import {Utils} from '../utils'
 import CompassIcon from '../widgets/icons/compassIcon'
 import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../telemetry/telemetryClient'
 import {useAppSelector, useAppDispatch} from '../store/hooks'
 import {getCards} from '../store/cards'
+import {fetchBoardMembers} from '../store/boards'
 import {loadBoardData} from '../store/initialLoad'
 import {getCurrentViewId, getViews} from '../store/views'
 import {getCurrentTeamId} from '../store/teams'
+import {getBoardUsers} from '../store/users'
+import {getClientConfig} from '../store/clientConfig'
+import {IUser} from '../user'
 import Tooltip from '../widgets/tooltip'
 import EmojiIcon from './emojiIcon'
 
@@ -34,6 +37,7 @@ const RHSBoardCards = (props: Props) => {
     const dispatch = useAppDispatch()
     const [showCopyNotification, setShowCopyNotification] = useState(false)
     const [fadeOut, setFadeOut] = useState(false)
+    const [dataLoaded, setDataLoaded] = useState(false)
 
     const untitledBoardTitle = intl.formatMessage({id: 'BoardComponent.untitled-board', defaultMessage: 'Untitled Board'})
 
@@ -52,6 +56,36 @@ const RHSBoardCards = (props: Props) => {
     const currentTeamId = useAppSelector(getCurrentTeamId)
     const allViews = useAppSelector(getViews)
 
+    const boardUsers = useAppSelector(getBoardUsers)
+    const clientConfig = useAppSelector(getClientConfig)
+
+    const personPropertyTemplate = useMemo((): IPropertyTemplate | undefined => {
+        return board.cardProperties.find(
+            (prop) => prop.type === 'person' || prop.type === 'multiPerson',
+        )
+    }, [board.cardProperties])
+
+    const getAssigneeName = useCallback((card: Card): string => {
+        const unassigned = intl.formatMessage({id: 'RHSBoardCards.unassigned', defaultMessage: '미지정'})
+        if (!personPropertyTemplate) {
+            return unassigned
+        }
+        const value = card.fields.properties?.[personPropertyTemplate.id]
+        if (!value) {
+            return unassigned
+        }
+
+        const userIds: string[] = Array.isArray(value) ? value : [value as string]
+        const names = userIds
+            .map((uid) => {
+                const user: IUser | undefined = boardUsers[uid]
+                return user ? Utils.getUserDisplayName(user, clientConfig.teammateNameDisplay) : uid
+            })
+            .filter(Boolean)
+
+        return names.length > 0 ? names.join(', ') : unassigned
+    }, [personPropertyTemplate, boardUsers, clientConfig.teammateNameDisplay, intl])
+
     // 해당 보드의 views만 필터링하고 정렬
     const currentBoardViews = useMemo(() => {
         const filteredViews = Object.values(allViews).filter(view => view.boardId === board.id)
@@ -59,15 +93,29 @@ const RHSBoardCards = (props: Props) => {
         return sortedViews
     }, [allViews, board.id, currentViewId])
 
-    // 선택된 보드의 데이터 로드
     useEffect(() => {
-        if (board.id) {
-            dispatch(loadBoardData(board.id))
+        if (!board.id) {
+            return
         }
-    }, [board.id, dispatch])
+        let cancelled = false
+        setDataLoaded(false)
+        Promise.all([
+            dispatch(loadBoardData(board.id)),
+            dispatch(fetchBoardMembers({
+                teamId: board.teamId,
+                boardId: board.id,
+            })),
+        ]).finally(() => {
+            if (!cancelled) {
+                setDataLoaded(true)
+            }
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [board.id, board.teamId, dispatch])
 
-    // 카드가 로드되지 않았을 때를 위한 로딩 상태
-    const isLoading = Object.keys(allCardsObj).length === 0
+    const isLoading = !dataLoaded
 
     // 디버깅을 위한 viewId 정보 로그 (현재 사용되지 않음)
     // const viewId = useMemo(() => {
@@ -230,11 +278,11 @@ const RHSBoardCards = (props: Props) => {
                                                     </div>
                                                 </div>
                                                 <div className='card-assignee'>
-                                                    <FormattedMessage 
-                                                        id='RHSBoardCards.assignee' 
+                                                    <FormattedMessage
+                                                        id='RHSBoardCards.assignee'
                                                         defaultMessage='담당자: {assignee}'
                                                         values={{
-                                                            assignee: card.fields.properties?.assignee || intl.formatMessage({id: 'RHSBoardCards.unassigned', defaultMessage: '미지정'})
+                                                            assignee: getAssigneeName(card),
                                                         }}
                                                     />
                                                 </div>
