@@ -149,6 +149,13 @@ const ViewTabs = (props: Props): React.JSX.Element => {
     }, [activeView.title])
 
     useEffect(() => {
+        setIsRenaming(false)
+        if (activeTabRef.current) {
+            activeTabRef.current.scrollIntoView({behavior: 'smooth', inline: 'center', block: 'nearest'})
+        }
+    }, [activeView.id])
+
+    useEffect(() => {
         if (isRenaming) {
             const frameId = requestAnimationFrame(() => {
                 editableRef.current?.focus(true)
@@ -249,6 +256,7 @@ const ViewTabs = (props: Props): React.JSX.Element => {
                     return (
                         <div
                             key={view.id}
+                            ref={activeTabRef}
                             className='ViewTab ViewTab--active ViewTab__editable'
                         >
                             <Editable
