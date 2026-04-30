@@ -19,7 +19,6 @@ export type EditableProps = {
     onCancel?: () => void
     onSave?: (saveType: 'onEnter'|'onEsc'|'onBlur') => void
     onFocus?: () => void
-    ref?: React.Ref<Focusable>
 }
 
 export type Focusable = {
@@ -118,10 +117,9 @@ export function useEditable(
     }
 }
 
-const Editable = (props: EditableProps): React.JSX.Element => {
-    const { ref, ...otherProps } = props
+const Editable = React.forwardRef<Focusable, EditableProps>((props, ref) => {
     const elementRef = useRef<HTMLInputElement>(null)
-    const elementProps = useEditable(otherProps, ref, elementRef as React.RefObject<ElementType>)
+    const elementProps = useEditable(props, ref, elementRef as React.RefObject<ElementType>)
 
     useLayoutEffect(() => {
         if (props.autoExpand && elementRef.current) {
@@ -136,6 +134,7 @@ const Editable = (props: EditableProps): React.JSX.Element => {
             ref={elementRef}
         />
     )
-}
+})
+Editable.displayName = 'Editable'
 
 export default Editable

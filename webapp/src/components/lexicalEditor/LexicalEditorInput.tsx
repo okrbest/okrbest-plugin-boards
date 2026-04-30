@@ -39,6 +39,7 @@ import editorTheme, {mentionsTheme, emojiTheme} from './themes/editorTheme'
 import OnChangePlugin from './plugins/OnChangePlugin'
 import FocusPlugin from './plugins/FocusPlugin'
 import KeyboardPlugin from './plugins/KeyboardPlugin'
+import CompositionPlugin from './plugins/CompositionPlugin'
 
 import './lexicalEditor.scss'
 
@@ -63,13 +64,16 @@ type Props = {
     saveOnEnter?: boolean
 }
 
-const MentionsMenu = ({loading, ...props}: BeautifulMentionsMenuProps) => {
-    return (
-        <ul className='LexicalEditor__mentionsMenu' {...props}>
-            {props.children}
-        </ul>
-    )
-}
+const MentionsMenu = React.forwardRef<HTMLUListElement, BeautifulMentionsMenuProps>(
+    ({loading, ...props}, ref) => {
+        return (
+            <ul ref={ref} className='LexicalEditor__mentionsMenu' {...props}>
+                {props.children}
+            </ul>
+        )
+    },
+)
+MentionsMenu.displayName = 'MentionsMenu'
 
 const MentionsMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
     ({selected, item, itemValue, ...restProps}, ref) => {
@@ -118,14 +122,6 @@ const MentionsMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuIt
 )
 MentionsMenuItem.displayName = 'MentionsMenuItem'
 
-const EmojiMenu = ({loading, ...props}: BeautifulMentionsMenuProps) => {
-    return (
-        <ul className='LexicalEditor__emojiMenu' {...props}>
-            {props.children}
-        </ul>
-    )
-}
-
 const EmojiMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
     ({selected, item, itemValue, ...restProps}, ref) => {
         const data = typeof item === 'object' ? (item.data as Record<string, unknown>) || {} : {}
@@ -150,6 +146,17 @@ const EmojiMenuItem = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemP
     },
 )
 EmojiMenuItem.displayName = 'EmojiMenuItem'
+
+const TriggerMenuItemComponent = React.forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
+    (itemProps, ref) => {
+        const trigger = (itemProps.item as {trigger?: string})?.trigger
+        if (trigger === ':') {
+            return <EmojiMenuItem ref={ref} {...itemProps}/>
+        }
+        return <MentionsMenuItem ref={ref} {...itemProps}/>
+    },
+)
+TriggerMenuItemComponent.displayName = 'TriggerMenuItemComponent'
 
 const LexicalEditorInput = (props: Props): React.ReactElement => {
     const {onChange, onMentionMappingsChange, onFocus, onBlur, initialText, id, saveOnEnter, onEditorCancel} = props
@@ -364,6 +371,7 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
                         onCancel={onEditorCancel}
                         editorRef={editorRef}
                     />
+                    <CompositionPlugin/>
                     <BeautifulMentionsPlugin
                         triggers={['@', ':']}
                         onSearch={(trigger, query) => {
@@ -373,19 +381,10 @@ const LexicalEditorInput = (props: Props): React.ReactElement => {
                             return handleMentionSearch(trigger, query)
                         }}
                         searchDelay={0}
+                        menuItemLimit={{'@': false, ':': 10}}
                         menuAnchorClassName='LexicalEditor__mentionsAnchor'
-                        menuComponent={(menuProps) => {
-                            if (menuProps.trigger === ':') {
-                                return <EmojiMenu {...menuProps}/>
-                            }
-                            return <MentionsMenu {...menuProps}/>
-                        }}
-                        menuItemComponent={(itemProps) => {
-                            if (itemProps.trigger === ':') {
-                                return <EmojiMenuItem {...itemProps}/>
-                            }
-                            return <MentionsMenuItem {...itemProps}/>
-                        }}
+                        menuComponent={MentionsMenu}
+                        menuItemComponent={TriggerMenuItemComponent}
                         onMenuItemSelect={(menuItem) => {
                             if (menuItem.trigger === ':') {
                                 return
