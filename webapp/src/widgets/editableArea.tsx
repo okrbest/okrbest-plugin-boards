@@ -11,12 +11,11 @@ function getBorderWidth(style: CSSStyleDeclaration): number {
     return parseInt(style.borderTopWidth || '0', 10) + parseInt(style.borderBottomWidth || '0', 10)
 }
 
-const EditableArea = (props: EditableProps): React.JSX.Element => {
-    const { ref, ...otherProps } = props
+const EditableArea = React.forwardRef<Focusable, EditableProps>((props, ref) => {
     const elementRef = useRef<HTMLTextAreaElement>(null)
     const referenceRef = useRef<HTMLTextAreaElement>(null)
     const heightRef = useRef(0)
-    const elementProps = useEditable(otherProps, ref, elementRef as React.RefObject<ElementType>)
+    const elementProps = useEditable(props, ref, elementRef as React.RefObject<ElementType>)
 
     useEffect(() => {
         if (!elementRef.current || !referenceRef.current) {
@@ -63,6 +62,7 @@ const EditableArea = (props: EditableProps): React.JSX.Element => {
             </div>
         </div>
     )
-}
+})
+EditableArea.displayName = 'EditableArea'
 
 export default EditableArea
