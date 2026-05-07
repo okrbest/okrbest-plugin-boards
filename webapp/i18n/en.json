@@ -57,6 +57,7 @@
   "BoardTemplate.MeetingAgenda.priority.medium": "2. Medium",
   "BoardTemplate.MeetingAgenda.priority.low": "3. Low",
   "BoardTemplate.MeetingAgenda.view.discussionItems": "Discussion Items",
+  "BoardsUnfurl.Deleted": "This board or card has been deleted",
   "BoardsUnfurl.Limited": "Additional details are hidden due to the card being archived",
   "BoardsUnfurl.Remainder": "+{remainder} more",
   "BoardsUnfurl.Updated": "Updated {time}",

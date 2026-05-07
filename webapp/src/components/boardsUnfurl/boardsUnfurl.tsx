@@ -75,40 +75,48 @@ export const BoardsUnfurl = (props: Props): React.JSX.Element => {
     const [content, setContent] = useState<ContentBlock>()
     const [board, setBoard] = useState<Board>()
     const [loading, setLoading] = useState(true)
+    const [deleted, setDeleted] = useState(false)
 
     useEffect(() => {
         const fetchData = async () => {
-            const [cards, fetchedBoard] = await Promise.all(
-                [
-                    octoClient.getBlocksWithBlockID(cardID, boardID, readToken),
-                    octoClient.getBoard(boardID),
-                ],
-            )
-            const [firstCard] = cards as Card[]
-            if (!firstCard || !fetchedBoard || firstCard.type !== 'card') {
-                setLoading(false)
-                return null
-            }
-            setCard(firstCard)
-            setBoard(fetchedBoard)
-
-            if (firstCard.fields.contentOrder?.length) {
-                let [firstContentBlockID] = firstCard.fields.contentOrder
-
-                if (Array.isArray(firstContentBlockID)) {
-                    [firstContentBlockID] = firstContentBlockID
-                }
-
-                const contentBlock = await octoClient.getBlocksWithBlockID(firstContentBlockID, boardID, readToken) as ContentBlock[]
-                const [firstContentBlock] = contentBlock
-                if (!firstContentBlock) {
+            setDeleted(false)
+            try {
+                const [cards, fetchedBoard] = await Promise.all(
+                    [
+                        octoClient.getBlocksWithBlockID(cardID, boardID, readToken),
+                        octoClient.getBoard(boardID),
+                    ],
+                )
+                const [firstCard] = cards as Card[]
+                if (!firstCard || !fetchedBoard || firstCard.type !== 'card') {
+                    setDeleted(true)
                     setLoading(false)
                     return null
                 }
-                setContent(firstContentBlock)
-            }
+                setCard(firstCard)
+                setBoard(fetchedBoard)
 
-            setLoading(false)
+                if (firstCard.fields.contentOrder?.length) {
+                    let [firstContentBlockID] = firstCard.fields.contentOrder
+
+                    if (Array.isArray(firstContentBlockID)) {
+                        [firstContentBlockID] = firstContentBlockID
+                    }
+
+                    const contentBlock = await octoClient.getBlocksWithBlockID(firstContentBlockID, boardID, readToken) as ContentBlock[]
+                    const [firstContentBlock] = contentBlock
+                    if (!firstContentBlock) {
+                        setLoading(false)
+                        return null
+                    }
+                    setContent(firstContentBlock)
+                }
+
+                setLoading(false)
+            } catch {
+                setDeleted(true)
+                setLoading(false)
+            }
             return null
         }
         fetchData()
@@ -117,8 +125,13 @@ export const BoardsUnfurl = (props: Props): React.JSX.Element => {
     useWebsockets(currentTeamId, (wsClient: WSClient) => {
         const onChangeHandler = (_: WSClient, blocks: Block[]): void => {
             const cardBlock: Block|undefined = blocks.find(b => b.id === cardID)
-            if (cardBlock && !cardBlock.deleteAt && cardBlock.type === 'card') {
-                setCard(cardBlock as Card)
+            if (cardBlock) {
+                if (cardBlock.deleteAt) {
+                    setDeleted(true)
+                } else if (cardBlock.type === 'card') {
+                    setDeleted(false)
+                    setCard(cardBlock as Card)
+                }
             }
 
             const contentBlock: Block|undefined = blocks.find(b => b.id === content?.id)
@@ -184,8 +197,23 @@ export const BoardsUnfurl = (props: Props): React.JSX.Element => {
 
     return (
         <WithWebSockets manifest={manifest} webSocketClient={webSocketClient}>
-            {!loading && (!card || !board) && <></>}
-            {!loading && card && board &&
+            {!loading && deleted &&
+                <div className='FocalboardUnfurl FocalboardUnfurl--deleted'>
+                    <div className='header'>
+                        <span className='icon'>{'🗑️'}</span>
+                        <div className='information'>
+                            <span className='card_title'>
+                                <FormattedMessage
+                                    id='BoardsUnfurl.Deleted'
+                                    defaultMessage='This board or card has been deleted'
+                                />
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+            {!loading && !deleted && (!card || !board) && <></>}
+            {!loading && !deleted && card && board &&
                 <a
                     className='FocalboardUnfurl'
                     href={`${baseURL}${originalPath}`}
