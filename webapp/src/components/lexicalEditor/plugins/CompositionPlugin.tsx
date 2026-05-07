@@ -31,6 +31,7 @@ export function CompositionPlugin(): null {
     const [editor] = useLexicalComposerContext()
     const enterDuringCompositionRef = useRef(false)
     const bypassComposingRef = useRef(false)
+    const removeUpdateListenerRef = useRef<(() => void) | null>(null)
 
     // Override editor.isComposing() so that LexicalTypeaheadMenuPlugin's
     // update listener can run during Korean IME composition when we
@@ -126,12 +127,15 @@ export function CompositionPlugin(): null {
             }
             enterDuringCompositionRef.current = false
 
+            removeUpdateListenerRef.current?.()
             const removeListener = editor.registerUpdateListener(() => {
                 removeListener()
+                removeUpdateListenerRef.current = null
                 setTimeout(() => {
                     editor.dispatchCommand(KEY_ENTER_COMMAND, null)
                 }, 150)
             })
+            removeUpdateListenerRef.current = removeListener
         }
 
         rootElement.addEventListener('keydown', handleKeyDown, true)
@@ -140,6 +144,8 @@ export function CompositionPlugin(): null {
         return () => {
             rootElement.removeEventListener('keydown', handleKeyDown, true)
             rootElement.removeEventListener('compositionend', handleCompositionEnd)
+            removeUpdateListenerRef.current?.()
+            removeUpdateListenerRef.current = null
         }
     }, [editor])
 

@@ -93,21 +93,6 @@
         }
     }
 
-    &__emojiMenu {
-        position: absolute;
-        z-index: 10;
-        background: rgba(var(--center-channel-bg-rgb), 1);
-        box-shadow: var(--elevation-1);
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-        border-radius: 4px;
-        max-height: 300px;
-        overflow-y: auto;
-        min-width: 200px;
-        padding: 4px 0;
-        list-style: none;
-        margin: 0;
-    }
-
     &__emojiItem {
         display: flex;
         align-items: center;

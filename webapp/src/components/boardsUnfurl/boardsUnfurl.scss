@@ -18,6 +18,19 @@
       cursor: pointer;
     }
 
+    &--deleted {
+        opacity: 0.7;
+
+        &:hover {
+            cursor: default;
+        }
+
+        .header .information .card_title {
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            font-style: italic;
+        }
+    }
+
     .header {
         display: flex;
         align-items: center;

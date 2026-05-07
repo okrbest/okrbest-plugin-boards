@@ -57,6 +57,7 @@
   "BoardTemplate.MeetingAgenda.priority.medium": "2. 보통",
   "BoardTemplate.MeetingAgenda.priority.low": "3. 낮음",
   "BoardTemplate.MeetingAgenda.view.discussionItems": "토론 항목",
+  "BoardsUnfurl.Deleted": "이 보드 또는 카드가 삭제되었습니다",
   "BoardsUnfurl.Limited": "보관 중인 카드로 인해 추가 세부정보가 숨겨져 있습니다",
   "BoardsUnfurl.Remainder": "+{remainder} 추가",
   "BoardsUnfurl.Updated": "{time}에 수정됨",
