@@ -4,7 +4,7 @@
 import {useEffect, useRef} from 'react'
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext'
-import {KEY_ENTER_COMMAND, LexicalEditor, SKIP_DOM_SELECTION_TAG} from 'lexical'
+import {$getNodeByKey, KEY_ENTER_COMMAND, LexicalEditor, SKIP_DOM_SELECTION_TAG} from 'lexical'
 
 /**
  * Handles Korean IME composition interactions with Lexical editor:
@@ -79,7 +79,8 @@ export function CompositionPlugin(): null {
                 rafId = null
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if ((editor as any)._compositionKey == null) {
+                const compositionKey = (editor as any)._compositionKey
+                if (compositionKey == null) {
                     return
                 }
 
@@ -87,6 +88,11 @@ export function CompositionPlugin(): null {
                 try {
                     editor.update(
                         () => {
+                            // Verify the composition node still exists before marking dirty.
+                            // The node may have been removed between compositionupdate and this RAF callback.
+                            if ($getNodeByKey(compositionKey) == null) {
+                                return
+                            }
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             (editor as any)._dirtyType = HAS_DIRTY_NODES
                         },

@@ -175,7 +175,7 @@ const PersonSelector = (props: Props): React.JSX.Element => {
     if (readOnly) {
         return (
             <div className={`${primaryClass}${secondaryClass}`}>
-                {users.map((user) => formatOptionLabel(user))}
+                {users.filter(Boolean).map((user) => formatOptionLabel(user))}
             </div>
         )
     }

@@ -14,11 +14,11 @@ import {contentRegistry} from '../content/contentRegistry'
 
 import {useCardDetailContext} from './cardDetailContext'
 
-function addContentMenu(intl: IntlShape, type: BlockTypes): React.JSX.Element {
+function addContentMenu(intl: IntlShape, type: BlockTypes): React.JSX.Element | null {
     const handler = contentRegistry.getHandler(type)
     if (!handler) {
         Utils.logError(`addContentMenu, unknown content type: ${type}`)
-        return <></>
+        return null
     }
     const cardDetail = useCardDetailContext()
     const addElement = useCallback(async () => {
