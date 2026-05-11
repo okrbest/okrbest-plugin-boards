@@ -11,10 +11,16 @@ export function jsx(type, props, key) {
 }
 
 export function jsxs(type, props, key) {
-    if (arguments.length > 2) {
-        return React.createElement(type, { ...props, key });
+    // jsxs is for static children: spread them as separate args so React
+    // treats them as positional children (no key warning).
+    const { children, ...restProps } = props;
+    if (key !== undefined) {
+        restProps.key = key;
     }
-    return React.createElement(type, props);
+    if (Array.isArray(children)) {
+        return React.createElement(type, restProps, ...children);
+    }
+    return React.createElement(type, restProps, children);
 }
 
 export const jsxDEV = jsx;
