@@ -1841,3 +1841,45 @@ func (mr *MockStoreMockRecorder) UpsertTeamSignupToken(arg0 interface{}) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertTeamSignupToken", reflect.TypeOf((*MockStore)(nil).UpsertTeamSignupToken), arg0)
 }
+
+// InsertBoardMention mocks base method.
+func (m *MockStore) InsertBoardMention(arg0 *model.BoardMention) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertBoardMention", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertBoardMention indicates an expected call of InsertBoardMention.
+func (mr *MockStoreMockRecorder) InsertBoardMention(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBoardMention", reflect.TypeOf((*MockStore)(nil).InsertBoardMention), arg0)
+}
+
+// MarkBoardMentionReplied mocks base method.
+func (m *MockStore) MarkBoardMentionReplied(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkBoardMentionReplied", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkBoardMentionReplied indicates an expected call of MarkBoardMentionReplied.
+func (mr *MockStoreMockRecorder) MarkBoardMentionReplied(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBoardMentionReplied", reflect.TypeOf((*MockStore)(nil).MarkBoardMentionReplied), arg0, arg1)
+}
+
+// MarkBoardMentionRepliedByPostID mocks base method.
+func (m *MockStore) MarkBoardMentionRepliedByPostID(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkBoardMentionRepliedByPostID", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkBoardMentionRepliedByPostID indicates an expected call of MarkBoardMentionRepliedByPostID.
+func (mr *MockStoreMockRecorder) MarkBoardMentionRepliedByPostID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBoardMentionRepliedByPostID", reflect.TypeOf((*MockStore)(nil).MarkBoardMentionRepliedByPostID), arg0, arg1)
+}

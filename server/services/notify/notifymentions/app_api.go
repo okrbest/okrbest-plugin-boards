@@ -7,4 +7,5 @@ import "github.com/mattermost/mattermost-plugin-boards/server/model"
 type AppAPI interface {
 	GetMemberForBoard(boardID, userID string) (*model.BoardMember, error)
 	AddMemberToBoard(member *model.BoardMember) (*model.BoardMember, error)
+	InsertBoardMention(mention *model.BoardMention) error
 }
