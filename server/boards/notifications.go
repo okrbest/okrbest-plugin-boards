@@ -165,3 +165,7 @@ func (a *appAPI) DeleteNotificationHint(blockID string) error {
 func (a *appAPI) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, error) {
 	return a.store.GetBlockSuiteDocByCardID(cardID)
 }
+
+func (a *appAPI) InsertBoardMention(mention *model.BoardMention) error {
+	return a.store.InsertBoardMention(mention)
+}
