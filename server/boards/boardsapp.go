@@ -204,6 +204,29 @@ func (b *BoardsApp) MessageWillBeUpdated(_ *plugin.Context, newPost, _ *mm_model
 	return postWithBoardsEmbed(newPost), ""
 }
 
+func (b *BoardsApp) ReactionHasBeenAdded(_ *plugin.Context, reaction *mm_model.Reaction) {
+	if err := b.server.App().MarkBoardMentionRepliedByPostID(reaction.UserId, reaction.PostId); err != nil {
+		b.logger.Warn("failed to mark board mention replied via reaction",
+			mlog.String("user_id", reaction.UserId),
+			mlog.String("post_id", reaction.PostId),
+			mlog.Err(err),
+		)
+	}
+}
+
+func (b *BoardsApp) MessageHasBeenPosted(_ *plugin.Context, post *mm_model.Post) {
+	if post.RootId == "" {
+		return
+	}
+	if err := b.server.App().MarkBoardMentionRepliedByPostID(post.UserId, post.RootId); err != nil {
+		b.logger.Warn("failed to mark board mention replied via thread reply",
+			mlog.String("user_id", post.UserId),
+			mlog.String("root_post_id", post.RootId),
+			mlog.Err(err),
+		)
+	}
+}
+
 func (b *BoardsApp) OnWebSocketConnect(webConnID, userID string) {
 	b.wsPluginAdapter.OnWebSocketConnect(webConnID, userID)
 }

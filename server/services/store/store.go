@@ -190,6 +190,11 @@ type Store interface {
 	GetScheduledCommentsByUser(userID string) ([]*model.Block, error)
 	GetScheduledCommentsForCard(cardID string) ([]*model.Block, error)
 	GetScheduledCommentsCountByUser(userID string) (int, error)
+
+	// Board mentions
+	InsertBoardMention(mention *model.BoardMention) error
+	MarkBoardMentionReplied(userID, cardID string) error
+	MarkBoardMentionRepliedByPostID(userID, postID string) error
 }
 
 type NotSupportedError struct {

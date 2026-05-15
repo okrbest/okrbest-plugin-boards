@@ -17,16 +17,16 @@ var errBatchRequiresChannel = errors.New("batch mention delivery requires board 
 
 // MentionDeliver notifies a user they have been mentioned in a block via the plugin API.
 // Used for DM notifications (when board is not linked to a channel).
-func (pd *PluginDelivery) MentionDeliver(mentionedUser *mm_model.User, extract string, evt notify.BlockChangeEvent) (string, error) {
+func (pd *PluginDelivery) MentionDeliver(mentionedUser *mm_model.User, extract string, evt notify.BlockChangeEvent) (string, string, error) {
 	author, err := pd.api.GetUserByID(evt.ModifiedBy.UserID)
 	if err != nil {
-		return "", fmt.Errorf("cannot find user: %w", err)
+		return "", "", fmt.Errorf("cannot find user: %w", err)
 	}
 
 	// DM 채널로 메시지 전송
 	channel, err := pd.getDirectChannel(evt.TeamID, mentionedUser.Id, pd.botID)
 	if err != nil {
-		return "", fmt.Errorf("cannot get direct channel: %w", err)
+		return "", "", fmt.Errorf("cannot get direct channel: %w", err)
 	}
 
 	link := utils.MakeCardLink(pd.serverRoot, evt.Board.TeamID, evt.Board.ID, evt.Card.ID)
@@ -38,28 +38,29 @@ func (pd *PluginDelivery) MentionDeliver(mentionedUser *mm_model.User, extract s
 		Message:   formatMessage(author.Username, mentionedUser.Username, extract, evt.Card.Title, link, evt.BlockChanged, boardLink, evt.Board.Title),
 	}
 
-	if _, err := pd.api.CreatePost(post); err != nil {
-		return "", err
+	created, err := pd.api.CreatePost(post)
+	if err != nil {
+		return "", "", err
 	}
 
-	return mentionedUser.Id, nil
+	return mentionedUser.Id, created.Id, nil
 }
 
 // BatchMentionDeliver sends a single notification to a channel for multiple mentioned users.
 // This is used when the board is linked to a channel to avoid duplicate messages.
-func (pd *PluginDelivery) BatchMentionDeliver(mentionedUsers []*mm_model.User, extract string, evt notify.BlockChangeEvent) ([]string, error) {
+func (pd *PluginDelivery) BatchMentionDeliver(mentionedUsers []*mm_model.User, extract string, evt notify.BlockChangeEvent) ([]string, string, error) {
 	if len(mentionedUsers) == 0 {
-		return nil, nil
+		return nil, "", nil
 	}
 
 	// 채널 연결이 없으면 배치 전송 불가
 	if evt.Board.ChannelID == "" {
-		return nil, errBatchRequiresChannel
+		return nil, "", errBatchRequiresChannel
 	}
 
 	author, err := pd.api.GetUserByID(evt.ModifiedBy.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("cannot find user: %w", err)
+		return nil, "", fmt.Errorf("cannot find user: %w", err)
 	}
 
 	link := utils.MakeCardLink(pd.serverRoot, evt.Board.TeamID, evt.Board.ID, evt.Card.ID)
@@ -79,9 +80,10 @@ func (pd *PluginDelivery) BatchMentionDeliver(mentionedUsers []*mm_model.User, e
 		Message:   formatBatchMessage(author.Username, usernames, extract, evt.Card.Title, link, evt.BlockChanged, boardLink, evt.Board.Title),
 	}
 
-	if _, err := pd.api.CreatePost(post); err != nil {
-		return nil, err
+	created, err := pd.api.CreatePost(post)
+	if err != nil {
+		return nil, "", err
 	}
 
-	return userIDs, nil
+	return userIDs, created.Id, nil
 }

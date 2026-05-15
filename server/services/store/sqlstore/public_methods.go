@@ -996,3 +996,15 @@ func (s *SQLStore) UpsertTeamSignupToken(team model.Team) error {
 	return s.upsertTeamSignupToken(s.db, team)
 
 }
+
+func (s *SQLStore) InsertBoardMention(mention *model.BoardMention) error {
+	return s.insertBoardMention(s.db, mention)
+}
+
+func (s *SQLStore) MarkBoardMentionReplied(userID, cardID string) error {
+	return s.markBoardMentionReplied(s.db, userID, cardID)
+}
+
+func (s *SQLStore) MarkBoardMentionRepliedByPostID(userID, postID string) error {
+	return s.markBoardMentionRepliedByPostID(s.db, userID, postID)
+}

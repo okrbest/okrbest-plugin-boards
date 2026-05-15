@@ -159,6 +159,16 @@ func (a *App) InsertBlockAndNotify(block *model.Block, modifiedByID string, disa
 
 	err := a.store.InsertBlock(block, modifiedByID)
 	if err == nil {
+		if block.Type == model.TypeComment || block.Type == model.TypeText {
+			if markErr := a.store.MarkBoardMentionReplied(modifiedByID, block.ParentID); markErr != nil {
+				a.logger.Warn("failed to mark board mention as replied",
+					mlog.String("user_id", modifiedByID),
+					mlog.String("card_id", block.ParentID),
+					mlog.Err(markErr),
+				)
+			}
+		}
+
 		a.blockChangeNotifier.Enqueue(func() error {
 			a.wsAdapter.BroadcastBlockChange(board.TeamID, block)
 			a.metrics.IncrementBlocksInserted(1)
@@ -244,6 +254,17 @@ func (a *App) InsertBlocksAndNotify(blocks []*model.Block, modifiedByID string, 
 		if err != nil {
 			return nil, err
 		}
+
+		if block.Type == model.TypeComment || block.Type == model.TypeText {
+			if markErr := a.store.MarkBoardMentionReplied(modifiedByID, block.ParentID); markErr != nil {
+				a.logger.Warn("failed to mark board mention as replied",
+					mlog.String("user_id", modifiedByID),
+					mlog.String("card_id", block.ParentID),
+					mlog.Err(markErr),
+				)
+			}
+		}
+
 		needsNotify = append(needsNotify, block)
 
 		a.wsAdapter.BroadcastBlockChange(board.TeamID, block)
