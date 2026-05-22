@@ -167,6 +167,8 @@ const CalendarFullView = (props: Props): React.JSX.Element|null => {
                     <MenuWrapper
                         className='optionsMenu'
                         stopPropagationOnToggle={true}
+                        usePortal={true}
+                        menuPosition='left'
                     >
                         <CardActionsMenuIcon/>
                         <CardActionsMenu

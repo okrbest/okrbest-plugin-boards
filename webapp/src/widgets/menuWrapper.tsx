@@ -78,30 +78,50 @@ const MenuWrapper = (props: Props) => {
             e.preventDefault()
             e.stopPropagation()
         }
-        setOpen(!open)
-        props.onToggle && props.onToggle(!open)
-    }, [props.onToggle, open, props.disabled])
+        const newOpen = !open
+        setOpen(newOpen)
+        if (newOpen) {
+            document.dispatchEvent(new CustomEvent('menuWrapperOpened', {
+                detail: {source: node.current},
+            }))
+        }
+        props.onToggle && props.onToggle(newOpen)
+    }, [props.onToggle, open, props.disabled, props.stopPropagationOnToggle])
+
+    const {children} = props
+    const trigger = children ? Object.values(children)[0] : null
+    const menu = children ? Object.values(children)[1] : null
+    const [position, setPosition] = useState<{top: number, right?: number, left?: number, bottom?: number} | null>(null)
+    const portalRef = useRef<HTMLDivElement>(null)
+
+    const handleOtherMenuOpened = useCallback((e: Event) => {
+        const source = (e as CustomEvent).detail?.source as Node
+        if (!source) {
+            return
+        }
+        if (node.current?.contains(source)) {
+            return
+        }
+        if (portalRef.current?.contains(source)) {
+            return
+        }
+        close()
+    }, [close])
 
     useEffect(() => {
         if (open) {
             document.addEventListener('menuItemClicked', close, true)
             document.addEventListener('click', closeOnBlur, true)
             document.addEventListener('keyup', keyboardClose, true)
+            document.addEventListener('menuWrapperOpened', handleOtherMenuOpened)
         }
         return () => {
-            // open 상태와 관계없이 항상 리스너 제거
-            // 메뉴가 닫히면서 컴포넌트가 unmount되면 open이 false가 되어
-            // 리스너가 제거되지 않는 버그 수정
             document.removeEventListener('menuItemClicked', close, true)
             document.removeEventListener('click', closeOnBlur, true)
             document.removeEventListener('keyup', keyboardClose, true)
+            document.removeEventListener('menuWrapperOpened', handleOtherMenuOpened)
         }
-    }, [open, close, closeOnBlur, keyboardClose])
-
-    const {children} = props
-    const trigger = children ? Object.values(children)[0] : null
-    const menu = children ? Object.values(children)[1] : null
-    const [position, setPosition] = useState<{top: number, right?: number, left?: number, bottom?: number} | null>(null)
+    }, [open, close, closeOnBlur, keyboardClose, handleOtherMenuOpened])
 
     useLayoutEffect(() => {
         if (!props.usePortal || !open || !node.current || !menu) {
@@ -120,6 +140,23 @@ const MenuWrapper = (props: Props) => {
             setPosition({top: rect.bottom, left: rect.left})
         }
     }, [open, props.usePortal, props.menuPosition, menu])
+
+    useLayoutEffect(() => {
+        if (!open || !props.usePortal || !position || !portalRef.current) {
+            return
+        }
+        const menuEl = portalRef.current.querySelector('.Menu.noselect') as HTMLElement
+        if (!menuEl) {
+            return
+        }
+        const menuRect = menuEl.getBoundingClientRect()
+        const overflow = menuRect.right - window.innerWidth + 8
+        if (overflow > 0) {
+            menuEl.style.transform = `translateX(-${overflow}px)`
+        } else {
+            menuEl.style.transform = ''
+        }
+    }, [open, props.usePortal, position])
 
     let className = 'MenuWrapper'
     if (props.disabled) {
@@ -143,6 +180,7 @@ const MenuWrapper = (props: Props) => {
             return (
                 <RootPortal>
                     <div
+                        ref={portalRef}
                         className='MenuWrapper-portal'
                         style={{
                             position: 'fixed',

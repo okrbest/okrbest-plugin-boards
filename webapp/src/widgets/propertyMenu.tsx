@@ -188,38 +188,25 @@ const PropertyMenu = (props: Props) => {
                     ) : (
                         <>
                             <div
-                                className='MenuOption LabelOption menu-option'
-                                style={{pointerEvents: 'auto', padding: '8px'}}
+                                className='board-search-row'
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                <div className='noicon'/>
-                                <div className='menu-name' style={{display: 'flex', alignItems: 'center', gap: '8px', width: '100%'}}>
-                                    <SearchIcon/>
-                                    <input
-                                        ref={searchInputRef}
-                                        type='text'
-                                        style={{
-                                            flex: 1,
-                                            border: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
-                                            borderRadius: '4px',
-                                            padding: '4px 8px',
-                                            fontSize: '14px',
-                                            background: 'rgb(var(--center-channel-bg-rgb))',
-                                            color: 'rgb(var(--center-channel-color-rgb))',
-                                        }}
-                                        placeholder={intl.formatMessage({id: 'PropertyMenu.searchBoards', defaultMessage: 'Search boards...'})}
-                                        value={searchQuery}
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onKeyDownCapture={(e) => e.stopPropagation()}
-                                        onKeyUpCapture={(e) => e.stopPropagation()}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-                                <div className='noicon'/>
+                                <SearchIcon/>
+                                <input
+                                    ref={searchInputRef}
+                                    type='text'
+                                    className='board-search-input'
+                                    placeholder={intl.formatMessage({id: 'PropertyMenu.searchBoards', defaultMessage: 'Search boards...'})}
+                                    value={searchQuery}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDownCapture={(e) => e.stopPropagation()}
+                                    onKeyUpCapture={(e) => e.stopPropagation()}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
                             </div>
                             {filteredBoards.length === 0 ? (
                                 <Menu.Label>

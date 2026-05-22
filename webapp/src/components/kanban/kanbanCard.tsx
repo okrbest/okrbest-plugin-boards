@@ -105,6 +105,8 @@ const KanbanCard = (props: Props) => {
                 <MenuWrapper
                     className={`optionsMenu ${showOnboarding ? 'show' : ''}`}
                     stopPropagationOnToggle={true}
+                    usePortal={true}
+                    menuPosition='left'
                 >
                     <CardActionsMenuIcon/>
                     <CardActionsMenu

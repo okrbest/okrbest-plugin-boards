@@ -206,8 +206,10 @@ const TableRow = (props: Props) => {
 
                 {!props.readonly && (
                     <MenuWrapper
-                        className='optionsMenu ml-2 mr-2'
+                        className='optionsMenu'
                         stopPropagationOnToggle={true}
+                        usePortal={true}
+                        menuPosition='left'
                     >
                         <Tooltip
                             title={intl.formatMessage({id: 'TableRow.MoreOption', defaultMessage: 'More actions'})}
