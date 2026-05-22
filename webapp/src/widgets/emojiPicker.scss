@@ -43,6 +43,15 @@
     }
 }
 
+#pick > .SubMenu.Menu.noselect {
+    max-width: none;
+
+    .menu-contents {
+        max-width: none;
+        min-width: auto;
+    }
+}
+
 @keyframes emoji-picker-spin {
     to {
         transform: rotate(360deg);

@@ -9,3 +9,41 @@
         margin: 5px;
     }
 }
+
+#select-board > .SubMenu.Menu.noselect {
+    max-width: 420px;
+
+    .menu-contents {
+        min-width: 320px;
+        max-width: 420px;
+    }
+}
+
+.board-search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+
+    .Icon {
+        opacity: 0.56;
+        flex-shrink: 0;
+    }
+}
+
+.board-search-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 14px;
+    background: rgb(var(--center-channel-bg-rgb));
+    color: rgb(var(--center-channel-color-rgb));
+    outline: none;
+
+    &:focus {
+        border-color: rgba(var(--button-bg-rgb), 0.5);
+    }
+}

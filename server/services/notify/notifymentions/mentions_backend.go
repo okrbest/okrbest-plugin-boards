@@ -92,7 +92,7 @@ func (b *Backend) RemoveListener(l MentionListener) {
 }
 
 func (b *Backend) BlockChanged(evt notify.BlockChangeEvent) error {
-	if evt.Board == nil || evt.Card == nil {
+	if evt.Board == nil || evt.Card == nil || evt.BlockChanged == nil {
 		return nil
 	}
 

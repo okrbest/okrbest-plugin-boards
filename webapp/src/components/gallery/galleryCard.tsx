@@ -90,6 +90,8 @@ const GalleryCard = (props: Props) => {
                     <MenuWrapper
                         className='optionsMenu'
                         stopPropagationOnToggle={true}
+                        usePortal={true}
+                        menuPosition='left'
                     >
                         <CardActionsMenuIcon/>
                         <CardActionsMenu

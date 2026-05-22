@@ -23,9 +23,12 @@ const AddContentMenuItem = ({type}: AddContentMenuItemProps): React.JSX.Element 
     const handler = contentRegistry.getHandler(type)
 
     const addElement = useCallback(async () => {
+        if (!handler) {
+            return
+        }
         const {card} = cardDetail
         const index = card.fields.contentOrder?.length ?? 0
-        cardDetail.addBlock(handler!, index, false)
+        cardDetail.addBlock(handler, index, false)
     }, [cardDetail, handler])
 
     if (!handler) {
