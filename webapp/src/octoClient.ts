@@ -660,6 +660,8 @@ class OctoClient {
             fileInfo = this.getJson(response, {}) as FileInfo
         } else if (response.status === 400) {
             fileInfo = await this.getJson(response, {}) as FileInfo
+        } else {
+            Utils.logWarn(`getFileInfo failed: status=${response.status} boardId=${boardId} fileId=${fileId}`)
         }
 
         return fileInfo
@@ -684,9 +686,15 @@ class OctoClient {
 
         if (response.status === 200) {
             const blob = await response.blob()
+            if (!blob || blob.size === 0) {
+                Utils.logWarn(`getFileAsDataUrl empty blob: boardId=${boardId} fileId=${fileId}`)
+                return fileInfo
+            }
             fileInfo.url = URL.createObjectURL(blob)
         } else if (response.status === 400) {
             fileInfo = await this.getJson(response, {}) as FileInfo
+        } else {
+            Utils.logWarn(`getFileAsDataUrl failed: status=${response.status} boardId=${boardId} fileId=${fileId}`)
         }
 
         return fileInfo
