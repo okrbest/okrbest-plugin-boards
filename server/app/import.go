@@ -53,12 +53,14 @@ func (a *App) ImportArchive(r io.Reader, opt model.ImportArchiveOptions) error {
 
 	boardMap := make(map[string]*model.Board) // maps old board ids to new
 	fileMap := make(map[string]string)        // maps old fileIds to new
+	fileNamesMap := make(map[string]map[string]string)
 
 	for {
 		hdr, err := zr.Next()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				a.fixImagesAttachments(boardMap, fileMap, opt.TeamID, opt.ModifiedBy)
+				a.fixBlockSuiteDocFileIDs(boardMap, fileMap)
 				a.logger.Debug("import archive - done", mlog.Int("boards_imported", len(boardMap)))
 				return nil
 			}
@@ -83,9 +85,26 @@ func (a *App) ImportArchive(r io.Reader, opt model.ImportArchiveOptions) error {
 				return fmt.Errorf("cannot import board %s: %w", dir, err)
 			}
 			boardMap[dir] = board
+		case "files_meta.json":
+			var meta archiveFilesMeta
+			if err := json.NewDecoder(zr).Decode(&meta); err != nil {
+				a.logger.Warn("cannot parse files_meta.json, falling back to archive entry names",
+					mlog.String("dir", dir),
+					mlog.Err(err),
+				)
+				continue
+			}
+			if len(meta.Files) > 0 {
+				fileNamesMap[dir] = meta.Files
+			}
 		default:
-			// import file/image;  dir is the old board id
+			// Skip only generated card markdown files under "<boardID>/cards/*.md".
+			// Real user attachments can also be ".md", and must still be imported.
+			if strings.HasSuffix(filename, ".md") && path.Base(dir) == "cards" {
+				continue
+			}
 
+			// import file/image;  dir is the old board id
 			board, ok := boardMap[dir]
 			if !ok {
 				a.logger.Warn("skipping orphan image in archive",
@@ -94,7 +113,14 @@ func (a *App) ImportArchive(r io.Reader, opt model.ImportArchiveOptions) error {
 				)
 				continue
 			}
-			newFileName, err := a.SaveFile(zr, opt.TeamID, board.ID, filename, board.IsTemplate)
+			displayName := filename
+			if boardFilesMeta, exists := fileNamesMap[dir]; exists {
+				if originalName, ok := boardFilesMeta[filename]; ok && originalName != "" {
+					displayName = originalName
+				}
+			}
+
+			newFileName, err := a.SaveFile(zr, opt.TeamID, board.ID, displayName, board.IsTemplate)
 			if err != nil {
 				return fmt.Errorf("cannot import file %s for board %s: %w", filename, dir, err)
 			}
@@ -104,6 +130,7 @@ func (a *App) ImportArchive(r io.Reader, opt model.ImportArchiveOptions) error {
 				mlog.String("TeamID", opt.TeamID),
 				mlog.String("boardID", board.ID),
 				mlog.String("filename", filename),
+				mlog.String("displayName", displayName),
 				mlog.String("newFileName", newFileName),
 			)
 		}
@@ -112,12 +139,12 @@ func (a *App) ImportArchive(r io.Reader, opt model.ImportArchiveOptions) error {
 
 // Update image and attachment blocks.
 func (a *App) fixImagesAttachments(boardMap map[string]*model.Board, fileMap map[string]string, teamID string, userID string) {
-	blockIDs := make([]string, 0)
-	blockPatches := make([]model.BlockPatch, 0)
 	for _, board := range boardMap {
 		if board.IsTemplate {
 			continue
 		}
+		blockIDs := make([]string, 0)
+		blockPatches := make([]model.BlockPatch, 0)
 
 		opts := model.QueryBlocksOptions{
 			BoardID: board.ID,
@@ -129,23 +156,67 @@ func (a *App) fixImagesAttachments(boardMap map[string]*model.Board, fileMap map
 		}
 
 		for _, block := range newBlocks {
-			if block.Type == "image" || block.Type == "attachment" {
-				fieldName := "fileId"
-				oldID := block.Fields[fieldName]
-				blockIDs = append(blockIDs, block.ID)
-
-				blockPatches = append(blockPatches, model.BlockPatch{
-					UpdatedFields: map[string]interface{}{
-						fieldName: fileMap[oldID.(string)],
-					},
-				})
+			if block.DeleteAt > 0 {
+				continue
 			}
+			if block.Type != model.TypeImage && block.Type != model.TypeAttachment {
+				continue
+			}
+
+			var fieldName, newID string
+			if fid, ok := block.Fields[model.BlockFieldFileId].(string); ok && fid != "" {
+				if mapped, exists := fileMap[fid]; exists {
+					fieldName = model.BlockFieldFileId
+					newID = mapped
+				}
+			}
+			if newID == "" {
+				if aid, ok := block.Fields[model.BlockFieldAttachmentId].(string); ok && aid != "" {
+					if mapped, exists := fileMap[aid]; exists {
+						fieldName = model.BlockFieldAttachmentId
+						newID = mapped
+					}
+				}
+			}
+			if newID == "" {
+				a.logger.Debug("fixImagesAttachments: no fileMap entry for block",
+					mlog.String("blockID", block.ID),
+					mlog.String("boardID", board.ID),
+					mlog.String("fileId", fmt.Sprintf("%v", block.Fields[model.BlockFieldFileId])),
+					mlog.String("attachmentId", fmt.Sprintf("%v", block.Fields[model.BlockFieldAttachmentId])),
+				)
+				continue
+			}
+
+			blockIDs = append(blockIDs, block.ID)
+			var deleteField string
+			if fieldName == model.BlockFieldFileId {
+				deleteField = model.BlockFieldAttachmentId
+			} else {
+				deleteField = model.BlockFieldFileId
+			}
+			blockPatches = append(blockPatches, model.BlockPatch{
+				UpdatedFields: map[string]interface{}{fieldName: newID},
+				DeletedFields: []string{deleteField},
+			})
+		}
+
+		if len(blockIDs) == 0 {
+			continue
 		}
 
 		blockPatchBatch := model.BlockPatchBatch{BlockIDs: blockIDs, BlockPatches: blockPatches}
-		err = a.PatchBlocks(teamID, &blockPatchBatch, userID)
-		if err != nil {
-			a.logger.Info("Error patching blocks for image import", mlog.Err(err))
+		if err = a.PatchBlocksAndNotify(teamID, &blockPatchBatch, userID, true); err != nil {
+			a.logger.Warn("fixImagesAttachments: failed to patch file IDs",
+				mlog.String("boardID", board.ID),
+				mlog.Int("patchCount", len(blockIDs)),
+				mlog.Err(err),
+			)
+		} else {
+			a.logger.Debug("fixImagesAttachments: patched file IDs",
+				mlog.String("boardID", board.ID),
+				mlog.Int("patchCount", len(blockIDs)),
+			)
 		}
 	}
 }
@@ -161,11 +232,14 @@ func (a *App) ImportBoardJSONL(r io.Reader, opt model.ImportArchiveOptions) (*mo
 	}
 	lineReader := &io.LimitedReader{R: r, N: importMaxFileSize + 1}
 	scanner := bufio.NewScanner(lineReader)
+	// BlockSuite snapshot lines can be large; increase scanner buffer to 10MB per line.
+	scanner.Buffer(make([]byte, bufio.MaxScanTokenSize), 10*1024*1024)
 
 	userID := opt.ModifiedBy
 	now := utils.GetMillis()
 	var boardID string
 	var boardMembers []*model.BoardMember
+	var blockSuiteDocs []*archiveBlockSuiteDoc
 
 	lineNum := 1
 	firstLine := true
@@ -235,15 +309,25 @@ func (a *App) ImportBoardJSONL(r io.Reader, opt model.ImportArchiveOptions) (*mo
 					block.UpdateAt = now
 					block.BoardID = boardID
 					boardsAndBlocks.Blocks = append(boardsAndBlocks.Blocks, block)
-				case "boardMember":
-					var boardMember *model.BoardMember
-					if err2 := json.Unmarshal(archiveLine.Data, &boardMember); err2 != nil {
-						return nil, fmt.Errorf("invalid board Member in archive line %d: %w", lineNum, err2)
-					}
-					boardMembers = append(boardMembers, boardMember)
-				default:
-					return nil, model.NewErrUnsupportedArchiveLineType(lineNum, archiveLine.Type)
+			case "boardMember":
+				var boardMember *model.BoardMember
+				if err2 := json.Unmarshal(archiveLine.Data, &boardMember); err2 != nil {
+					return nil, fmt.Errorf("invalid board Member in archive line %d: %w", lineNum, err2)
 				}
+				boardMembers = append(boardMembers, boardMember)
+			case "blocksuitedoc":
+				var doc archiveBlockSuiteDoc
+				if err2 := json.Unmarshal(archiveLine.Data, &doc); err2 != nil {
+					return nil, fmt.Errorf("invalid blocksuitedoc in archive line %d: %w", lineNum, err2)
+				}
+				blockSuiteDocs = append(blockSuiteDocs, &doc)
+			default:
+				// Skip unknown line types for forward compatibility
+				a.logger.Warn("skipping unknown archive line type",
+					mlog.Int("lineNum", lineNum),
+					mlog.String("type", archiveLine.Type),
+				)
+			}
 				firstLine = false
 			}
 		}
@@ -263,7 +347,8 @@ func (a *App) ImportBoardJSONL(r io.Reader, opt model.ImportArchiveOptions) (*mo
 	a.fixBoardsandBlocks(boardsAndBlocks, opt)
 
 	var err error
-	boardsAndBlocks, err = model.GenerateBoardsAndBlocksIDs(boardsAndBlocks, a.logger)
+	var cardIDMapping map[string]string
+	boardsAndBlocks, cardIDMapping, err = model.GenerateBoardsAndBlocksIDsWithMapping(boardsAndBlocks, a.logger)
 	if err != nil {
 		return nil, fmt.Errorf("error generating archive block IDs: %w", err)
 	}
@@ -276,6 +361,14 @@ func (a *App) ImportBoardJSONL(r io.Reader, opt model.ImportArchiveOptions) (*mo
 	if err := a.addUserToNewBoard(boardsAndBlocks, opt, boardMembers); err != nil {
 		return nil, err
 	}
+
+	// import BlockSuite docs with remapped IDs (after cards are in DB)
+	var newBoardID string
+	for _, board := range boardsAndBlocks.Boards {
+		newBoardID = board.ID
+		break
+	}
+	a.importBlockSuiteDocs(blockSuiteDocs, cardIDMapping, newBoardID)
 
 	// find new board id
 	for _, board := range boardsAndBlocks.Boards {
@@ -465,6 +558,75 @@ func arrayMapsValue(m map[string]interface{}, key string) ([]map[string]interfac
 		arr = append(arr, mm)
 	}
 	return arr, true
+}
+
+// importBlockSuiteDocs saves BlockSuite documents with remapped card/board IDs.
+// Must be called after CreateBoardsAndBlocks so parent cards exist.
+func (a *App) importBlockSuiteDocs(docs []*archiveBlockSuiteDoc, cardIDMapping map[string]string, newBoardID string) {
+	for _, doc := range docs {
+		newCardID, ok := cardIDMapping[doc.CardID]
+		if !ok {
+			a.logger.Warn("skipping blocksuite doc with unknown card ID",
+				mlog.String("oldCardID", doc.CardID),
+			)
+			continue
+		}
+		newDoc := &model.BlockSuiteDoc{
+			DocID:       newCardID,
+			CardID:      newCardID,
+			BoardID:     newBoardID,
+			Snapshot:    doc.Snapshot,
+			ContentText: doc.ContentText,
+		}
+		if err := a.store.UpsertBlockSuiteDoc(newDoc); err != nil {
+			a.logger.Warn("cannot import blocksuite doc",
+				mlog.String("cardID", newCardID),
+				mlog.Err(err),
+			)
+		}
+	}
+}
+
+// fixBlockSuiteDocFileIDs replaces old file IDs with new file IDs inside BlockSuite snapshots.
+func (a *App) fixBlockSuiteDocFileIDs(boardMap map[string]*model.Board, fileMap map[string]string) {
+	if len(fileMap) == 0 {
+		return
+	}
+	for _, board := range boardMap {
+		if board.IsTemplate {
+			continue
+		}
+		docs, err := a.store.GetBlockSuiteDocsByBoardID(board.ID)
+		if err != nil {
+			a.logger.Warn("fixBlockSuiteDocFileIDs: cannot get docs",
+				mlog.String("boardID", board.ID),
+				mlog.Err(err),
+			)
+			continue
+		}
+		for _, doc := range docs {
+			if len(doc.Snapshot) == 0 {
+				continue
+			}
+			snapshotStr := string(doc.Snapshot)
+			changed := false
+			for oldID, newID := range fileMap {
+				if strings.Contains(snapshotStr, oldID) {
+					snapshotStr = strings.ReplaceAll(snapshotStr, oldID, newID)
+					changed = true
+				}
+			}
+			if changed {
+				doc.Snapshot = []byte(snapshotStr)
+				if err := a.store.UpsertBlockSuiteDoc(doc); err != nil {
+					a.logger.Warn("fixBlockSuiteDocFileIDs: cannot update doc",
+						mlog.String("docID", doc.DocID),
+						mlog.Err(err),
+					)
+				}
+			}
+		}
+	}
 }
 
 func parseVersionFile(r io.Reader) (int, error) {
