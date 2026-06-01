@@ -117,8 +117,12 @@ const AttachmentElement = (props: Props): React.JSX.Element|null => {
 
     const attachmentDownloadHandler = async () => {
         const attachment = await octoClient.getFileAsDataUrl(block.boardId, block.fields.fileId)
+        if (!attachment.url) {
+            Utils.logWarn(`Attachment download skipped: missing URL for board=${block.boardId} fileId=${block.fields.fileId}`)
+            return
+        }
         const anchor = document.createElement('a')
-        anchor.href = attachment.url || ''
+        anchor.href = attachment.url
         anchor.download = fileInfo.name || ''
         document.body.appendChild(anchor)
         anchor.click()

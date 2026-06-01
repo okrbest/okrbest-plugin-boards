@@ -140,8 +140,10 @@ endif
 webapp: webapp/node_modules
 ifneq ($(HAS_WEBAPP),)
 ifeq ($(MM_DEBUG),)
+	rm -rf webapp/dist
 	cd webapp && $(NPM) run build;
 else
+	rm -rf webapp/dist
 	cd webapp && $(NPM) run debug;
 endif
 endif
@@ -173,7 +175,7 @@ endif
 ifneq ($(HAS_WEBAPP),)
 	mkdir -p dist/$(PLUGIN_NAME)/webapp
 endif
-	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_NAME)
+	cd dist && COPYFILE_DISABLE=1 tar -cvzf $(BUNDLE_NAME) $(PLUGIN_NAME)
 
 	@echo plugin built at: dist/$(BUNDLE_NAME)
 
