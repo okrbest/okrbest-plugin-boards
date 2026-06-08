@@ -434,26 +434,10 @@ func (a *App) SendCardNotification(boardID, userID, cardID string) error {
 		return errBoardNotLinkedToChannel
 	}
 
-	card, err := a.GetBlockByID(cardID)
-	if err != nil {
-		return err
-	}
-
-	user, err := a.GetUser(userID)
-	if err != nil {
-		return err
-	}
-
-	cardLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, cardID)
-	boardLink := utils.MakeBoardLink(a.config.ServerRoot, board.TeamID, board.ID)
-
-	message := fmt.Sprintf(
-		"@%s님이 보드 [%s](%s)의 카드 [%s](%s)를 공유했습니다.",
-		user.Username, board.Title, boardLink, card.Title, cardLink,
-	)
-
-	if err := a.store.PostMessage(message, "", board.ChannelID); err != nil {
-		return err
+	if a.subscriptionsBackend != nil {
+		if err := a.subscriptionsBackend.ForceNotifyBlock(cardID, userID, model.TypeCard); err != nil {
+			a.logger.Error("Failed to force notify block", mlog.Err(err))
+		}
 	}
 
 	return nil
