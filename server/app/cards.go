@@ -325,7 +325,9 @@ func (a *App) LinkCardAsSubCard(cardID, parentCardID, userID string) (*model.Car
 		childLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, cardID)
 		parentLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, parentCardID)
 
-		a.postChannelMessage(fmt.Sprintf(linkSubCardMessage, username, childTitle, childLink, parentTitle, parentLink), board.ChannelID)
+		if err := a.postChannelMessage(fmt.Sprintf(linkSubCardMessage, username, childTitle, childLink, parentTitle, parentLink), board.ChannelID); err != nil {
+			a.logger.Error("Unable to post sub-card link message to channel", mlog.Err(err))
+		}
 	}
 
 	return updatedCard, nil
@@ -415,7 +417,9 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 
 		childLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, cardID)
 
-		a.postChannelMessage(fmt.Sprintf(unlinkSubCardMessage, username, childTitle, childLink), board.ChannelID)
+		if err := a.postChannelMessage(fmt.Sprintf(unlinkSubCardMessage, username, childTitle, childLink), board.ChannelID); err != nil {
+			a.logger.Error("Unable to post sub-card unlink message to channel", mlog.Err(err))
+		}
 	}
 
 	return updatedCard, nil

@@ -71,6 +71,7 @@ func (s *SQLStore) postMessage(_ sq.BaseRunner, message, postType, channelID str
 			"failed to send message to receipt from PostMessage",
 			mlog.Err(err),
 		)
+		return err
 	}
 	return nil
 }
