@@ -20,6 +20,7 @@ var (
 
 const linkBoardMessage = "@%s님이 보드 [%s](%s)를 이 채널에 연결했습니다"
 const unlinkBoardMessage = "@%s님이 보드 [%s](%s)와 이 채널의 연결을 해제했습니다"
+const shareCardMessage = "@%s가 카드 [%s](%s)를 공유 하였습니다 (보드: [%s](%s))"
 
 var (
 	errNoDefaultCategoryFound  = errors.New("no default category found for user")
@@ -374,9 +375,13 @@ func (a *App) PatchBoard(patch *model.BoardPatch, boardID, userID string) (*mode
 			title = "Untitled board" // todo: localize this when server has i18n
 		}
 		if *patch.ChannelID != "" {
-			a.postChannelMessage(fmt.Sprintf(linkBoardMessage, username, title, boardLink), updatedBoard.ChannelID)
+			if err := a.postChannelMessage(fmt.Sprintf(linkBoardMessage, username, title, boardLink), updatedBoard.ChannelID); err != nil {
+				a.logger.Error("Unable to post board link message to channel", mlog.Err(err))
+			}
 		} else if *patch.ChannelID == "" {
-			a.postChannelMessage(fmt.Sprintf(unlinkBoardMessage, username, title, boardLink), oldChannelID)
+			if err := a.postChannelMessage(fmt.Sprintf(unlinkBoardMessage, username, title, boardLink), oldChannelID); err != nil {
+				a.logger.Error("Unable to post board unlink message to channel", mlog.Err(err))
+			}
 		}
 	}
 
@@ -417,11 +422,13 @@ func (a *App) PatchBoard(patch *model.BoardPatch, boardID, userID string) (*mode
 	return updatedBoard, nil
 }
 
-func (a *App) postChannelMessage(message, channelID string) {
+func (a *App) postChannelMessage(message, channelID string) error {
 	err := a.store.PostMessage(message, "", channelID)
 	if err != nil {
 		a.logger.Error("Unable to post the link message to channel", mlog.Err(err))
+		return err
 	}
+	return nil
 }
 
 func (a *App) SendCardNotification(boardID, userID, cardID string) error {
@@ -434,10 +441,33 @@ func (a *App) SendCardNotification(boardID, userID, cardID string) error {
 		return errBoardNotLinkedToChannel
 	}
 
-	if a.subscriptionsBackend != nil {
-		if err := a.subscriptionsBackend.ForceNotifyBlock(cardID, userID, model.TypeCard); err != nil {
-			a.logger.Error("Failed to force notify block", mlog.Err(err))
-		}
+	card, err := a.GetCardByID(cardID)
+	if err != nil {
+		return err
+	}
+	if card.BoardID != boardID {
+		return model.NewErrBadRequest("card does not belong to board")
+	}
+
+	user, err := a.store.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+
+	boardTitle := board.Title
+	if boardTitle == "" {
+		boardTitle = "제목 없음"
+	}
+	cardTitle := card.Title
+	if cardTitle == "" {
+		cardTitle = "제목 없음"
+	}
+
+	cardLink := utils.MakeCardLink(a.config.ServerRoot, board.TeamID, board.ID, card.ID)
+	boardLink := utils.MakeBoardLink(a.config.ServerRoot, board.TeamID, board.ID)
+	message := fmt.Sprintf(shareCardMessage, user.Username, cardTitle, cardLink, boardTitle, boardLink)
+	if err = a.postChannelMessage(message, board.ChannelID); err != nil {
+		return fmt.Errorf("unable to send card share message: %w", err)
 	}
 
 	return nil

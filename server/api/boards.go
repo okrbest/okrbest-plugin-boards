@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
@@ -698,6 +699,10 @@ func (a *API) handleSendBoardNotification(w http.ResponseWriter, r *http.Request
 	}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		a.errorResponse(w, r, model.NewErrBadRequest("invalid request body"))
+		return
+	}
+	if strings.TrimSpace(requestBody.CardID) == "" {
+		a.errorResponse(w, r, model.NewErrBadRequest("cardID is required"))
 		return
 	}
 
