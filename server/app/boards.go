@@ -23,8 +23,9 @@ const unlinkBoardMessage = "@%s님이 보드 [%s](%s)와 이 채널의 연결을
 const shareCardMessage = "@%s가 카드 [%s](%s)를 공유 하였습니다 (보드: [%s](%s))"
 
 var (
-	errNoDefaultCategoryFound  = errors.New("no default category found for user")
-	errBoardNotLinkedToChannel = errors.New("board is not linked to any channel")
+	errNoDefaultCategoryFound   = errors.New("no default category found for user")
+	errBoardNotLinkedToChannel  = errors.New("board is not linked to any channel")
+	errSubscriptionsUnavailable = errors.New("subscriptions backend is not initialized")
 )
 
 func (a *App) GetBoard(boardID string) (*model.Board, error) {
@@ -431,7 +432,40 @@ func (a *App) postChannelMessage(message, channelID string) error {
 	return nil
 }
 
+// SendCardNotification triggers subscription-based diff notifications.
+// This is used by auto-notify flows (e.g. card close after edits).
 func (a *App) SendCardNotification(boardID, userID, cardID string) error {
+	board, err := a.GetBoard(boardID)
+	if err != nil {
+		return err
+	}
+
+	if board.ChannelID == "" {
+		return errBoardNotLinkedToChannel
+	}
+
+	card, err := a.GetCardByID(cardID)
+	if err != nil {
+		return err
+	}
+	if card.BoardID != boardID {
+		return model.NewErrBadRequest("card does not belong to board")
+	}
+
+	if a.subscriptionsBackend == nil {
+		return errSubscriptionsUnavailable
+	}
+	if err := a.subscriptionsBackend.ForceNotifyBlock(cardID, userID, model.TypeCard); err != nil {
+		a.logger.Error("Failed to force notify block", mlog.Err(err))
+		return fmt.Errorf("failed to send subscription notification: %w", err)
+	}
+
+	return nil
+}
+
+// SendCardShareNotification posts an explicit channel share message for a card.
+// This is used only by user-initiated share actions.
+func (a *App) SendCardShareNotification(boardID, userID, cardID string) error {
 	board, err := a.GetBoard(boardID)
 	if err != nil {
 		return err

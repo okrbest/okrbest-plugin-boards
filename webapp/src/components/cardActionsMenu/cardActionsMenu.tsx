@@ -48,7 +48,7 @@ export const CardActionsMenu = (props: Props): React.JSX.Element => {
 
     const handleSendNotification = async () => {
         try {
-            const response = await octoClient.sendBoardNotification(props.boardId, props.cardId)
+            const response = await octoClient.sendBoardShareNotification(props.boardId, props.cardId)
             if (response.ok) {
                 sendFlashMessage({content: intl.formatMessage({id: 'CardActionsMenu.notification-sent', defaultMessage: 'Notification sent!'}), severity: 'high'})
             } else {

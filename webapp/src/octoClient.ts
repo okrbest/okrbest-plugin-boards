@@ -1160,8 +1160,20 @@ class OctoClient {
         }))
     }
 
+    // Auto-notify endpoint: used when card changes are submitted on close.
     async sendBoardNotification(boardID: string, cardID: string): Promise<Response> {
         const path = `/api/v2/boards/${boardID}/notify`
+        const body = JSON.stringify({cardID})
+        return fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body,
+        }))
+    }
+
+    // Explicit share endpoint: used when user clicks "share to channel".
+    async sendBoardShareNotification(boardID: string, cardID: string): Promise<Response> {
+        const path = `/api/v2/boards/${boardID}/notify/share`
         const body = JSON.stringify({cardID})
         return fetch(this.getBaseURL() + path, Client4.getOptions({
             method: 'POST',
