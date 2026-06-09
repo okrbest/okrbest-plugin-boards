@@ -85,6 +85,7 @@ const CardDialog = (props: Props): React.JSX.Element => {
 
         if (isDirty && board.channelId) {
             try {
+                // Keep auto-notify on the diff endpoint; explicit share uses /notify/share.
                 await octoClient.sendBoardNotification(props.board.id, props.cardId)
             } catch (error) {
                 // eslint-disable-next-line no-console
@@ -270,7 +271,7 @@ const CardDialog = (props: Props): React.JSX.Element => {
 
     const handleSendNotification = async () => {
         try {
-            const response = await octoClient.sendBoardNotification(props.board.id, props.cardId)
+            const response = await octoClient.sendBoardShareNotification(props.board.id, props.cardId)
             if (response.ok) {
                 sendFlashMessage({content: intl.formatMessage({id: 'CardDialog.notification-sent', defaultMessage: '채널에 게시되었습니다!'}), severity: 'high'})
             } else {

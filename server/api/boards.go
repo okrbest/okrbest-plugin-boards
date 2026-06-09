@@ -25,7 +25,10 @@ func (a *API) registerBoardsRoutes(r *mux.Router) {
 	r.HandleFunc("/boards/{boardID}/duplicate", a.sessionRequired(a.handleDuplicateBoard)).Methods("POST")
 	r.HandleFunc("/boards/{boardID}/undelete", a.sessionRequired(a.handleUndeleteBoard)).Methods("POST")
 	r.HandleFunc("/boards/{boardID}/metadata", a.sessionRequired(a.handleGetBoardMetadata)).Methods("GET")
+	// /notify is used by auto-notify flow (card close) to send subscription diff notifications.
 	r.HandleFunc("/boards/{boardID}/notify", a.sessionRequired(a.handleSendBoardNotification)).Methods("POST")
+	// /notify/share is used only by explicit share actions (button/menu click).
+	r.HandleFunc("/boards/{boardID}/notify/share", a.sessionRequired(a.handleSendBoardShareNotification)).Methods("POST")
 }
 
 func (a *API) handleGetBoards(w http.ResponseWriter, r *http.Request) {
@@ -706,8 +709,40 @@ func (a *API) handleSendBoardNotification(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// 실제 카드 정보로 알림 전송
+	// Auto-notify endpoint: sends subscription-based diff notifications.
 	err := a.app.SendCardNotification(boardID, userID, requestBody.CardID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonStringResponse(w, http.StatusOK, "{}")
+}
+
+func (a *API) handleSendBoardShareNotification(w http.ResponseWriter, r *http.Request) {
+	userID := getUserID(r)
+	vars := mux.Vars(r)
+	boardID := vars["boardID"]
+
+	if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardCards) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to board"))
+		return
+	}
+
+	var requestBody struct {
+		CardID string `json:"cardID"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest("invalid request body"))
+		return
+	}
+	if strings.TrimSpace(requestBody.CardID) == "" {
+		a.errorResponse(w, r, model.NewErrBadRequest("cardID is required"))
+		return
+	}
+
+	// Explicit share endpoint: posts a channel share message with links.
+	err := a.app.SendCardShareNotification(boardID, userID, requestBody.CardID)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return
