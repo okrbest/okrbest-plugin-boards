@@ -32,7 +32,18 @@ import {BoardView} from '../../blocks/boardView'
 import octoClient from '../../octoClient'
 
 import {useBlockSuiteEditor} from './useBlockSuiteEditor'
-import {createFocalboardBlobSource} from './focalboardBlobSource'
+import {
+    appendBlobPayloadToHtml,
+    appendBlobPayloadToPlainText,
+    buildClipboardBlobPayload,
+    createFocalboardBlobSource,
+    extractBlobPayloadFromClipboardData,
+    extractClipboardBlobPayloadKeys,
+    hydrateClipboardBlobPayload,
+    FOCALBOARD_CLIPBOARD_BLOB_MIME,
+    FOCALBOARD_CLIPBOARD_BLOB_TEXT_MIME,
+    registerUpcomingPasteKeys,
+} from './focalboardBlobSource'
 import {createLinkedCardExtension} from './linkedCardConfig'
 import {patchImageDragOption, createImageDraggableObserver} from './imageDragPatch'
 
@@ -51,6 +62,137 @@ type Props = {
     readonly: boolean
     teamId: string
     viewId: string
+}
+
+type CopyAllResult = {
+    copied: boolean
+    method?: string
+    reason?: string
+}
+
+type BlockLike = {
+    id: string
+    flavour?: string
+}
+
+type CopyAllOptions = {
+    editor: PageEditor | null | undefined
+    editorDoc: Doc | null | undefined
+    boardId?: string
+    teamId?: string
+}
+
+const NON_COPYABLE_FAVOURS = new Set([
+    'affine:page',
+    'affine:surface',
+    'affine:note',
+])
+
+function getCopyableBlockIds(blocks: BlockLike[]): string[] {
+    return blocks.filter((block) => !NON_COPYABLE_FAVOURS.has(block.flavour || '')).map((block) => block.id)
+}
+
+function triggerHostCopyEvent(host: HTMLElement | null | undefined): boolean {
+    if (!host) {
+        return false
+    }
+    let event: Event
+    try {
+        event = new ClipboardEvent('copy', {
+            bubbles: true,
+            cancelable: true,
+        })
+    } catch {
+        event = new Event('copy', {
+            bubbles: true,
+            cancelable: true,
+        })
+    }
+
+    const dispatchResult = host.dispatchEvent(event)
+    return event.defaultPrevented || dispatchResult === false
+}
+
+function selectAllBlocks(editor: PageEditor, blockIds: string[]): void {
+    const selectionApi = (editor as unknown as {std?: {selection?: {create?: (type: string, payload: {blockId: string}) => unknown, set?: (items: unknown[]) => void}}})?.std?.selection
+    if (!selectionApi || typeof selectionApi.create !== 'function' || typeof selectionApi.set !== 'function') {
+        return
+    }
+
+    const blockSelections = blockIds.map((blockId) => {
+        try {
+            return selectionApi.create?.('block', {blockId})
+        } catch {
+            return null
+        }
+    }).filter(Boolean) as unknown[]
+
+    if (blockSelections.length > 0) {
+        selectionApi.set(blockSelections)
+    }
+}
+
+export async function copyAllContent(options: CopyAllOptions): Promise<CopyAllResult> {
+    const {
+        editor,
+        editorDoc,
+        boardId,
+        teamId,
+    } = options
+
+    if (!editor) {
+        return {copied: false, reason: 'no_editor'}
+    }
+
+    if (!editorDoc) {
+        return {copied: false, reason: 'no_editor_doc'}
+    }
+
+    if (editor.host) {
+        editor.host.focus()
+    }
+
+    const copyableBlockIds = getCopyableBlockIds(editorDoc.getBlocks() as BlockLike[])
+    if (copyableBlockIds.length > 0) {
+        selectAllBlocks(editor, copyableBlockIds)
+    }
+
+    if (boardId && teamId && editor.host) {
+        let payloadText: string | null = null
+        try {
+            const payload = await buildClipboardBlobPayload(boardId, teamId, {
+                preferredKeys: copyableBlockIds,
+            })
+            payloadText = payload.payloadText
+        } catch (err) {
+            Utils.logError(`BlockSuiteEditor: Failed to build clipboard blob payload: ${err}`)
+        }
+
+        if (payloadText) {
+            const injectPayload = (event: ClipboardEvent) => {
+                if (!event.clipboardData) {
+                    return
+                }
+                const plainText = event.clipboardData.getData('text/plain') || ''
+                const html = event.clipboardData.getData('text/html') || ''
+
+                event.clipboardData.setData(FOCALBOARD_CLIPBOARD_BLOB_MIME, payloadText as string)
+                event.clipboardData.setData(FOCALBOARD_CLIPBOARD_BLOB_TEXT_MIME, payloadText as string)
+                event.clipboardData.setData('text/plain', appendBlobPayloadToPlainText(plainText, payloadText as string))
+                if (html) {
+                    event.clipboardData.setData('text/html', appendBlobPayloadToHtml(html, payloadText as string))
+                }
+            }
+
+            editor.host.addEventListener('copy', injectPayload, {once: true})
+        }
+    }
+
+    if (triggerHostCopyEvent(editor.host)) {
+        return {copied: true, method: 'rich:copy_event'}
+    }
+
+    return {copied: false, reason: 'rich_copy_failed'}
 }
 
 function BlockSuiteEditor(props: Props): React.JSX.Element {
@@ -179,6 +321,40 @@ function BlockSuiteEditor(props: Props): React.JSX.Element {
         const observer = createImageDraggableObserver(container)
         return () => observer.disconnect()
     }, [containerMounted, readonly])
+
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container || readonly) {
+            return
+        }
+
+        const handlePaste = (event: ClipboardEvent) => {
+            if (!event.clipboardData) {
+                return
+            }
+
+            const extracted = extractBlobPayloadFromClipboardData(event.clipboardData)
+            if (!extracted.payloadText) {
+                return
+            }
+
+            const payloadKeys = extractClipboardBlobPayloadKeys(extracted.payloadText)
+            if (payloadKeys.length > 0) {
+                registerUpcomingPasteKeys(card.boardId, payloadKeys)
+            }
+
+            void hydrateClipboardBlobPayload(card.boardId, teamId, extracted.payloadText).then((result) => {
+                Utils.log(`BlockSuiteEditor: Clipboard blob hydration completed. hydrated=${result.hydrated}, failed=${result.failed}`)
+            }).catch((err) => {
+                Utils.logError(`BlockSuiteEditor: Clipboard blob hydration failed: ${err}`)
+            })
+        }
+
+        container.addEventListener('paste', handlePaste)
+        return () => {
+            container.removeEventListener('paste', handlePaste)
+        }
+    }, [containerMounted, readonly, card.boardId, teamId])
 
     useEffect(() => {
         Utils.log(`BlockSuiteEditor useEffect: containerMounted=${containerMounted}, snapshot=${!!snapshot}`)
@@ -398,6 +574,22 @@ function BlockSuiteEditor(props: Props): React.JSX.Element {
         }
     }, [containerMounted])
 
+    const handleCopyAll = useCallback(async () => {
+        const result = await copyAllContent({
+            editor: editorRef.current,
+            editorDoc: editorDocRef.current,
+            boardId: card.boardId,
+            teamId,
+        })
+
+        if (result.copied) {
+            Utils.log(`BlockSuiteEditor: Copy all succeeded (${result.method || 'unknown'})`)
+            return
+        }
+
+        Utils.logError(`BlockSuiteEditor: Rich copy failed (${result.reason || 'unknown'})`)
+    }, [card.boardId, teamId])
+
     if (loading) {
         return (
             <div className='BlockSuiteEditor BlockSuiteEditor--loading'>
@@ -462,6 +654,23 @@ function BlockSuiteEditor(props: Props): React.JSX.Element {
                     {statusMessage}
                 </div>
             )}
+            <div className='BlockSuiteEditor__toolbar'>
+                <button
+                    type='button'
+                    className='BlockSuiteEditor__copyAllButton'
+                    onClick={handleCopyAll}
+                    disabled={loading || !!error}
+                    aria-label={intl.formatMessage({
+                        id: 'BlockSuiteEditor.copyAll.ariaLabel',
+                        defaultMessage: 'Copy entire editor content',
+                    })}
+                >
+                    {intl.formatMessage({
+                        id: 'BlockSuiteEditor.copyAll',
+                        defaultMessage: '전체 복사',
+                    })}
+                </button>
+            </div>
             <div
                 ref={containerCallbackRef}
                 className='BlockSuiteEditor__container'
