@@ -46,7 +46,7 @@ function createBoardView(block?: Block): BoardView {
             visiblePropertyIds: block?.fields.visiblePropertyIds?.slice() || [],
             visibleOptionIds: block?.fields.visibleOptionIds?.slice() || [],
             hiddenOptionIds: block?.fields.hiddenOptionIds?.slice() || [],
-            collapsedOptionIds: block?.fields.collapsedOptionIds?.slice() || [],
+            collapsedOptionIds: Array.isArray(block?.fields.collapsedOptionIds) ? block.fields.collapsedOptionIds.slice() : [],
             filter: createFilterGroup(block?.fields.filter),
             cardOrder: block?.fields.cardOrder?.slice() || [],
             columnWidths: {...(block?.fields.columnWidths || {})},

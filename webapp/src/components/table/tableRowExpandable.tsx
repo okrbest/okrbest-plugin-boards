@@ -29,7 +29,7 @@ type Props = {
 const TableRowExpandable = (props: Props): React.JSX.Element => {
     const {board, activeView, card} = props
     const {subCards, hasSubCards} = useSubCardInfo(card.id)
-    const [expanded, setExpanded] = useState(false)
+    const [expanded, setExpanded] = useState(hasSubCards)
 
     useEffect(() => {
         if (!hasSubCards) {
