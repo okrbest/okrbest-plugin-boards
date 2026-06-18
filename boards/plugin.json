@@ -25,7 +25,7 @@
         "footer": "",
         "settings": [{
             "key": "EnablePublicSharedBoards",
-            "type": "bool",
+            "type": "custom",
             "display_name": "Enable Publicly-Shared Boards:",
             "default": false,
             "help_text": "This allows board editors to share boards that can be accessed by anyone with the link."
