@@ -42,7 +42,7 @@ exports[`components/table/TableRow should match snapshot 1`] = `
       </div>
       <div
         aria-label="menuwrapper"
-        class="MenuWrapper optionsMenu ml-2 mr-2"
+        class="MenuWrapper optionsMenu"
         role="button"
       >
         <div
@@ -120,7 +120,7 @@ exports[`components/table/TableRow should match snapshot, collapsed tree 1`] = `
       </div>
       <div
         aria-label="menuwrapper"
-        class="MenuWrapper optionsMenu ml-2 mr-2"
+        class="MenuWrapper optionsMenu"
         role="button"
       >
         <div
@@ -198,7 +198,7 @@ exports[`components/table/TableRow should match snapshot, display properties 1`]
       </div>
       <div
         aria-label="menuwrapper"
-        class="MenuWrapper optionsMenu ml-2 mr-2"
+        class="MenuWrapper optionsMenu"
         role="button"
       >
         <div
@@ -314,7 +314,7 @@ exports[`components/table/TableRow should match snapshot, isSelected 1`] = `
       </div>
       <div
         aria-label="menuwrapper"
-        class="MenuWrapper optionsMenu ml-2 mr-2"
+        class="MenuWrapper optionsMenu"
         role="button"
       >
         <div
@@ -441,7 +441,7 @@ exports[`components/table/TableRow should match snapshot, resizing column 1`] = 
       </div>
       <div
         aria-label="menuwrapper"
-        class="MenuWrapper optionsMenu ml-2 mr-2"
+        class="MenuWrapper optionsMenu"
         role="button"
       >
         <div
