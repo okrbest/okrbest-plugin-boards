@@ -56,6 +56,7 @@ import CloudUpgradeNudge from "./components/cloudUpgradeNudge/cloudUpgradeNudge"
 import CreateBoardFromTemplate from './components/createBoardFromTemplate'
 import {patchSlashMenu} from 'blockSuitePatch'
 import {setMattermostStore} from './mmStore'
+import EnablePublicSharedBoardsSetting from './components/adminConsole/EnablePublicSharedBoardsSetting'
 
 const windowAny = (window as SuiteWindow)
 windowAny.baseURL = process.env.TARGET_IS_PRODUCT ? '/plugins/boards' : '/plugins/focalboard'
@@ -179,6 +180,11 @@ export default class Plugin {
 
 
         this.registry = registry
+        this.registry?.registerAdminConsoleCustomSetting?.(
+            'EnablePublicSharedBoards',
+            EnablePublicSharedBoardsSetting,
+            {showTitle: false},
+        )
 
         UserSettings.nameFormat = mmStore.getState().entities.preferences?.myPreferences['display_settings--name_format']?.value || null
         let theme = mmStore.getState().entities.preferences.myPreferences.theme
