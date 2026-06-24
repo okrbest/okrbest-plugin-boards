@@ -12,6 +12,7 @@ import propsRegistry from './properties'
 
 declare let window: IAppWindow
 const hashSignToken = '___hash_sign___'
+const cleanupFallbackDelayMs = 60000
 
 class CsvExporter {
     static exportTableCsv(board: Board, activeView: BoardView, cards: Card[], intl: IntlShape, view?: BoardView): void {
@@ -23,19 +24,20 @@ class CsvExporter {
 
         const rows = CsvExporter.generateTableArray(board, cards, viewToExport, intl)
 
-        let csvContent = ''
+        let csvContent = '\uFEFF'
 
         rows.forEach((row) => {
             const encodedRow = row.join(',')
             csvContent += encodedRow + '\r\n'
         })
 
-        const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent)
-
         const filename = `${Utils.sanitizeFilename(viewToExport.title || 'Untitled')}.csv`
+        const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8'})
+        const blobUrl = URL.createObjectURL(blob)
+        const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent)
         const link = document.createElement('a')
         link.style.display = 'none'
-        link.setAttribute('href', encodedUri)
+        link.setAttribute('href', blobUrl)
         link.setAttribute('download', filename)
         document.body.appendChild(link)						// FireFox support
 
@@ -46,12 +48,29 @@ class CsvExporter {
             window.openInNewBrowser(encodedUri)
         }
         
-        // Clean up: remove link element after download
-        setTimeout(() => {
+        let isCleanedUp = false
+        let fallbackTimer = 0
+
+        const cleanup = () => {
+            if (isCleanedUp) {
+                return
+            }
+            isCleanedUp = true
+
+            if (fallbackTimer) {
+                window.clearTimeout(fallbackTimer)
+                fallbackTimer = 0
+            }
+            window.removeEventListener('focus', cleanup)
+
             if (link.parentNode) {
                 link.parentNode.removeChild(link)
             }
-        }, 100)
+            URL.revokeObjectURL(blobUrl)
+        }
+
+        window.addEventListener('focus', cleanup, {once: true})
+        fallbackTimer = window.setTimeout(cleanup, cleanupFallbackDelayMs)
     }
 
     private static encodeText(text: string): string {

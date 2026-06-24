@@ -61,7 +61,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             name: 'View header menu',
         })
         await act(async () => {
-            userEvent.click(buttonElement)
+            await userEvent.click(buttonElement)
         })
         expect(container).toMatchSnapshot()
     })
@@ -80,14 +80,17 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         )
         const buttonElement = await screen.findByRole('button', {name: 'View header menu'})
         await act(async () => {
-            userEvent.click(buttonElement)
+            await userEvent.click(buttonElement)
         })
         expect(container).toMatchSnapshot()
         const buttonExportCSV = await screen.findByRole('button', {name: 'Export to CSV'})
         await act(async () => {
-            userEvent.click(buttonExportCSV)
+            await userEvent.click(buttonExportCSV)
         })
-        expect(mockedCsvExporter.exportTableCsv).toBeCalledTimes(1)
+        await waitFor(() => {
+            expect(mockedCsvExporter.exportTableCsv).toBeCalledTimes(1)
+        })
+        expect(mockedCsvExporter.exportTableCsv).toBeCalledWith(board, activeView, [card], expect.anything())
     })
 
     test('return menu and verify call to board archive', async () => {
@@ -104,14 +107,16 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         )
         const buttonElement = await screen.findByRole('button', {name: 'View header menu'})
         await act(async () => {
-            userEvent.click(buttonElement)
+            await userEvent.click(buttonElement)
         })
         expect(container).toMatchSnapshot()
         const buttonExportBoardArchive = await screen.findByRole('button', {name: 'Export board archive'})
         await act(async () => {
-            userEvent.click(buttonExportBoardArchive)
+            await userEvent.click(buttonExportBoardArchive)
         })
-        expect(mockedArchiver.exportBoardArchive).toBeCalledTimes(1)
+        await waitFor(() => {
+            expect(mockedArchiver.exportBoardArchive).toBeCalledTimes(1)
+        })
         expect(mockedArchiver.exportBoardArchive).toBeCalledWith(board)
     })
 })
