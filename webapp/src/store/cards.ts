@@ -535,6 +535,18 @@ function searchFilterCards(cards: Card[], board: Board, searchTextRaw: string): 
     })
 }
 
+function applyViewCardFilterSearchAndSort(cards: Card[], lastCommentByCard: {[key: string]: CommentBlock}, board: Board, view: BoardView, searchText: string, users: {[key: string]: IUser}): Card[] {
+    let result = cards.filter((c) => !c.limited)
+    if (view.fields.filter) {
+        result = CardFilter.applyFilterGroup(view.fields.filter, board.cardProperties, result)
+    }
+
+    if (searchText) {
+        result = searchFilterCards(result, board, searchText)
+    }
+    return sortCards(result, lastCommentByCard, board, view, users)
+}
+
 export const getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit = createSelector(
     getCurrentBoardParentCards,
     getLastCommentByCard,
@@ -550,21 +562,36 @@ export const getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit = createSel
         if (view.boardId !== board.id) {
             return EMPTY_CARDS
         }
-        let result = cards.filter((c) => !c.limited)
-        if (view.fields.filter) {
-            result = CardFilter.applyFilterGroup(view.fields.filter, board.cardProperties, result)
-        }
+        return applyViewCardFilterSearchAndSort(cards, lastCommentByCard, board, view, searchText, users)
+    },
+)
 
-        if (searchText) {
-            result = searchFilterCards(result, board, searchText)
+export const getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit = createSelector(
+    getCurrentBoardCards,
+    getLastCommentByCard,
+    getCurrentBoard,
+    getCurrentView,
+    getSearchText,
+    getBoardUsers,
+    (cards, lastCommentByCard, board, view, searchText, users) => {
+        if (!view || !board || !users || !cards) {
+            return EMPTY_CARDS
         }
-        result = sortCards(result, lastCommentByCard, board, view, users)
-        return result
+        // 보드 전환 중 board와 view가 일치하지 않는 경우 방어
+        if (view.boardId !== board.id) {
+            return EMPTY_CARDS
+        }
+        return applyViewCardFilterSearchAndSort(cards, lastCommentByCard, board, view, searchText, users)
     },
 )
 
 export const getCurrentViewCardsSortedFilteredAndGrouped = createSelector(
     getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit,
+    (cards) => cards.filter((c) => !c.limited),
+)
+
+export const getCurrentBoardViewCardsSortedFilteredAndGrouped = createSelector(
+    getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit,
     (cards) => cards.filter((c) => !c.limited),
 )
 

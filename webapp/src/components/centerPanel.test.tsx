@@ -234,6 +234,58 @@ describe('components/centerPanel', () => {
         ))
         expect(container).toMatchSnapshot()
     })
+
+    test('shows subcard in kanban list when subcard is in board cards', () => {
+        activeView.fields.viewType = 'board'
+        card2.fields.parentCardId = card1.id
+
+        const {container} = render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <CenterPanel
+                    cards={[card1]}
+                    views={[activeView]}
+                    board={board}
+                    activeView={activeView}
+                    readonly={false}
+                    showCard={jest.fn()}
+                    groupByProperty={groupProperty}
+                    shownCardId={card1.id}
+                    hiddenCardsCount={0}
+                />
+            </ReduxProvider>,
+        ))
+
+        const kanbanCardElements = container.querySelectorAll('.KanbanCard')
+        expect(kanbanCardElements).toHaveLength(2)
+
+        card2.fields.parentCardId = ''
+    })
+
+    test('keeps table list unchanged with parent-only props cards', () => {
+        activeView.fields.viewType = 'table'
+        card2.fields.parentCardId = card1.id
+
+        render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <CenterPanel
+                    cards={[card1]}
+                    views={[activeView]}
+                    board={board}
+                    activeView={activeView}
+                    readonly={false}
+                    showCard={jest.fn()}
+                    groupByProperty={groupProperty}
+                    shownCardId={card1.id}
+                    hiddenCardsCount={0}
+                />
+            </ReduxProvider>,
+        ))
+
+        expect(screen.getByRole('textbox', {name: 'card1'})).toBeInTheDocument()
+        expect(screen.queryByRole('textbox', {name: 'card2'})).not.toBeInTheDocument()
+
+        card2.fields.parentCardId = ''
+    })
     describe('return centerPanel and', () => {
           test('select one card and click background', async () => {
               activeView.fields.viewType = 'table'

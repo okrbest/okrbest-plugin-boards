@@ -16,7 +16,7 @@ import {CardFilter} from '../cardFilter'
 import mutator from '../mutator'
 import {Utils} from '../utils'
 import {UserSettings} from '../userSettings'
-import {getCurrentCard, getCurrentBoardTemplates, addCard as addCardAction, addTemplate as addTemplateAction, showCardHiddenWarning} from '../store/cards'
+import {getCurrentCard, getCurrentBoardTemplates, getCurrentBoardViewCardsSortedFilteredAndGrouped, addCard as addCardAction, addTemplate as addTemplateAction, showCardHiddenWarning} from '../store/cards'
 import {getCardLimitTimestamp} from '../store/limits'
 import {updateView} from '../store/views'
 import {getVisibleAndHiddenGroups} from '../boardUtils'
@@ -88,8 +88,10 @@ const CenterPanel = (props: Props) => {
     const me = useAppSelector(getMe)
     const currentCard = useAppSelector(getCurrentCard)
     const cardTemplates = useAppSelector(getCurrentBoardTemplates)
+    const boardViewCards = useAppSelector(getCurrentBoardViewCardsSortedFilteredAndGrouped)
     const boardUsers = useAppSelector(getBoardUsers)
     const dispatch = useAppDispatch()
+    const cardsForCurrentView = props.activeView.fields.viewType === 'board' ? boardViewCards : props.cards
 
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
 
@@ -123,7 +125,7 @@ const CenterPanel = (props: Props) => {
 
             mutator.performAsUndoGroup(async () => {
                 for (const cardId of selectedCardIds) {
-                    const card = props.cards.find((o) => o.id === cardId)
+                    const card = cardsForCurrentView.find((o) => o.id === cardId)
                     if (card) {
                         mutator.duplicateCard(cardId, board.id)
                     } else {
@@ -136,7 +138,7 @@ const CenterPanel = (props: Props) => {
             e.stopPropagation()
             e.preventDefault()
         }
-    }, [selectedCardIds, props.readonly, props.cards, props.board.id])
+    }, [selectedCardIds, props.readonly, cardsForCurrentView, props.board.id])
 
     useHotkeys('del,backspace', (e: KeyboardEvent) => {
         if (e.target !== document.body || props.readonly) {
@@ -151,7 +153,7 @@ const CenterPanel = (props: Props) => {
 
             mutator.performAsUndoGroup(async () => {
                 for (const cardId of selectedCardIds) {
-                    const card = props.cards.find((o) => o.id === cardId)
+                    const card = cardsForCurrentView.find((o) => o.id === cardId)
                     if (card) {
                         mutator.deleteBlock(card, selectedCardIds.length > 1 ? `delete ${selectedCardIds.length} cards` : 'delete card')
                     } else {
@@ -163,7 +165,7 @@ const CenterPanel = (props: Props) => {
             setSelectedCardIds([])
             e.stopPropagation()
         }
-    }, [selectedCardIds, props.readonly, props.cards])
+    }, [selectedCardIds, props.readonly, cardsForCurrentView])
 
     const showCard = useCallback((cardId?: string) => {
         if (selectedCardIds.length > 0) {
@@ -418,13 +420,13 @@ const CenterPanel = (props: Props) => {
     }, [showCard])
 
     const cardClicked = useCallback((e: React.MouseEvent, card: Card): void => {
-        const {activeView, cards} = props
+        const {activeView} = props
 
         if (e.shiftKey) {
             let newSelectedCardIds = [...selectedCardIds]
             if (newSelectedCardIds.length > 0 && (e.metaKey || e.ctrlKey)) {
                 // Cmd+Shift+Click: Extend the selection
-                const orderedCardIds = cards.map((o) => o.id)
+                const orderedCardIds = cardsForCurrentView.map((o) => o.id)
                 const lastCardId = newSelectedCardIds[newSelectedCardIds.length - 1]
                 const srcIndex = orderedCardIds.indexOf(lastCardId)
                 const destIndex = orderedCardIds.indexOf(card.id)
@@ -449,7 +451,7 @@ const CenterPanel = (props: Props) => {
         }
 
         e.stopPropagation()
-    }, [selectedCardIds, props.activeView, props.cards, showCard])
+    }, [selectedCardIds, props.activeView, cardsForCurrentView, showCard])
 
     const hiddenCardCountNotifyHandler = useCallback((show: boolean) => {
         setShowHiddenCardCountNotification(show)
@@ -458,7 +460,8 @@ const CenterPanel = (props: Props) => {
     const showShareButton = !props.readonly && me?.id !== 'single-user'
     const showShareLoginButton = props.readonly && me?.id !== 'single-user'
 
-    const {groupByProperty, activeView, board, views, cards} = props
+    const {groupByProperty, activeView, board, views} = props
+    const cards = cardsForCurrentView
 
     const getUserDisplayName = (boardGroup: BoardGroup) => {
         const user = boardUsers[boardGroup.option.id]
@@ -575,7 +578,7 @@ const CenterPanel = (props: Props) => {
             <Kanban
                 board={props.board}
                 activeView={props.activeView}
-                cards={props.cards}
+                cards={cards}
                 groupByProperty={props.groupByProperty}
                 visibleGroups={visibleGroups}
                 hiddenGroups={hiddenGroups}
