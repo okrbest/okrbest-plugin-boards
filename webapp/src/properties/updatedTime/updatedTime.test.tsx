@@ -58,4 +58,38 @@ describe('properties/updatedTime', () => {
         const {container} = render(component)
         expect(container).toMatchSnapshot()
     })
+
+    test('does not crash when latest content and comment are missing', () => {
+        const card = createCard()
+        card.id = 'card-id-without-history'
+        card.updateAt = Date.parse('10 Jun 2021 16:22:00')
+
+        const mockStore = configureStore([])
+        const store = mockStore({
+            comments: {
+                comments: {},
+                commentsByCard: {},
+            },
+            contents: {
+                contents: {},
+                contentsByCard: {},
+            },
+        })
+
+        const component = wrapIntl(
+            <ReduxProvider store={store}>
+                <UpdatedTime
+                    property={new UpdatedTimeProperty()}
+                    card={card}
+                    board={{} as Board}
+                    propertyTemplate={{} as IPropertyTemplate}
+                    propertyValue={''}
+                    readOnly={false}
+                    showEmptyPlaceholder={false}
+                />
+            </ReduxProvider>,
+        )
+
+        expect(() => render(component)).not.toThrow()
+    })
 })

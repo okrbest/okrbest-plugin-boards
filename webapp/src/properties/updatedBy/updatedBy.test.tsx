@@ -69,4 +69,49 @@ describe('properties/updatedBy', () => {
         const {container} = render(wrapIntl(component))
         expect(container).toMatchSnapshot()
     })
+
+    test('does not crash when latest content and comment are missing', () => {
+        const card = createCard()
+        card.id = 'card-id-without-history'
+        card.modifiedBy = 'user-id-1'
+
+        const board = createBoard()
+        const mockStore = configureStore([])
+        const store = mockStore({
+            users: {
+                boardUsers: {
+                    'user-id-1': {username: 'username_1'} as IUser,
+                },
+            },
+            comments: {
+                comments: {},
+                commentsByCard: {},
+            },
+            contents: {
+                contents: {},
+                contentsByCard: {},
+            },
+            clientConfig: {
+                value: {
+                    teammateNameDisplay: 'username',
+                },
+            },
+        })
+
+        const component = (
+            <ReduxProvider store={store}>
+                <UpdatedBy
+                    property={new UpdatedByProperty()}
+                    card={card}
+                    board={board}
+                    propertyTemplate={{} as IPropertyTemplate}
+                    propertyValue={''}
+                    readOnly={false}
+                    showEmptyPlaceholder={false}
+                />
+            </ReduxProvider>
+        )
+
+        expect(() => render(wrapIntl(component))).not.toThrow()
+    })
 })

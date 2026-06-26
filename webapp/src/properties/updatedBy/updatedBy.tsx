@@ -18,8 +18,8 @@ const LastModifiedBy = (props: PropertyProps): React.JSX.Element => {
 
     let latestBlock: Block = props.card
     if (props.board) {
-        const allBlocks: Block[] = [props.card, lastContent, lastComment]
-        const sortedBlocks = allBlocks.sort((a, b) => b.updateAt - a.updateAt)
+        const allBlocks = [props.card, lastContent, lastComment].filter((block): block is Block => Boolean(block))
+        const sortedBlocks = allBlocks.sort((a, b) => (b.updateAt || 0) - (a.updateAt || 0))
 
         latestBlock = sortedBlocks.length > 0 ? sortedBlocks[0] : latestBlock
     }

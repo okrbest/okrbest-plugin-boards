@@ -6,6 +6,10 @@ import {createIntl} from 'react-intl'
 import {CsvExporter} from './csvExporter'
 import {TestBlockFactory} from './test/testBlockFactory'
 import {IAppWindow} from './types'
+import store from './store'
+import {setBoardUsers} from './store/users'
+import {setClientConfig} from './store/clientConfig'
+import {ShowUsername} from './utils'
 
 declare let window: IAppWindow
 
@@ -17,6 +21,15 @@ describe('csvExporter', () => {
         jest.useFakeTimers()
         originalCreateObjectURL = URL.createObjectURL
         originalRevokeObjectURL = URL.revokeObjectURL
+        store.dispatch(setBoardUsers([]))
+        store.dispatch(setClientConfig({
+            telemetry: false,
+            telemetryid: '',
+            enablePublicSharedBoards: false,
+            teammateNameDisplay: ShowUsername,
+            featureFlags: {},
+            maxFileSize: 0,
+        }))
 
         Object.defineProperty(URL, 'createObjectURL', {
             writable: true,
@@ -53,6 +66,8 @@ describe('csvExporter', () => {
         return {intl, board, activeView, card}
     }
 
+    const decodeCsvFromDataUri = (dataUri: string): string => decodeURIComponent(dataUri.replace('data:text/csv;charset=utf-8,', ''))
+
     test('cleans up blob URL on window focus and uses data URI for openInNewBrowser', () => {
         const {intl, board, activeView, card} = createExportData()
         const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
@@ -83,5 +98,89 @@ describe('csvExporter', () => {
 
         jest.advanceTimersByTime(1)
         expect(URL.revokeObjectURL).toBeCalledWith('blob:test-url')
+    })
+
+    test('exports person properties using display names instead of ids', () => {
+        const {intl, board, activeView, card} = createExportData()
+        const personProperty = {
+            id: 'personProperty',
+            name: 'Assignee',
+            type: 'person',
+            options: [],
+        }
+        const multiPersonProperty = {
+            id: 'multiPersonProperty',
+            name: 'Reviewers',
+            type: 'multiPerson',
+            options: [],
+        }
+        const createdByProperty = {
+            id: 'createdByProperty',
+            name: 'Created by',
+            type: 'createdBy',
+            options: [],
+        }
+        const updatedByProperty = {
+            id: 'updatedByProperty',
+            name: 'Updated by',
+            type: 'updatedBy',
+            options: [],
+        }
+        board.cardProperties.push(personProperty, multiPersonProperty, createdByProperty, updatedByProperty)
+        activeView.fields.visiblePropertyIds = [personProperty.id, multiPersonProperty.id, createdByProperty.id, updatedByProperty.id]
+
+        card.fields.properties[personProperty.id] = 'user-1'
+        card.fields.properties[multiPersonProperty.id] = ['user-1', 'user-2', 'missing-user']
+        card.createdBy = 'user-2'
+        card.modifiedBy = 'user-1'
+
+        store.dispatch(setClientConfig({
+            telemetry: false,
+            telemetryid: '',
+            enablePublicSharedBoards: false,
+            teammateNameDisplay: 'username',
+            featureFlags: {},
+            maxFileSize: 0,
+        }))
+        store.dispatch(setBoardUsers([
+            {
+                id: 'user-1',
+                username: 'alpha',
+                email: '',
+                nickname: '',
+                firstname: '',
+                lastname: '',
+                props: {},
+                create_at: 0,
+                update_at: 0,
+                is_bot: false,
+                is_guest: false,
+                roles: 'system_user',
+            },
+            {
+                id: 'user-2',
+                username: 'beta',
+                email: '',
+                nickname: '',
+                firstname: '',
+                lastname: '',
+                props: {},
+                create_at: 0,
+                update_at: 0,
+                is_bot: false,
+                is_guest: false,
+                roles: 'system_user',
+            },
+        ]))
+
+        const openInNewBrowser = jest.fn()
+        window.openInNewBrowser = openInNewBrowser
+
+        CsvExporter.exportTableCsv(board, activeView, [card], intl)
+
+        const exportedCsv = decodeCsvFromDataUri(openInNewBrowser.mock.calls[0][0])
+        expect(exportedCsv).toContain('"alpha"')
+        expect(exportedCsv).toContain('"alpha|beta|missing-user"')
+        expect(exportedCsv).toContain('"beta"')
     })
 })

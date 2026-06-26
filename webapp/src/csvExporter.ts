@@ -8,13 +8,19 @@ import {Board, IPropertyTemplate} from './blocks/board'
 import {Card} from './blocks/card'
 import {Utils} from './utils'
 import {IAppWindow} from './types'
+import {IUser} from './user'
 import propsRegistry from './properties'
+import store from './store'
+import {getBoardUsers} from './store/users'
+import {getClientConfig} from './store/clientConfig'
 
 declare let window: IAppWindow
 const hashSignToken = '___hash_sign___'
 const cleanupFallbackDelayMs = 60000
 
 class CsvExporter {
+    private static readonly personPropertyTypes = new Set(['person', 'multiPerson', 'createdBy', 'updatedBy'])
+
     static exportTableCsv(board: Board, activeView: BoardView, cards: Card[], intl: IntlShape, view?: BoardView): void {
         const viewToExport = view ?? activeView
         
@@ -80,6 +86,9 @@ class CsvExporter {
     private static generateTableArray(board: Board, cards: Card[], viewToExport: BoardView, intl: IntlShape): string[][] {
         const rows: string[][] = []
         const visibleProperties = board.cardProperties.filter((template: IPropertyTemplate) => viewToExport.fields.visiblePropertyIds.includes(template.id))
+        const state = store.getState()
+        const boardUsers = getBoardUsers(state)
+        const clientConfig = getClientConfig(state)
 
         if (viewToExport.fields.viewType === 'calendar' &&
             viewToExport.fields.dateDisplayPropertyId &&
@@ -114,6 +123,8 @@ class CsvExporter {
                 if (property.type === 'number') {
                     const rawValue = property.exportValue(propertyValue, card, template, intl)
                     row.push(`"${this.encodeText(rawValue)}"`)
+                } else if (CsvExporter.personPropertyTypes.has(property.type)) {
+                    row.push(CsvExporter.exportPersonValue(propertyValue, boardUsers, clientConfig.teammateNameDisplay))
                 } else {
                     row.push(property.exportValue(propertyValue, card, template, intl))
                 } 
@@ -122,6 +133,18 @@ class CsvExporter {
         })
 
         return rows
+    }
+
+    private static exportPersonValue(propertyValue: string | string[] | undefined, boardUsers: {[key: string]: IUser}, teammateNameDisplay: string): string {
+        const userIds = Array.isArray(propertyValue) ? propertyValue : [propertyValue]
+        const userDisplayNames = userIds.filter((userId): userId is string => Boolean(userId)).map((userId) => {
+            const user = boardUsers[userId]
+            if (!user) {
+                return userId
+            }
+            return Utils.getUserDisplayName(user, teammateNameDisplay)
+        })
+        return `"${this.encodeText(userDisplayNames.join('|'))}"`
     }
 }
 
