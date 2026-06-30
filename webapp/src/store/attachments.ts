@@ -15,6 +15,8 @@ type AttachmentsState = {
     attachmentsByCard: {[key: string]: AttachmentBlock[]}
 }
 
+const EMPTY_ATTACHMENTS: AttachmentBlock[] = []
+
 const attachmentSlice = createSlice({
     name: 'attachments',
     initialState: {attachments: {}, attachmentsByCard: {}} as AttachmentsState,
@@ -85,7 +87,7 @@ export const {reducer} = attachmentSlice
 
 export function getCardAttachments(cardId: string): (state: RootState) => AttachmentBlock[] {
     return (state: RootState): AttachmentBlock[] => {
-        return (state.attachments?.attachmentsByCard && state.attachments.attachmentsByCard[cardId]) || []
+        return (state.attachments?.attachmentsByCard && state.attachments.attachmentsByCard[cardId]) || EMPTY_ATTACHMENTS
     }
 }
 

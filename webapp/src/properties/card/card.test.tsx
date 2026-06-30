@@ -439,4 +439,47 @@ describe('properties/card', () => {
         })
         expect(screen.getByText('폴백 카드 제목')).toBeInTheDocument()
     })
+
+    test('shows board access error even without selected cards', async () => {
+        const linkedBoardId = 'linked-board-id'
+
+        const store = mockStore({
+            teams: {
+                current: 'team-id',
+            },
+            boards: {
+                current: baseBoard.id,
+            },
+            cards: {
+                cards: {},
+            },
+        })
+
+        mockedOctoClient.getBoard.mockResolvedValue(undefined)
+
+        render(wrapIntl(
+            <ReduxProvider store={store}>
+                <CardPropertyEditor
+                    property={new CardProperty()}
+                    board={baseBoard}
+                    card={baseCard}
+                    propertyTemplate={getPropertyTemplate(linkedBoardId)}
+                    propertyValue={JSON.stringify({boardId: linkedBoardId, cards: []})}
+                    readOnly={false}
+                    showEmptyPlaceholder={false}
+                />
+            </ReduxProvider>,
+        ))
+
+        await waitFor(() => {
+            expect(screen.getByText('Board not accessible')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Board not accessible'))
+        await waitFor(() => {
+            expect(screen.getByText('Board has been deleted or is no longer accessible. Please select a different board.')).toBeInTheDocument()
+        })
+        expect(screen.queryByText('No cards available')).not.toBeInTheDocument()
+        expect(mockedOctoClient.getAllBlocks).not.toBeCalled()
+    })
 })

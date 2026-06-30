@@ -233,7 +233,7 @@ const CardPropertyEditor = (props: PropertyProps) => {
                     if (currentInFlight === inFlightRequest) {
                         linkedBoardInFlight.delete(inFlightKey)
                     }
-                })
+                }).catch(() => undefined)
             }
 
             const fetchedCards = await inFlightRequest
@@ -283,6 +283,34 @@ const CardPropertyEditor = (props: PropertyProps) => {
         }
         fetchCards({forDropdown: false})
     }, [linkedBoardId, isLinkedToCurrentBoard, selectedCardIds, fetchCards])
+
+    useEffect(() => {
+        if (!linkedBoardId || isLinkedToCurrentBoard) {
+            setBoardAccessError(false)
+            return
+        }
+
+        let isCancelled = false
+        const checkLinkedBoardAccess = async () => {
+            try {
+                const linkedBoard = await octoClient.getBoard(linkedBoardId)
+                if (!isCancelled) {
+                    setBoardAccessError(!linkedBoard)
+                }
+            } catch (error) {
+                console.error('Failed to check linked board access:', error)
+                if (!isCancelled) {
+                    setBoardAccessError(true)
+                }
+            }
+        }
+
+        void checkLinkedBoardAccess()
+
+        return () => {
+            isCancelled = true
+        }
+    }, [linkedBoardId, isLinkedToCurrentBoard])
 
     useEffect(() => {
         if (!linkedBoardId || isLinkedToCurrentBoard || selectedCardIds.length === 0) {

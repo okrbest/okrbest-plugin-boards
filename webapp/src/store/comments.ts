@@ -15,6 +15,8 @@ type CommentsState = {
     commentsByCard: {[key: string]: CommentBlock[]}
 }
 
+const EMPTY_COMMENTS: CommentBlock[] = []
+
 const commentsSlice = createSlice({
     name: 'comments',
     initialState: {comments: {}, commentsByCard: {}} as CommentsState,
@@ -83,7 +85,7 @@ export const {reducer} = commentsSlice
 
 export function getCardComments(cardId: string): (state: RootState) => CommentBlock[] {
     return (state: RootState): CommentBlock[] => {
-        return (state.comments?.commentsByCard && state.comments.commentsByCard[cardId]) || []
+        return (state.comments?.commentsByCard && state.comments.commentsByCard[cardId]) || EMPTY_COMMENTS
     }
 }
 
