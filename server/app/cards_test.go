@@ -115,6 +115,49 @@ func TestGetCards(t *testing.T) {
 	})
 }
 
+func TestGetCardsByIDs(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	boardID := utils.NewID(utils.IDTypeBoard)
+	otherBoardID := utils.NewID(utils.IDTypeBoard)
+	cardID1 := utils.NewID(utils.IDTypeCard)
+	cardID2 := utils.NewID(utils.IDTypeCard)
+	cardID3 := utils.NewID(utils.IDTypeCard)
+	missingCardID := utils.NewID(utils.IDTypeCard)
+
+	card1 := &model.Card{ID: cardID1, BoardID: boardID, Title: "card-1"}
+	card2 := &model.Card{ID: cardID2, BoardID: boardID, Title: "card-2"}
+	card3 := &model.Card{ID: cardID3, BoardID: otherBoardID, Title: "card-3"}
+
+	t.Run("success scenario", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(cardID1).Return(model.Card2Block(card1), nil)
+		th.Store.EXPECT().GetBlock(cardID2).Return(model.Card2Block(card2), nil)
+		th.Store.EXPECT().GetBlock(cardID3).Return(model.Card2Block(card3), nil)
+		th.Store.EXPECT().GetBlock(missingCardID).Return(nil, model.NewErrNotFound(missingCardID))
+
+		cards, err := th.App.GetCardsByIDs(boardID, []string{cardID1, cardID1, cardID2, cardID3, missingCardID, ""})
+		require.NoError(t, err)
+		require.Len(t, cards, 2)
+		require.Equal(t, cardID1, cards[0].ID)
+		require.Equal(t, cardID2, cards[1].ID)
+	})
+
+	t.Run("empty ids returns empty list", func(t *testing.T) {
+		cards, err := th.App.GetCardsByIDs(boardID, nil)
+		require.NoError(t, err)
+		require.Len(t, cards, 0)
+	})
+
+	t.Run("error scenario", func(t *testing.T) {
+		th.Store.EXPECT().GetBlock(cardID1).Return(nil, blockError{"error"})
+
+		cards, err := th.App.GetCardsByIDs(boardID, []string{cardID1})
+		require.Error(t, err)
+		require.Nil(t, cards)
+	})
+}
+
 func TestPatchCard(t *testing.T) {
 	th, tearDown := SetupTestHelper(t)
 	defer tearDown()

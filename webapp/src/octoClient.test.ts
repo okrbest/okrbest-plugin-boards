@@ -69,6 +69,65 @@ test('OctoClient: importFullArchive', async () => {
         }))
 })
 
+test('OctoClient: get cards by ids', async () => {
+    const cards = createBlocks()
+    const apiCards = [
+        {
+            id: 'api-card-1',
+            boardId: 'board-id',
+            parentCardId: '',
+            depth: 0,
+            createdBy: 'user-1',
+            modifiedBy: 'user-1',
+            title: 'api card one',
+            contentOrder: ['content-1'],
+            icon: '📌',
+            isTemplate: false,
+            properties: {prop: 'value'},
+            createAt: 100,
+            updateAt: 100,
+            deleteAt: 0,
+        },
+    ]
+    const boardID = 'board-id'
+    const cardIDs = ['card-1', 'card-2']
+
+    FetchMock.fn.mockReturnValueOnce(FetchMock.jsonResponse(JSON.stringify(cards)))
+    const fetchedCards = await octoClient.getCardsByIDs(boardID, cardIDs)
+    expect(fetchedCards.length).toBe(cards.length)
+    expect(FetchMock.fn).toBeCalledWith(
+        'http://localhost/api/v2/boards/board-id/cards/by-ids',
+        expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ids: cardIDs}),
+        }),
+    )
+
+    FetchMock.fn.mockReturnValueOnce(FetchMock.jsonResponse(JSON.stringify(apiCards)))
+    const fetchedFromApiCards = await octoClient.getCardsByIDs(boardID, cardIDs)
+    expect(fetchedFromApiCards.length).toBe(1)
+    expect(fetchedFromApiCards[0]).toEqual(expect.objectContaining({
+        id: 'api-card-1',
+        boardId: boardID,
+        parentId: boardID,
+        type: 'card',
+        title: 'api card one',
+        fields: expect.objectContaining({
+            icon: '📌',
+            parentCardId: '',
+            depth: 0,
+            contentOrder: ['content-1'],
+            properties: {prop: 'value'},
+            isTemplate: false,
+        }),
+    }))
+
+    FetchMock.fn.mockReset()
+    const emptyCards = await octoClient.getCardsByIDs(boardID, [])
+    expect(emptyCards).toEqual([])
+    expect(FetchMock.fn).not.toBeCalled()
+})
+
 function createBlocks(): Block[] {
     const blocks = []
 

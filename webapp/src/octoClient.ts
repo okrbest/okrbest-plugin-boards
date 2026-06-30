@@ -312,6 +312,25 @@ class OctoClient {
         return this.getBlocksWithPath(path)
     }
 
+    async getCardsByIDs(boardID: string, cardIDs: string[]): Promise<Block[]> {
+        if (cardIDs.length === 0) {
+            return []
+        }
+
+        const path = `/api/v2/boards/${boardID}/cards/by-ids`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify({ids: cardIDs}),
+        }))
+        if (response.status !== 200) {
+            return []
+        }
+        const cards = await this.getJson<unknown[]>(response, [])
+        const normalizedCards = this.normalizeCardLikeBlocks(cards)
+        return this.fixBlocks(normalizedCards)
+    }
+
     private async getBlocksWithPath(path: string): Promise<Block[]> {
         const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
             method: 'GET',
@@ -357,6 +376,67 @@ class OctoClient {
         const fixedBlocks = OctoUtils.hydrateBlocks(blocks)
 
         return fixedBlocks
+    }
+
+    private normalizeCardLikeBlocks(rawCards: unknown[]): Block[] {
+        if (!Array.isArray(rawCards)) {
+            return []
+        }
+
+        return rawCards.reduce<Block[]>((acc, rawCard) => {
+            if (!rawCard || typeof rawCard !== 'object') {
+                return acc
+            }
+
+            const candidate = rawCard as Partial<Block> & {
+                contentOrder?: unknown
+                icon?: unknown
+                isTemplate?: unknown
+                properties?: unknown
+                parentCardId?: unknown
+                depth?: unknown
+            }
+
+            if (typeof candidate.type === 'string') {
+                acc.push(candidate as Block)
+                return acc
+            }
+
+            if (typeof candidate.id !== 'string' || candidate.id === '') {
+                return acc
+            }
+
+            const boardId = typeof candidate.boardId === 'string' ? candidate.boardId : ''
+            const parentCardId = typeof candidate.parentCardId === 'string' ? candidate.parentCardId : ''
+            const contentOrder = Array.isArray(candidate.contentOrder) ? candidate.contentOrder.filter((id): id is string => typeof id === 'string') : []
+            const properties = candidate.properties && typeof candidate.properties === 'object' && !Array.isArray(candidate.properties) ? candidate.properties : {}
+            const now = Date.now()
+
+            acc.push({
+                id: candidate.id,
+                boardId,
+                parentId: parentCardId || boardId || '',
+                createdBy: typeof candidate.createdBy === 'string' ? candidate.createdBy : '',
+                modifiedBy: typeof candidate.modifiedBy === 'string' ? candidate.modifiedBy : '',
+                schema: typeof candidate.schema === 'number' ? candidate.schema : 1,
+                type: 'card',
+                title: typeof candidate.title === 'string' ? candidate.title : '',
+                fields: {
+                    icon: typeof candidate.icon === 'string' ? candidate.icon : '',
+                    isTemplate: typeof candidate.isTemplate === 'boolean' ? candidate.isTemplate : false,
+                    properties,
+                    contentOrder,
+                    parentCardId,
+                    depth: typeof candidate.depth === 'number' ? candidate.depth : 0,
+                },
+                createAt: typeof candidate.createAt === 'number' ? candidate.createAt : now,
+                updateAt: typeof candidate.updateAt === 'number' ? candidate.updateAt : now,
+                deleteAt: typeof candidate.deleteAt === 'number' ? candidate.deleteAt : 0,
+                limited: Boolean(candidate.limited),
+            })
+
+            return acc
+        }, [])
     }
 
     async patchBlock(boardId: string, blockId: string, blockPatch: BlockPatch): Promise<Response> {

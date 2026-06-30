@@ -26,6 +26,7 @@ func (a *API) registerCardsRoutes(r *mux.Router) {
 	// Cards APIs
 	r.HandleFunc("/boards/{boardID}/cards", a.sessionRequired(a.handleCreateCard)).Methods("POST")
 	r.HandleFunc("/boards/{boardID}/cards", a.sessionRequired(a.handleGetCards)).Methods("GET")
+	r.HandleFunc("/boards/{boardID}/cards/by-ids", a.sessionRequired(a.handleQueryCardsByIDs)).Methods("POST")
 	r.HandleFunc("/cards/{cardID}", a.sessionRequired(a.handlePatchCard)).Methods("PATCH")
 	r.HandleFunc("/cards/{cardID}", a.sessionRequired(a.handleGetCard)).Methods("GET")
 
@@ -235,6 +236,61 @@ func (a *API) handleGetCards(w http.ResponseWriter, r *http.Request) {
 	// response
 	jsonBytesResponse(w, http.StatusOK, data)
 
+	auditRec.Success()
+}
+
+type queryCardsByIDsRequest struct {
+	IDs []string `json:"ids"`
+}
+
+func (a *API) handleQueryCardsByIDs(w http.ResponseWriter, r *http.Request) {
+	userID := getUserID(r)
+	boardID := mux.Vars(r)["boardID"]
+
+	if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionViewBoard) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to fetch cards"))
+		return
+	}
+
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	var request queryCardsByIDsRequest
+	if len(requestBody) > 0 {
+		if err = json.Unmarshal(requestBody, &request); err != nil {
+			a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
+			return
+		}
+	}
+
+	auditRec := a.makeAuditRecord(r, "queryCardsByIDs", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelRead, auditRec)
+	auditRec.AddMeta("boardID", boardID)
+	auditRec.AddMeta("idsCount", len(request.IDs))
+
+	cards, err := a.app.GetCardsByIDs(boardID, request.IDs)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	a.logger.Debug("QueryCardsByIDs",
+		mlog.String("boardID", boardID),
+		mlog.String("userID", userID),
+		mlog.Int("idsCount", len(request.IDs)),
+		mlog.Int("count", len(cards)),
+	)
+
+	data, err := json.Marshal(cards)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
 	auditRec.Success()
 }
 

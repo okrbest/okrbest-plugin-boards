@@ -11,6 +11,7 @@ import mutator from '../../mutator'
 import octoClient from '../../octoClient'
 import {useAppSelector} from '../../store/hooks'
 import {getCurrentTeamId} from '../../store/teams'
+import {getCards} from '../../store/cards'
 import IconButton from '../../widgets/buttons/iconButton'
 import EditIcon from '../../widgets/icons/edit'
 import CloseIcon from '../../widgets/icons/close'
@@ -22,6 +23,7 @@ import './card.scss'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const windowAny = window as any
+const linkedBoardInFlight = new Map<string, Promise<Card[]>>()
 
 // 선택된 카드 정보 타입
 interface SelectedCard {
@@ -101,13 +103,43 @@ const serializePropertyValue = (boardId: string, selectedCards: SelectedCard[]):
     return JSON.stringify(data)
 }
 
+const clearLinkedBoardCardCacheForTests = () => {
+    linkedBoardInFlight.clear()
+}
+
+const sortCardsByTitle = (cardBlocks: Card[]) => {
+    return [...cardBlocks].sort((a, b) => {
+        const titleA = a.title || ''
+        const titleB = b.title || ''
+
+        // 빈 제목은 항상 뒤로
+        if (!titleA && !titleB) return 0
+        if (!titleA) return 1
+        if (!titleB) return -1
+
+        return titleA.localeCompare(titleB)
+    })
+}
+
+const toCardsById = (cardBlocks: Card[]) => cardBlocks.reduce((acc, cardBlock) => {
+    acc[cardBlock.id] = cardBlock
+    return acc
+}, {} as {[key: string]: Card})
+
+const mergeCardsById = (currentCardsById: {[key: string]: Card}, cardBlocks: Card[]) => ({
+    ...currentCardsById,
+    ...toCardsById(cardBlocks),
+})
+
 const CardPropertyEditor = (props: PropertyProps) => {
     const {propertyValue, propertyTemplate, board, card} = props
     const intl = useIntl()
     const currentTeamId = useAppSelector(getCurrentTeamId)
+    const allCards = useAppSelector(getCards)
 
     const [open, setOpen] = useState(false)
     const [cards, setCards] = useState<Card[]>([])
+    const [linkedCardsById, setLinkedCardsById] = useState<{[key: string]: Card}>({})
     const [loading, setLoading] = useState(false)
     const [boardAccessError, setBoardAccessError] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -119,83 +151,153 @@ const CardPropertyEditor = (props: PropertyProps) => {
 
     // 연결된 보드 ID는 속성 템플릿에서 가져옴
     const linkedBoardId = propertyTemplate.options?.[0]?.id || ''
+    const isLinkedToCurrentBoard = linkedBoardId === board.id
 
     // propertyValue 파싱 (선택된 카드 정보만)
     const {selectedCards} = useMemo(
         () => parsePropertyValue(propertyValue),
         [propertyValue],
     )
+    const selectedCardIds = useMemo(() => selectedCards.map((c) => c.id), [selectedCards])
 
     const hasSelectedCards = selectedCards.length > 0
 
-    // 연결된 보드의 카드 목록 가져오기
-    const fetchCards = useCallback(async () => {
-        if (!linkedBoardId) {
+    const saveLinkedCardsForTitleSync = useCallback((cardBlocks: Card[]) => {
+        setLinkedCardsById((previousCardsById) => mergeCardsById(previousCardsById, cardBlocks))
+    }, [])
+
+    const saveLinkedCardsForDropdown = useCallback((cardBlocks: Card[]) => {
+        setLinkedCardsById((previousCardsById) => mergeCardsById(previousCardsById, cardBlocks))
+        setCards(sortCardsByTitle(cardBlocks))
+    }, [])
+
+    const currentBoardCards = useMemo(() => {
+        if (!isLinkedToCurrentBoard) {
+            return []
+        }
+        return sortCardsByTitle(Object.values(allCards).filter((candidateCard) => candidateCard.boardId === linkedBoardId))
+    }, [isLinkedToCurrentBoard, allCards, linkedBoardId])
+
+    const resolveTitlesByIds = useCallback(async (cardIds: string[] = []): Promise<Card[]> => {
+        if (cardIds.length === 0) {
+            return []
+        }
+        const cardBlocks = await octoClient.getCardsByIDs(linkedBoardId, cardIds) as Card[]
+        if (cardBlocks.length > 0) {
+            return cardBlocks
+        }
+
+        // 서버 벌크 API 미배포/실패 상황을 위한 안전 폴백
+        const allBlocks = await octoClient.getAllBlocks(linkedBoardId)
+        const allCardBlocks = allBlocks.filter((block: Block) => block.type === 'card') as Card[]
+        const cardIdSet = new Set(cardIds)
+        return allCardBlocks.filter((candidateCard) => cardIdSet.has(candidateCard.id))
+    }, [linkedBoardId])
+
+    const fetchAllCardsForLinkedBoard = useCallback(async (): Promise<Card[]> => {
+        const linkedBoard = await octoClient.getBoard(linkedBoardId)
+        if (!linkedBoard) {
+            throw new Error('linked board not accessible')
+        }
+
+        const blocks = await octoClient.getAllBlocks(linkedBoardId)
+        return blocks.filter((block: Block) => block.type === 'card') as Card[]
+    }, [linkedBoardId])
+
+    const fetchSelectedCardsForTitleSync = useCallback(async (): Promise<Card[]> => {
+        const linkedBoard = await octoClient.getBoard(linkedBoardId)
+        if (!linkedBoard) {
+            throw new Error('linked board not accessible')
+        }
+
+        return resolveTitlesByIds(selectedCardIds)
+    }, [linkedBoardId, resolveTitlesByIds, selectedCardIds])
+
+    const fetchCards = useCallback(async ({forDropdown = false, showLoading = false}: {forDropdown?: boolean, showLoading?: boolean} = {}) => {
+        if (!linkedBoardId || isLinkedToCurrentBoard) {
             return
         }
-        setLoading(true)
+        if (showLoading) {
+            setLoading(true)
+        }
         setBoardAccessError(false)
+
         try {
-            const linkedBoard = await octoClient.getBoard(linkedBoardId)
-            if (!linkedBoard) {
-                setBoardAccessError(true)
-                setCards([])
-                return
+            const inFlightKey = forDropdown ? `${linkedBoardId}:all` : `${linkedBoardId}:ids:${selectedCardIds.join(',')}`
+            let inFlightRequest = linkedBoardInFlight.get(inFlightKey)
+            if (!inFlightRequest) {
+                inFlightRequest = forDropdown ? fetchAllCardsForLinkedBoard() : fetchSelectedCardsForTitleSync()
+                linkedBoardInFlight.set(inFlightKey, inFlightRequest)
+                void inFlightRequest.finally(() => {
+                    const currentInFlight = linkedBoardInFlight.get(inFlightKey)
+                    if (currentInFlight === inFlightRequest) {
+                        linkedBoardInFlight.delete(inFlightKey)
+                    }
+                })
             }
-            const blocks = await octoClient.getAllBlocks(linkedBoardId)
-            const cardBlocks = blocks.filter((block: Block) => block.type === 'card') as Card[]
-            // 이름순 정렬 (빈 제목은 뒤로)
-            cardBlocks.sort((a, b) => {
-                const titleA = a.title || ''
-                const titleB = b.title || ''
-                
-                // 빈 제목은 항상 뒤로
-                if (!titleA && !titleB) return 0
-                if (!titleA) return 1
-                if (!titleB) return -1
-                
-                return titleA.localeCompare(titleB)
-            })
-            setCards(cardBlocks)
+
+            const fetchedCards = await inFlightRequest
+            const sortedCards = sortCardsByTitle(fetchedCards)
+
+            if (forDropdown) {
+                saveLinkedCardsForDropdown(sortedCards)
+            } else {
+                saveLinkedCardsForTitleSync(sortedCards)
+            }
         } catch (error) {
             console.error('Failed to fetch cards:', error)
             setBoardAccessError(true)
-            setCards([])
-        } finally {
-            setLoading(false)
-        }
-    }, [linkedBoardId])
-
-    // 보드 접근성 확인 (컴포넌트 마운트 시)
-    const checkBoardAccess = useCallback(async () => {
-        if (!linkedBoardId) {
-            return
-        }
-        try {
-            const linkedBoard = await octoClient.getBoard(linkedBoardId)
-            if (!linkedBoard) {
-                setBoardAccessError(true)
+            if (forDropdown) {
+                setCards([])
             }
-        } catch (error) {
-            console.error('Failed to check board access:', error)
-            setBoardAccessError(true)
+        } finally {
+            if (showLoading) {
+                setLoading(false)
+            }
         }
-    }, [linkedBoardId])
-
-    // 컴포넌트 마운트 시 보드 접근성 확인
-    useEffect(() => {
-        if (linkedBoardId) {
-            checkBoardAccess()
-        }
-    }, [linkedBoardId, checkBoardAccess])
+    }, [
+        linkedBoardId,
+        isLinkedToCurrentBoard,
+        selectedCardIds,
+        saveLinkedCardsForDropdown,
+        saveLinkedCardsForTitleSync,
+        fetchAllCardsForLinkedBoard,
+        fetchSelectedCardsForTitleSync,
+    ])
 
     // 드롭다운 열 때 카드 목록 가져오기
     useEffect(() => {
         if (open && linkedBoardId) {
-            fetchCards()
+            if (isLinkedToCurrentBoard) {
+                setCards(currentBoardCards)
+            } else {
+                fetchCards({forDropdown: true, showLoading: true})
+            }
             setSearchQuery('') // 드롭다운 열 때 검색어 초기화
         }
-    }, [open, linkedBoardId, fetchCards])
+    }, [open, linkedBoardId, isLinkedToCurrentBoard, currentBoardCards, fetchCards])
+
+    useEffect(() => {
+        if (!linkedBoardId || isLinkedToCurrentBoard || selectedCardIds.length === 0) {
+            return
+        }
+        fetchCards({forDropdown: false})
+    }, [linkedBoardId, isLinkedToCurrentBoard, selectedCardIds, fetchCards])
+
+    useEffect(() => {
+        if (!linkedBoardId || isLinkedToCurrentBoard || selectedCardIds.length === 0) {
+            return
+        }
+
+        const handleWindowFocus = () => {
+            fetchCards({forDropdown: false})
+        }
+
+        window.addEventListener('focus', handleWindowFocus)
+        return () => {
+            window.removeEventListener('focus', handleWindowFocus)
+        }
+    }, [linkedBoardId, isLinkedToCurrentBoard, selectedCardIds, fetchCards])
 
     // 카드 추가
     const handleCardAdd = useCallback(async (selectedCard: Card) => {
@@ -238,20 +340,33 @@ const CardPropertyEditor = (props: PropertyProps) => {
         }
     }, [isEditable, hasSelectedCards, open])
 
+    const resolvedSelectedCards = useMemo(() => {
+        return selectedCards.map((selectedCard) => {
+            const currentBoardCard = linkedBoardId === board.id ? allCards[selectedCard.id] : undefined
+            const linkedBoardCard = linkedCardsById[selectedCard.id]
+            const resolvedTitle = currentBoardCard?.title || linkedBoardCard?.title || selectedCard.title || intl.formatMessage({id: 'CardProperty.untitled', defaultMessage: 'Untitled'})
+            return {
+                id: selectedCard.id,
+                title: resolvedTitle,
+            }
+        })
+    }, [selectedCards, linkedBoardId, board.id, allCards, linkedCardsById, intl])
+
     // 이미 선택된 카드 ID 목록
-    const selectedCardIds = new Set(selectedCards.map((c) => c.id))
+    const selectedCardIdSet = useMemo(() => new Set(selectedCards.map((c) => c.id)), [selectedCards])
 
     // 검색 필터링된 카드 목록
+    const cardsForDropdown = isLinkedToCurrentBoard ? currentBoardCards : cards
     const filteredCards = useMemo(() => {
         if (!searchQuery.trim()) {
-            return cards
+            return cardsForDropdown
         }
         const query = searchQuery.toLowerCase().trim()
-        return cards.filter((c) => {
+        return cardsForDropdown.filter((c) => {
             const title = c.title || ''
             return title.toLowerCase().includes(query)
         })
-    }, [cards, searchQuery])
+    }, [cardsForDropdown, searchQuery])
 
     // 보드가 선택되지 않은 경우 안내 메시지 표시
     if (!linkedBoardId) {
@@ -275,7 +390,7 @@ const CardPropertyEditor = (props: PropertyProps) => {
                 </span>
             ) : hasSelectedCards ? (
                 <div className='CardProperty-tags'>
-                    {selectedCards.map((c) => (
+                    {resolvedSelectedCards.map((c) => (
                         <div
                             key={c.id}
                             className='CardProperty-tag'
@@ -362,7 +477,7 @@ const CardPropertyEditor = (props: PropertyProps) => {
                         <div className='CardProperty-error'>
                             {intl.formatMessage({id: 'CardProperty.boardAccessError', defaultMessage: 'Board has been deleted or is no longer accessible. Please select a different board.'})}
                         </div>
-                    ) : cards.length === 0 ? (
+                    ) : cardsForDropdown.length === 0 ? (
                         <div className='CardProperty-empty'>
                             {intl.formatMessage({id: 'CardProperty.noCards', defaultMessage: 'No cards available'})}
                         </div>
@@ -373,7 +488,7 @@ const CardPropertyEditor = (props: PropertyProps) => {
                     ) : (
                         <div className='CardProperty-list'>
                             {filteredCards.map((c) => {
-                                const isSelected = selectedCardIds.has(c.id)
+                                const isSelected = selectedCardIdSet.has(c.id)
                                 return (
                                     <div
                                         key={c.id}
@@ -407,3 +522,4 @@ const CardPropertyEditor = (props: PropertyProps) => {
 }
 
 export default React.memo(CardPropertyEditor)
+export {clearLinkedBoardCardCacheForTests}

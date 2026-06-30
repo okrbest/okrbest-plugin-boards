@@ -70,6 +70,38 @@ func (a *App) GetCardsForBoard(boardID string, page int, perPage int) ([]*model.
 	return cards, nil
 }
 
+func (a *App) GetCardsByIDs(boardID string, cardIDs []string) ([]*model.Card, error) {
+	if len(cardIDs) == 0 {
+		return []*model.Card{}, nil
+	}
+
+	seenCardIDs := map[string]struct{}{}
+	cards := make([]*model.Card, 0, len(cardIDs))
+	for _, cardID := range cardIDs {
+		if cardID == "" {
+			continue
+		}
+		if _, seen := seenCardIDs[cardID]; seen {
+			continue
+		}
+		seenCardIDs[cardID] = struct{}{}
+
+		card, err := a.GetCardByID(cardID)
+		if err != nil {
+			if model.IsErrNotFound(err) {
+				continue
+			}
+			return nil, err
+		}
+		if card.BoardID != boardID {
+			continue
+		}
+		cards = append(cards, card)
+	}
+
+	return cards, nil
+}
+
 func (a *App) PatchCard(cardPatch *model.CardPatch, cardID string, userID string, disableNotify bool) (*model.Card, error) {
 	blockPatch, err := model.CardPatch2BlockPatch(cardPatch)
 	if err != nil {

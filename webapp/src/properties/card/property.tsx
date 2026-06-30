@@ -5,6 +5,8 @@ import {IntlShape} from 'react-intl'
 
 // import {IPropertyTemplate} from '../../blocks/board' // 미사용
 // import {Card} from '../../blocks/card' // 미사용
+import store from '../../store'
+import {getCards} from '../../store/cards'
 import {PropertyType, PropertyTypeEnum, FilterValueType} from '../types'
 
 import CardPropertyEditor from './card'
@@ -19,6 +21,11 @@ export default class CardProperty extends PropertyType {
 
     displayName = (intl: IntlShape) => intl.formatMessage({id: 'PropertyType.Card', defaultMessage: 'Card'})
 
+    private resolveCardTitle = (cardId: string, fallbackTitle: string): string => {
+        const cards = getCards(store.getState())
+        return cards[cardId]?.title || fallbackTitle || 'Untitled'
+    }
+
     displayValue = (propertyValue: string | string[] | undefined) => {
         if (propertyValue && typeof propertyValue === 'string') {
             // JSON 형식 (새 형식)
@@ -29,7 +36,7 @@ export default class CardProperty extends PropertyType {
                     if (cards.length === 0) {
                         return ''
                     }
-                    return cards.map((c: {id: string, title: string}) => c.title || 'Untitled').join(', ')
+                    return cards.map((c: {id: string, title: string}) => this.resolveCardTitle(c.id, c.title)).join(', ')
                 } catch {
                     return ''
                 }
@@ -45,14 +52,18 @@ export default class CardProperty extends PropertyType {
                     if (colonIndex === -1) {
                         return 'Untitled'
                     }
-                    return cardStr.substring(colonIndex + 1) || 'Untitled'
+                    const cardId = cardStr.substring(0, colonIndex)
+                    const fallbackTitle = cardStr.substring(colonIndex + 1) || 'Untitled'
+                    return this.resolveCardTitle(cardId, fallbackTitle)
                 })
                 return titles.join(', ')
             }
             // 이전 형식 호환: "boardId:cardId:cardTitle"
             const parts = propertyValue.split(':')
             if (parts.length >= 3) {
-                return parts.slice(2).join(':')
+                const cardId = parts[1]
+                const fallbackTitle = parts.slice(2).join(':')
+                return this.resolveCardTitle(cardId, fallbackTitle)
             }
             return ''
         }
