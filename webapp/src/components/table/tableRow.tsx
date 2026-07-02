@@ -13,6 +13,7 @@ import Editable from '../../widgets/editable'
 import {useSortable} from '../../hooks/sortable'
 
 import {Utils} from '../../utils'
+import {getGroupOptionIDForCard} from '../../boardUtils'
 
 import PropertyValueElement from '../propertyValueElement'
 import MenuWrapper from '../../widgets/menuWrapper'
@@ -100,19 +101,10 @@ const TableRow = (props: Props) => {
         className += ' dragover'
     }
     if (isGrouped) {
-        const groupID = groupById || ''
-        let groupValue = card.fields.properties[groupID] as string || 'undefined'
-        if (groupValue === 'undefined') {
-            const template = board.cardProperties.find((p) => p.id === groupById) //templates.find((o) => o.id === groupById)
-            if (template && template.type === 'createdBy') {
-                groupValue = card.createdBy
-            } else if (template && template.type === 'updatedBy') {
-                groupValue = card.modifiedBy
-            }
-        } else if (Array.isArray(groupValue)) {
-            groupValue = groupValue[0]
-        }
-        if (collapsedOptionIds.indexOf(groupValue) > -1) {
+        const groupTemplate = board.cardProperties.find((p) => p.id === groupById)
+        const groupOptionID = getGroupOptionIDForCard(card, groupTemplate)
+        const collapsedGroupKey = groupOptionID || 'undefined'
+        if (collapsedOptionIds.indexOf(collapsedGroupKey) > -1) {
             className += ' hidden'
         }
     }

@@ -4,6 +4,51 @@
 import {Card} from './blocks/card'
 import {IPropertyTemplate, IPropertyOption, BoardGroup} from './blocks/board'
 
+export function getGroupOptionIDForCard(card: Card, groupByProperty?: IPropertyTemplate): string {
+    if (!groupByProperty) {
+        return ''
+    }
+
+    const propertyValue = card.fields.properties[groupByProperty.id]
+    if (groupByProperty.type === 'createdBy') {
+        return card.createdBy || ''
+    }
+
+    if (groupByProperty.type === 'updatedBy') {
+        return card.modifiedBy || ''
+    }
+
+    if (groupByProperty.type === 'person') {
+        return typeof propertyValue === 'string' ? propertyValue : ''
+    }
+
+    if (groupByProperty.type === 'multiPerson' || groupByProperty.type === 'multiSelect') {
+        let valueIDs: string[] = []
+        if (Array.isArray(propertyValue)) {
+            valueIDs = propertyValue.filter((id): id is string => typeof id === 'string' && id !== '')
+        } else if (typeof propertyValue === 'string' && propertyValue !== '') {
+            valueIDs = propertyValue.split(',').map((id) => id.trim()).filter((id) => id !== '')
+        }
+        return valueIDs.sort().join(',')
+    }
+
+    if (groupByProperty.type === 'card') {
+        const linkedBoardId = groupByProperty.options?.[0]?.id || ''
+        const linkedCards = parseAllCardPropertyValues(typeof propertyValue === 'string' ? propertyValue : undefined)
+        const sortedCards = [...linkedCards].sort((a, b) => a.cardId.localeCompare(b.cardId))
+        return JSON.stringify({
+            boardId: linkedBoardId,
+            cards: sortedCards.map((c) => ({id: c.cardId, title: c.cardTitle})),
+        })
+    }
+
+    if (typeof propertyValue === 'string') {
+        return propertyValue
+    }
+
+    return ''
+}
+
 function groupCardsByOptions(cards: Card[], optionIds: string[], groupByProperty?: IPropertyTemplate): BoardGroup[] {
     const groups = []
     for (const optionId of optionIds) {
@@ -95,12 +140,7 @@ function getPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate, hidd
     const order: string[] = []
 
     cards.forEach((item) => {
-        let key = item.fields.properties[groupByProperty.id] as string
-        if (groupByProperty?.type === 'createdBy') {
-            key = item.createdBy
-        } else if (groupByProperty?.type === 'updatedBy') {
-            key = item.modifiedBy
-        }
+        const key = getGroupOptionIDForCard(item, groupByProperty)
 
         if (!groups[key]) {
             groups[key] = []
@@ -132,17 +172,8 @@ function getMultiPersonGroups(cards: Card[], groupByProperty: IPropertyTemplate,
     const order: string[] = []
 
     cards.forEach((card) => {
-        const propertyValue = card.fields.properties[groupByProperty.id]
-        let personIds: string[] = []
-
-        if (Array.isArray(propertyValue)) {
-            personIds = propertyValue.filter((id) => id).sort()
-        } else if (typeof propertyValue === 'string' && propertyValue && !propertyValue.includes(',')) {
-            personIds = [propertyValue]
-        }
-
-        // 정렬된 ID 배열을 문자열로 직렬화하여 그룹 키로 사용
-        const key = personIds.join(',')
+        const key = getGroupOptionIDForCard(card, groupByProperty)
+        const personIds = key === '' ? [] : key.split(',').filter((id) => id)
 
         if (!groups[key]) {
             groups[key] = {cards: [], personIds}
@@ -178,15 +209,8 @@ function getMultiSelectGroups(cards: Card[], groupByProperty: IPropertyTemplate,
     const order: string[] = []
 
     cards.forEach((card) => {
-        const propertyValue = card.fields.properties[groupByProperty.id]
-        let optionIds: string[] = []
-
-        if (Array.isArray(propertyValue)) {
-            optionIds = propertyValue.filter((id) => id).sort()
-        }
-
-        // 정렬된 옵션 ID 배열을 문자열로 직렬화하여 그룹 키로 사용
-        const key = optionIds.join(',')
+        const key = getGroupOptionIDForCard(card, groupByProperty)
+        const optionIds = key === '' ? [] : key.split(',').filter((id) => id)
 
         if (!groups[key]) {
             groups[key] = {cards: [], optionIds}
@@ -288,21 +312,10 @@ function getCardGroups(cards: Card[], groupByProperty: IPropertyTemplate, hidden
     const groups: {[key: string]: {cards: Card[], linkedCards: {cardId: string, cardTitle: string}[]}} = {}
     const order: string[] = []
 
-    // 연결된 보드 ID 가져오기
-    const linkedBoardId = groupByProperty.options?.[0]?.id || ''
-
     cards.forEach((card) => {
+        const key = getGroupOptionIDForCard(card, groupByProperty)
         const propertyValue = card.fields.properties[groupByProperty.id] as string
         const linkedCards = parseAllCardPropertyValues(propertyValue)
-
-        // 카드들을 정렬하여 동일한 조합이면 같은 그룹
-        // JSON 형식으로 키 생성: {"boardId":"...","cards":[{"id":"...","title":"..."}]}
-        const sortedCards = [...linkedCards].sort((a, b) => a.cardId.localeCompare(b.cardId))
-        const keyData = {
-            boardId: linkedBoardId,
-            cards: sortedCards.map((c) => ({id: c.cardId, title: c.cardTitle})),
-        }
-        const key = JSON.stringify(keyData)
 
         if (!groups[key]) {
             groups[key] = {cards: [], linkedCards}

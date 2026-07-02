@@ -214,6 +214,62 @@ describe('components/table/Table', () => {
         expect(container).toMatchSnapshot()
     })
 
+    test('does not render group rows when group is collapsed', async () => {
+        const callback = jest.fn()
+        const addCard = jest.fn()
+        const groupedCard = TestBlockFactory.createCard(board)
+        groupedCard.title = 'collapsed-row-card'
+        groupedCard.fields.properties.property1 = 'value1'
+
+        const groupedView = {
+            ...view,
+            fields: {
+                ...view.fields,
+                groupById: 'property1',
+                collapsedOptionIds: ['value1'],
+            },
+        } as BoardView
+
+        const mockStore = configureStore([])
+        const store = mockStore({
+            ...state,
+            cards: {
+                cards: {
+                    [groupedCard.id]: groupedCard,
+                },
+            },
+        })
+
+        const component = wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <Table
+                    board={board}
+                    activeView={groupedView}
+                    visibleGroups={[{option: {id: 'value1', value: 'Value 1', color: ''}, cards: [groupedCard]}]}
+                    groupByProperty={{
+                        id: 'property1',
+                        name: 'Property 1',
+                        type: 'text',
+                        options: [{id: 'value1', value: 'Value 1', color: ''}],
+                    }}
+                    cards={[groupedCard]}
+                    views={[view, view2]}
+                    selectedCardIds={[]}
+                    readonly={false}
+                    cardIdToFocusOnRender=''
+                    showCard={callback}
+                    addCard={addCard}
+                    onCardClicked={jest.fn()}
+                    hiddenCardsCount={0}
+                    showHiddenCardCountNotification={jest.fn()}
+                />
+            </ReduxProvider>,
+        )
+        render(component)
+
+        expect(screen.queryByText('collapsed-row-card')).not.toBeInTheDocument()
+    })
+
      test('limited card in table view', async () => {
          const callback = jest.fn()
          const addCard = jest.fn()

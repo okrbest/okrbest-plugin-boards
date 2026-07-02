@@ -202,4 +202,95 @@ describe('components/table/TableRow', () => {
         )
         expect(container).toMatchSnapshot()
     })
+
+    test('adds hidden class for collapsed multiSelect group key', async () => {
+        const groupedBoard = TestBlockFactory.createBoard()
+        const multiSelectProperty = {
+            id: 'multi-select-property-id',
+            name: 'Multi Select',
+            type: 'multiSelect',
+            options: [
+                {id: 'opt-a', value: 'A', color: 'propColorGray'},
+                {id: 'opt-b', value: 'B', color: 'propColorGray'},
+            ],
+        }
+        groupedBoard.cardProperties.push(multiSelectProperty)
+
+        const groupedCard = TestBlockFactory.createCard(groupedBoard)
+        groupedCard.fields.properties[multiSelectProperty.id] = ['opt-b', 'opt-a']
+
+        const {container} = render(
+            <Wrapper>
+                <TableRow
+                    board={groupedBoard}
+                    card={groupedCard}
+                    columnWidths={view.fields.columnWidths}
+                    addCard={jest.fn()}
+                    visiblePropertyIds={view.fields.visiblePropertyIds}
+                    isManualSort={view.fields.sortOptions.length === 0}
+                    groupById={multiSelectProperty.id}
+                    isLastCard={false}
+                    collapsedOptionIds={['opt-a,opt-b']}
+                    isSelected={false}
+                    focusOnMount={false}
+                    showCard={jest.fn()}
+                    readonly={false}
+                    onDrop={jest.fn()}
+                />
+            </Wrapper>,
+        )
+
+        expect(container.querySelector('.TableRow')).toHaveClass('hidden')
+    })
+
+    test('adds hidden class for collapsed card property group key', async () => {
+        const groupedBoard = TestBlockFactory.createBoard()
+        const cardProperty = {
+            id: 'card-property-id',
+            name: 'Linked Card',
+            type: 'card',
+            options: [{id: 'linked-board-id', value: 'Linked Board', color: 'propColorGray'}],
+        }
+        groupedBoard.cardProperties.push(cardProperty)
+
+        const groupedCard = TestBlockFactory.createCard(groupedBoard)
+        groupedCard.fields.properties[cardProperty.id] = JSON.stringify({
+            boardId: 'linked-board-id',
+            cards: [
+                {id: 'card-b', title: 'Card B'},
+                {id: 'card-a', title: 'Card A'},
+            ],
+        })
+
+        const collapsedGroupID = JSON.stringify({
+            boardId: 'linked-board-id',
+            cards: [
+                {id: 'card-a', title: 'Card A'},
+                {id: 'card-b', title: 'Card B'},
+            ],
+        })
+
+        const {container} = render(
+            <Wrapper>
+                <TableRow
+                    board={groupedBoard}
+                    card={groupedCard}
+                    columnWidths={view.fields.columnWidths}
+                    addCard={jest.fn()}
+                    visiblePropertyIds={view.fields.visiblePropertyIds}
+                    isManualSort={view.fields.sortOptions.length === 0}
+                    groupById={cardProperty.id}
+                    isLastCard={false}
+                    collapsedOptionIds={[collapsedGroupID]}
+                    isSelected={false}
+                    focusOnMount={false}
+                    showCard={jest.fn()}
+                    readonly={false}
+                    onDrop={jest.fn()}
+                />
+            </Wrapper>,
+        )
+
+        expect(container.querySelector('.TableRow')).toHaveClass('hidden')
+    })
 })

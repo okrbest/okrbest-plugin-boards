@@ -97,10 +97,15 @@ const Table = (props: Props): React.JSX.Element => {
 
         const newView = createBoardView(activeView)
         newView.fields.collapsedOptionIds = newValue
+        dispatch(updateView(newView))
         mutator.performAsUndoGroup(async () => {
-            await mutator.updateBlock(board.id, newView, activeView, 'hide group')
+            try {
+                await mutator.updateBlock(board.id, newView, activeView, 'hide group')
+            } catch {
+                dispatch(updateView(activeView))
+            }
         })
-    }, [activeView])
+    }, [activeView, board.id, dispatch])
 
     const onDropToGroupHeader = useCallback(async (option: IPropertyOption, dstOption?: IPropertyOption) => {
         if (dstOption) {

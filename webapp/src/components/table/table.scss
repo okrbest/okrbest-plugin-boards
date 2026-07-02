@@ -245,6 +245,10 @@
     .octo-table-row {
         display: flex;
         flex-direction: row;
+
+        &.hidden {
+            display: none;
+        }
     }
 
     .octo-table-header {

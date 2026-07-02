@@ -33,6 +33,7 @@ type Props = {
 const TableGroup = (props: Props): React.JSX.Element => {
     const {board, activeView, group, onDropToGroup, groupByProperty} = props
     const groupId = group.option.id
+    const isCollapsed = activeView.fields.collapsedOptionIds.includes(group.option.id || 'undefined')
 
     const [{isOver}, drop] = useDrop(() => ({
         accept: 'card',
@@ -69,7 +70,7 @@ const TableGroup = (props: Props): React.JSX.Element => {
                 onDrop={props.onDropToGroupHeader}
             />
 
-            {(group.cards.length > 0) &&
+            {!isCollapsed && (group.cards.length > 0) &&
             <TableRows
                 board={board}
                 activeView={activeView}
