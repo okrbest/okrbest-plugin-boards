@@ -17,6 +17,7 @@ import mutator from '../../mutator'
 import {Utils, IDType} from '../../utils'
 import Button from '../../widgets/buttons/button'
 import {Constants, Permission} from '../../constants'
+import {useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
 import {dragAndDropRearrange} from '../cardDetail/cardDetailContentsUtility'
 
@@ -55,6 +56,8 @@ const vStrength = createVerticalStrength(Utils.isMobile() ? 60 : 250)
 
 const Kanban = (props: Props) => {
     const cardTemplates: Card[] = useAppSelector(getCurrentBoardTemplates)
+    const canEditCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
+    const canEditCardsByCapability = useHasCapabilities(props.board.id, ['canEditCard'])
     const {board, activeView, cards, groupByProperty, visibleGroups, hiddenGroups, hiddenCardsCount} = props
     const [defaultTemplateID, setDefaultTemplateID] = useState<string>()
 
@@ -343,7 +346,7 @@ const Kanban = (props: Props) => {
                                 visiblePropertyTemplates={visiblePropertyTemplates}
                                 visibleBadges={visibleBadges}
                                 key={card.id}
-                                readonly={props.readonly}
+                                readonly={props.readonly || !(canEditCards || canEditCardsByCapability)}
                                 isSelected={props.selectedCardIds.includes(card.id)}
                                 onClick={props.onCardClicked}
                                 onDrop={onDropToCard}

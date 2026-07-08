@@ -13,7 +13,8 @@ import RootPortal from '../rootPortal'
 
 import {useAppSelector} from '../../store/hooks'
 import {Permission} from '../../constants'
-import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {getCurrentBoardId} from '../../store/boards'
 import {
     getOnboardingTourCategory,
     getOnboardingTourStarted,
@@ -58,7 +59,10 @@ type Props = {
 const ViewHeader = (props: Props) => {
     const [showFilter, setShowFilter] = useState(false)
     const [lockFilterOnClose, setLockFilterOnClose] = useState(false)
+    const currentBoardId = useAppSelector(getCurrentBoardId)
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
+    const canManageBoard = useHasCapabilities(currentBoardId, ['canManageBoard'])
+    const canCreateCard = useHasCapabilities(currentBoardId, ['canCreateCard'])
 
     const {board, activeView, views, groupByProperty, cards, dateDisplayProperty} = props
 
@@ -172,7 +176,7 @@ const ViewHeader = (props: Props) => {
             </div>
 
             <div className='ViewHeader__toolbar'>
-                {!props.readonly && canEditBoardProperties &&
+                {!props.readonly && (canEditBoardProperties || canManageBoard) &&
                 <>
                     {/* Card properties */}
 
@@ -266,7 +270,7 @@ const ViewHeader = (props: Props) => {
 
                     {/* New card button */}
 
-                    <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
+                    <BoardPermissionGate capabilities={['canCreateCard']}>
                         <NewCardButton
                             addCard={props.addCard}
                             addCardFromTemplate={props.addCardFromTemplate}
@@ -274,6 +278,16 @@ const ViewHeader = (props: Props) => {
                             editCardTemplate={props.editCardTemplate}
                         />
                     </BoardPermissionGate>
+                    {!canCreateCard && (
+                        <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
+                            <NewCardButton
+                                addCard={props.addCard}
+                                addCardFromTemplate={props.addCardFromTemplate}
+                                addCardTemplate={props.addCardTemplate}
+                                editCardTemplate={props.editCardTemplate}
+                            />
+                        </BoardPermissionGate>
+                    )}
                 </>}
             </div>
         </div>

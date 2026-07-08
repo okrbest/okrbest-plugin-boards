@@ -130,7 +130,7 @@ func (a *API) handleAddMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) &&
+	if !a.canManageBoardMembership(userID, boardID) &&
 		!(board.Type == model.BoardTypeOpen && a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardProperties)) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to modify board members"))
 		return
@@ -447,9 +447,22 @@ func (a *API) handleUpdateMember(w http.ResponseWriter, r *http.Request) {
 		newBoardMember.SchemeAdmin = false
 	}
 
-	if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) {
+	if !a.canManageBoardMembership(userID, boardID) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to modify board members"))
 		return
+	}
+
+	oldMember, memberErr := a.app.GetMemberForBoard(boardID, paramsUserID)
+	if memberErr == nil && oldMember != nil && oldMember.SchemeAdmin && !newBoardMember.SchemeAdmin {
+		canRemoveLastAdmin, canErr := a.canDowngradeLastBoardManager(boardID, paramsUserID)
+		if canErr != nil {
+			a.errorResponse(w, r, canErr)
+			return
+		}
+		if !canRemoveLastAdmin {
+			a.errorResponse(w, r, model.NewErrBadRequest("boards must keep at least one manager"))
+			return
+		}
 	}
 
 	auditRec := a.makeAuditRecord(r, "patchMember", audit.Fail)
@@ -520,8 +533,18 @@ func (a *API) handleDeleteMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) {
+	if !a.canManageBoardMembership(userID, boardID) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to modify board members"))
+		return
+	}
+
+	canDeleteLastAdmin, canErr := a.canDowngradeLastBoardManager(boardID, paramsUserID)
+	if canErr != nil {
+		a.errorResponse(w, r, canErr)
+		return
+	}
+	if !canDeleteLastAdmin {
+		a.errorResponse(w, r, model.NewErrBadRequest("boards must keep at least one manager"))
 		return
 	}
 
@@ -545,4 +568,36 @@ func (a *API) handleDeleteMember(w http.ResponseWriter, r *http.Request) {
 	jsonStringResponse(w, http.StatusOK, "{}")
 
 	auditRec.Success()
+}
+
+func (a *API) canManageBoardMembership(userID, boardID string) bool {
+	if a.permissions.HasPermissionTo(userID, model.PermissionManageSystem) {
+		return true
+	}
+	return a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles)
+}
+
+func (a *API) canDowngradeLastBoardManager(boardID, targetUserID string) (bool, error) {
+	members, err := a.app.GetMembersForBoard(boardID)
+	if err != nil {
+		return false, err
+	}
+
+	adminCount := 0
+	targetIsAdmin := false
+	for _, member := range members {
+		if !member.SchemeAdmin {
+			continue
+		}
+		adminCount++
+		if member.UserID == targetUserID {
+			targetIsAdmin = true
+		}
+	}
+
+	if targetIsAdmin && adminCount <= 1 {
+		return false, nil
+	}
+
+	return true, nil
 }

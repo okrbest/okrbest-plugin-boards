@@ -4,7 +4,7 @@
 import { Client4 } from "mattermost-redux/client"
 
 import {Block, BlockPatch, FileInfo} from './blocks/block'
-import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember} from './blocks/board'
+import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse, BoardACLEntry, ACLSubjectOption} from './blocks/board'
 import {ISharing} from './blocks/sharing'
 import {OctoUtils} from './octoUtils'
 import {IUser, UserConfigPatch, UserPreference} from './user'
@@ -890,6 +890,95 @@ class OctoClient {
         }
 
         return this.getJson<Board>(response, {} as Board)
+    }
+
+    async getBoardPermissionsMe(boardID: string): Promise<BoardPermissionsResponse | undefined> {
+        const path = `/api/v2/boards/${boardID}/permissions/me`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+
+        if (response.status !== 200) {
+            return undefined
+        }
+
+        return this.getJson<BoardPermissionsResponse>(response, {} as BoardPermissionsResponse)
+    }
+
+    async getBoardPermissionsPreview(boardID: string, userID: string): Promise<BoardPermissionsResponse | undefined> {
+        const path = `/api/v2/boards/${boardID}/permissions/preview?userID=${encodeURIComponent(userID)}`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+
+        if (response.status !== 200) {
+            return undefined
+        }
+
+        return this.getJson<BoardPermissionsResponse>(response, {} as BoardPermissionsResponse)
+    }
+
+    async getBoardACL(boardID: string): Promise<BoardACLEntry[]> {
+        const path = `/api/v2/boards/${boardID}/acl`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+
+        if (response.status !== 200) {
+            return []
+        }
+
+        return this.getJson<BoardACLEntry[]>(response, [])
+    }
+
+    async putBoardACL(boardID: string, entries: BoardACLEntry[]): Promise<BoardACLEntry[]> {
+        const path = `/api/v2/boards/${boardID}/acl`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'PUT',
+            headers: this.headers(),
+            body: JSON.stringify({entries}),
+        }))
+
+        if (response.status !== 200) {
+            return []
+        }
+
+        return this.getJson<BoardACLEntry[]>(response, [])
+    }
+
+    async getOrgUnits(teamID: string): Promise<ACLSubjectOption[]> {
+        if (!teamID) {
+            return []
+        }
+        const path = `/api/v2/org/units?teamID=${encodeURIComponent(teamID)}`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            throw new Error('failed_to_load_org_units')
+        }
+        const units = await this.getJson<Array<{id: string, name: string}>>(response, [])
+        return units.filter((unit) => unit?.id && unit?.name)
+    }
+
+    async getPositions(teamID: string): Promise<ACLSubjectOption[]> {
+        if (!teamID) {
+            return []
+        }
+        const path = `/api/v2/org/positions?teamID=${encodeURIComponent(teamID)}`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'GET',
+            headers: this.headers(),
+        }))
+        if (response.status !== 200) {
+            throw new Error('failed_to_load_positions')
+        }
+        const positions = await this.getJson<Array<{id: string, name: string}>>(response, [])
+        return positions.filter((position) => position?.id && position?.name)
     }
 
     async duplicateBoard(boardID: string, asTemplate: boolean, toTeam?: string): Promise<BoardsAndBlocks | undefined> {

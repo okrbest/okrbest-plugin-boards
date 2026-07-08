@@ -7,10 +7,37 @@ import {getMyBoardMembership, getCurrentBoardId, getBoard} from '../store/boards
 import {getCurrentTeam} from '../store/teams'
 import {Permission} from '../constants'
 import {MemberRole} from '../blocks/board'
+import {getBoardPermissions} from '../store/boardPermissions'
+
+export type BoardCapability = 'canView' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard'
+
+const permissionToCapability: Record<Permission, keyof NonNullable<ReturnType<typeof getPermissionsCapabilities>>> = {
+    [Permission.ViewBoard]: 'canView',
+    [Permission.CommentBoardCards]: 'canEditCard',
+    [Permission.ManageBoardCards]: 'canEditCard',
+    [Permission.ManageBoardProperties]: 'canManageBoard',
+    [Permission.ManageBoardRoles]: 'canManageBoard',
+    [Permission.ManageBoardType]: 'canManageBoard',
+    [Permission.ShareBoard]: 'canManageBoard',
+    [Permission.DeleteBoard]: 'canDeleteCard',
+    [Permission.DeleteOthersComments]: 'canManageBoard',
+    [Permission.ChannelCreatePost]: 'canManageBoard',
+}
 
 export const useHasPermissions = (teamId: string, boardId: string, permissions: Permission[]): boolean => {
     if (!boardId || !teamId) {
         return false
+    }
+
+    const capabilities = useAppSelector(getBoardPermissions(boardId))?.capabilities
+    if (capabilities) {
+        return permissions.some((permission) => {
+            const capability = permissionToCapability[permission]
+            if (!capability) {
+                return false
+            }
+            return Boolean(capabilities[capability])
+        })
     }
 
     const member = useAppSelector(getMyBoardMembership(boardId))
@@ -44,6 +71,19 @@ export const useHasPermissions = (teamId: string, boardId: string, permissions: 
         }
     }
     return false
+}
+
+export const useHasCapabilities = (boardId: string, capabilities: BoardCapability[]): boolean => {
+    if (!boardId) {
+        return false
+    }
+
+    const boardCapabilities = useAppSelector(getBoardPermissions(boardId))?.capabilities
+    if (!boardCapabilities) {
+        return false
+    }
+
+    return capabilities.some((capability) => Boolean(boardCapabilities[capability]))
 }
 
 export const useHasCurrentTeamPermissions = (boardId: string, permissions: Permission[]): boolean => {

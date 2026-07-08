@@ -243,4 +243,74 @@ func TestHasPermissionToBoard(t *testing.T) {
 		hasNotPermissionTo := []*mmModel.Permission{}
 		th.checkBoardPermissions("elevated-admin", member, teamID, hasPermissionTo, hasNotPermissionTo)
 	})
+
+	t.Run("org_position acl requires both org and position", func(t *testing.T) {
+		taggedUserID := "user-id org_unit:dept-a position:leader"
+
+		boardWithACL := &model.Board{
+			ID:     boardID,
+			TeamID: teamID,
+			Properties: map[string]interface{}{
+				model.BoardACLPropertyKey: []model.BoardACLEntry{
+					{
+						ID:           "acl-org-pos",
+						SubjectType:  model.BoardACLSubjectOrgPos,
+						OrgUnitID:    "dept-a",
+						PositionCode: "leader",
+						Permission:   model.EffectiveBoardPermissionManage,
+					},
+				},
+			},
+		}
+
+		th.store.EXPECT().
+			GetBoard(boardID).
+			Return(boardWithACL, nil).
+			Times(1)
+		th.api.EXPECT().
+			HasPermissionToTeam(taggedUserID, teamID, model.PermissionViewTeam).
+			Return(true).
+			Times(1)
+		th.store.EXPECT().
+			GetMemberForBoard(boardID, taggedUserID).
+			Return(nil, sql.ErrNoRows).
+			Times(1)
+
+		assert.True(t, th.permissions.HasPermissionToBoard(taggedUserID, boardID, model.PermissionManageBoardCards))
+	})
+
+	t.Run("org_position acl denies when one side missing", func(t *testing.T) {
+		taggedUserID := "user-id org_unit:dept-a"
+
+		boardWithACL := &model.Board{
+			ID:     boardID,
+			TeamID: teamID,
+			Properties: map[string]interface{}{
+				model.BoardACLPropertyKey: []model.BoardACLEntry{
+					{
+						ID:           "acl-org-pos",
+						SubjectType:  model.BoardACLSubjectOrgPos,
+						OrgUnitID:    "dept-a",
+						PositionCode: "leader",
+						Permission:   model.EffectiveBoardPermissionManage,
+					},
+				},
+			},
+		}
+
+		th.store.EXPECT().
+			GetBoard(boardID).
+			Return(boardWithACL, nil).
+			Times(1)
+		th.api.EXPECT().
+			HasPermissionToTeam(taggedUserID, teamID, model.PermissionViewTeam).
+			Return(true).
+			Times(1)
+		th.store.EXPECT().
+			GetMemberForBoard(boardID, taggedUserID).
+			Return(nil, sql.ErrNoRows).
+			Times(1)
+
+		assert.False(t, th.permissions.HasPermissionToBoard(taggedUserID, boardID, model.PermissionManageBoardCards))
+	})
 }

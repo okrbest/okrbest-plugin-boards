@@ -17,6 +17,8 @@ import (
 )
 
 func (a *API) registerBoardsRoutes(r *mux.Router) {
+	r.HandleFunc("/org/units", a.sessionRequired(a.handleGetOrgUnits)).Methods("GET")
+	r.HandleFunc("/org/positions", a.sessionRequired(a.handleGetPositions)).Methods("GET")
 	r.HandleFunc("/teams/{teamID}/boards", a.sessionRequired(a.handleGetBoards)).Methods("GET")
 	r.HandleFunc("/boards", a.sessionRequired(a.handleCreateBoard)).Methods("POST")
 	r.HandleFunc("/boards/{boardID}", a.attachSession(a.handleGetBoard)).Methods("GET")
@@ -25,6 +27,12 @@ func (a *API) registerBoardsRoutes(r *mux.Router) {
 	r.HandleFunc("/boards/{boardID}/duplicate", a.sessionRequired(a.handleDuplicateBoard)).Methods("POST")
 	r.HandleFunc("/boards/{boardID}/undelete", a.sessionRequired(a.handleUndeleteBoard)).Methods("POST")
 	r.HandleFunc("/boards/{boardID}/metadata", a.sessionRequired(a.handleGetBoardMetadata)).Methods("GET")
+	r.HandleFunc("/boards/{boardID}/permissions/me", a.sessionRequired(a.handleGetBoardPermissionsMe)).Methods("GET")
+	r.HandleFunc("/boards/{boardID}/permissions/preview", a.sessionRequired(a.handleGetBoardPermissionsPreview)).Methods("GET")
+	r.HandleFunc("/boards/{boardID}/acl", a.sessionRequired(a.handleGetBoardACL)).Methods("GET")
+	r.HandleFunc("/boards/{boardID}/acl", a.sessionRequired(a.handlePutBoardACL)).Methods("PUT")
+	r.HandleFunc("/boards/{boardID}/acl/entries", a.sessionRequired(a.handleCreateBoardACLEntry)).Methods("POST")
+	r.HandleFunc("/boards/{boardID}/acl/entries/{entryID}", a.sessionRequired(a.handleDeleteBoardACLEntry)).Methods("DELETE")
 	// /notify is used by auto-notify flow (card close) to send subscription diff notifications.
 	r.HandleFunc("/boards/{boardID}/notify", a.sessionRequired(a.handleSendBoardNotification)).Methods("POST")
 	// /notify/share is used only by explicit share actions (button/menu click).

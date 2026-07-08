@@ -16,6 +16,7 @@ type PermissionsService interface {
 	HasPermissionToTeam(userID, teamID string, permission *mmModel.Permission) bool
 	HasPermissionToChannel(userID, channelID string, permission *mmModel.Permission) bool
 	HasPermissionToBoard(userID, boardID string, permission *mmModel.Permission) bool
+	GetBoardPermissions(userID, boardID string) (*model.BoardPermissionsResponse, error)
 }
 
 type Store interface {

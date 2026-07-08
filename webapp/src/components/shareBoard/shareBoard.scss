@@ -250,4 +250,65 @@
         }
     }
 
+    .ShareBoardDialog__acl-toolbar {
+        gap: 8px;
+    }
+
+    .ShareBoardDialog__acl-list {
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .ShareBoardDialog__acl-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 120px 220px;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+
+        &:first-child {
+            border-top: 0;
+        }
+
+        > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        select.form-control {
+            height: 36px;
+            min-width: 0;
+        }
+    }
+
+    .ShareBoardDialog__acl-row--header {
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+        font-size: 12px;
+        font-weight: 600;
+
+        > span {
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+            white-space: nowrap;
+        }
+    }
+
+    .ShareBoardDialog__acl-row--editing {
+        background: rgba(var(--button-bg-rgb), 0.04);
+    }
+
+    .ShareBoardDialog__acl-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+
+    .ShareBoardDialog__acl-empty {
+        padding: 14px 12px;
+    }
+
 }

@@ -293,6 +293,14 @@ func (s *SQLStore) GetAllTeams() ([]*model.Team, error) {
 
 }
 
+func (s *SQLStore) GetOrgUnitsForTeam(teamID string, includeInactive bool) ([]*model.ACLSubjectOption, error) {
+	return s.getOrgUnitsForTeam(s.db, teamID, includeInactive)
+}
+
+func (s *SQLStore) GetPositionsForTeam(teamID string, includeInactive bool) ([]*model.ACLSubjectOption, error) {
+	return s.getPositionsForTeam(s.db, teamID, includeInactive)
+}
+
 func (s *SQLStore) GetBlock(blockID string) (*model.Block, error) {
 	return s.getBlock(s.db, blockID)
 

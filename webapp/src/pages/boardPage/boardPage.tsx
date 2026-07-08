@@ -23,11 +23,13 @@ import {
     updateBoards,
     updateMembersEnsuringBoardsAndUsers,
     getCurrentBoardId,
+    getCurrentBoard,
     setCurrent as setCurrentBoard,
     fetchBoardMembers,
     addMyBoardMemberships,
 } from '../../store/boards'
 import {getCurrentViewId, setCurrent as setCurrentView, updateViews} from '../../store/views'
+import {getCurrentView} from '../../store/views'
 import ConfirmationDialog from '../../components/confirmationDialogBox'
 import {initialLoad, initialReadOnlyLoad, loadBoardData} from '../../store/initialLoad'
 import {useAppSelector, useAppDispatch} from '../../store/hooks'
@@ -35,14 +37,17 @@ import {setTeam} from '../../store/teams'
 import {updateCards} from '../../store/cards'
 import {updateComments} from '../../store/comments'
 import {updateAttachments} from '../../store/attachments'
+import {fetchBoardPermissionsMe} from '../../store/boardPermissions'
 import {
     fetchUserBlockSubscriptions,
     getMe,
+    getMyOrgContext,
     followBlock,
     unfollowBlock,
 } from '../../store/users'
 import {setGlobalError} from '../../store/globalError'
 import {UserSettings} from '../../userSettings'
+import mutator from '../../mutator'
 
 import IconButton from '../../widgets/buttons/iconButton'
 import CloseIcon from '../../widgets/icons/close'
@@ -78,6 +83,9 @@ const BoardPage = (props: Props): React.JSX.Element => {
     const viewId = params.viewId
     const me = useAppSelector<IUser|null>(getMe)
     const hiddenBoardIDs = useAppSelector(getHiddenBoardIDs)
+    const currentBoard = useAppSelector(getCurrentBoard)
+    const currentView = useAppSelector(getCurrentView)
+    const orgContext = useAppSelector(getMyOrgContext)
     const category = useAppSelector(getCategoryOfBoard(activeBoardId))
     const [showJoinBoardDialog, setShowJoinBoardDialog] = useState<boolean>(false)
 
@@ -243,6 +251,7 @@ const BoardPage = (props: Props): React.JSX.Element => {
             teamId: boardTeamId,
             boardId,
         }))
+        dispatch(fetchBoardPermissionsMe(boardId))
     }, [])
 
     useEffect(() => {
@@ -251,6 +260,7 @@ const BoardPage = (props: Props): React.JSX.Element => {
 
             if (params.boardId) {
                 dispatch(setCurrentBoard(params.boardId))
+                dispatch(fetchBoardPermissionsMe(params.boardId))
 
                 if (viewId && viewId !== Constants.globalTeamId) {
                     dispatch(setCurrentView(viewId))
@@ -285,6 +295,50 @@ const BoardPage = (props: Props): React.JSX.Element => {
             handleUnhideBoard(params.boardId)
         }
     }, [me?.id, teamId, params.boardId, hiddenBoardIDs])
+
+    useEffect(() => {
+        if (props.readonly || !currentBoard || !currentView || !me) {
+            return
+        }
+        const appliedKey = `default_filter_applied_${currentBoard.id}_${currentView.id}`
+        if (localStorage.getItem(appliedKey)) {
+            return
+        }
+
+        if (orgContext.isCEO) {
+            localStorage.setItem(appliedKey, 'true')
+            return
+        }
+
+        const teamProperty = currentBoard.cardProperties.find((p) => p.name.toLowerCase() === 'team' || p.name.toLowerCase() === 'org')
+        const positionProperty = currentBoard.cardProperties.find((p) => p.name.toLowerCase() === 'position' || p.name.toLowerCase() === 'role')
+        const filters: Array<{propertyId: string, condition: 'includes', values: string[]}> = []
+
+        if (teamProperty && orgContext.orgUnitIds.length > 0) {
+            filters.push({
+                propertyId: teamProperty.id,
+                condition: 'includes',
+                values: orgContext.orgUnitIds,
+            })
+        }
+        if (positionProperty && orgContext.positionCodes.length > 0) {
+            filters.push({
+                propertyId: positionProperty.id,
+                condition: 'includes',
+                values: orgContext.positionCodes,
+            })
+        }
+
+        if (filters.length === 0) {
+            localStorage.setItem(appliedKey, 'true')
+            return
+        }
+
+        const oldFilter = currentView.fields.filter || {operation: 'and', filters: []}
+        const newFilter = {operation: 'and', filters}
+        mutator.changeViewFilter(currentBoard.id, currentView.id, oldFilter as any, newFilter as any)
+        localStorage.setItem(appliedKey, 'true')
+    }, [props.readonly, currentBoard?.id, currentView?.id, me?.id, orgContext.isCEO, orgContext.orgUnitIds.join(','), orgContext.positionCodes.join(',')])
 
     if (props.readonly) {
         useEffect(() => {

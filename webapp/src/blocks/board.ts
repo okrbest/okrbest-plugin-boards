@@ -72,6 +72,35 @@ type BoardMember = {
     synthetic: boolean
 }
 
+type BoardACLEntry = {
+    id: string
+    subjectType: 'user' | 'org_unit' | 'position' | 'org_position'
+    subjectId: string
+    orgUnitId?: string
+    positionCode?: string
+    permission: 'view' | 'edit' | 'manage' | 'delete'
+}
+
+type BoardCapabilities = {
+    canView: boolean
+    canCreateCard: boolean
+    canEditCard: boolean
+    canDeleteCard: boolean
+    canManageBoard: boolean
+}
+
+type BoardPermissionsResponse = {
+    boardId: string
+    effectivePermission: 'none' | 'view' | 'edit' | 'manage' | 'delete'
+    capabilities: BoardCapabilities
+    derivedFrom: string
+}
+
+type ACLSubjectOption = {
+    id: string
+    name: string
+}
+
 type BoardsAndBlocks = {
     boards: Board[]
     blocks: Block[]
@@ -352,6 +381,10 @@ export {
     Board,
     BoardPatch,
     BoardMember,
+    BoardACLEntry,
+    BoardCapabilities,
+    BoardPermissionsResponse,
+    ACLSubjectOption,
     BoardsAndBlocks,
     BoardsAndBlocksPatch,
     PropertyTypeEnum,

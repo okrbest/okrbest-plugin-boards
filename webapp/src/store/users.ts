@@ -36,6 +36,12 @@ type UsersStatus = {
     myConfig: Record<string, UserPreference>
 }
 
+export type UserOrgContext = {
+    orgUnitIds: string[]
+    positionCodes: string[]
+    isCEO: boolean
+}
+
 export const fetchUserBlockSubscriptions = createAsyncThunk(
     'user/blockSubscriptions',
     async (userId: string) => (Utils.isFocalboardPlugin() ? client.getUserBlockSubscriptions(userId) : []),
@@ -209,5 +215,32 @@ export const getCardHiddenWarningSnoozeUntil = createSelector(
         } catch (_) {
             return 0
         }
+    },
+)
+
+export const getMyOrgContext = createSelector(
+    getMe,
+    (me): UserOrgContext => {
+        if (!me) {
+            return {orgUnitIds: [], positionCodes: [], isCEO: false}
+        }
+
+        const props = me.props || {}
+        const toStringList = (value: unknown): string[] => {
+            if (Array.isArray(value)) {
+                return value.filter((v): v is string => typeof v === 'string' && Boolean(v))
+            }
+            if (typeof value === 'string' && value.trim()) {
+                return value.split(',').map((v) => v.trim()).filter(Boolean)
+            }
+            return []
+        }
+
+        const orgUnitIds = toStringList(props.org_unit_ids || props.orgUnitIds || props.org_unit_id || props.orgUnitId || props.team_codes || props.teamCode)
+        const positionCodes = toStringList(props.position_codes || props.positionCodes || props.position_code || props.positionCode)
+        const isCEO = String(props.is_ceo || props.isCEO || '').toLowerCase() === 'true' ||
+            me.roles.split(' ').includes('system_admin')
+
+        return {orgUnitIds, positionCodes, isCEO}
     },
 )

@@ -13,7 +13,7 @@ import mutator from '../../mutator'
 import {Utils} from '../../utils'
 import {useAppDispatch} from '../../store/hooks'
 import {updateView} from '../../store/views'
-import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
@@ -49,6 +49,8 @@ const Table = (props: Props): React.JSX.Element => {
     const isManualSort = activeView.fields.sortOptions?.length === 0
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
     const canEditCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
+    const canEditCardsByCapability = useHasCapabilities(board.id, ['canEditCard'])
+    const canManageBoardByCapability = useHasCapabilities(board.id, ['canManageBoard'])
     const dispatch = useAppDispatch()
 
     const columnMinWidths = useMemo(() => {
@@ -251,7 +253,7 @@ const Table = (props: Props): React.JSX.Element => {
                         cards={cards}
                         activeView={activeView}
                         views={views}
-                        readonly={props.readonly || !canEditBoardProperties}
+                        readonly={props.readonly || !(canEditBoardProperties || canManageBoardByCapability)}
                     />
 
                     {/* Table rows */}
@@ -265,7 +267,7 @@ const Table = (props: Props): React.JSX.Element => {
                                 activeView={activeView}
                                 groupByProperty={groupByProperty}
                                 group={group}
-                                readonly={props.readonly || !canEditCards}
+                                readonly={props.readonly || !(canEditCards || canEditCardsByCapability)}
                                 selectedCardIds={props.selectedCardIds}
                                 cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                                 hideGroup={hideGroup}
@@ -287,7 +289,7 @@ const Table = (props: Props): React.JSX.Element => {
                             activeView={activeView}
                             cards={cards}
                             selectedCardIds={props.selectedCardIds}
-                            readonly={props.readonly || !canEditCards}
+                            readonly={props.readonly || !(canEditCards || canEditCardsByCapability)}
                             cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                             showCard={props.showCard}
                             addCard={props.addCard}
@@ -320,7 +322,7 @@ const Table = (props: Props): React.JSX.Element => {
                         board={board}
                         cards={cards}
                         activeView={activeView}
-                        readonly={props.readonly || !canEditBoardProperties}
+                        readonly={props.readonly || !(canEditBoardProperties || canManageBoardByCapability)}
                     />
                 </div>
             </ColumnResizeProvider>
