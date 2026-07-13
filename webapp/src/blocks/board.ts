@@ -78,7 +78,7 @@ type BoardACLEntry = {
     subjectId: string
     orgUnitId?: string
     positionCode?: string
-    permission: 'view' | 'edit' | 'manage' | 'delete'
+    permission: 'view' | 'edit' | 'manage'
 }
 
 type BoardCapabilities = {
@@ -87,13 +87,15 @@ type BoardCapabilities = {
     canEditCard: boolean
     canDeleteCard: boolean
     canManageBoard: boolean
+    canDeleteBoard: boolean
 }
 
 type BoardPermissionsResponse = {
     boardId: string
-    effectivePermission: 'none' | 'view' | 'edit' | 'manage' | 'delete'
+    effectivePermission: 'none' | 'view' | 'edit' | 'manage'
     capabilities: BoardCapabilities
     derivedFrom: string
+    isOwner: boolean
 }
 
 type ACLSubjectOption = {

@@ -53,7 +53,16 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *mmMod
 	if err != nil {
 		return false
 	}
+	if permission == model.PermissionDeleteBoard {
+		return response.IsOwner
+	}
 	return model.PermissionSatisfies(response.EffectivePermission, permission)
+}
+
+// ResolveOrgContext is always empty in local/standalone mode: there is no
+// Mattermost user/org context available to resolve.
+func (s *Service) ResolveOrgContext(userID string) (orgUnits []string, positions []string, isCEO bool) {
+	return nil, nil, false
 }
 
 func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermissionsResponse, error) {
@@ -61,8 +70,9 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 		return &model.BoardPermissionsResponse{
 			BoardID:             boardID,
 			EffectivePermission: model.EffectiveBoardPermissionNone,
-			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone),
+			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone, false),
 			DerivedFrom:         model.PermissionDerivedDeny,
+			IsOwner:             false,
 		}, nil
 	}
 
@@ -71,8 +81,9 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 		return &model.BoardPermissionsResponse{
 			BoardID:             boardID,
 			EffectivePermission: model.EffectiveBoardPermissionNone,
-			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone),
+			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone, false),
 			DerivedFrom:         model.PermissionDerivedDeny,
+			IsOwner:             false,
 		}, nil
 	}
 	if err != nil {
@@ -97,7 +108,7 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 
 	effective := model.EffectiveBoardPermissionNone
 	if member.SchemeAdmin {
-		effective = model.EffectiveBoardPermissionDelete
+		effective = model.EffectiveBoardPermissionManage
 	} else if member.SchemeEditor {
 		effective = model.EffectiveBoardPermissionEdit
 	} else if member.SchemeCommenter || member.SchemeViewer {
@@ -108,7 +119,8 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 	return &model.BoardPermissionsResponse{
 		BoardID:             boardID,
 		EffectivePermission: effective,
-		Capabilities:        model.BuildCapabilities(effective),
+		Capabilities:        model.BuildCapabilities(effective, false),
 		DerivedFrom:         derivedFrom,
+		IsOwner:             false,
 	}, nil
 }

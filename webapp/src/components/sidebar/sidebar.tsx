@@ -20,6 +20,7 @@ import './sidebar.scss'
 import {
     BoardCategoryWebsocketData,
     Category,
+    CategoryBoardMetadata,
     CategoryBoards,
     fetchSidebarCategories,
     getSidebarCategories,
@@ -380,6 +381,30 @@ const Sidebar = (props: Props) => {
         )
     }
 
+    const getCategoryWithRecoveredBoards = (category: CategoryBoards): CategoryBoards => {
+        if (category.name !== 'Boards') {
+            return category
+        }
+
+        const mappedBoardIDs = new Set(
+            sidebarCategories.flatMap((sidebarCategory) =>
+                sidebarCategory.boardMetadata.map((metadata) => metadata.boardID),
+            ),
+        )
+        const missingBoardMetadata: CategoryBoardMetadata[] = boards.
+            filter((board) => !mappedBoardIDs.has(board.id)).
+            map((board) => ({boardID: board.id, hidden: false}))
+
+        if (missingBoardMetadata.length === 0) {
+            return category
+        }
+
+        return {
+            ...category,
+            boardMetadata: [...category.boardMetadata, ...missingBoardMetadata],
+        }
+    }
+
     const getSortedCategoryBoards = (category: CategoryBoards): Board[] => {
         const categoryBoardsByID = new Map<string, Board>()
         boards.forEach((board) => {
@@ -459,21 +484,22 @@ const Sidebar = (props: Props) => {
                             className='octo-sidebar-list'
                         >
                             {
-                                sidebarCategories.map((category, index) => (
-                                    <SidebarCategory
+                                sidebarCategories.map((category, index) => {
+                                    const resolvedCategory = getCategoryWithRecoveredBoards(category)
+                                    return <SidebarCategory
                                         hideSidebar={hideSidebar}
                                         key={category.id}
                                         activeBoardID={props.activeBoardId}
                                         activeViewID={activeViewID}
-                                        categoryBoards={category}
-                                        boards={getSortedCategoryBoards(category)}
+                                        categoryBoards={resolvedCategory}
+                                        boards={getSortedCategoryBoards(resolvedCategory)}
                                         allCategories={sidebarCategories}
                                         index={index}
                                         onBoardTemplateSelectorClose={props.onBoardTemplateSelectorClose}
                                         draggedItemID={draggedItemID}
                                         forceCollapse={isCategoryBeingDragged}
                                     />
-                                ))
+                                })
                             }
                             {provided.placeholder}
                         </div>

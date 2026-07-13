@@ -14,64 +14,73 @@ func TestEffectivePermissionRank(t *testing.T) {
 	require.Equal(t, 1, EffectivePermissionRank(EffectiveBoardPermissionView))
 	require.Equal(t, 2, EffectivePermissionRank(EffectiveBoardPermissionEdit))
 	require.Equal(t, 3, EffectivePermissionRank(EffectiveBoardPermissionManage))
-	require.Equal(t, 4, EffectivePermissionRank(EffectiveBoardPermissionDelete))
+	require.Equal(t, 3, EffectivePermissionRank(EffectiveBoardPermissionDelete))
 }
 
 func TestBuildCapabilities(t *testing.T) {
 	tests := []struct {
 		name       string
 		permission EffectiveBoardPermission
+		isOwner    bool
 		expected   BoardPermissionCapabilities
 	}{
 		{
 			name:       "none",
 			permission: EffectiveBoardPermissionNone,
+			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        false,
 				CanCreateCard:  false,
 				CanEditCard:    false,
 				CanDeleteCard:  false,
 				CanManageBoard: false,
+				CanDeleteBoard: false,
 			},
 		},
 		{
 			name:       "edit",
 			permission: EffectiveBoardPermissionEdit,
+			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
 				CanCreateCard:  true,
 				CanEditCard:    true,
-				CanDeleteCard:  false,
+				CanDeleteCard:  true,
 				CanManageBoard: false,
+				CanDeleteBoard: false,
 			},
 		},
 		{
 			name:       "manage",
 			permission: EffectiveBoardPermissionManage,
+			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
 				CanCreateCard:  true,
 				CanEditCard:    true,
 				CanDeleteCard:  true,
 				CanManageBoard: true,
+				CanDeleteBoard: false,
 			},
 		},
 		{
-			name:       "delete",
-			permission: EffectiveBoardPermissionDelete,
+			name:       "owner manage",
+			permission: EffectiveBoardPermissionManage,
+			isOwner:    true,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
 				CanCreateCard:  true,
 				CanEditCard:    true,
 				CanDeleteCard:  true,
 				CanManageBoard: true,
+				CanDeleteBoard: true,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.expected, BuildCapabilities(tt.permission))
+			require.Equal(t, tt.expected, BuildCapabilities(tt.permission, tt.isOwner))
 		})
 	}
 }
@@ -80,10 +89,10 @@ func TestParseBoardACLFromProperties(t *testing.T) {
 	props := map[string]interface{}{
 		BoardACLPropertyKey: []map[string]interface{}{
 			{
-				"id":         "entry-1",
+				"id":          "entry-1",
 				"subjectType": "user",
-				"subjectId":  "user-1",
-				"permission": "manage",
+				"subjectId":   "user-1",
+				"permission":  "manage",
 			},
 		},
 	}

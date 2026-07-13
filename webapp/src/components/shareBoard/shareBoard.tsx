@@ -88,8 +88,8 @@ const styles = {
     }),
 }
 
-type ACLPermission = 'view'|'edit'|'manage'|'delete'
-type ACLSubjectMode = 'org_position'|'user'
+type ACLPermission = 'view'|'edit'|'manage'
+type ACLSubjectMode = 'org_position'|'org_unit'|'position'|'user'
 type ACLEntryDraft = {
     subjectType: ACLSubjectMode
     orgUnitId: string
@@ -140,6 +140,8 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     })
     const [previewUserId, setPreviewUserId] = useState('')
     const [previewResult, setPreviewResult] = useState<BoardPermissionsResponse|undefined>(undefined)
+    const [transferOwnerUserId, setTransferOwnerUserId] = useState('')
+    const [isOwnershipTransferring, setIsOwnershipTransferring] = useState(false)
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
 
     // members of the current board
@@ -157,6 +159,10 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const hasSharePermissions = useHasPermissions(board.teamId, boardId, [Permission.ShareBoard])
     const canManageBoardRoles = useHasPermissions(board.teamId, boardId, [Permission.ManageBoardRoles])
     const canManageACL = canManageBoardRoles
+    const ownerUserId = typeof board.properties?.board_owner_user_id === 'string' && board.properties.board_owner_user_id ?
+        board.properties.board_owner_user_id :
+        board.createdBy
+    const canTransferOwnership = Boolean(me?.id) && me?.id === ownerUserId
 
     const loadData = async () => {
         if (hasSharePermissions) {
@@ -329,6 +335,22 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             return true
         }
 
+        if (draft.subjectType === 'org_unit') {
+            if (!draft.subjectId) {
+                sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.orgRequired', defaultMessage: '부서를 선택하세요.'}), severity: 'low'})
+                return false
+            }
+            return true
+        }
+
+        if (draft.subjectType === 'position') {
+            if (!draft.subjectId) {
+                sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.positionRequired', defaultMessage: '직위를 선택하세요.'}), severity: 'low'})
+                return false
+            }
+            return true
+        }
+
         if (!draft.subjectId) {
             sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.subjectRequired', defaultMessage: '사용자를 선택하세요.'}), severity: 'low'})
             return false
@@ -348,6 +370,24 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             }
         }
 
+        if (draft.subjectType === 'org_unit') {
+            return {
+                id: source?.id || '',
+                subjectType: 'org_unit',
+                subjectId: draft.subjectId,
+                permission: draft.permission,
+            }
+        }
+
+        if (draft.subjectType === 'position') {
+            return {
+                id: source?.id || '',
+                subjectType: 'position',
+                subjectId: draft.subjectId,
+                permission: draft.permission,
+            }
+        }
+
         return {
             id: source?.id || '',
             subjectType: 'user',
@@ -362,7 +402,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     }
 
     const startCreateEntry = () => {
-        const defaultMode: ACLSubjectMode = showAdvancedUserACL ? 'org_position' : 'org_position'
+        const defaultMode: ACLSubjectMode = 'org_position'
         setCreateDraft(buildDefaultDraft(defaultMode))
         setCreatingEntry(true)
     }
@@ -382,10 +422,10 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
         const entryKey = getACLEntryKey(entry, index)
         setEditingEntryKey(entryKey)
         setEntryDraft({
-            subjectType: entry.subjectType === 'user' ? 'user' : 'org_position',
+            subjectType: entry.subjectType === 'user' ? 'user' : (entry.subjectType === 'org_unit' ? 'org_unit' : (entry.subjectType === 'position' ? 'position' : 'org_position')),
             orgUnitId: entry.orgUnitId || (entry.subjectType === 'org_unit' ? entry.subjectId : ''),
             positionCode: entry.positionCode || (entry.subjectType === 'position' ? entry.subjectId : ''),
-            subjectId: entry.subjectId || '',
+            subjectId: entry.subjectType === 'org_position' ? '' : entry.subjectId || '',
             permission: entry.permission,
         })
     }
@@ -421,6 +461,30 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     }
 
     const managerMembers = Object.values(members).filter((member) => member.schemeAdmin && !member.synthetic)
+    const transferCandidates = managerMembers.filter((member) => member.userId !== ownerUserId)
+
+    const handleTransferOwnership = async () => {
+        const targetUserID = transferOwnerUserId.trim()
+        if (!targetUserID) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerTransfer.required', defaultMessage: '소유권을 이전할 사용자를 선택하세요.'}), severity: 'low'})
+            return
+        }
+
+        setIsOwnershipTransferring(true)
+        try {
+            const success = await client.transferBoardOwnership(boardId, targetUserID)
+            if (!success) {
+                sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerTransfer.failed', defaultMessage: '소유권 이전에 실패했습니다.'}), severity: 'high'})
+                return
+            }
+
+            setTransferOwnerUserId('')
+            await loadData()
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerTransfer.success', defaultMessage: '소유권을 이전했습니다.'}), severity: 'normal'})
+        } finally {
+            setIsOwnershipTransferring(false)
+        }
+    }
 
     const orgUnitNameById = useMemo(() => {
         return orgUnitOptions.reduce((acc: Record<string, string>, option) => {
@@ -669,7 +733,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                 <div className='text-light mb-2'>
                     <FormattedMessage
                         id='shareBoard.acl.description'
-                        defaultMessage='사용자/팀/직위 단위의 권한(view/edit/manage/delete)을 관리합니다.'
+                        defaultMessage='부서+직위, 직위, 부서, 사용자 예외 단위의 권한(view/edit/manage)을 관리합니다.'
                     />
                 </div>
                 <div className='d-flex align-items-center mb-2 ShareBoardDialog__acl-toolbar'>
@@ -771,6 +835,40 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     </>
                                 )}
 
+                                {isEditing && entryDraft.subjectType === 'org_unit' && (
+                                    <>
+                                        <span className='text-light'>부서</span>
+                                        <select
+                                            value={entryDraft.subjectId}
+                                            onChange={(e) => setEntryDraft((prev) => ({...prev, subjectId: e.target.value}))}
+                                            className='form-control'
+                                            disabled={isACLOptionsLoading}
+                                        >
+                                            <option value=''>부서 선택</option>
+                                            {orgUnitOptions.map((option) => (
+                                                <option key={option.id} value={option.id}>{option.name}</option>
+                                            ))}
+                                        </select>
+                                    </>
+                                )}
+
+                                {isEditing && entryDraft.subjectType === 'position' && (
+                                    <>
+                                        <span className='text-light'>직위</span>
+                                        <select
+                                            value={entryDraft.subjectId}
+                                            onChange={(e) => setEntryDraft((prev) => ({...prev, subjectId: e.target.value}))}
+                                            className='form-control'
+                                            disabled={isACLOptionsLoading}
+                                        >
+                                            <option value=''>직위 선택</option>
+                                            {positionOptions.map((option) => (
+                                                <option key={option.id} value={option.id}>{option.name}</option>
+                                            ))}
+                                        </select>
+                                    </>
+                                )}
+
                                 {isEditing && entryDraft.subjectType === 'user' && (
                                     <>
                                         <span className='text-light'>사용자 예외</span>
@@ -816,7 +914,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     <option value='view'>view</option>
                                     <option value='edit'>edit</option>
                                     <option value='manage'>manage</option>
-                                    <option value='delete'>delete</option>
                                 </select>
 
                                 <div className='ShareBoardDialog__acl-actions'>
@@ -852,12 +949,14 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     className='form-control'
                                 >
                                     <option value='org_position'>부서+직위</option>
+                                    <option value='position'>직위</option>
+                                    <option value='org_unit'>부서</option>
                                     <option value='user'>사용자(예외)</option>
                                 </select>
                             )}
                             {!showAdvancedUserACL && <span className='text-light'>신규 ACL</span>}
 
-                            {createDraft.subjectType === 'org_position' ? (
+                            {createDraft.subjectType === 'org_position' && (
                                 <>
                                     <select
                                         value={createDraft.orgUnitId}
@@ -882,7 +981,40 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                         ))}
                                     </select>
                                 </>
-                            ) : (
+                            )}
+                            {createDraft.subjectType === 'org_unit' && (
+                                <>
+                                    <span className='text-light'>부서</span>
+                                    <select
+                                        value={createDraft.subjectId}
+                                        onChange={(e) => setCreateDraft((prev) => ({...prev, subjectId: e.target.value}))}
+                                        className='form-control'
+                                        disabled={isACLOptionsLoading}
+                                    >
+                                        <option value=''>부서 선택</option>
+                                        {orgUnitOptions.map((option) => (
+                                            <option key={option.id} value={option.id}>{option.name}</option>
+                                        ))}
+                                    </select>
+                                </>
+                            )}
+                            {createDraft.subjectType === 'position' && (
+                                <>
+                                    <span className='text-light'>직위</span>
+                                    <select
+                                        value={createDraft.subjectId}
+                                        onChange={(e) => setCreateDraft((prev) => ({...prev, subjectId: e.target.value}))}
+                                        className='form-control'
+                                        disabled={isACLOptionsLoading}
+                                    >
+                                        <option value=''>직위 선택</option>
+                                        {positionOptions.map((option) => (
+                                            <option key={option.id} value={option.id}>{option.name}</option>
+                                        ))}
+                                    </select>
+                                </>
+                            )}
+                            {createDraft.subjectType === 'user' && (
                                 <>
                                     <span className='text-light'>사용자 예외</span>
                                     <select
@@ -906,7 +1038,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                 <option value='view'>view</option>
                                 <option value='edit'>edit</option>
                                 <option value='manage'>manage</option>
-                                <option value='delete'>delete</option>
                             </select>
 
                             <div className='ShareBoardDialog__acl-actions'>
@@ -917,6 +1048,8 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     disabled={
                                         isACLOptionsLoading ||
                                         (createDraft.subjectType === 'org_position' && (!createDraft.orgUnitId || !createDraft.positionCode)) ||
+                                        (createDraft.subjectType === 'org_unit' && !createDraft.subjectId) ||
+                                        (createDraft.subjectType === 'position' && !createDraft.subjectId) ||
                                         (createDraft.subjectType === 'user' && !createDraft.subjectId)
                                     }
                                 >
@@ -949,9 +1082,38 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                 <div className='text-light mb-2'>
                     <FormattedMessage
                         id='shareBoard.managerSection.description'
-                        defaultMessage='manage 권한 보유자 목록입니다. 보드 생성자는 소유자입니다.'
+                        defaultMessage='manage 권한 보유자 목록입니다. 보드 소유자만 보드를 삭제할 수 있습니다.'
                     />
                 </div>
+                {canTransferOwnership && (
+                    <div className='d-flex align-items-center mb-2'>
+                        <select
+                            className='form-control mr-1'
+                            value={transferOwnerUserId}
+                            onChange={(e) => setTransferOwnerUserId(e.target.value)}
+                            disabled={isOwnershipTransferring}
+                        >
+                            <option value=''>{intl.formatMessage({id: 'shareBoard.ownerTransfer.select', defaultMessage: '새 소유자 선택'})}</option>
+                            {transferCandidates.map((candidate) => {
+                                const candidateUser = boardUsers.find((u) => u.id === candidate.userId)
+                                const label = candidateUser ?
+                                    Utils.getUserDisplayName(candidateUser, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay) :
+                                    candidate.userId
+                                return (
+                                    <option key={`owner-candidate-${candidate.userId}`} value={candidate.userId}>{label}</option>
+                                )
+                            })}
+                        </select>
+                        <Button
+                            emphasis='secondary'
+                            size='small'
+                            onClick={handleTransferOwnership}
+                            disabled={!transferOwnerUserId || isOwnershipTransferring}
+                        >
+                            <FormattedMessage id='shareBoard.ownerTransfer.button' defaultMessage='소유권 이전'/>
+                        </Button>
+                    </div>
+                )}
                 <div className='user-items'>
                     {managerMembers.map((member) => {
                         const user = boardUsers.find((u) => u.id === member.userId)
@@ -962,7 +1124,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                             >
                                 <div className='user-item__content'>
                                     <strong>{user ? Utils.getUserDisplayName(user, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay) : member.userId}</strong>
-                                    {board.createdBy === member.userId &&
+                                    {ownerUserId === member.userId &&
                                         <span className='ml-2 text-light'>
                                             <FormattedMessage
                                                 id='shareBoard.managerSection.ownerBadge'
@@ -1012,7 +1174,8 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                     <div className='text-light'>
                         <div>{`effectivePermission: ${previewResult.effectivePermission}`}</div>
                         <div>{`derivedFrom: ${previewResult.derivedFrom}`}</div>
-                        <div>{`canView: ${String(previewResult.capabilities.canView)}, canCreateCard: ${String(previewResult.capabilities.canCreateCard)}, canEditCard: ${String(previewResult.capabilities.canEditCard)}, canDeleteCard: ${String(previewResult.capabilities.canDeleteCard)}, canManageBoard: ${String(previewResult.capabilities.canManageBoard)}`}</div>
+                        <div>{`isOwner: ${String(previewResult.isOwner)}`}</div>
+                        <div>{`canView: ${String(previewResult.capabilities.canView)}, canCreateCard: ${String(previewResult.capabilities.canCreateCard)}, canEditCard: ${String(previewResult.capabilities.canEditCard)}, canDeleteCard: ${String(previewResult.capabilities.canDeleteCard)}, canManageBoard: ${String(previewResult.capabilities.canManageBoard)}, canDeleteBoard: ${String(previewResult.capabilities.canDeleteBoard)}`}</div>
                     </div>
                 }
             </div>

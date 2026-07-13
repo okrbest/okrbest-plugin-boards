@@ -348,11 +348,34 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         }))
+        this.logBoardsDebugHeaders(path, response)
         if (response.status !== 200) {
             return []
         }
         const boards = (await this.getJson(response, [])) as Board[]
         return boards
+    }
+
+    private logBoardsDebugHeaders(path: string, response: Response) {
+        const teamAccess = response.headers.get('X-Boards-Debug-TeamAccess')
+        if (!teamAccess) {
+            return
+        }
+
+        console.debug('[Boards Debug Headers]', {
+            path,
+            status: response.status,
+            teamAccess,
+            orgContextSource: response.headers.get('X-Boards-Debug-OrgContextSource'),
+            isGuest: response.headers.get('X-Boards-Debug-IsGuest'),
+            isCEO: response.headers.get('X-Boards-Debug-IsCEO'),
+            boardsCount: response.headers.get('X-Boards-Debug-BoardsCount'),
+            orgUnitIds: response.headers.get('X-Boards-Debug-OrgUnitIds'),
+            positionCodes: response.headers.get('X-Boards-Debug-PositionCodes'),
+            fullVisibilityPositionIds: response.headers.get('X-Boards-Debug-FullVisibilityPositionIds'),
+            isCEOFromProps: response.headers.get('X-Boards-Debug-IsCEO-FromProps'),
+            isCEOFromFallback: response.headers.get('X-Boards-Debug-IsCEO-FromFallback'),
+        })
     }
 
     private async getBoardMembersWithPath(path: string): Promise<BoardMember[]> {
@@ -949,6 +972,16 @@ class OctoClient {
         return this.getJson<BoardACLEntry[]>(response, [])
     }
 
+    async transferBoardOwnership(boardID: string, ownerUserId: string): Promise<boolean> {
+        const path = `/api/v2/boards/${boardID}/owner`
+        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
+            method: 'PUT',
+            headers: this.headers(),
+            body: JSON.stringify({ownerUserId}),
+        }))
+        return response.status === 200
+    }
+
     async getOrgUnits(teamID: string): Promise<ACLSubjectOption[]> {
         if (!teamID) {
             return []
@@ -1156,6 +1189,7 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         })
+        this.logBoardsDebugHeaders(url, response)
 
         if (response.status !== 200) {
             return []
@@ -1170,6 +1204,7 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         })
+        this.logBoardsDebugHeaders(url, response)
 
         if (response.status !== 200) {
             return []
@@ -1184,6 +1219,7 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         })
+        this.logBoardsDebugHeaders(url, response)
 
         if (response.status !== 200) {
             return []

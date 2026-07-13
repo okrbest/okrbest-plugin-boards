@@ -25,6 +25,7 @@ import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmation
 import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../telemetry/telemetryClient'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import EmojiIcon from '../emojiIcon'
+import {useHasCapabilities} from '../../hooks/permissions'
 
 import {useColumnResize} from './tableColumnResizeContext'
 
@@ -59,7 +60,9 @@ const TableRow = (props: Props) => {
     const titleRef = useRef<{ focus(selectAll?: boolean): void }>(null)
     const [title, setTitle] = useState(props.card.title || '')
     const isGrouped = Boolean(groupById)
-    const [isDragging, isOver, cardRef] = useSortable('card', card, !props.readonly && (isManualSort || isGrouped), props.onDrop)
+    const canEditCard = useHasCapabilities(card.boardId, ['canEditCard'])
+    const isReadOnly = props.readonly || !canEditCard
+    const [isDragging, isOver, cardRef] = useSortable('card', card, !isReadOnly && (isManualSort || isGrouped), props.onDrop)
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = useState<boolean>(false)
     const columnResize = useColumnResize()
 
@@ -108,7 +111,7 @@ const TableRow = (props: Props) => {
             className += ' hidden'
         }
     }
-    if (props.readonly) {
+    if (isReadOnly) {
         className += ' readonly'
     }
 
@@ -152,7 +155,7 @@ const TableRow = (props: Props) => {
         >
 
             <div className='action-cell octo-table-cell-btn'>
-                {!props.readonly && (
+                {!isReadOnly && (
                     <IconButton icon={<CompassIcon icon='drag-vertical'/>}/>
                 )}
             </div>
@@ -191,12 +194,12 @@ const TableRow = (props: Props) => {
                         onChange={onTitleChange}
                         onSave={onSave}
                         onCancel={() => setTitle(card.title || '')}
-                        readonly={props.readonly}
+                        readonly={isReadOnly}
                         spellCheck={true}
                     />
                 </div>
 
-                {!props.readonly && (
+                {!isReadOnly && (
                     <MenuWrapper
                         className='optionsMenu'
                         stopPropagationOnToggle={true}
@@ -255,7 +258,7 @@ const TableRow = (props: Props) => {
                         ref={(ref) => columnResize.updateRef(card.id, template.id, ref)}
                     >
                         <PropertyValueElement
-                            readOnly={props.readonly}
+                            readOnly={isReadOnly}
                             card={card}
                             board={board}
                             propertyTemplate={template}

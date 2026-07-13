@@ -9,9 +9,9 @@ import {Permission} from '../constants'
 import {MemberRole} from '../blocks/board'
 import {getBoardPermissions} from '../store/boardPermissions'
 
-export type BoardCapability = 'canView' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard'
+export type BoardCapability = 'canView' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard' | 'canDeleteBoard'
 
-const permissionToCapability: Record<Permission, keyof NonNullable<ReturnType<typeof getPermissionsCapabilities>>> = {
+const permissionToCapability: Record<Permission, BoardCapability> = {
     [Permission.ViewBoard]: 'canView',
     [Permission.CommentBoardCards]: 'canEditCard',
     [Permission.ManageBoardCards]: 'canEditCard',
@@ -19,17 +19,20 @@ const permissionToCapability: Record<Permission, keyof NonNullable<ReturnType<ty
     [Permission.ManageBoardRoles]: 'canManageBoard',
     [Permission.ManageBoardType]: 'canManageBoard',
     [Permission.ShareBoard]: 'canManageBoard',
-    [Permission.DeleteBoard]: 'canDeleteCard',
+    [Permission.DeleteBoard]: 'canDeleteBoard',
     [Permission.DeleteOthersComments]: 'canManageBoard',
     [Permission.ChannelCreatePost]: 'canManageBoard',
 }
 
 export const useHasPermissions = (teamId: string, boardId: string, permissions: Permission[]): boolean => {
-    if (!boardId || !teamId) {
+    const capabilities = useAppSelector(getBoardPermissions(boardId))?.capabilities
+    const member = useAppSelector(getMyBoardMembership(boardId))
+    const board = useAppSelector(getBoard(boardId))
+
+    if (!boardId || !teamId || permissions.length === 0) {
         return false
     }
 
-    const capabilities = useAppSelector(getBoardPermissions(boardId))?.capabilities
     if (capabilities) {
         return permissions.some((permission) => {
             const capability = permissionToCapability[permission]
@@ -40,9 +43,6 @@ export const useHasPermissions = (teamId: string, boardId: string, permissions: 
         })
     }
 
-    const member = useAppSelector(getMyBoardMembership(boardId))
-    const board = useAppSelector(getBoard(boardId))
-
     if (!board) {
         return false
     }
@@ -51,12 +51,21 @@ export const useHasPermissions = (teamId: string, boardId: string, permissions: 
         return false
     }
 
-    const adminPermissions = [Permission.ManageBoardType, Permission.DeleteBoard, Permission.ShareBoard, Permission.ManageBoardRoles, Permission.DeleteOthersComments]
+    const adminPermissions = [Permission.ManageBoardType, Permission.ShareBoard, Permission.ManageBoardRoles, Permission.DeleteOthersComments]
     const editorPermissions = [Permission.ManageBoardCards, Permission.ManageBoardProperties]
     const commenterPermissions = [Permission.CommentBoardCards]
     const viewerPermissions = [Permission.ViewBoard]
 
     for (const permission of permissions) {
+        if (permission === Permission.DeleteBoard) {
+            const ownerUserId = typeof board.properties?.board_owner_user_id === 'string' && board.properties.board_owner_user_id ?
+                board.properties.board_owner_user_id :
+                board.createdBy
+            if (member.userId === ownerUserId) {
+                return true
+            }
+            continue
+        }
         if (adminPermissions.includes(permission) && member.schemeAdmin) {
             return true
         }
@@ -74,12 +83,8 @@ export const useHasPermissions = (teamId: string, boardId: string, permissions: 
 }
 
 export const useHasCapabilities = (boardId: string, capabilities: BoardCapability[]): boolean => {
-    if (!boardId) {
-        return false
-    }
-
     const boardCapabilities = useAppSelector(getBoardPermissions(boardId))?.capabilities
-    if (!boardCapabilities) {
+    if (!boardId || capabilities.length === 0 || !boardCapabilities) {
         return false
     }
 

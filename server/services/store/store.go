@@ -88,6 +88,16 @@ type Store interface {
 	GetBoard(id string) (*model.Board, error)
 	GetBoardsForUserAndTeam(userID, teamID string, includePublicBoards bool) ([]*model.Board, error)
 	GetBoardsInTeamByIds(boardIDs []string, teamID string) ([]*model.Board, error)
+	// GetBoardsInTeam returns every non-template board in a team, regardless
+	// of membership, for ACL/full-visibility board list/search expansion. If
+	// onlyWithACL is true, only boards with has_acl_entries=true are returned
+	// (fast, indexed candidate set for ACL matching); otherwise all boards in
+	// the team are returned (used for full-visibility/"CEO" users).
+	GetBoardsInTeam(teamID string, onlyWithACL bool) ([]*model.Board, error)
+	// GetBoardsInUserTeams is the cross-team equivalent of GetBoardsInTeam,
+	// covering every team the user belongs to (used by the global "find
+	// boards" search, which has no single teamID).
+	GetBoardsInUserTeams(userID string, onlyWithACL bool) ([]*model.Board, error)
 	// @withTransaction
 	DeleteBoard(boardID, userID string) error
 

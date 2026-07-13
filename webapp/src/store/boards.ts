@@ -233,9 +233,8 @@ export const getBoards = (state: RootState): {[key: string]: Board} => state.boa
 
 export const getMySortedBoards = createSelector(
     getBoards,
-    (state: RootState): {[key: string]: BoardMember} => state.boards?.myBoardMemberships || {},
-    (boards, myBoardMemberships: {[key: string]: BoardMember}) => {
-        return Object.values(boards).filter((b) => myBoardMemberships[b.id]).
+    (boards) => {
+        return Object.values(boards).
             sort((a, b) => a.title.localeCompare(b.title))
     },
 )

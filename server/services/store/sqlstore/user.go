@@ -105,6 +105,7 @@ func mmUserToFbUser(mmUser *mmModel.User) model.User {
 		DeleteAt:    mmUser.DeleteAt,
 		IsBot:       mmUser.IsBot,
 		IsGuest:     mmUser.IsGuest(),
+		Props:       mmUser.Props,
 		Roles:       mmUser.Roles,
 	}
 }

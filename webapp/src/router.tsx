@@ -78,6 +78,12 @@ function HomeToCurrentTeamContent() {
                     return <Navigate to={`/team/${teamID}/${fallbackBoardId}`} replace/>
                 }
 
+                const firstAccessibleBoard = myBoards.find((board) => !board.deleteAt)
+                if (firstAccessibleBoard) {
+                    UserSettings.setLastBoardID(teamID, firstAccessibleBoard.id)
+                    return <Navigate to={`/team/${teamID}/${firstAccessibleBoard.id}`} replace/>
+                }
+
                 UserSettings.setLastBoardID(teamID, null)
                 return <Navigate to={`/team/${teamID}`} replace/>
             }

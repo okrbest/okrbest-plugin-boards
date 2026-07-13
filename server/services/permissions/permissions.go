@@ -17,6 +17,12 @@ type PermissionsService interface {
 	HasPermissionToChannel(userID, channelID string, permission *mmModel.Permission) bool
 	HasPermissionToBoard(userID, boardID string, permission *mmModel.Permission) bool
 	GetBoardPermissions(userID, boardID string) (*model.BoardPermissionsResponse, error)
+	// ResolveOrgContext resolves a user's org unit IDs, position IDs, and
+	// full-visibility flag (synced onto user.Props["is_ceo"] by the main
+	// server when a position with FullVisibility set is assigned) in a
+	// single call, so batch callers (board list/search expansion) can
+	// resolve it once instead of once per board.
+	ResolveOrgContext(userID string) (orgUnits []string, positions []string, isCEO bool)
 }
 
 type Store interface {

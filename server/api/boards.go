@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/audit"
+	"github.com/mattermost/mattermost-plugin-boards/server/utils"
 
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
@@ -29,6 +30,7 @@ func (a *API) registerBoardsRoutes(r *mux.Router) {
 	r.HandleFunc("/boards/{boardID}/metadata", a.sessionRequired(a.handleGetBoardMetadata)).Methods("GET")
 	r.HandleFunc("/boards/{boardID}/permissions/me", a.sessionRequired(a.handleGetBoardPermissionsMe)).Methods("GET")
 	r.HandleFunc("/boards/{boardID}/permissions/preview", a.sessionRequired(a.handleGetBoardPermissionsPreview)).Methods("GET")
+	r.HandleFunc("/boards/{boardID}/owner", a.sessionRequired(a.handleTransferBoardOwnership)).Methods("PUT")
 	r.HandleFunc("/boards/{boardID}/acl", a.sessionRequired(a.handleGetBoardACL)).Methods("GET")
 	r.HandleFunc("/boards/{boardID}/acl", a.sessionRequired(a.handlePutBoardACL)).Methods("PUT")
 	r.HandleFunc("/boards/{boardID}/acl/entries", a.sessionRequired(a.handleCreateBoardACLEntry)).Methods("POST")
@@ -37,6 +39,10 @@ func (a *API) registerBoardsRoutes(r *mux.Router) {
 	r.HandleFunc("/boards/{boardID}/notify", a.sessionRequired(a.handleSendBoardNotification)).Methods("POST")
 	// /notify/share is used only by explicit share actions (button/menu click).
 	r.HandleFunc("/boards/{boardID}/notify/share", a.sessionRequired(a.handleSendBoardShareNotification)).Methods("POST")
+}
+
+type transferBoardOwnershipRequest struct {
+	OwnerUserID string `json:"ownerUserId"`
 }
 
 func (a *API) handleGetBoards(w http.ResponseWriter, r *http.Request) {
@@ -69,11 +75,8 @@ func (a *API) handleGetBoards(w http.ResponseWriter, r *http.Request) {
 
 	teamID := mux.Vars(r)["teamID"]
 	userID := getUserID(r)
-
-	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
-		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
-		return
-	}
+	hasTeamAccess := a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
+	debugPermissions := debugPermissionsEnabled(r)
 
 	auditRec := a.makeAuditRecord(r, "getBoards", audit.Fail)
 	defer a.audit.LogRecord(audit.LevelRead, auditRec)
@@ -89,6 +92,28 @@ func (a *API) handleGetBoards(w http.ResponseWriter, r *http.Request) {
 	boards, err := a.app.GetBoardsForUserAndTeam(userID, teamID, !isGuest)
 	if err != nil {
 		a.errorResponse(w, r, err)
+		return
+	}
+	debugInfo := boardsDebugInfo{}
+	if debugPermissions {
+		debugInfo = resolveDebugInfo(a.permissions, userID, teamID)
+		setBoardsDebugHeaders(w, hasTeamAccess, isGuest, len(boards), debugInfo)
+	}
+	a.logger.Debug("GetBoards permission evaluation",
+		mlog.String("userID", userID),
+		mlog.String("teamID", teamID),
+		mlog.Bool("hasTeamAccess", hasTeamAccess),
+		mlog.Bool("isGuest", isGuest),
+		mlog.Bool("isCEO", debugInfo.IsCEO),
+		mlog.Bool("isCEOFromProps", debugInfo.IsCEOFromProps),
+		mlog.Bool("isCEOFromFallback", debugInfo.IsCEOFromFallback),
+		mlog.String("orgUnitIDs", strings.Join(debugInfo.OrgUnits, ",")),
+		mlog.String("positionCodes", strings.Join(debugInfo.PositionCodes, ",")),
+		mlog.String("fullVisibilityPositionIDs", strings.Join(debugInfo.FullVisibilityPositionIDs, ",")),
+		mlog.Int("boardsCount", len(boards)),
+	)
+	if !hasTeamAccess && len(boards) == 0 {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
 		return
 	}
 
@@ -258,12 +283,13 @@ func (a *API) handleGetBoard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !hasValidReadToken {
+		canViewBoard := a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionViewBoard)
 		if board.Type == model.BoardTypePrivate {
-			if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionViewBoard) {
+			if !canViewBoard {
 				a.errorResponse(w, r, model.NewErrPermission("access denied to board"))
 				return
 			}
-		} else {
+		} else if !canViewBoard {
 			var isGuest bool
 			isGuest, err = a.userIsGuest(userID)
 			if err != nil {
@@ -461,6 +487,118 @@ func (a *API) handleDeleteBoard(w http.ResponseWriter, r *http.Request) {
 	a.logger.Debug("DELETE Board", mlog.String("boardID", boardID))
 	jsonStringResponse(w, http.StatusOK, "{}")
 
+	auditRec.Success()
+}
+
+func (a *API) handleTransferBoardOwnership(w http.ResponseWriter, r *http.Request) {
+	boardID := mux.Vars(r)["boardID"]
+	requestorID := getUserID(r)
+
+	board, err := a.app.GetBoard(boardID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	currentOwnerID := model.ResolveBoardOwnerUserID(board)
+	if currentOwnerID != requestorID {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to transfer board ownership"))
+		return
+	}
+
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	var req transferBoardOwnershipRequest
+	if err := json.Unmarshal(requestBody, &req); err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
+		return
+	}
+
+	nextOwnerID := strings.TrimSpace(req.OwnerUserID)
+	if nextOwnerID == "" {
+		a.errorResponse(w, r, model.NewErrBadRequest("ownerUserId is required"))
+		return
+	}
+	if nextOwnerID == currentOwnerID {
+		jsonStringResponse(w, http.StatusOK, "{}")
+		return
+	}
+
+	if !a.permissions.HasPermissionToTeam(nextOwnerID, board.TeamID, model.PermissionViewTeam) {
+		a.errorResponse(w, r, model.NewErrBadRequest("ownerUserId must belong to the board team"))
+		return
+	}
+
+	auditRec := a.makeAuditRecord(r, "transferBoardOwnership", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelModify, auditRec)
+	auditRec.AddMeta("boardID", boardID)
+	auditRec.AddMeta("fromOwner", currentOwnerID)
+	auditRec.AddMeta("toOwner", nextOwnerID)
+
+	boardPatch := &model.BoardPatch{
+		UpdatedProperties: map[string]interface{}{
+			model.BoardOwnerUserIDKey: nextOwnerID,
+		},
+	}
+	if _, err := a.app.PatchBoard(boardPatch, boardID, requestorID); err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	updatedBoard, err := a.app.GetBoard(boardID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	entries, err := model.ParseBoardACLFromProperties(updatedBoard.Properties)
+	if err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
+		return
+	}
+
+	updatedEntries := false
+	highestPermission := model.EffectiveBoardPermissionNone
+	ownerEntryIndex := -1
+	for i, entry := range entries {
+		if entry.SubjectType != model.BoardACLSubjectUser || entry.SubjectID != currentOwnerID {
+			continue
+		}
+		ownerEntryIndex = i
+		if model.EffectivePermissionRank(entry.Permission) > model.EffectivePermissionRank(highestPermission) {
+			highestPermission = entry.Permission
+		}
+	}
+	if model.EffectivePermissionRank(highestPermission) < model.EffectivePermissionRank(model.EffectiveBoardPermissionManage) {
+		if ownerEntryIndex >= 0 {
+			entries[ownerEntryIndex].Permission = model.EffectiveBoardPermissionManage
+		} else {
+			entries = append(entries, model.BoardACLEntry{
+				ID:          utils.NewID(utils.IDTypeBlock),
+				SubjectType: model.BoardACLSubjectUser,
+				SubjectID:   currentOwnerID,
+				Permission:  model.EffectiveBoardPermissionManage,
+			})
+		}
+		updatedEntries = true
+	}
+
+	if updatedEntries {
+		if err := normalizeAndValidateACLEntries(entries); err != nil {
+			a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
+			return
+		}
+		if _, err := a.persistBoardACL(boardID, requestorID, entries); err != nil {
+			a.errorResponse(w, r, err)
+			return
+		}
+	}
+
+	jsonStringResponse(w, http.StatusOK, "{}")
 	auditRec.Success()
 }
 
@@ -672,9 +810,11 @@ func (a *API) handleGetBoardMetadata(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		if !a.permissions.HasPermissionToTeam(userID, board.TeamID, model.PermissionViewTeam) {
-			a.errorResponse(w, r, model.NewErrPermission("access denied to board"))
-			return
+		if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionViewBoard) {
+			if !a.permissions.HasPermissionToTeam(userID, board.TeamID, model.PermissionViewTeam) {
+				a.errorResponse(w, r, model.NewErrPermission("access denied to board"))
+				return
+			}
 		}
 	}
 

@@ -65,7 +65,6 @@ func TestHasPermissionToBoard(t *testing.T) {
 
 		hasPermissionTo := []*mmModel.Permission{
 			model.PermissionManageBoardType,
-			model.PermissionDeleteBoard,
 			model.PermissionManageBoardRoles,
 			model.PermissionShareBoard,
 			model.PermissionManageBoardCards,
@@ -73,7 +72,9 @@ func TestHasPermissionToBoard(t *testing.T) {
 			model.PermissionManageBoardProperties,
 		}
 
-		hasNotPermissionTo := []*mmModel.Permission{}
+		hasNotPermissionTo := []*mmModel.Permission{
+			model.PermissionDeleteBoard,
+		}
 
 		th.checkBoardPermissions("admin", member, hasPermissionTo, hasNotPermissionTo)
 	})

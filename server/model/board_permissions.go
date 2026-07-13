@@ -13,6 +13,7 @@ import (
 const (
 	BoardACLPropertyKey     = "board_acl_entries"
 	BoardACLManagersKey     = "board_acl_managers"
+	BoardOwnerUserIDKey     = "board_owner_user_id"
 	OrgUnitsMasterKey       = "org_units_master"
 	PositionsMasterKey      = "positions_master"
 	UserOrgUnitIDsKey       = "org_unit_ids"
@@ -22,6 +23,8 @@ const (
 	PermissionDerivedDirect = "direct_acl"
 	PermissionDerivedOrg    = "org_unit_acl"
 	PermissionDerivedPos    = "position_acl"
+	PermissionDerivedOrgPos = "org_position_acl"
+	PermissionDerivedCEO    = "ceo_full_visibility"
 	PermissionDerivedMgr    = "board_manager"
 	PermissionDerivedSys    = "system_admin_override"
 	PermissionDerivedTeam   = "team_admin_default"
@@ -63,6 +66,7 @@ type BoardPermissionCapabilities struct {
 	CanEditCard    bool `json:"canEditCard"`
 	CanDeleteCard  bool `json:"canDeleteCard"`
 	CanManageBoard bool `json:"canManageBoard"`
+	CanDeleteBoard bool `json:"canDeleteBoard"`
 }
 
 type ACLSubjectOption struct {
@@ -75,6 +79,7 @@ type BoardPermissionsResponse struct {
 	EffectivePermission EffectiveBoardPermission    `json:"effectivePermission"`
 	Capabilities        BoardPermissionCapabilities `json:"capabilities"`
 	DerivedFrom         string                      `json:"derivedFrom"`
+	IsOwner             bool                        `json:"isOwner"`
 }
 
 func ParseBoardACLFromProperties(properties map[string]interface{}) ([]BoardACLEntry, error) {
@@ -100,6 +105,114 @@ func ParseBoardACLFromProperties(properties map[string]interface{}) ([]BoardACLE
 	return entries, nil
 }
 
+// EvaluateBoardACLEntries computes the effective permission granted by a
+// board's ACL entries for a given user ID and their already-resolved org
+// context (org unit IDs, position IDs), along with which kind of ACL entry
+// produced it (one of the PermissionDerived* constants, or
+// PermissionDerivedDeny if nothing matched). It is a pure function — no DB or
+// plugin-API access — so a caller evaluating many boards (e.g. expanding a
+// board list/search result) can resolve the org context once and reuse it
+// across every candidate board instead of re-resolving it per board.
+func EvaluateBoardACLEntries(entries []BoardACLEntry, userID string, orgUnits, positions []string) (EffectiveBoardPermission, string) {
+	if directPermission := evaluateACLEntries(entries, BoardACLSubjectUser, userID); directPermission != EffectiveBoardPermissionNone {
+		return directPermission, PermissionDerivedDirect
+	}
+
+	if !hasOrgScopedACLEntries(entries) {
+		return EffectiveBoardPermissionNone, PermissionDerivedDeny
+	}
+
+	if orgPositionPermission := evaluateOrgPositionACLEntries(entries, orgUnits, positions); orgPositionPermission != EffectiveBoardPermissionNone {
+		return orgPositionPermission, PermissionDerivedOrgPos
+	}
+
+	if positionPermission := evaluateAnyACLEntries(entries, BoardACLSubjectPosition, positions); positionPermission != EffectiveBoardPermissionNone {
+		return positionPermission, PermissionDerivedPos
+	}
+
+	if orgPermission := evaluateAnyACLEntries(entries, BoardACLSubjectOrgUnit, orgUnits); orgPermission != EffectiveBoardPermissionNone {
+		return orgPermission, PermissionDerivedOrg
+	}
+
+	return EffectiveBoardPermissionNone, PermissionDerivedDeny
+}
+
+func evaluateACLEntries(entries []BoardACLEntry, subjectType BoardACLSubjectType, subjectID string) EffectiveBoardPermission {
+	highest := EffectiveBoardPermissionNone
+	for _, entry := range entries {
+		if entry.SubjectType != subjectType || entry.SubjectID != subjectID {
+			continue
+		}
+		normalizedPermission := NormalizeEffectivePermission(entry.Permission)
+		if EffectivePermissionRank(normalizedPermission) > EffectivePermissionRank(highest) {
+			highest = normalizedPermission
+		}
+	}
+	return highest
+}
+
+func evaluateOrgPositionACLEntries(entries []BoardACLEntry, orgUnits []string, positions []string) EffectiveBoardPermission {
+	if len(orgUnits) == 0 || len(positions) == 0 {
+		return EffectiveBoardPermissionNone
+	}
+
+	orgUnitSet := map[string]struct{}{}
+	for _, orgUnit := range orgUnits {
+		orgUnitSet[orgUnit] = struct{}{}
+	}
+	positionSet := map[string]struct{}{}
+	for _, position := range positions {
+		positionSet[position] = struct{}{}
+	}
+
+	highest := EffectiveBoardPermissionNone
+	for _, entry := range entries {
+		if entry.SubjectType != BoardACLSubjectOrgPos {
+			continue
+		}
+		if _, ok := orgUnitSet[entry.OrgUnitID]; !ok {
+			continue
+		}
+		if _, ok := positionSet[entry.PositionCode]; !ok {
+			continue
+		}
+		normalizedPermission := NormalizeEffectivePermission(entry.Permission)
+		if EffectivePermissionRank(normalizedPermission) > EffectivePermissionRank(highest) {
+			highest = normalizedPermission
+		}
+	}
+
+	return highest
+}
+
+func evaluateAnyACLEntries(entries []BoardACLEntry, subjectType BoardACLSubjectType, subjectIDs []string) EffectiveBoardPermission {
+	highest := EffectiveBoardPermissionNone
+	for _, subjectID := range subjectIDs {
+		permission := evaluateACLEntries(entries, subjectType, subjectID)
+		if EffectivePermissionRank(permission) > EffectivePermissionRank(highest) {
+			highest = permission
+		}
+	}
+	return highest
+}
+
+// HasOrgScopedACLEntries reports whether entries contains any org_unit/
+// position/org_position entry, so callers can decide whether it's worth
+// resolving a user's org context before evaluating ACL (direct "user"
+// entries never need it).
+func HasOrgScopedACLEntries(entries []BoardACLEntry) bool {
+	return hasOrgScopedACLEntries(entries)
+}
+
+func hasOrgScopedACLEntries(entries []BoardACLEntry) bool {
+	for _, entry := range entries {
+		if entry.SubjectType == BoardACLSubjectOrgPos || entry.SubjectType == BoardACLSubjectOrgUnit || entry.SubjectType == BoardACLSubjectPosition {
+			return true
+		}
+	}
+	return false
+}
+
 func ACLPermissionFromBoardPermission(permission *mmModel.Permission) EffectiveBoardPermission {
 	if permission == nil {
 		return EffectiveBoardPermissionNone
@@ -115,13 +228,17 @@ func ACLPermissionFromBoardPermission(permission *mmModel.Permission) EffectiveB
 	case PermissionManageBoardRoles, PermissionManageBoardType, PermissionShareBoard:
 		return EffectiveBoardPermissionManage
 	case PermissionDeleteBoard:
-		return EffectiveBoardPermissionDelete
+		// Board deletion is owner-only, not ACL-derived.
+		return EffectiveBoardPermissionNone
 	default:
 		return EffectiveBoardPermissionNone
 	}
 }
 
 func PermissionSatisfies(effective EffectiveBoardPermission, required *mmModel.Permission) bool {
+	if required == PermissionDeleteBoard {
+		return false
+	}
 	requiredLevel := ACLPermissionFromBoardPermission(required)
 	return EffectivePermissionRank(effective) >= EffectivePermissionRank(requiredLevel)
 }
@@ -129,7 +246,8 @@ func PermissionSatisfies(effective EffectiveBoardPermission, required *mmModel.P
 func EffectivePermissionRank(permission EffectiveBoardPermission) int {
 	switch permission {
 	case EffectiveBoardPermissionDelete:
-		return 4
+		// Legacy value: treat as manage.
+		return 3
 	case EffectiveBoardPermissionManage:
 		return 3
 	case EffectiveBoardPermissionEdit:
@@ -141,14 +259,40 @@ func EffectivePermissionRank(permission EffectiveBoardPermission) int {
 	}
 }
 
-func BuildCapabilities(permission EffectiveBoardPermission) BoardPermissionCapabilities {
-	rank := EffectivePermissionRank(permission)
+func NormalizeEffectivePermission(permission EffectiveBoardPermission) EffectiveBoardPermission {
+	switch permission {
+	case EffectiveBoardPermissionDelete:
+		return EffectiveBoardPermissionManage
+	default:
+		return permission
+	}
+}
+
+func ResolveBoardOwnerUserID(board *Board) string {
+	if board == nil {
+		return ""
+	}
+
+	if board.Properties != nil {
+		if rawOwner, ok := board.Properties[BoardOwnerUserIDKey]; ok {
+			if ownerID, okCast := rawOwner.(string); okCast && ownerID != "" {
+				return ownerID
+			}
+		}
+	}
+
+	return board.CreatedBy
+}
+
+func BuildCapabilities(permission EffectiveBoardPermission, isOwner bool) BoardPermissionCapabilities {
+	rank := EffectivePermissionRank(NormalizeEffectivePermission(permission))
 
 	return BoardPermissionCapabilities{
 		CanView:        rank >= 1,
 		CanCreateCard:  rank >= 2,
 		CanEditCard:    rank >= 2,
-		CanDeleteCard:  rank >= 4 || rank >= 3,
+		CanDeleteCard:  rank >= 2,
 		CanManageBoard: rank >= 3,
+		CanDeleteBoard: isOwner,
 	}
 }

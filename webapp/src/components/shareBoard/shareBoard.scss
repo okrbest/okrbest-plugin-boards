@@ -6,8 +6,10 @@
         width: 600px;
         max-width: 90%;
         height: auto;
+        max-height: calc(100vh - 64px);
         position: relative;
-        overflow: unset;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
     .confirmation-dialog-box {

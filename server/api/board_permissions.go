@@ -354,7 +354,7 @@ func normalizeAndValidateACLEntries(entries []model.BoardACLEntry) error {
 		}
 
 		switch entries[i].Permission {
-		case model.EffectiveBoardPermissionView, model.EffectiveBoardPermissionEdit, model.EffectiveBoardPermissionManage, model.EffectiveBoardPermissionDelete:
+		case model.EffectiveBoardPermissionView, model.EffectiveBoardPermissionEdit, model.EffectiveBoardPermissionManage:
 		default:
 			return model.NewErrBadRequest("invalid permission")
 		}
