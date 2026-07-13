@@ -180,6 +180,11 @@ func (a *API) handlePutBoardACL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateACLManageScope(req.Entries); err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
+		return
+	}
+
 	if err := normalizeAndValidateACLEntries(req.Entries); err != nil {
 		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
 		return
@@ -228,6 +233,10 @@ func (a *API) handleCreateBoardACLEntry(w http.ResponseWriter, r *http.Request) 
 		OrgUnitID:    req.OrgUnitID,
 		PositionCode: req.PositionCode,
 		Permission:   req.Permission,
+	}
+	if err := validateACLManageScope([]model.BoardACLEntry{entry}); err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
+		return
 	}
 	if err := normalizeAndValidateACLEntries([]model.BoardACLEntry{entry}); err != nil {
 		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
@@ -308,6 +317,8 @@ func (a *API) handleDeleteBoardACLEntry(w http.ResponseWriter, r *http.Request) 
 }
 
 func (a *API) persistBoardACL(boardID, userID string, entries []model.BoardACLEntry) ([]model.BoardACLEntry, error) {
+	normalizeLegacyOrgManagePermissions(entries)
+
 	updatedProperties := map[string]interface{}{
 		model.BoardACLPropertyKey: entries,
 	}
@@ -354,11 +365,35 @@ func normalizeAndValidateACLEntries(entries []model.BoardACLEntry) error {
 		}
 
 		switch entries[i].Permission {
-		case model.EffectiveBoardPermissionView, model.EffectiveBoardPermissionEdit, model.EffectiveBoardPermissionManage:
+		case model.EffectiveBoardPermissionView, model.EffectiveBoardPermissionCommenter, model.EffectiveBoardPermissionEdit, model.EffectiveBoardPermissionManage:
 		default:
 			return model.NewErrBadRequest("invalid permission")
 		}
 	}
 
 	return nil
+}
+
+func validateACLManageScope(entries []model.BoardACLEntry) error {
+	for _, entry := range entries {
+		if entry.Permission != model.EffectiveBoardPermissionManage {
+			continue
+		}
+		if entry.SubjectType != model.BoardACLSubjectUser {
+			return model.NewErrBadRequest("manage permission is only allowed for user subjectType")
+		}
+	}
+	return nil
+}
+
+func normalizeLegacyOrgManagePermissions(entries []model.BoardACLEntry) {
+	for i := range entries {
+		if entries[i].Permission != model.EffectiveBoardPermissionManage {
+			continue
+		}
+		if entries[i].SubjectType == model.BoardACLSubjectUser {
+			continue
+		}
+		entries[i].Permission = model.EffectiveBoardPermissionEdit
+	}
 }

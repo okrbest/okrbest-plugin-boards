@@ -19,9 +19,11 @@ type Props = {
     properties: readonly IPropertyTemplate[]
     activeView: BoardView
     orderedCards: Card[]
+    disabled?: boolean
+    disabledReason?: string
 }
 const ViewHeaderSortMenu = (props: Props) => {
-    const {properties, activeView, orderedCards} = props
+    const {properties, activeView, orderedCards, disabled, disabledReason} = props
     const intl = useIntl()
     const hasSort = activeView.fields.sortOptions?.length > 0
     const sortDisplayOptions = properties?.map((o) => ({id: o.id, name: o.name}))
@@ -59,8 +61,13 @@ const ViewHeaderSortMenu = (props: Props) => {
         <MenuWrapper
             usePortal={true}
             menuPosition='bottom'
+            disabled={disabled}
         >
-            <Button active={hasSort}>
+            <Button
+                active={hasSort && !disabled}
+                disabled={disabled}
+                title={disabled ? disabledReason : undefined}
+            >
                 <FormattedMessage
                     id='ViewHeader.sort'
                     defaultMessage='Sort'

@@ -261,6 +261,13 @@
     }
 }
 
+.BlockSuiteEditor--readonly {
+    .blocksuite-editor-wrapper,
+    .BlockSuiteEditor__container--readonly {
+        cursor: default;
+    }
+}
+
 /* 
  * BlockSuite 포털 요소 스타일 (body에 직접 렌더링되는 요소들)
  * 슬래시 메뉴, 포맷 바, 팝오버 등

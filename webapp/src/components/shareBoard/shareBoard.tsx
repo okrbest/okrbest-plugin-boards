@@ -88,7 +88,7 @@ const styles = {
     }),
 }
 
-type ACLPermission = 'view'|'edit'|'manage'
+type ACLPermission = 'view'|'commenter'|'edit'|'manage'
 type ACLSubjectMode = 'org_position'|'org_unit'|'position'|'user'
 type ACLEntryDraft = {
     subjectType: ACLSubjectMode
@@ -108,6 +108,27 @@ function isLastAdmin(members: BoardMember[]) {
         }
     }
     return true
+}
+
+const toACLPermission = (permission: string): ACLPermission => {
+    if (permission === 'commenter' || permission === 'edit' || permission === 'manage' || permission === 'view') {
+        return permission
+    }
+    return 'view'
+}
+
+const normalizePermissionForSubject = (subjectType: string, permission: ACLPermission): ACLPermission => {
+    if (subjectType !== 'user' && permission === 'manage') {
+        return 'edit'
+    }
+    return permission
+}
+
+const getPermissionOptionsForSubject = (subjectType: string): ACLPermission[] => {
+    if (subjectType === 'user') {
+        return ['view', 'commenter', 'edit', 'manage']
+    }
+    return ['view', 'commenter', 'edit']
 }
 
 export default function ShareBoardDialog(props: Props): React.JSX.Element {
@@ -359,6 +380,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     }
 
     const draftToEntry = (draft: ACLEntryDraft, source?: BoardACLEntry): BoardACLEntry => {
+        const normalizedPermission = normalizePermissionForSubject(draft.subjectType, draft.permission)
         if (draft.subjectType === 'org_position') {
             return {
                 id: source?.id || '',
@@ -366,7 +388,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                 subjectId: '',
                 orgUnitId: draft.orgUnitId,
                 positionCode: draft.positionCode,
-                permission: draft.permission,
+                permission: normalizedPermission,
             }
         }
 
@@ -375,7 +397,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                 id: source?.id || '',
                 subjectType: 'org_unit',
                 subjectId: draft.subjectId,
-                permission: draft.permission,
+                permission: normalizedPermission,
             }
         }
 
@@ -384,7 +406,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                 id: source?.id || '',
                 subjectType: 'position',
                 subjectId: draft.subjectId,
-                permission: draft.permission,
+                permission: normalizedPermission,
             }
         }
 
@@ -392,7 +414,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             id: source?.id || '',
             subjectType: 'user',
             subjectId: draft.subjectId,
-            permission: draft.permission,
+            permission: normalizedPermission,
         }
     }
 
@@ -426,7 +448,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             orgUnitId: entry.orgUnitId || (entry.subjectType === 'org_unit' ? entry.subjectId : ''),
             positionCode: entry.positionCode || (entry.subjectType === 'position' ? entry.subjectId : ''),
             subjectId: entry.subjectType === 'org_position' ? '' : entry.subjectId || '',
-            permission: entry.permission,
+            permission: normalizePermissionForSubject(entry.subjectType, toACLPermission(entry.permission)),
         })
     }
 
@@ -801,6 +823,11 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                         const entryKey = getACLEntryKey(entry, index)
                         const isEditing = editingEntryKey === entryKey
                         const isUserEntry = entry.subjectType === 'user'
+                        const activeSubjectType = isEditing ? entryDraft.subjectType : entry.subjectType
+                        const activePermission = isEditing ?
+                            normalizePermissionForSubject(activeSubjectType, entryDraft.permission) :
+                            normalizePermissionForSubject(activeSubjectType, toACLPermission(entry.permission))
+                        const permissionOptions = getPermissionOptionsForSubject(activeSubjectType)
                         const userLabel = resolveACLSubjectLabel(entry)
                         const orgLabel = isUserEntry ? intl.formatMessage({id: 'shareBoard.acl.userException', defaultMessage: '사용자 예외'}) : (orgUnitNameById[entry.orgUnitId || ''] || '-')
                         const positionLabel = isUserEntry ? userLabel : (positionNameById[entry.positionCode || ''] || '-')
@@ -893,27 +920,27 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                 )}
 
                                 <select
-                                    value={isEditing ? entryDraft.permission : entry.permission}
+                                    value={activePermission}
                                     onChange={(e) => {
                                         const next = e.target.value as ACLPermission
                                         if (isEditing) {
-                                            setEntryDraft((prev) => ({...prev, permission: next}))
+                                            setEntryDraft((prev) => ({...prev, permission: normalizePermissionForSubject(prev.subjectType, next)}))
                                             return
                                         }
                                         const nextEntries = aclEntries.map((item, itemIndex) => {
                                             if (itemIndex !== index) {
                                                 return item
                                             }
-                                            return {...item, permission: next}
+                                            return {...item, permission: normalizePermissionForSubject(item.subjectType, next)}
                                         })
                                         void saveACL(nextEntries)
                                     }}
                                     className='form-control'
                                     disabled={isACLOptionsLoading}
                                 >
-                                    <option value='view'>view</option>
-                                    <option value='edit'>edit</option>
-                                    <option value='manage'>manage</option>
+                                    {permissionOptions.map((permissionOption) => (
+                                        <option key={`${entryKey}-${permissionOption}`} value={permissionOption}>{permissionOption}</option>
+                                    ))}
                                 </select>
 
                                 <div className='ShareBoardDialog__acl-actions'>
@@ -1032,12 +1059,12 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
 
                             <select
                                 value={createDraft.permission}
-                                onChange={(e) => setCreateDraft((prev) => ({...prev, permission: e.target.value as ACLPermission}))}
+                                onChange={(e) => setCreateDraft((prev) => ({...prev, permission: normalizePermissionForSubject(prev.subjectType, e.target.value as ACLPermission)}))}
                                 className='form-control'
                             >
-                                <option value='view'>view</option>
-                                <option value='edit'>edit</option>
-                                <option value='manage'>manage</option>
+                                {getPermissionOptionsForSubject(createDraft.subjectType).map((permissionOption) => (
+                                    <option key={`create-${permissionOption}`} value={permissionOption}>{permissionOption}</option>
+                                ))}
                             </select>
 
                             <div className='ShareBoardDialog__acl-actions'>

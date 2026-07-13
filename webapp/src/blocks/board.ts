@@ -78,11 +78,12 @@ type BoardACLEntry = {
     subjectId: string
     orgUnitId?: string
     positionCode?: string
-    permission: 'view' | 'edit' | 'manage'
+    permission: 'view' | 'commenter' | 'edit' | 'manage'
 }
 
 type BoardCapabilities = {
     canView: boolean
+    canCommentCard: boolean
     canCreateCard: boolean
     canEditCard: boolean
     canDeleteCard: boolean
@@ -92,7 +93,7 @@ type BoardCapabilities = {
 
 type BoardPermissionsResponse = {
     boardId: string
-    effectivePermission: 'none' | 'view' | 'edit' | 'manage'
+    effectivePermission: 'none' | 'view' | 'commenter' | 'edit' | 'manage'
     capabilities: BoardCapabilities
     derivedFrom: string
     isOwner: boolean

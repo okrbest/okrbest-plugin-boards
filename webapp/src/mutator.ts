@@ -25,7 +25,7 @@ import {Category} from './store/sidebar'
 import {UserConfigPatch, UserPreference} from './user'
 import store from './store'
 import {updateBoards} from './store/boards'
-import {updateViews} from './store/views'
+import {updateView, updateViews} from './store/views'
 import {updateCards, markCardModified} from './store/cards'
 import {updateAttachments} from './store/attachments'
 import {updateComments} from './store/comments'
@@ -129,6 +129,9 @@ class Mutator {
                 const res = await octoClient.insertBlock(boardId, block)
                 const jsonres = await res.json()
                 const newBlock = jsonres[0] as Block
+                if (newBlock.type === 'comment') {
+                    store.dispatch(updateComments([newBlock as CommentBlock]))
+                }
                 await afterRedo?.(newBlock)
                 if (newBlock.parentId) {
                     store.dispatch(markCardModified(newBlock.parentId))
@@ -852,37 +855,75 @@ class Mutator {
     // Views
 
     async changeViewSortOptions(boardId: string, viewId: string, oldSortOptions: ISortOption[], sortOptions: ISortOption[]): Promise<void> {
-        await undoManager.perform(
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {sortOptions}})
-            },
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {sortOptions: oldSortOptions}})
-            },
-            'sort',
-            this.undoGroupId,
-        )
+        const previousView = store.getState().views.views[viewId]
+        const optimisticView = previousView ? createBoardView(previousView) : undefined
+        if (optimisticView) {
+            optimisticView.fields.sortOptions = sortOptions
+        }
+
+        try {
+            await undoManager.perform(
+                async () => {
+                    if (optimisticView) {
+                        store.dispatch(updateView(optimisticView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {sortOptions}})
+                },
+                async () => {
+                    if (previousView) {
+                        store.dispatch(updateView(previousView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {sortOptions: oldSortOptions}})
+                },
+                'sort',
+                this.undoGroupId,
+            )
+        } catch (err) {
+            if (previousView) {
+                store.dispatch(updateView(previousView))
+            }
+            throw err
+        }
     }
 
     async changeViewFilter(boardId: string, viewId: string, oldFilter: FilterGroup, filter: FilterGroup): Promise<void> {
-        await undoManager.perform(
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {filter}})
-            },
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {filter: oldFilter}})
-            },
-            'filter',
-            this.undoGroupId,
-        )
+        const previousView = store.getState().views.views[viewId]
+        const optimisticView = previousView ? createBoardView(previousView) : undefined
+        if (optimisticView) {
+            optimisticView.fields.filter = filter
+        }
+
+        try {
+            await undoManager.perform(
+                async () => {
+                    if (optimisticView) {
+                        store.dispatch(updateView(optimisticView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {filter}})
+                },
+                async () => {
+                    if (previousView) {
+                        store.dispatch(updateView(previousView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {filter: oldFilter}})
+                },
+                'filter',
+                this.undoGroupId,
+            )
+        } catch (err) {
+            if (previousView) {
+                store.dispatch(updateView(previousView))
+            }
+            throw err
+        }
     }
 
     async changeViewGroupById(boardId: string, viewId: string, oldGroupById: string|undefined, groupById: string): Promise<void> {
-        const view = store.getState().views.views[viewId]
-        const oldVisibleOptionIds = view?.fields.visibleOptionIds || []
-        const oldHiddenOptionIds = view?.fields.hiddenOptionIds || []
-        const oldCollapsedOptionIds = view?.fields.collapsedOptionIds || []
-        const oldKanbanCalculations = view?.fields.kanbanCalculations || {}
+        const previousView = store.getState().views.views[viewId]
+        const oldVisibleOptionIds = previousView?.fields.visibleOptionIds || []
+        const oldHiddenOptionIds = previousView?.fields.hiddenOptionIds || []
+        const oldCollapsedOptionIds = previousView?.fields.collapsedOptionIds || []
+        const oldKanbanCalculations = previousView?.fields.kanbanCalculations || {}
         const resetFields = {
             groupById,
             visibleOptionIds: [],
@@ -890,23 +931,44 @@ class Mutator {
             collapsedOptionIds: [],
             kanbanCalculations: {},
         }
+        const optimisticView = previousView ? createBoardView(previousView) : undefined
+        if (optimisticView) {
+            optimisticView.fields.groupById = groupById
+            optimisticView.fields.visibleOptionIds = []
+            optimisticView.fields.hiddenOptionIds = []
+            optimisticView.fields.collapsedOptionIds = []
+            optimisticView.fields.kanbanCalculations = {}
+        }
 
-        await undoManager.perform(
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: resetFields})
-            },
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {
-                    groupById: oldGroupById,
-                    visibleOptionIds: oldVisibleOptionIds,
-                    hiddenOptionIds: oldHiddenOptionIds,
-                    collapsedOptionIds: oldCollapsedOptionIds,
-                    kanbanCalculations: oldKanbanCalculations,
-                }})
-            },
-            'group by',
-            this.undoGroupId,
-        )
+        try {
+            await undoManager.perform(
+                async () => {
+                    if (optimisticView) {
+                        store.dispatch(updateView(optimisticView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: resetFields})
+                },
+                async () => {
+                    if (previousView) {
+                        store.dispatch(updateView(previousView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {
+                        groupById: oldGroupById,
+                        visibleOptionIds: oldVisibleOptionIds,
+                        hiddenOptionIds: oldHiddenOptionIds,
+                        collapsedOptionIds: oldCollapsedOptionIds,
+                        kanbanCalculations: oldKanbanCalculations,
+                    }})
+                },
+                'group by',
+                this.undoGroupId,
+            )
+        } catch (err) {
+            if (previousView) {
+                store.dispatch(updateView(previousView))
+            }
+            throw err
+        }
     }
 
     async changeViewDateDisplayPropertyId(boardId: string, viewId: string, oldDateDisplayPropertyId: string|undefined, dateDisplayPropertyId: string): Promise<void> {
@@ -944,16 +1006,35 @@ class Mutator {
     }
 
     async changeViewVisibleProperties(boardId: string, viewId: string, oldVisiblePropertyIds: string[], visiblePropertyIds: string[], description = 'show / hide property'): Promise<void> {
-        await undoManager.perform(
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {visiblePropertyIds}})
-            },
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {visiblePropertyIds: oldVisiblePropertyIds}})
-            },
-            description,
-            this.undoGroupId,
-        )
+        const previousView = store.getState().views.views[viewId]
+        const optimisticView = previousView ? createBoardView(previousView) : undefined
+        if (optimisticView) {
+            optimisticView.fields.visiblePropertyIds = visiblePropertyIds
+        }
+
+        try {
+            await undoManager.perform(
+                async () => {
+                    if (optimisticView) {
+                        store.dispatch(updateView(optimisticView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {visiblePropertyIds}})
+                },
+                async () => {
+                    if (previousView) {
+                        store.dispatch(updateView(previousView))
+                    }
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {visiblePropertyIds: oldVisiblePropertyIds}})
+                },
+                description,
+                this.undoGroupId,
+            )
+        } catch (err) {
+            if (previousView) {
+                store.dispatch(updateView(previousView))
+            }
+            throw err
+        }
     }
 
     async changeViewVisibleOptionIds(boardId: string, viewId: string, oldVisibleOptionIds: string[], visibleOptionIds: string[], description = 'reorder'): Promise<void> {

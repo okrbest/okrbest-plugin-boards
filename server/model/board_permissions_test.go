@@ -12,9 +12,10 @@ import (
 func TestEffectivePermissionRank(t *testing.T) {
 	require.Equal(t, 0, EffectivePermissionRank(EffectiveBoardPermissionNone))
 	require.Equal(t, 1, EffectivePermissionRank(EffectiveBoardPermissionView))
-	require.Equal(t, 2, EffectivePermissionRank(EffectiveBoardPermissionEdit))
-	require.Equal(t, 3, EffectivePermissionRank(EffectiveBoardPermissionManage))
-	require.Equal(t, 3, EffectivePermissionRank(EffectiveBoardPermissionDelete))
+	require.Equal(t, 2, EffectivePermissionRank(EffectiveBoardPermissionCommenter))
+	require.Equal(t, 3, EffectivePermissionRank(EffectiveBoardPermissionEdit))
+	require.Equal(t, 4, EffectivePermissionRank(EffectiveBoardPermissionManage))
+	require.Equal(t, 4, EffectivePermissionRank(EffectiveBoardPermissionDelete))
 }
 
 func TestBuildCapabilities(t *testing.T) {
@@ -30,6 +31,21 @@ func TestBuildCapabilities(t *testing.T) {
 			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        false,
+				CanCommentCard: false,
+				CanCreateCard:  false,
+				CanEditCard:    false,
+				CanDeleteCard:  false,
+				CanManageBoard: false,
+				CanDeleteBoard: false,
+			},
+		},
+		{
+			name:       "commenter",
+			permission: EffectiveBoardPermissionCommenter,
+			isOwner:    false,
+			expected: BoardPermissionCapabilities{
+				CanView:        true,
+				CanCommentCard: true,
 				CanCreateCard:  false,
 				CanEditCard:    false,
 				CanDeleteCard:  false,
@@ -43,6 +59,7 @@ func TestBuildCapabilities(t *testing.T) {
 			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
+				CanCommentCard: true,
 				CanCreateCard:  true,
 				CanEditCard:    true,
 				CanDeleteCard:  true,
@@ -56,6 +73,7 @@ func TestBuildCapabilities(t *testing.T) {
 			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
+				CanCommentCard: true,
 				CanCreateCard:  true,
 				CanEditCard:    true,
 				CanDeleteCard:  true,
@@ -69,6 +87,7 @@ func TestBuildCapabilities(t *testing.T) {
 			isOwner:    true,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
+				CanCommentCard: true,
 				CanCreateCard:  true,
 				CanEditCard:    true,
 				CanDeleteCard:  true,

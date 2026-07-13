@@ -164,10 +164,6 @@ const Sidebar = (props: Props) => {
         }
     }, [teamId])
 
-    if (!boards) {
-        return <div/>
-    }
-
     const hideSidebar = () => {
         if (!userHidden) {
             if (windowDimensions.width < 768) {
@@ -200,7 +196,7 @@ const Sidebar = (props: Props) => {
         // optimistically updating the store to produce a lag-free UI
         await dispatch(updateCategoryOrder(newCategoryOrder))
         await octoClient.reorderSidebarCategories(team.id, newCategoryOrder)
-    }, [team, sidebarCategories])
+    }, [team, sidebarCategories, boards])
 
     const handleCategoryBoardDND = useCallback(async (result: DropResult) => {
         const {source, destination, draggableId} = result
@@ -314,7 +310,7 @@ const Sidebar = (props: Props) => {
                 dispatch(fetchSidebarCategories(team.id))
             }
         }
-    }, [team, sidebarCategories])
+    }, [team, sidebarCategories, boards])
 
     const onDragEnd = useCallback(async (result: DropResult) => {
         const {destination, source, type} = result
@@ -341,7 +337,7 @@ const Sidebar = (props: Props) => {
 
         setDraggedItemID('')
         setIsCategoryBeingDragged(false)
-    }, [team, sidebarCategories])
+    }, [team, handleCategoryDND, handleCategoryBoardDND])
 
     const [draggedItemID, setDraggedItemID] = useState<string>('')
     const [isCategoryBeingDragged, setIsCategoryBeingDragged] = useState<boolean>(false)

@@ -86,7 +86,8 @@ const BoardPage = (props: Props): React.JSX.Element => {
     const currentBoard = useAppSelector(getCurrentBoard)
     const currentView = useAppSelector(getCurrentView)
     const orgContext = useAppSelector(getMyOrgContext)
-    const category = useAppSelector(getCategoryOfBoard(activeBoardId))
+    const categorySelector = useMemo(() => getCategoryOfBoard(activeBoardId), [activeBoardId])
+    const category = useAppSelector(categorySelector)
     const [showJoinBoardDialog, setShowJoinBoardDialog] = useState<boolean>(false)
 
     // if we're in a legacy route and not showing a shared board,
@@ -95,16 +96,14 @@ const BoardPage = (props: Props): React.JSX.Element => {
         window.location.href = window.location.href.replace('/plugins/focalboard', '/boards')
     }
 
-    // Load user's block subscriptions when workspace changes
-    // block subscriptions are relevant only in plugin mode.
-    if (Utils.isFocalboardPlugin()) {
-        useEffect(() => {
-            if (!me) {
-                return
-            }
-            dispatch(fetchUserBlockSubscriptions(me!.id))
-        }, [me?.id])
-    }
+    // Load user's block subscriptions when workspace changes.
+    // Keep this hook unconditional and branch inside to preserve hook order.
+    useEffect(() => {
+        if (!Utils.isFocalboardPlugin() || !me) {
+            return
+        }
+        dispatch(fetchUserBlockSubscriptions(me.id))
+    }, [dispatch, me?.id])
 
     // Note: Team ID synchronization - updates both UserSettings and octoClient
     // This is safe here because this is the root render function that manages team context
@@ -340,13 +339,13 @@ const BoardPage = (props: Props): React.JSX.Element => {
         localStorage.setItem(appliedKey, 'true')
     }, [props.readonly, currentBoard?.id, currentView?.id, me?.id, orgContext.isCEO, orgContext.orgUnitIds.join(','), orgContext.positionCodes.join(',')])
 
-    if (props.readonly) {
-        useEffect(() => {
-            if (activeBoardId && activeViewId) {
-                TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.ViewSharedBoard, {board: activeBoardId, view: activeViewId})
-            }
-        }, [activeBoardId, activeViewId])
-    }
+    useEffect(() => {
+        if (!props.readonly || !activeBoardId || !activeViewId) {
+            return
+        }
+
+        TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.ViewSharedBoard, {board: activeBoardId, view: activeViewId})
+    }, [props.readonly, activeBoardId, activeViewId])
 
     return (
         <>

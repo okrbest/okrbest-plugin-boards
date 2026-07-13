@@ -44,11 +44,12 @@ const (
 type EffectiveBoardPermission string
 
 const (
-	EffectiveBoardPermissionNone   EffectiveBoardPermission = "none"
-	EffectiveBoardPermissionView   EffectiveBoardPermission = "view"
-	EffectiveBoardPermissionEdit   EffectiveBoardPermission = "edit"
-	EffectiveBoardPermissionManage EffectiveBoardPermission = "manage"
-	EffectiveBoardPermissionDelete EffectiveBoardPermission = "delete"
+	EffectiveBoardPermissionNone      EffectiveBoardPermission = "none"
+	EffectiveBoardPermissionView      EffectiveBoardPermission = "view"
+	EffectiveBoardPermissionCommenter EffectiveBoardPermission = "commenter"
+	EffectiveBoardPermissionEdit      EffectiveBoardPermission = "edit"
+	EffectiveBoardPermissionManage    EffectiveBoardPermission = "manage"
+	EffectiveBoardPermissionDelete    EffectiveBoardPermission = "delete"
 )
 
 type BoardACLEntry struct {
@@ -62,6 +63,7 @@ type BoardACLEntry struct {
 
 type BoardPermissionCapabilities struct {
 	CanView        bool `json:"canView"`
+	CanCommentCard bool `json:"canCommentCard"`
 	CanCreateCard  bool `json:"canCreateCard"`
 	CanEditCard    bool `json:"canEditCard"`
 	CanDeleteCard  bool `json:"canDeleteCard"`
@@ -222,7 +224,7 @@ func ACLPermissionFromBoardPermission(permission *mmModel.Permission) EffectiveB
 	case PermissionViewBoard:
 		return EffectiveBoardPermissionView
 	case PermissionCommentBoardCards:
-		return EffectiveBoardPermissionEdit
+		return EffectiveBoardPermissionCommenter
 	case PermissionManageBoardCards, PermissionManageBoardProperties:
 		return EffectiveBoardPermissionEdit
 	case PermissionManageBoardRoles, PermissionManageBoardType, PermissionShareBoard:
@@ -247,10 +249,12 @@ func EffectivePermissionRank(permission EffectiveBoardPermission) int {
 	switch permission {
 	case EffectiveBoardPermissionDelete:
 		// Legacy value: treat as manage.
-		return 3
+		return 4
 	case EffectiveBoardPermissionManage:
-		return 3
+		return 4
 	case EffectiveBoardPermissionEdit:
+		return 3
+	case EffectiveBoardPermissionCommenter:
 		return 2
 	case EffectiveBoardPermissionView:
 		return 1
@@ -289,10 +293,11 @@ func BuildCapabilities(permission EffectiveBoardPermission, isOwner bool) BoardP
 
 	return BoardPermissionCapabilities{
 		CanView:        rank >= 1,
-		CanCreateCard:  rank >= 2,
-		CanEditCard:    rank >= 2,
-		CanDeleteCard:  rank >= 2,
-		CanManageBoard: rank >= 3,
+		CanCommentCard: rank >= 2,
+		CanCreateCard:  rank >= 3,
+		CanEditCard:    rank >= 3,
+		CanDeleteCard:  rank >= 3,
+		CanManageBoard: rank >= 4,
 		CanDeleteBoard: isOwner,
 	}
 }

@@ -190,6 +190,7 @@ func TestHasPermissionToBoard(t *testing.T) {
 
 		hasPermissionTo := []*mmModel.Permission{
 			model.PermissionViewBoard,
+			model.PermissionCommentBoardCards,
 		}
 
 		hasNotPermissionTo := []*mmModel.Permission{
@@ -222,6 +223,7 @@ func TestHasPermissionToBoard(t *testing.T) {
 			model.PermissionShareBoard,
 			model.PermissionManageBoardCards,
 			model.PermissionManageBoardProperties,
+			model.PermissionCommentBoardCards,
 		}
 
 		th.checkBoardPermissions("viewer", member, teamID, hasPermissionTo, hasNotPermissionTo)
@@ -436,7 +438,7 @@ func TestResolveOrgContextForTeam_FullVisibilityFallback(t *testing.T) {
 
 	resolved, err := service.GetBoardPermissions("user-id", "board-id")
 	assert.NoError(t, err)
-	assert.Equal(t, model.EffectiveBoardPermissionView, resolved.EffectivePermission)
+	assert.Equal(t, model.EffectiveBoardPermissionCommenter, resolved.EffectivePermission)
 	assert.Equal(t, model.PermissionDerivedCEO, resolved.DerivedFrom)
 }
 
@@ -476,6 +478,6 @@ func TestResolveOrgContextForTeam_DBFirstProfile(t *testing.T) {
 
 	resolved, err := service.GetBoardPermissions("user-id", "board-id")
 	assert.NoError(t, err)
-	assert.Equal(t, model.EffectiveBoardPermissionView, resolved.EffectivePermission)
+	assert.Equal(t, model.EffectiveBoardPermissionCommenter, resolved.EffectivePermission)
 	assert.Equal(t, model.PermissionDerivedCEO, resolved.DerivedFrom)
 }

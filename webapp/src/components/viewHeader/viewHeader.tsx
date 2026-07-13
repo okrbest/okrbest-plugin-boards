@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect, useCallback, useRef, useLayoutEffect} from 'react'
-import {FormattedMessage} from 'react-intl'
+import {FormattedMessage, useIntl} from 'react-intl'
 
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
@@ -57,6 +57,7 @@ type Props = {
 }
 
 const ViewHeader = (props: Props) => {
+    const intl = useIntl()
     const [showFilter, setShowFilter] = useState(false)
     const [lockFilterOnClose, setLockFilterOnClose] = useState(false)
     const currentBoardId = useAppSelector(getCurrentBoardId)
@@ -69,6 +70,11 @@ const ViewHeader = (props: Props) => {
     const withGroupBy = activeView.fields.viewType === 'board' || activeView.fields.viewType === 'table'
     const withDisplayBy = activeView.fields.viewType === 'calendar'
     const withSortBy = activeView.fields.viewType !== 'calendar'
+    const canManageViewOptions = canEditBoardProperties || canManageBoard
+    const noPermissionMessage = intl.formatMessage({
+        id: 'ViewHeader.permission-required',
+        defaultMessage: 'Insufficient permissions. Ask a board admin for edit access.',
+    })
 
     const hasFilter = activeView.fields.filter && activeView.fields.filter.filters?.length > 0
 
@@ -163,6 +169,12 @@ const ViewHeader = (props: Props) => {
         }
     }, [showFilter, updateFilterPos])
 
+    useEffect(() => {
+        if (!canManageViewOptions && showFilter) {
+            setShowFilter(false)
+        }
+    }, [canManageViewOptions, showFilter])
+
     return (
         <div className='ViewHeader'>
             <div className='ViewHeader__tabsRegion'>
@@ -176,13 +188,15 @@ const ViewHeader = (props: Props) => {
             </div>
 
             <div className='ViewHeader__toolbar'>
-                {!props.readonly && (canEditBoardProperties || canManageBoard) &&
+                {!props.readonly &&
                 <>
                     {/* Card properties */}
 
                     <ViewHeaderPropertiesMenu
                         properties={board.cardProperties}
                         activeView={activeView}
+                        disabled={!canManageViewOptions}
+                        disabledReason={noPermissionMessage}
                     />
 
                     {/* Group by */}
@@ -192,6 +206,8 @@ const ViewHeader = (props: Props) => {
                         properties={board.cardProperties}
                         activeView={activeView}
                         groupByProperty={groupByProperty}
+                        disabled={!canManageViewOptions}
+                        disabledReason={noPermissionMessage}
                     />}
 
                     {/* Display by */}
@@ -201,16 +217,25 @@ const ViewHeader = (props: Props) => {
                         properties={board.cardProperties}
                         activeView={activeView}
                         dateDisplayPropertyName={dateDisplayProperty?.name}
+                        disabled={!canManageViewOptions}
+                        disabledReason={noPermissionMessage}
                     />}
 
                     {/* Filter */}
 
                     <div ref={filterBtnRef}>
                         <Button
-                            active={hasFilter}
-                            onClick={() => setShowFilter(!showFilter)}
+                            active={hasFilter && canManageViewOptions}
+                            onClick={() => {
+                                if (!canManageViewOptions) {
+                                    return
+                                }
+                                setShowFilter(!showFilter)
+                            }}
                             onMouseOver={() => setLockFilterOnClose(true)}
                             onMouseLeave={() => setLockFilterOnClose(false)}
+                            disabled={!canManageViewOptions}
+                            title={!canManageViewOptions ? noPermissionMessage : undefined}
                         >
                             <FormattedMessage
                                 id='ViewHeader.filter'
@@ -218,7 +243,7 @@ const ViewHeader = (props: Props) => {
                             />
                         </Button>
                     </div>
-                    {showFilter && filterPos &&
+                    {showFilter && filterPos && canManageViewOptions &&
                     <RootPortal>
                         <div
                             className='ViewHeader__filterPortal'
@@ -249,6 +274,8 @@ const ViewHeader = (props: Props) => {
                         properties={board.cardProperties}
                         activeView={activeView}
                         orderedCards={cards}
+                        disabled={!canManageViewOptions}
+                        disabledReason={noPermissionMessage}
                     />
                     }
                 </>

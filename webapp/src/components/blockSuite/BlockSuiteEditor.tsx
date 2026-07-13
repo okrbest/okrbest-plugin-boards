@@ -132,6 +132,30 @@ function selectAllBlocks(editor: PageEditor, blockIds: string[]): void {
     }
 }
 
+function applyEditorReadonly(editor: PageEditor, readonly: boolean): void {
+    try {
+        if (readonly) {
+            editor.setAttribute('readonly', 'true')
+            return
+        }
+        editor.removeAttribute('readonly')
+    } catch (err) {
+        Utils.logError(`BlockSuiteEditor: Failed to apply readonly attribute: ${err}`)
+    }
+}
+
+function shouldBlockReadonlyKey(event: KeyboardEvent): boolean {
+    if (event.key === 'Backspace' || event.key === 'Delete' || event.key === 'Enter') {
+        return true
+    }
+
+    if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.length === 1) {
+        return true
+    }
+
+    return false
+}
+
 export async function copyAllContent(options: CopyAllOptions): Promise<CopyAllResult> {
     const {
         editor,
@@ -427,10 +451,7 @@ function BlockSuiteEditor(props: Props): React.JSX.Element {
                     linkedCardExtension,
                 ]
                 editor.doc = editorDoc
-
-                if (readonly) {
-                    editor.setAttribute('readonly', 'true')
-                }
+                applyEditorReadonly(editor, readonly)
 
                 containerRef.current.innerHTML = ''
                 containerRef.current.appendChild(editor)
@@ -529,6 +550,63 @@ function BlockSuiteEditor(props: Props): React.JSX.Element {
             jobRef.current = null
         }
     }, [containerMounted, snapshot, readonly, card.boardId, teamId, handleDocUpdate])
+
+    useEffect(() => {
+        if (!containerMounted || !containerRef.current) {
+            return
+        }
+
+        const container = containerRef.current
+        container.classList.toggle('BlockSuiteEditor__container--readonly', readonly)
+
+        if (editorRef.current) {
+            applyEditorReadonly(editorRef.current, readonly)
+        }
+    }, [containerMounted, readonly])
+
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container || !readonly) {
+            return
+        }
+
+        const handleBeforeInput = (event: InputEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+        const handlePaste = (event: ClipboardEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+        const handleDrop = (event: DragEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+        const handleCut = (event: ClipboardEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (shouldBlockReadonlyKey(event)) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+        }
+
+        container.addEventListener('beforeinput', handleBeforeInput, true)
+        container.addEventListener('paste', handlePaste, true)
+        container.addEventListener('drop', handleDrop, true)
+        container.addEventListener('cut', handleCut, true)
+        container.addEventListener('keydown', handleKeyDown, true)
+
+        return () => {
+            container.removeEventListener('beforeinput', handleBeforeInput, true)
+            container.removeEventListener('paste', handlePaste, true)
+            container.removeEventListener('drop', handleDrop, true)
+            container.removeEventListener('cut', handleCut, true)
+            container.removeEventListener('keydown', handleKeyDown, true)
+        }
+    }, [containerMounted, readonly])
 
     useEffect(() => {
         const handleSelectionChange = () => {
@@ -648,7 +726,7 @@ function BlockSuiteEditor(props: Props): React.JSX.Element {
     const statusMessage = getSaveStatusMessage()
 
     return (
-        <div className='BlockSuiteEditor'>
+        <div className={`BlockSuiteEditor ${readonly ? 'BlockSuiteEditor--readonly' : ''}`}>
             {statusMessage && (
                 <div className={`BlockSuiteEditor__saving BlockSuiteEditor__saving--${saveStatus}`}>
                     {statusMessage}

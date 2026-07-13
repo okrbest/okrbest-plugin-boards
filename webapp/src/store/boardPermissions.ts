@@ -46,5 +46,5 @@ export const {setBoardPermissions} = boardPermissionsSlice.actions
 export const {reducer} = boardPermissionsSlice
 
 export const getBoardPermissions = (boardId: string) => (state: RootState): BoardPermissionsResponse|undefined => {
-    return state.boardPermissions.byBoardId[boardId]
+    return state.boardPermissions?.byBoardId?.[boardId]
 }

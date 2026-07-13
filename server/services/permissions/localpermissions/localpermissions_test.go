@@ -111,6 +111,7 @@ func TestHasPermissionToBoard(t *testing.T) {
 
 		hasPermissionTo := []*mmModel.Permission{
 			model.PermissionViewBoard,
+			model.PermissionCommentBoardCards,
 		}
 
 		hasNotPermissionTo := []*mmModel.Permission{
@@ -143,6 +144,7 @@ func TestHasPermissionToBoard(t *testing.T) {
 			model.PermissionShareBoard,
 			model.PermissionManageBoardCards,
 			model.PermissionManageBoardProperties,
+			model.PermissionCommentBoardCards,
 		}
 
 		th.checkBoardPermissions("viewer", member, hasPermissionTo, hasNotPermissionTo)

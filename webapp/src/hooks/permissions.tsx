@@ -1,6 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {useMemo} from 'react'
 
 import {useAppSelector} from '../store/hooks'
 import {getMyBoardMembership, getCurrentBoardId, getBoard} from '../store/boards'
@@ -9,13 +10,14 @@ import {Permission} from '../constants'
 import {MemberRole} from '../blocks/board'
 import {getBoardPermissions} from '../store/boardPermissions'
 
-export type BoardCapability = 'canView' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard' | 'canDeleteBoard'
+export type BoardCapability = 'canView' | 'canCommentCard' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard' | 'canDeleteBoard'
 
 const permissionToCapability: Record<Permission, BoardCapability> = {
     [Permission.ViewBoard]: 'canView',
-    [Permission.CommentBoardCards]: 'canEditCard',
+    [Permission.CommentBoardCards]: 'canCommentCard',
     [Permission.ManageBoardCards]: 'canEditCard',
-    [Permission.ManageBoardProperties]: 'canManageBoard',
+    // Property edits are edit-level (not manage-level) in ACL model.
+    [Permission.ManageBoardProperties]: 'canEditCard',
     [Permission.ManageBoardRoles]: 'canManageBoard',
     [Permission.ManageBoardType]: 'canManageBoard',
     [Permission.ShareBoard]: 'canManageBoard',
@@ -25,9 +27,13 @@ const permissionToCapability: Record<Permission, BoardCapability> = {
 }
 
 export const useHasPermissions = (teamId: string, boardId: string, permissions: Permission[]): boolean => {
-    const capabilities = useAppSelector(getBoardPermissions(boardId))?.capabilities
-    const member = useAppSelector(getMyBoardMembership(boardId))
-    const board = useAppSelector(getBoard(boardId))
+    const boardPermissionsSelector = useMemo(() => getBoardPermissions(boardId), [boardId])
+    const myBoardMembershipSelector = useMemo(() => getMyBoardMembership(boardId), [boardId])
+    const boardSelector = useMemo(() => getBoard(boardId), [boardId])
+
+    const capabilities = useAppSelector(boardPermissionsSelector)?.capabilities
+    const member = useAppSelector(myBoardMembershipSelector)
+    const board = useAppSelector(boardSelector)
 
     if (!boardId || !teamId || permissions.length === 0) {
         return false
@@ -83,7 +89,8 @@ export const useHasPermissions = (teamId: string, boardId: string, permissions: 
 }
 
 export const useHasCapabilities = (boardId: string, capabilities: BoardCapability[]): boolean => {
-    const boardCapabilities = useAppSelector(getBoardPermissions(boardId))?.capabilities
+    const boardPermissionsSelector = useMemo(() => getBoardPermissions(boardId), [boardId])
+    const boardCapabilities = useAppSelector(boardPermissionsSelector)?.capabilities
     if (!boardId || capabilities.length === 0 || !boardCapabilities) {
         return false
     }

@@ -439,6 +439,7 @@
   "ViewHeader.filter": "필터",
   "ViewHeader.group-by": "{property}로 그룹화",
   "ViewHeader.new": "생성",
+  "ViewHeader.permission-required": "권한이 없어 변경할 수 없습니다. 보드 관리자에게 편집 권한을 요청하세요.",
   "ViewHeader.properties": "속성",
   "ViewHeader.properties-menu": "속성 메뉴",
   "ViewHeader.search-text": "카드 검색하기",

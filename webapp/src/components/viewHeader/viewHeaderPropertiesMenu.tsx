@@ -15,9 +15,11 @@ import MenuWrapper from '../../widgets/menuWrapper'
 type Props = {
     properties: readonly IPropertyTemplate[]
     activeView: BoardView
+    disabled?: boolean
+    disabledReason?: string
 }
 const ViewHeaderPropertiesMenu = (props: Props) => {
-    const {properties, activeView} = props
+    const {properties, activeView, disabled, disabledReason} = props
     const intl = useIntl()
     const {viewType, visiblePropertyIds} = activeView.fields
     const canShowBadges = viewType === 'board' || viewType === 'gallery' || viewType === 'calendar'
@@ -37,8 +39,12 @@ const ViewHeaderPropertiesMenu = (props: Props) => {
             label={intl.formatMessage({id: 'ViewHeader.properties-menu', defaultMessage: 'Properties menu'})}
             usePortal={true}
             menuPosition='bottom'
+            disabled={disabled}
         >
-            <Button>
+            <Button
+                disabled={disabled}
+                title={disabled ? disabledReason : undefined}
+            >
                 <FormattedMessage
                     id='ViewHeader.properties'
                     defaultMessage='Properties'

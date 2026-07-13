@@ -56,6 +56,9 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *mmMod
 	if permission == model.PermissionDeleteBoard {
 		return response.IsOwner
 	}
+	if permission == model.PermissionCommentBoardCards {
+		return response.Capabilities.CanCommentCard
+	}
 	return model.PermissionSatisfies(response.EffectivePermission, permission)
 }
 
@@ -111,7 +114,9 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 		effective = model.EffectiveBoardPermissionManage
 	} else if member.SchemeEditor {
 		effective = model.EffectiveBoardPermissionEdit
-	} else if member.SchemeCommenter || member.SchemeViewer {
+	} else if member.SchemeCommenter {
+		effective = model.EffectiveBoardPermissionCommenter
+	} else if member.SchemeViewer {
 		effective = model.EffectiveBoardPermissionView
 	}
 

@@ -75,6 +75,9 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *mmMod
 	if permission == model.PermissionDeleteBoard {
 		return resolved.IsOwner
 	}
+	if permission == model.PermissionCommentBoardCards {
+		return resolved.Capabilities.CanCommentCard
+	}
 
 	return model.PermissionSatisfies(resolved.EffectivePermission, permission)
 }
@@ -177,7 +180,9 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 			legacyPermission = model.EffectiveBoardPermissionManage
 		case "editor":
 			legacyPermission = model.EffectiveBoardPermissionEdit
-		case "commenter", "viewer":
+		case "commenter":
+			legacyPermission = model.EffectiveBoardPermissionCommenter
+		case "viewer":
 			legacyPermission = model.EffectiveBoardPermissionView
 		}
 		if legacyPermission != model.EffectiveBoardPermissionNone {
@@ -216,7 +221,9 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 			memberIsAdmin = true
 		} else if member.SchemeEditor {
 			memberPermission = model.EffectiveBoardPermissionEdit
-		} else if member.SchemeCommenter || member.SchemeViewer {
+		} else if member.SchemeCommenter {
+			memberPermission = model.EffectiveBoardPermissionCommenter
+		} else if member.SchemeViewer {
 			memberPermission = model.EffectiveBoardPermissionView
 		}
 
@@ -241,7 +248,7 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 	if model.EffectivePermissionRank(effective) < model.EffectivePermissionRank(model.EffectiveBoardPermissionView) {
 		resolveOrgContext()
 		if isCEO {
-			effective = model.EffectiveBoardPermissionView
+			effective = model.EffectiveBoardPermissionCommenter
 			derivedFrom = model.PermissionDerivedCEO
 		}
 	}
