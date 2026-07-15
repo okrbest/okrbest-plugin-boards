@@ -470,6 +470,12 @@ func (a *App) PatchBoard(patch *model.BoardPatch, boardID, userID string) (*mode
 				return nil, model.NewErrPermission("access denied to channel")
 			}
 		}
+
+		if patch.ChannelID != nil && *patch.ChannelID != "" && oldChannelID == "" &&
+			board.MinimumRole == model.BoardRoleNone && patch.MinimumRole == nil {
+			viewerRole := model.BoardRoleViewer
+			patch.MinimumRole = &viewerRole
+		}
 	}
 
 	updatedBoard, err := a.store.PatchBoard(boardID, patch, userID)

@@ -26,6 +26,7 @@ type Props = {
     user: IUser
     member: BoardMember
     isMe: boolean
+    isOwner: boolean
     teammateNameDisplay: string
     onDeleteBoardMember: (member: BoardMember) => void
     onUpdateBoardMember: (member: BoardMember, permission: string) => void
@@ -34,7 +35,7 @@ type Props = {
 const UserPermissionsRow = (props: Props): React.JSX.Element => {
     const intl = useIntl()
     const board = useAppSelector(getCurrentBoard)
-    const {user, member, isMe, teammateNameDisplay} = props
+    const {user, member, isMe, isOwner, teammateNameDisplay} = props
     let currentRole = MemberRole.Viewer
     let displayRole = intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})
     if (member.schemeAdmin) {
@@ -71,57 +72,67 @@ const UserPermissionsRow = (props: Props): React.JSX.Element => {
             </div>
             <div>
                 <BoardPermissionGate permissions={[Permission.ManageBoardRoles]}>
-                    <MenuWrapper>
-                        <button className='user-item__button'>
+                    {isOwner ? (
+                        <span className='user-item__button user-item__button--readonly'>
                             {displayRole}
                             <CompassIcon
                                 icon='chevron-down'
-                                className='CompassIcon'
+                                className='CompassIcon user-item__chevron-placeholder'
                             />
-                        </button>
-                        <Menu
-                            position='left'
-                            parentRef={menuWrapperRef}
-                        >
-                            {(board.minimumRole === MemberRole.Viewer || board.minimumRole === MemberRole.None) &&
+                        </span>
+                    ) : (
+                        <MenuWrapper>
+                            <button className='user-item__button'>
+                                {displayRole}
+                                <CompassIcon
+                                    icon='chevron-down'
+                                    className='CompassIcon'
+                                />
+                            </button>
+                            <Menu
+                                position='left'
+                                parentRef={menuWrapperRef}
+                            >
+                                {(board.minimumRole === MemberRole.Viewer || board.minimumRole === MemberRole.None) &&
+                                    <Menu.Text
+                                        id={MemberRole.Viewer}
+                                        check={true}
+                                        icon={currentRole === MemberRole.Viewer ? <CheckIcon/> : <div className='empty-icon'/>}
+                                        name={intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})}
+                                        onClick={() => props.onUpdateBoardMember(member, MemberRole.Viewer)}
+                                    />}
+                                {!board.isTemplate && (board.minimumRole === MemberRole.None || board.minimumRole === MemberRole.Commenter || board.minimumRole === MemberRole.Viewer) &&
+                                    <Menu.Text
+                                        id={MemberRole.Commenter}
+                                        check={true}
+                                        icon={currentRole === MemberRole.Commenter ? <CheckIcon/> : <div className='empty-icon'/>}
+                                        name={intl.formatMessage({id: 'BoardMember.schemeCommenter', defaultMessage: 'Commenter'})}
+                                        onClick={() => props.onUpdateBoardMember(member, MemberRole.Commenter)}
+                                    />}
                                 <Menu.Text
-                                    id={MemberRole.Viewer}
+                                    id={MemberRole.Editor}
                                     check={true}
-                                    icon={currentRole === MemberRole.Viewer ? <CheckIcon/> : <div className='empty-icon'/>}
-                                    name={intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})}
-                                    onClick={() => props.onUpdateBoardMember(member, MemberRole.Viewer)}
-                                />}
-                            {!board.isTemplate && (board.minimumRole === MemberRole.None || board.minimumRole === MemberRole.Commenter || board.minimumRole === MemberRole.Viewer) &&
+                                    icon={currentRole === MemberRole.Editor ? <CheckIcon/> : <div className='empty-icon'/>}
+                                    name={intl.formatMessage({id: 'BoardMember.schemeEditor', defaultMessage: 'Editor'})}
+                                    onClick={() => props.onUpdateBoardMember(member, MemberRole.Editor)}
+                                />
+                                {user.is_guest !== true &&
+                                    <Menu.Text
+                                        id={MemberRole.Admin}
+                                        check={true}
+                                        icon={currentRole === MemberRole.Admin ? <CheckIcon/> : <div className='empty-icon'/>}
+                                        name={intl.formatMessage({id: 'BoardMember.schemeAdmin', defaultMessage: 'Admin'})}
+                                        onClick={() => props.onUpdateBoardMember(member, MemberRole.Admin)}
+                                    />}
+                                <Menu.Separator/>
                                 <Menu.Text
-                                    id={MemberRole.Commenter}
-                                    check={true}
-                                    icon={currentRole === MemberRole.Commenter ? <CheckIcon/> : <div className='empty-icon'/>}
-                                    name={intl.formatMessage({id: 'BoardMember.schemeCommenter', defaultMessage: 'Commenter'})}
-                                    onClick={() => props.onUpdateBoardMember(member, MemberRole.Commenter)}
-                                />}
-                            <Menu.Text
-                                id={MemberRole.Editor}
-                                check={true}
-                                icon={currentRole === MemberRole.Editor ? <CheckIcon/> : <div className='empty-icon'/>}
-                                name={intl.formatMessage({id: 'BoardMember.schemeEditor', defaultMessage: 'Editor'})}
-                                onClick={() => props.onUpdateBoardMember(member, MemberRole.Editor)}
-                            />
-                            {user.is_guest !== true &&
-                                <Menu.Text
-                                    id={MemberRole.Admin}
-                                    check={true}
-                                    icon={currentRole === MemberRole.Admin ? <CheckIcon/> : <div className='empty-icon'/>}
-                                    name={intl.formatMessage({id: 'BoardMember.schemeAdmin', defaultMessage: 'Admin'})}
-                                    onClick={() => props.onUpdateBoardMember(member, MemberRole.Admin)}
-                                />}
-                            <Menu.Separator/>
-                            <Menu.Text
-                                id='Remove'
-                                name={intl.formatMessage({id: 'ShareBoard.userPermissionsRemoveMemberText', defaultMessage: 'Remove member'})}
-                                onClick={() => props.onDeleteBoardMember(member)}
-                            />
-                        </Menu>
-                    </MenuWrapper>
+                                    id='Remove'
+                                    name={intl.formatMessage({id: 'ShareBoard.userPermissionsRemoveMemberText', defaultMessage: 'Remove member'})}
+                                    onClick={() => props.onDeleteBoardMember(member)}
+                                />
+                            </Menu>
+                        </MenuWrapper>
+                    )}
                 </BoardPermissionGate>
                 <BoardPermissionGate
                     permissions={[Permission.ManageBoardRoles]}

@@ -22,7 +22,7 @@ import Tooltip from '../../widgets/tooltip'
 import mutator from '../../mutator'
 
 import {ISharing} from '../../blocks/sharing'
-import {ACLSubjectOption, BoardACLEntry, BoardPermissionsResponse, BoardMember, createBoard, MemberRole} from '../../blocks/board'
+import {ACLSubjectOption, BoardACLEntry, BoardMember, createBoard, MemberRole} from '../../blocks/board'
 
 import client from '../../octoClient'
 import Dialog from '../dialog'
@@ -89,12 +89,12 @@ const styles = {
 }
 
 type ACLPermission = 'view'|'commenter'|'edit'|'manage'
-type ACLSubjectMode = 'org_position'|'org_unit'|'position'
 type ACLEntryDraft = {
-    subjectType: ACLSubjectMode
+    permission: ACLPermission
+}
+type CreateACLDraft = {
     orgUnitId: string
     positionCode: string
-    subjectId: string
     permission: ACLPermission
 }
 
@@ -141,22 +141,14 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const [aclOptionsError, setACLOptionsError] = useState('')
     const [editingEntryKey, setEditingEntryKey] = useState('')
     const [entryDraft, setEntryDraft] = useState<ACLEntryDraft>({
-        subjectType: 'org_position',
-        orgUnitId: '',
-        positionCode: '',
-        subjectId: '',
         permission: 'view',
     })
     const [creatingEntry, setCreatingEntry] = useState(false)
-    const [createDraft, setCreateDraft] = useState<ACLEntryDraft>({
-        subjectType: 'org_position',
+    const [createDraft, setCreateDraft] = useState<CreateACLDraft>({
         orgUnitId: '',
         positionCode: '',
-        subjectId: '',
         permission: 'view',
     })
-    const [previewUserId, setPreviewUserId] = useState('')
-    const [previewResult, setPreviewResult] = useState<BoardPermissionsResponse|undefined>(undefined)
     const [transferOwnerUserId, setTransferOwnerUserId] = useState('')
     const [isOwnershipTransferring, setIsOwnershipTransferring] = useState(false)
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
@@ -269,6 +261,11 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     }
 
     const onUpdateBoardMember = (member: BoardMember, newPermission: string) => {
+        if (member.userId === ownerUserId) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerRoleProtected', defaultMessage: '소유자의 역할은 변경할 수 없습니다. 소유권 이전을 이용하세요.'}), severity: 'low'})
+            return
+        }
+
         if (member.userId === me?.id && isLastAdmin(Object.values(members))) {
             sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.lastAdmin', defaultMessage: 'Boards must have at least one Administrator'}), severity: 'low'})
             return
@@ -331,11 +328,9 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
         loadData()
     }, [boardId, hasSharePermissions, canManageACL])
 
-    const buildDefaultDraft = (subjectType: ACLSubjectMode): ACLEntryDraft => ({
-        subjectType,
+    const defaultCreateDraft = (): CreateACLDraft => ({
         orgUnitId: '',
         positionCode: '',
-        subjectId: '',
         permission: 'view',
     })
 
@@ -343,35 +338,19 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
         return entry.id || `${entry.subjectType}-${entry.subjectId}-${entry.orgUnitId || ''}-${entry.positionCode || ''}-${entry.permission}-${index}`
     }
 
-    const validateDraft = (draft: ACLEntryDraft): boolean => {
-        if (draft.subjectType === 'org_position') {
-            if (!draft.orgUnitId || !draft.positionCode) {
-                sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.orgPosRequired', defaultMessage: '부서와 직위를 모두 선택하세요.'}), severity: 'low'})
-                return false
-            }
-            return true
-        }
-
-        if (draft.subjectType === 'org_unit') {
-            if (!draft.subjectId) {
-                sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.orgRequired', defaultMessage: '부서를 선택하세요.'}), severity: 'low'})
-                return false
-            }
-            return true
-        }
-
-        if (!draft.subjectId) {
-            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.positionRequired', defaultMessage: '직위를 선택하세요.'}), severity: 'low'})
+    const validateCreateDraft = (draft: CreateACLDraft): boolean => {
+        if (!draft.orgUnitId && !draft.positionCode) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.orgOrPositionRequired', defaultMessage: '부서 또는 직위를 선택하세요.'}), severity: 'low'})
             return false
         }
         return true
     }
 
-    const draftToEntry = (draft: ACLEntryDraft, source?: BoardACLEntry): BoardACLEntry => {
+    const createDraftToEntry = (draft: CreateACLDraft): BoardACLEntry => {
         const normalizedPermission = normalizePermissionForSubject(draft.permission)
-        if (draft.subjectType === 'org_position') {
+        if (draft.orgUnitId && draft.positionCode) {
             return {
-                id: source?.id || '',
+                id: '',
                 subjectType: 'org_position',
                 subjectId: '',
                 orgUnitId: draft.orgUnitId,
@@ -380,19 +359,19 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             }
         }
 
-        if (draft.subjectType === 'org_unit') {
+        if (draft.orgUnitId) {
             return {
-                id: source?.id || '',
+                id: '',
                 subjectType: 'org_unit',
-                subjectId: draft.subjectId,
+                subjectId: draft.orgUnitId,
                 permission: normalizedPermission,
             }
         }
 
         return {
-            id: source?.id || '',
+            id: '',
             subjectType: 'position',
-            subjectId: draft.subjectId,
+            subjectId: draft.positionCode,
             permission: normalizedPermission,
         }
     }
@@ -402,45 +381,49 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
         setAclEntries(saved)
     }
 
+    const getACLSubjectDuplicateKey = (entry: BoardACLEntry): string => {
+        if (entry.subjectType === 'org_position') {
+            return `org_position:${entry.orgUnitId}:${entry.positionCode}`
+        }
+        return `${entry.subjectType}:${entry.subjectId}`
+    }
+
     const startCreateEntry = () => {
-        const defaultMode: ACLSubjectMode = 'org_position'
-        setCreateDraft(buildDefaultDraft(defaultMode))
+        setCreateDraft(defaultCreateDraft())
         setCreatingEntry(true)
     }
 
     const saveNewEntry = async () => {
-        if (!validateDraft(createDraft)) {
+        if (!validateCreateDraft(createDraft)) {
             return
         }
-        const entry = draftToEntry(createDraft)
+        const entry = createDraftToEntry(createDraft)
+        const duplicateKey = getACLSubjectDuplicateKey(entry)
+        const isDuplicate = aclEntries.some((existing) => getACLSubjectDuplicateKey(existing) === duplicateKey)
+        if (isDuplicate) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.duplicateEntry', defaultMessage: '이미 동일한 부서/직위 조합의 권한이 등록되어 있습니다.'}), severity: 'low'})
+            return
+        }
         const nextEntries = [...aclEntries, entry]
         await saveACL(nextEntries)
         setCreatingEntry(false)
-        setCreateDraft(buildDefaultDraft(createDraft.subjectType))
+        setCreateDraft(defaultCreateDraft())
     }
 
     const startEditEntry = (entry: BoardACLEntry, index: number) => {
         const entryKey = getACLEntryKey(entry, index)
         setEditingEntryKey(entryKey)
         setEntryDraft({
-            subjectType: entry.subjectType === 'org_unit' ? 'org_unit' : (entry.subjectType === 'position' ? 'position' : 'org_position'),
-            orgUnitId: entry.orgUnitId || (entry.subjectType === 'org_unit' ? entry.subjectId : ''),
-            positionCode: entry.positionCode || (entry.subjectType === 'position' ? entry.subjectId : ''),
-            subjectId: entry.subjectType === 'org_position' ? '' : entry.subjectId || '',
             permission: normalizePermissionForSubject(toACLPermission(entry.permission)),
         })
     }
 
     const saveEditedEntry = async (entry: BoardACLEntry, index: number) => {
-        if (!validateDraft(entryDraft)) {
-            return
-        }
-
         const nextEntries = aclEntries.map((item, itemIndex) => {
             if (itemIndex !== index) {
                 return item
             }
-            return draftToEntry(entryDraft, entry)
+            return {...item, permission: normalizePermissionForSubject(entryDraft.permission)}
         })
         await saveACL(nextEntries)
         setEditingEntryKey('')
@@ -449,16 +432,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const removeACLEntry = async (index: number) => {
         const nextEntries = aclEntries.filter((_, itemIndex) => itemIndex !== index)
         await saveACL(nextEntries)
-    }
-
-    const runPermissionPreview = async () => {
-        const targetUserId = previewUserId.trim()
-        if (!targetUserId) {
-            setPreviewResult(undefined)
-            return
-        }
-        const preview = await client.getBoardPermissionsPreview(boardId, targetUserId)
-        setPreviewResult(preview)
     }
 
     const managerMembers = Object.values(members).filter((member) => member.schemeAdmin && !member.synthetic)
@@ -588,10 +561,10 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     let confirmSubtext
     let confirmButtonText
     if (board.channelId === '') {
-        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to edit it. This excludes members who are guests.'})
+        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to view it. This excludes members who are guests. An admin can change this default permission afterwards.'})
         confirmButtonText = intl.formatMessage({id: 'shareBoard.confirm-link-channel-button', defaultMessage: 'Link channel'})
     } else {
-        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext-with-other-channel', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to edit it. This excludes members who are guests.{lineBreak}This board is currently linked to another channel.\nIt will be unlinked if you choose to link it here.'}, {lineBreak: <p/>})
+        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext-with-other-channel', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to view it. This excludes members who are guests. An admin can change this default permission afterwards.{lineBreak}This board is currently linked to another channel.\nIt will be unlinked if you choose to link it here.'}, {lineBreak: <p/>})
         confirmButtonText = intl.formatMessage({id: 'shareBoard.confirm-link-channel-button-with-other-channel', defaultMessage: 'Unlink and link here'})
     }
 
@@ -692,6 +665,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                             onDeleteBoardMember={onDeleteBoardMember}
                             onUpdateBoardMember={onUpdateBoardMember}
                             isMe={user.id === me?.id}
+                            isOwner={user.id === ownerUserId}
                         />
                     )
                 })}
@@ -768,97 +742,26 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
 
                         return (
                             <div key={entryKey} className='ShareBoardDialog__acl-row'>
-                                {isEditing && entryDraft.subjectType === 'org_position' && (
-                                    <>
-                                        <select
-                                            value={entryDraft.orgUnitId}
-                                            onChange={(e) => setEntryDraft((prev) => ({...prev, orgUnitId: e.target.value}))}
-                                            className='form-control'
-                                            disabled={isACLOptionsLoading}
-                                        >
-                                            <option value=''>부서 선택</option>
-                                            {orgUnitOptions.map((option) => (
-                                                <option key={option.id} value={option.id}>{option.name}</option>
-                                            ))}
-                                        </select>
-                                        <select
-                                            value={entryDraft.positionCode}
-                                            onChange={(e) => setEntryDraft((prev) => ({...prev, positionCode: e.target.value}))}
-                                            className='form-control'
-                                            disabled={isACLOptionsLoading}
-                                        >
-                                            <option value=''>직위 선택</option>
-                                            {positionOptions.map((option) => (
-                                                <option key={option.id} value={option.id}>{option.name}</option>
-                                            ))}
-                                        </select>
-                                    </>
-                                )}
+                                <span>{orgLabel}</span>
+                                <span>{positionLabel}</span>
 
-                                {isEditing && entryDraft.subjectType === 'org_unit' && (
-                                    <>
-                                        <span className='text-light'>부서</span>
-                                        <select
-                                            value={entryDraft.subjectId}
-                                            onChange={(e) => setEntryDraft((prev) => ({...prev, subjectId: e.target.value}))}
-                                            className='form-control'
-                                            disabled={isACLOptionsLoading}
-                                        >
-                                            <option value=''>부서 선택</option>
-                                            {orgUnitOptions.map((option) => (
-                                                <option key={option.id} value={option.id}>{option.name}</option>
-                                            ))}
-                                        </select>
-                                    </>
-                                )}
-
-                                {isEditing && entryDraft.subjectType === 'position' && (
-                                    <>
-                                        <span className='text-light'>직위</span>
-                                        <select
-                                            value={entryDraft.subjectId}
-                                            onChange={(e) => setEntryDraft((prev) => ({...prev, subjectId: e.target.value}))}
-                                            className='form-control'
-                                            disabled={isACLOptionsLoading}
-                                        >
-                                            <option value=''>직위 선택</option>
-                                            {positionOptions.map((option) => (
-                                                <option key={option.id} value={option.id}>{option.name}</option>
-                                            ))}
-                                        </select>
-                                    </>
-                                )}
-
-                                {!isEditing && (
-                                    <>
-                                        <span>{orgLabel}</span>
-                                        <span>{positionLabel}</span>
-                                    </>
-                                )}
-
-                                <select
-                                    value={activePermission}
-                                    onChange={(e) => {
-                                        const next = e.target.value as ACLPermission
-                                        if (isEditing) {
+                                {isEditing ? (
+                                    <select
+                                        value={activePermission}
+                                        onChange={(e) => {
+                                            const next = e.target.value as ACLPermission
                                             setEntryDraft((prev) => ({...prev, permission: normalizePermissionForSubject(next)}))
-                                            return
-                                        }
-                                        const nextEntries = aclEntries.map((item, itemIndex) => {
-                                            if (itemIndex !== index) {
-                                                return item
-                                            }
-                                            return {...item, permission: normalizePermissionForSubject(next)}
-                                        })
-                                        void saveACL(nextEntries)
-                                    }}
-                                    className='form-control'
-                                    disabled={isACLOptionsLoading}
-                                >
-                                    {permissionOptions.map((permissionOption) => (
-                                        <option key={`${entryKey}-${permissionOption}`} value={permissionOption}>{permissionOption}</option>
-                                    ))}
-                                </select>
+                                        }}
+                                        className='form-control'
+                                        disabled={isACLOptionsLoading}
+                                    >
+                                        {permissionOptions.map((permissionOption) => (
+                                            <option key={`${entryKey}-${permissionOption}`} value={permissionOption}>{permissionOption}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <span>{activePermission}</span>
+                                )}
 
                                 <div className='ShareBoardDialog__acl-actions'>
                                     {!isEditing && (
@@ -886,74 +789,29 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
 
                     {creatingEntry && (
                         <div className='ShareBoardDialog__acl-row ShareBoardDialog__acl-row--editing'>
-                            <div className='ShareBoardDialog__acl-create-primary'>
-                                <select
-                                    value={createDraft.subjectType}
-                                    onChange={(e) => setCreateDraft(buildDefaultDraft(e.target.value as ACLSubjectMode))}
-                                    className='form-control'
-                                >
-                                    <option value='org_position'>부서+직위</option>
-                                    <option value='position'>직위</option>
-                                    <option value='org_unit'>부서</option>
-                                </select>
+                            <select
+                                value={createDraft.orgUnitId}
+                                onChange={(e) => setCreateDraft((prev) => ({...prev, orgUnitId: e.target.value}))}
+                                className='form-control'
+                                disabled={isACLOptionsLoading}
+                            >
+                                <option value=''>부서 선택</option>
+                                {orgUnitOptions.map((option) => (
+                                    <option key={option.id} value={option.id}>{option.name}</option>
+                                ))}
+                            </select>
 
-                                {(createDraft.subjectType === 'org_position' || createDraft.subjectType === 'org_unit') && (
-                                    <select
-                                        value={createDraft.subjectType === 'org_position' ? createDraft.orgUnitId : createDraft.subjectId}
-                                        onChange={(e) => {
-                                            const nextValue = e.target.value
-                                            if (createDraft.subjectType === 'org_position') {
-                                                setCreateDraft((prev) => ({...prev, orgUnitId: nextValue}))
-                                                return
-                                            }
-                                            setCreateDraft((prev) => ({...prev, subjectId: nextValue}))
-                                        }}
-                                        className='form-control'
-                                        disabled={isACLOptionsLoading}
-                                    >
-                                        <option value=''>부서 선택</option>
-                                        {orgUnitOptions.map((option) => (
-                                            <option key={option.id} value={option.id}>{option.name}</option>
-                                        ))}
-                                    </select>
-                                )}
-
-                                {createDraft.subjectType === 'position' && (
-                                    <span className='text-light ShareBoardDialog__acl-create-label'>직위</span>
-                                )}
-                            </div>
-
-                            <div className='ShareBoardDialog__acl-create-secondary'>
-                                {createDraft.subjectType === 'org_position' && (
-                                    <select
-                                        value={createDraft.positionCode}
-                                        onChange={(e) => setCreateDraft((prev) => ({...prev, positionCode: e.target.value}))}
-                                        className='form-control'
-                                        disabled={isACLOptionsLoading}
-                                    >
-                                        <option value=''>직위 선택</option>
-                                        {positionOptions.map((option) => (
-                                            <option key={option.id} value={option.id}>{option.name}</option>
-                                        ))}
-                                    </select>
-                                )}
-                                {createDraft.subjectType === 'position' && (
-                                    <select
-                                        value={createDraft.subjectId}
-                                        onChange={(e) => setCreateDraft((prev) => ({...prev, subjectId: e.target.value}))}
-                                        className='form-control'
-                                        disabled={isACLOptionsLoading}
-                                    >
-                                        <option value=''>직위 선택</option>
-                                        {positionOptions.map((option) => (
-                                            <option key={option.id} value={option.id}>{option.name}</option>
-                                        ))}
-                                    </select>
-                                )}
-                                {createDraft.subjectType === 'org_unit' && (
-                                    <span className='text-light'>-</span>
-                                )}
-                            </div>
+                            <select
+                                value={createDraft.positionCode}
+                                onChange={(e) => setCreateDraft((prev) => ({...prev, positionCode: e.target.value}))}
+                                className='form-control'
+                                disabled={isACLOptionsLoading}
+                            >
+                                <option value=''>직위 선택</option>
+                                {positionOptions.map((option) => (
+                                    <option key={option.id} value={option.id}>{option.name}</option>
+                                ))}
+                            </select>
 
                             <select
                                 value={createDraft.permission}
@@ -970,12 +828,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     emphasis='secondary'
                                     size='small'
                                     onClick={saveNewEntry}
-                                    disabled={
-                                        isACLOptionsLoading ||
-                                        (createDraft.subjectType === 'org_position' && (!createDraft.orgUnitId || !createDraft.positionCode)) ||
-                                        (createDraft.subjectType === 'org_unit' && !createDraft.subjectId) ||
-                                        (createDraft.subjectType === 'position' && !createDraft.subjectId)
-                                    }
+                                    disabled={isACLOptionsLoading || (!createDraft.orgUnitId && !createDraft.positionCode)}
                                 >
                                     <FormattedMessage id='shareBoard.acl.addEntry' defaultMessage='추가'/>
                                 </Button>
@@ -1072,38 +925,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             </div>
             }
 
-            {canManageACL &&
-            <div className='tabs-content'>
-                <div className='text-heading2 mb-2'>
-                    <FormattedMessage
-                        id='shareBoard.permissionPreview.title'
-                        defaultMessage='권한 미리보기'
-                    />
-                </div>
-                <div className='d-flex mb-2'>
-                    <input
-                        value={previewUserId}
-                        onChange={(e) => setPreviewUserId(e.target.value)}
-                        className='form-control mr-1'
-                        placeholder='preview userId'
-                    />
-                    <Button onClick={runPermissionPreview}>
-                        <FormattedMessage
-                            id='shareBoard.permissionPreview.run'
-                            defaultMessage='미리보기'
-                        />
-                    </Button>
-                </div>
-                {previewResult &&
-                    <div className='text-light'>
-                        <div>{`effectivePermission: ${previewResult.effectivePermission}`}</div>
-                        <div>{`derivedFrom: ${previewResult.derivedFrom}`}</div>
-                        <div>{`isOwner: ${String(previewResult.isOwner)}`}</div>
-                        <div>{`canView: ${String(previewResult.capabilities.canView)}, canCreateCard: ${String(previewResult.capabilities.canCreateCard)}, canEditCard: ${String(previewResult.capabilities.canEditCard)}, canDeleteCard: ${String(previewResult.capabilities.canDeleteCard)}, canManageBoard: ${String(previewResult.capabilities.canManageBoard)}, canDeleteBoard: ${String(previewResult.capabilities.canDeleteBoard)}`}</div>
-                    </div>
-                }
-            </div>
-            }
 
             {props.enableSharedBoards && !board.isTemplate && (
                 <div className='tabs-container'>

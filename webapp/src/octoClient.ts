@@ -929,20 +929,6 @@ class OctoClient {
         return this.getJson<BoardPermissionsResponse>(response, {} as BoardPermissionsResponse)
     }
 
-    async getBoardPermissionsPreview(boardID: string, userID: string): Promise<BoardPermissionsResponse | undefined> {
-        const path = `/api/v2/boards/${boardID}/permissions/preview?userID=${encodeURIComponent(userID)}`
-        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
-            method: 'GET',
-            headers: this.headers(),
-        }))
-
-        if (response.status !== 200) {
-            return undefined
-        }
-
-        return this.getJson<BoardPermissionsResponse>(response, {} as BoardPermissionsResponse)
-    }
-
     async getBoardACL(boardID: string): Promise<BoardACLEntry[]> {
         const path = `/api/v2/boards/${boardID}/acl`
         const response = await fetch(this.getBaseURL() + path, Client4.getOptions({

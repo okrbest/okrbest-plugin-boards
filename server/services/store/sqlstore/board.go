@@ -679,14 +679,19 @@ func (s *SQLStore) getMemberForBoard(db sq.BaseRunner, boardID, userID string) (
 				return nil, memberErr
 			}
 
+			channelRole := b.MinimumRole
+			if channelRole == model.BoardRoleNone {
+				channelRole = model.BoardRoleEditor
+			}
+
 			return &model.BoardMember{
 				BoardID:         boardID,
 				UserID:          userID,
-				Roles:           "editor",
-				SchemeAdmin:     false,
-				SchemeEditor:    true,
-				SchemeCommenter: false,
-				SchemeViewer:    false,
+				Roles:           string(channelRole),
+				SchemeAdmin:     channelRole == model.BoardRoleAdmin,
+				SchemeEditor:    channelRole == model.BoardRoleEditor || channelRole == model.BoardRoleAdmin,
+				SchemeCommenter: channelRole == model.BoardRoleCommenter,
+				SchemeViewer:    channelRole == model.BoardRoleViewer,
 				Synthetic:       true,
 			}, nil
 		}

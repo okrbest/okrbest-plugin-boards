@@ -228,6 +228,19 @@
             }
         }
 
+        .user-item__button--readonly {
+            color: rgba(var(--center-channel-color-rgb), 0.75);
+            cursor: default;
+
+            &:hover {
+                text-decoration: none;
+            }
+
+            .user-item__chevron-placeholder {
+                visibility: hidden;
+            }
+        }
+
         .Menu {
             position: fixed;
             left: 53%;
@@ -309,23 +322,6 @@
         justify-content: flex-end;
         gap: 4px;
         flex-wrap: nowrap;
-    }
-
-    .ShareBoardDialog__acl-create-primary {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 0;
-    }
-
-    .ShareBoardDialog__acl-create-secondary {
-        display: flex;
-        align-items: center;
-        min-width: 0;
-    }
-
-    .ShareBoardDialog__acl-create-label {
-        line-height: 1.2;
     }
 
     .ShareBoardDialog__acl-empty {

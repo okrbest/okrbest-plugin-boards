@@ -452,6 +452,16 @@ func (a *API) handleUpdateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	board, err := a.app.GetBoard(boardID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+	if paramsUserID == model.ResolveBoardOwnerUserID(board) {
+		a.errorResponse(w, r, model.NewErrBadRequest("owner's role cannot be changed here; use ownership transfer"))
+		return
+	}
+
 	oldMember, memberErr := a.app.GetMemberForBoard(boardID, paramsUserID)
 	if memberErr == nil && oldMember != nil && oldMember.SchemeAdmin && !newBoardMember.SchemeAdmin {
 		canRemoveLastAdmin, canErr := a.canDowngradeLastBoardManager(boardID, paramsUserID)
