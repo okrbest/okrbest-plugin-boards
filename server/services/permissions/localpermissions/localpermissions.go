@@ -49,9 +49,45 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *mmMod
 		return false
 	}
 
+	response, err := s.GetBoardPermissions(userID, boardID)
+	if err != nil {
+		return false
+	}
+	if permission == model.PermissionDeleteBoard {
+		return response.IsOwner
+	}
+	if permission == model.PermissionCommentBoardCards {
+		return response.Capabilities.CanCommentCard
+	}
+	return model.PermissionSatisfies(response.EffectivePermission, permission)
+}
+
+// ResolveOrgContext is always empty in local/standalone mode: there is no
+// Mattermost user/org context available to resolve.
+func (s *Service) ResolveOrgContext(userID string) (orgUnits []string, positions []string, isCEO bool) {
+	return nil, nil, false
+}
+
+func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermissionsResponse, error) {
+	if userID == "" || boardID == "" {
+		return &model.BoardPermissionsResponse{
+			BoardID:             boardID,
+			EffectivePermission: model.EffectiveBoardPermissionNone,
+			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone, false),
+			DerivedFrom:         model.PermissionDerivedDeny,
+			IsOwner:             false,
+		}, nil
+	}
+
 	member, err := s.store.GetMemberForBoard(boardID, userID)
 	if model.IsErrNotFound(err) {
-		return false
+		return &model.BoardPermissionsResponse{
+			BoardID:             boardID,
+			EffectivePermission: model.EffectiveBoardPermissionNone,
+			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone, false),
+			DerivedFrom:         model.PermissionDerivedDeny,
+			IsOwner:             false,
+		}, nil
 	}
 	if err != nil {
 		s.logger.Error("error getting member for board",
@@ -59,7 +95,7 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *mmMod
 			mlog.String("userID", userID),
 			mlog.Err(err),
 		)
-		return false
+		return nil, err
 	}
 
 	switch member.MinimumRole {
@@ -73,16 +109,23 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *mmMod
 		member.SchemeViewer = true
 	}
 
-	switch permission {
-	case model.PermissionManageBoardType, model.PermissionDeleteBoard, model.PermissionManageBoardRoles, model.PermissionShareBoard, model.PermissionDeleteOthersComments:
-		return member.SchemeAdmin
-	case model.PermissionManageBoardCards, model.PermissionManageBoardProperties:
-		return member.SchemeAdmin || member.SchemeEditor
-	case model.PermissionCommentBoardCards:
-		return member.SchemeAdmin || member.SchemeEditor || member.SchemeCommenter
-	case model.PermissionViewBoard:
-		return member.SchemeAdmin || member.SchemeEditor || member.SchemeCommenter || member.SchemeViewer
-	default:
-		return false
+	effective := model.EffectiveBoardPermissionNone
+	if member.SchemeAdmin {
+		effective = model.EffectiveBoardPermissionManage
+	} else if member.SchemeEditor {
+		effective = model.EffectiveBoardPermissionEdit
+	} else if member.SchemeCommenter {
+		effective = model.EffectiveBoardPermissionCommenter
+	} else if member.SchemeViewer {
+		effective = model.EffectiveBoardPermissionView
 	}
+
+	derivedFrom := model.PermissionDerivedMember
+	return &model.BoardPermissionsResponse{
+		BoardID:             boardID,
+		EffectivePermission: effective,
+		Capabilities:        model.BuildCapabilities(effective, false),
+		DerivedFrom:         derivedFrom,
+		IsOwner:             false,
+	}, nil
 }

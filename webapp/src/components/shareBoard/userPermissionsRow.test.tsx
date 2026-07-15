@@ -86,6 +86,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                         <UserPermissionsRow
                             user={me}
                             isMe={true}
+                            isOwner={false}
                             member={state.boards.myBoardMemberships[board.id] as BoardMember}
                             teammateNameDisplay={'test'}
                             onDeleteBoardMember={() => {}}
@@ -118,6 +119,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                         <UserPermissionsRow
                             user={newMe}
                             isMe={true}
+                            isOwner={false}
                             member={state.boards.myBoardMemberships[board.id] as BoardMember}
                             teammateNameDisplay={'test'}
                             onDeleteBoardMember={() => {}}
@@ -147,6 +149,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                         <UserPermissionsRow
                             user={me}
                             isMe={true}
+                            isOwner={false}
                             member={state.boards.myBoardMemberships[board.id] as BoardMember}
                             teammateNameDisplay={'test'}
                             onDeleteBoardMember={() => {}}
@@ -186,6 +189,7 @@ describe('src/components/shareBoard/userPermissionsRow', () => {
                         <UserPermissionsRow
                             user={me}
                             isMe={true}
+                            isOwner={false}
                             member={state.boards.myBoardMemberships[board.id] as BoardMember}
                             teammateNameDisplay={'test'}
                             onDeleteBoardMember={() => {}}

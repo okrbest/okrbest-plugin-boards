@@ -20,6 +20,7 @@ import './sidebar.scss'
 import {
     BoardCategoryWebsocketData,
     Category,
+    CategoryBoardMetadata,
     CategoryBoards,
     fetchSidebarCategories,
     getSidebarCategories,
@@ -163,10 +164,6 @@ const Sidebar = (props: Props) => {
         }
     }, [teamId])
 
-    if (!boards) {
-        return <div/>
-    }
-
     const hideSidebar = () => {
         if (!userHidden) {
             if (windowDimensions.width < 768) {
@@ -199,7 +196,7 @@ const Sidebar = (props: Props) => {
         // optimistically updating the store to produce a lag-free UI
         await dispatch(updateCategoryOrder(newCategoryOrder))
         await octoClient.reorderSidebarCategories(team.id, newCategoryOrder)
-    }, [team, sidebarCategories])
+    }, [team, sidebarCategories, boards])
 
     const handleCategoryBoardDND = useCallback(async (result: DropResult) => {
         const {source, destination, draggableId} = result
@@ -313,7 +310,7 @@ const Sidebar = (props: Props) => {
                 dispatch(fetchSidebarCategories(team.id))
             }
         }
-    }, [team, sidebarCategories])
+    }, [team, sidebarCategories, boards])
 
     const onDragEnd = useCallback(async (result: DropResult) => {
         const {destination, source, type} = result
@@ -340,7 +337,7 @@ const Sidebar = (props: Props) => {
 
         setDraggedItemID('')
         setIsCategoryBeingDragged(false)
-    }, [team, sidebarCategories])
+    }, [team, handleCategoryDND, handleCategoryBoardDND])
 
     const [draggedItemID, setDraggedItemID] = useState<string>('')
     const [isCategoryBeingDragged, setIsCategoryBeingDragged] = useState<boolean>(false)
@@ -378,6 +375,30 @@ const Sidebar = (props: Props) => {
                 </div>
             </div>
         )
+    }
+
+    const getCategoryWithRecoveredBoards = (category: CategoryBoards): CategoryBoards => {
+        if (category.name !== 'Boards') {
+            return category
+        }
+
+        const mappedBoardIDs = new Set(
+            sidebarCategories.flatMap((sidebarCategory) =>
+                sidebarCategory.boardMetadata.map((metadata) => metadata.boardID),
+            ),
+        )
+        const missingBoardMetadata: CategoryBoardMetadata[] = boards.
+            filter((board) => !mappedBoardIDs.has(board.id)).
+            map((board) => ({boardID: board.id, hidden: false}))
+
+        if (missingBoardMetadata.length === 0) {
+            return category
+        }
+
+        return {
+            ...category,
+            boardMetadata: [...category.boardMetadata, ...missingBoardMetadata],
+        }
     }
 
     const getSortedCategoryBoards = (category: CategoryBoards): Board[] => {
@@ -459,21 +480,22 @@ const Sidebar = (props: Props) => {
                             className='octo-sidebar-list'
                         >
                             {
-                                sidebarCategories.map((category, index) => (
-                                    <SidebarCategory
+                                sidebarCategories.map((category, index) => {
+                                    const resolvedCategory = getCategoryWithRecoveredBoards(category)
+                                    return <SidebarCategory
                                         hideSidebar={hideSidebar}
                                         key={category.id}
                                         activeBoardID={props.activeBoardId}
                                         activeViewID={activeViewID}
-                                        categoryBoards={category}
-                                        boards={getSortedCategoryBoards(category)}
+                                        categoryBoards={resolvedCategory}
+                                        boards={getSortedCategoryBoards(resolvedCategory)}
                                         allCategories={sidebarCategories}
                                         index={index}
                                         onBoardTemplateSelectorClose={props.onBoardTemplateSelectorClose}
                                         draggedItemID={draggedItemID}
                                         forceCollapse={isCategoryBeingDragged}
                                     />
-                                ))
+                                })
                             }
                             {provided.placeholder}
                         </div>

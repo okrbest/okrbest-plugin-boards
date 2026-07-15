@@ -529,7 +529,7 @@ func TestSearchBoards(t *testing.T) {
 			Type:   model.BoardTypePrivate,
 			TeamID: "other-team-id",
 		}
-		rBoard5, err := th.Server.App().CreateBoard(board5, user1.ID, true)
+		_, err = th.Server.App().CreateBoard(board5, user1.ID, true)
 		require.NoError(t, err)
 
 		testCases := []struct {
@@ -539,16 +539,16 @@ func TestSearchBoards(t *testing.T) {
 			ExpectedIDs []string
 		}{
 			{
-				Name:        "should return all boards where user1 is member or that are public",
+				Name:        "should return all matching boards in the requested team where user1 is member or that are public",
 				Client:      th.Client,
 				Term:        "board",
-				ExpectedIDs: []string{rBoard1.ID, rBoard2.ID, rBoard3.ID, rBoard5.ID},
+				ExpectedIDs: []string{rBoard1.ID, rBoard2.ID, rBoard3.ID},
 			},
 			{
 				Name:        "matching a full word",
 				Client:      th.Client,
 				Term:        "admin",
-				ExpectedIDs: []string{rBoard1.ID, rBoard3.ID, rBoard5.ID},
+				ExpectedIDs: []string{rBoard1.ID, rBoard3.ID},
 			},
 			{
 				Name:        "matching part of the word",
@@ -583,6 +583,96 @@ func TestSearchBoards(t *testing.T) {
 				require.ElementsMatch(t, tc.ExpectedIDs, boardIDs)
 			})
 		}
+	})
+}
+
+func TestBoardListAndSearchIncludeDirectACLBoards(t *testing.T) {
+	t.Run("team member with direct user ACL should discover private board in list and search", func(t *testing.T) {
+		th := SetupTestHelper(t).InitBasic()
+		defer th.TearDown()
+
+		teamID := testTeamID
+		ownerID := th.GetUser1().ID
+		aclUserID := th.GetUser2().ID
+
+		aclBoard := &model.Board{
+			Title:  "acl discoverable board",
+			Type:   model.BoardTypePrivate,
+			TeamID: teamID,
+		}
+		createdACLBoard, err := th.Server.App().CreateBoard(aclBoard, ownerID, false)
+		require.NoError(t, err)
+
+		hiddenBoard := &model.Board{
+			Title:  "hidden private board",
+			Type:   model.BoardTypePrivate,
+			TeamID: teamID,
+		}
+		createdHiddenBoard, err := th.Server.App().CreateBoard(hiddenBoard, ownerID, false)
+		require.NoError(t, err)
+
+		aclPatch := &model.BoardPatch{
+			UpdatedProperties: map[string]interface{}{
+				model.BoardACLPropertyKey: []model.BoardACLEntry{
+					{
+						ID:          "acl-entry-user2-view",
+						SubjectType: model.BoardACLSubjectUser,
+						SubjectID:   aclUserID,
+						Permission:  model.EffectiveBoardPermissionView,
+					},
+				},
+			},
+		}
+		_, err = th.Server.App().PatchBoard(aclPatch, createdACLBoard.ID, ownerID)
+		require.NoError(t, err)
+
+		boards, resp := th.Client2.GetBoardsForTeam(teamID)
+		th.CheckOK(resp)
+		boardIDs := []string{}
+		for _, board := range boards {
+			boardIDs = append(boardIDs, board.ID)
+		}
+		require.Contains(t, boardIDs, createdACLBoard.ID)
+		require.NotContains(t, boardIDs, createdHiddenBoard.ID)
+
+		searchResults, resp := th.Client2.SearchBoardsForTeam(teamID, "discoverable")
+		th.CheckOK(resp)
+		searchIDs := []string{}
+		for _, board := range searchResults {
+			searchIDs = append(searchIDs, board.ID)
+		}
+		require.Contains(t, searchIDs, createdACLBoard.ID)
+		require.NotContains(t, searchIDs, createdHiddenBoard.ID)
+	})
+}
+
+func TestBoardsDebugHeaders(t *testing.T) {
+	t.Run("debug_permissions query returns diagnostic headers", func(t *testing.T) {
+		th := SetupTestHelper(t).InitBasic()
+		defer th.TearDown()
+
+		board := &model.Board{
+			Title:  "debug board",
+			Type:   model.BoardTypeOpen,
+			TeamID: testTeamID,
+		}
+		_, err := th.Server.App().CreateBoard(board, th.GetUser1().ID, true)
+		require.NoError(t, err)
+
+		resp, err := th.Client.DoAPIGet(th.Client.GetTeamRoute(testTeamID)+"/boards?debug_permissions=1", "")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		require.Equal(t, "true", resp.Header.Get("X-Boards-Debug-TeamAccess"))
+		require.NotEmpty(t, resp.Header.Get("X-Boards-Debug-IsGuest"))
+		require.NotEmpty(t, resp.Header.Get("X-Boards-Debug-IsCEO"))
+		require.NotEmpty(t, resp.Header.Get("X-Boards-Debug-BoardsCount"))
+		require.NotEmpty(t, resp.Header.Get("X-Boards-Debug-OrgContextSource"))
+		require.NotEmpty(t, resp.Header.Values("X-Boards-Debug-OrgUnitIds"))
+		require.NotEmpty(t, resp.Header.Values("X-Boards-Debug-PositionCodes"))
+		require.NotEmpty(t, resp.Header.Values("X-Boards-Debug-FullVisibilityPositionIds"))
+		require.NotEmpty(t, resp.Header.Values("X-Boards-Debug-IsCEO-FromProps"))
+		require.NotEmpty(t, resp.Header.Values("X-Boards-Debug-IsCEO-FromFallback"))
 	})
 }
 

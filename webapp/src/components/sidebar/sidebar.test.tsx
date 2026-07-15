@@ -424,6 +424,63 @@ describe('components/sidebarSidebar', () => {
         expect(mockedOctoClient.moveBoardToCategory).toBeCalledTimes(0)
     })
 
+    test('shows accessible board in default category even if metadata is missing', async () => {
+        const board2 = TestBlockFactory.createBoard()
+        board2.id = 'board2'
+        board2.title = 'ACL Accessible Board'
+
+        const store = mockStore({
+            teams: {
+                current: {id: 'team-id'},
+            },
+            boards: {
+                current: board.id,
+                boards: {
+                    [board.id]: board,
+                    [board2.id]: board2,
+                },
+                myBoardMemberships: {
+                    [board.id]: board,
+                },
+            },
+            cards: {
+                cards: {
+                    card_id_1: {title: 'Card'},
+                },
+                current: 'card_id_1',
+            },
+            views: {
+                views: [],
+            },
+            users: {
+                me: {
+                    id: 'user_id_1',
+                    props: {},
+                },
+            },
+            sidebar: {
+                categoryAttributes: [
+                    categoryAttribute1,
+                    defaultCategory,
+                ],
+                hiddenBoardIDs: [],
+            },
+        })
+
+        const onBoardTemplateSelectorOpen = jest.fn()
+
+        const component = wrapIntl(
+            <ReduxProvider store={store}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
+                    <Sidebar onBoardTemplateSelectorOpen={onBoardTemplateSelectorOpen}/>
+                </MemoryRouter>
+            </ReduxProvider>,
+        )
+        render(component)
+
+        expect(await screen.findByText('ACL Accessible Board')).toBeInTheDocument()
+    })
+
     // TODO: Fix this later
     // test('global templates', () => {
     //     const store = mockStore({

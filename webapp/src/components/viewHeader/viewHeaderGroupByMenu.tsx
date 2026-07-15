@@ -23,10 +23,12 @@ type Props = {
     properties: readonly IPropertyTemplate[]
     activeView: BoardView
     groupByProperty?: IPropertyTemplate
+    disabled?: boolean
+    disabledReason?: string
 }
 
 const ViewHeaderGroupByMenu = (props: Props) => {
-    const {properties, activeView, groupByProperty} = props
+    const {properties, activeView, groupByProperty, disabled, disabledReason} = props
     const intl = useIntl()
 
     const cards = useAppSelector(getCurrentViewCardsSortedFilteredAndGrouped)
@@ -52,8 +54,12 @@ const ViewHeaderGroupByMenu = (props: Props) => {
         <MenuWrapper
             usePortal={true}
             menuPosition='bottom'
+            disabled={disabled}
         >
-            <Button>
+            <Button
+                disabled={disabled}
+                title={disabled ? disabledReason : undefined}
+            >
                 <FormattedMessage
                     id='ViewHeader.group-by'
                     defaultMessage='Group by: {property}'

@@ -6,6 +6,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/notify"
@@ -234,7 +235,125 @@ func (a *App) DuplicateBoard(boardID, userID, toTeam string, asTemplate bool) (*
 }
 
 func (a *App) GetBoardsForUserAndTeam(userID, teamID string, includePublicBoards bool) ([]*model.Board, error) {
-	return a.store.GetBoardsForUserAndTeam(userID, teamID, includePublicBoards)
+	baseBoards, err := a.store.GetBoardsForUserAndTeam(userID, teamID, includePublicBoards)
+	if err != nil {
+		return nil, err
+	}
+	if !includePublicBoards {
+		// Guests keep the existing strict, membership-only behavior.
+		return baseBoards, nil
+	}
+	return a.expandBoardsWithACLAndFullVisibility(userID, teamID, baseBoards, "", func(onlyWithACL bool) ([]*model.Board, error) {
+		return a.store.GetBoardsInTeam(teamID, onlyWithACL)
+	})
+}
+
+// expandBoardsWithACLAndFullVisibility adds boards the user cannot see via
+// membership/open-board rules but is nonetheless granted access to through
+// board ACL entries (department/position/department+position) or a
+// full-visibility position ("CEO"). Without this, GetBoardPermissions could
+// correctly grant a user access to a board they still have no way to
+// discover, since the base list/search queries only consider membership.
+//
+// The user's org context is resolved once per call (not once per candidate
+// board), and fetchCandidates is asked to pre-filter to ACL-carrying boards
+// via the has_acl_entries index whenever the user isn't full-visibility, so
+// the cost of this expansion scales with the number of ACL-carrying boards
+// rather than total boards in the team.
+func (a *App) expandBoardsWithACLAndFullVisibility(userID, teamID string, baseBoards []*model.Board, titleFilter string, fetchCandidates func(onlyWithACL bool) ([]*model.Board, error)) ([]*model.Board, error) {
+	orgUnits, positions, isCEO := resolveOrgContextForScope(a.permissions, userID, teamID)
+
+	candidates, err := fetchCandidates(!isCEO)
+	if err != nil {
+		a.logger.Warn("failed to load candidate boards for ACL/full-visibility expansion", mlog.Err(err))
+		return baseBoards, nil
+	}
+	a.logger.Debug("expandBoardsWithACLAndFullVisibility context",
+		mlog.String("userID", userID),
+		mlog.String("teamID", teamID),
+		mlog.Int("baseBoardsCount", len(baseBoards)),
+		mlog.Int("candidatesCount", len(candidates)),
+		mlog.Bool("isCEO", isCEO),
+		mlog.String("orgUnits", strings.Join(orgUnits, ",")),
+		mlog.String("positions", strings.Join(positions, ",")),
+	)
+
+	if isCEO {
+		if titleFilter == "" {
+			return candidates, nil
+		}
+		return filterBoardsByTitle(candidates, titleFilter), nil
+	}
+
+	seen := make(map[string]bool, len(baseBoards))
+	result := make([]*model.Board, 0, len(baseBoards))
+	aclParseSkipped := 0
+	titleFiltered := 0
+	aclPermissionMissed := 0
+	for _, board := range baseBoards {
+		if !seen[board.ID] {
+			seen[board.ID] = true
+			result = append(result, board)
+		}
+	}
+
+	for _, board := range candidates {
+		if seen[board.ID] {
+			continue
+		}
+		entries, parseErr := model.ParseBoardACLFromProperties(board.Properties)
+		if parseErr != nil || len(entries) == 0 {
+			aclParseSkipped++
+			continue // DB already filtered by has_acl_entries; this is just a safety net
+		}
+		if titleFilter != "" && !boardTitleMatches(board, titleFilter) {
+			titleFiltered++
+			continue
+		}
+		if permission, _ := model.EvaluateBoardACLEntries(entries, userID, orgUnits, positions); permission == model.EffectiveBoardPermissionNone {
+			aclPermissionMissed++
+			continue
+		}
+		seen[board.ID] = true
+		result = append(result, board)
+	}
+	a.logger.Debug("expandBoardsWithACLAndFullVisibility result",
+		mlog.String("userID", userID),
+		mlog.String("teamID", teamID),
+		mlog.Int("resultCount", len(result)),
+		mlog.Int("aclParseSkipped", aclParseSkipped),
+		mlog.Int("titleFiltered", titleFiltered),
+		mlog.Int("aclPermissionMissed", aclPermissionMissed),
+	)
+
+	return result, nil
+}
+
+func resolveOrgContextForScope(service interface {
+	ResolveOrgContext(userID string) (orgUnits []string, positions []string, isCEO bool)
+}, userID, teamID string) ([]string, []string, bool) {
+	if teamID != "" {
+		if resolver, ok := service.(interface {
+			ResolveOrgContextForTeam(userID, teamID string) (orgUnits []string, positions []string, isCEO bool)
+		}); ok {
+			return resolver.ResolveOrgContextForTeam(userID, teamID)
+		}
+	}
+	return service.ResolveOrgContext(userID)
+}
+
+func filterBoardsByTitle(boards []*model.Board, term string) []*model.Board {
+	filtered := make([]*model.Board, 0, len(boards))
+	for _, board := range boards {
+		if boardTitleMatches(board, term) {
+			filtered = append(filtered, board)
+		}
+	}
+	return filtered
+}
+
+func boardTitleMatches(board *model.Board, term string) bool {
+	return strings.Contains(strings.ToLower(board.Title), strings.ToLower(term))
 }
 
 func (a *App) GetTemplateBoards(teamID, userID string) ([]*model.Board, error) {
@@ -350,6 +469,12 @@ func (a *App) PatchBoard(patch *model.BoardPatch, boardID, userID string) (*mode
 			if !a.permissions.HasPermissionToChannel(userID, testChannel, model.PermissionCreatePost) {
 				return nil, model.NewErrPermission("access denied to channel")
 			}
+		}
+
+		if patch.ChannelID != nil && *patch.ChannelID != "" && oldChannelID == "" &&
+			board.MinimumRole == model.BoardRoleNone && patch.MinimumRole == nil {
+			viewerRole := model.BoardRoleViewer
+			patch.MinimumRole = &viewerRole
 		}
 	}
 
@@ -749,11 +874,26 @@ func (a *App) DeleteBoardMember(boardID, userID string) error {
 }
 
 func (a *App) SearchBoardsForUser(term string, searchField model.BoardSearchField, userID string, includePublicBoards bool) ([]*model.Board, error) {
-	return a.store.SearchBoardsForUser(term, searchField, userID, includePublicBoards)
+	baseBoards, err := a.store.SearchBoardsForUser(term, searchField, userID, includePublicBoards)
+	if err != nil {
+		return nil, err
+	}
+	if !includePublicBoards {
+		return baseBoards, nil
+	}
+	return a.expandBoardsWithACLAndFullVisibility(userID, "", baseBoards, term, func(onlyWithACL bool) ([]*model.Board, error) {
+		return a.store.GetBoardsInUserTeams(userID, onlyWithACL)
+	})
 }
 
 func (a *App) SearchBoardsForUserInTeam(teamID, term, userID string) ([]*model.Board, error) {
-	return a.store.SearchBoardsForUserInTeam(teamID, term, userID)
+	baseBoards, err := a.store.SearchBoardsForUserInTeam(teamID, term, userID)
+	if err != nil {
+		return nil, err
+	}
+	return a.expandBoardsWithACLAndFullVisibility(userID, teamID, baseBoards, term, func(onlyWithACL bool) ([]*model.Board, error) {
+		return a.store.GetBoardsInTeam(teamID, onlyWithACL)
+	})
 }
 
 func (a *App) UndeleteBoard(boardID string, modifiedBy string) error {

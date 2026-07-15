@@ -6,6 +6,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
@@ -59,7 +60,6 @@ func (a *API) handleSearchMyChannels(w http.ResponseWriter, r *http.Request) {
 
 	teamID := mux.Vars(r)["teamID"]
 	userID := getUserID(r)
-
 	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
 		return
@@ -131,22 +131,14 @@ func (a *API) handleSearchBoards(w http.ResponseWriter, r *http.Request) {
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
 
-	var err error
 	teamID := mux.Vars(r)["teamID"]
 	term := r.URL.Query().Get("q")
-	searchFieldText := r.URL.Query().Get("field")
-	searchField := model.BoardSearchFieldTitle
-	if searchFieldText != "" {
-		searchField, err = model.BoardSearchFieldFromString(searchFieldText)
-		if err != nil {
-			a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
-			return
-		}
-	}
 	userID := getUserID(r)
-
-	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
-		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
+	hasTeamAccess := a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
+	debugPermissions := debugPermissionsEnabled(r)
+	isGuest, err := a.userIsGuest(userID)
+	if err != nil {
+		a.errorResponse(w, r, err)
 		return
 	}
 
@@ -159,16 +151,32 @@ func (a *API) handleSearchBoards(w http.ResponseWriter, r *http.Request) {
 	defer a.audit.LogRecord(audit.LevelRead, auditRec)
 	auditRec.AddMeta("teamID", teamID)
 
-	isGuest, err := a.userIsGuest(userID)
+	// retrieve team-scoped boards list
+	boards, err := a.app.SearchBoardsForUserInTeam(teamID, term, userID)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return
 	}
-
-	// retrieve boards list
-	boards, err := a.app.SearchBoardsForUser(term, searchField, userID, !isGuest)
-	if err != nil {
-		a.errorResponse(w, r, err)
+	debugInfo := boardsDebugInfo{}
+	if debugPermissions {
+		debugInfo = resolveDebugInfo(a.permissions, userID, teamID)
+		setBoardsDebugHeaders(w, hasTeamAccess, isGuest, len(boards), debugInfo)
+	}
+	a.logger.Debug("SearchBoards permission evaluation",
+		mlog.String("userID", userID),
+		mlog.String("teamID", teamID),
+		mlog.Bool("hasTeamAccess", hasTeamAccess),
+		mlog.Bool("isGuest", isGuest),
+		mlog.Bool("isCEO", debugInfo.IsCEO),
+		mlog.Bool("isCEOFromProps", debugInfo.IsCEOFromProps),
+		mlog.Bool("isCEOFromFallback", debugInfo.IsCEOFromFallback),
+		mlog.String("orgUnitIDs", strings.Join(debugInfo.OrgUnits, ",")),
+		mlog.String("positionCodes", strings.Join(debugInfo.PositionCodes, ",")),
+		mlog.String("fullVisibilityPositionIDs", strings.Join(debugInfo.FullVisibilityPositionIDs, ",")),
+		mlog.Int("boardsCount", len(boards)),
+	)
+	if !hasTeamAccess && len(boards) == 0 {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
 		return
 	}
 

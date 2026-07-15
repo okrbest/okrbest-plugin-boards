@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, useMemo} from 'react'
 
 import {useIntl, FormattedMessage} from 'react-intl'
 import {generatePath, useParams} from 'react-router-dom'
@@ -22,7 +22,7 @@ import Tooltip from '../../widgets/tooltip'
 import mutator from '../../mutator'
 
 import {ISharing} from '../../blocks/sharing'
-import {BoardMember, createBoard, MemberRole} from '../../blocks/board'
+import {ACLSubjectOption, BoardACLEntry, BoardMember, createBoard, MemberRole} from '../../blocks/board'
 
 import client from '../../octoClient'
 import Dialog from '../dialog'
@@ -88,6 +88,16 @@ const styles = {
     }),
 }
 
+type ACLPermission = 'view'|'commenter'|'edit'|'manage'
+type ACLEntryDraft = {
+    permission: ACLPermission
+}
+type CreateACLDraft = {
+    orgUnitId: string
+    positionCode: string
+    permission: ACLPermission
+}
+
 function isLastAdmin(members: BoardMember[]) {
     let adminCount = 0
     for (const member of members) {
@@ -100,12 +110,47 @@ function isLastAdmin(members: BoardMember[]) {
     return true
 }
 
+const toACLPermission = (permission: string): ACLPermission => {
+    if (permission === 'commenter' || permission === 'edit' || permission === 'manage' || permission === 'view') {
+        return permission
+    }
+    return 'view'
+}
+
+const normalizePermissionForSubject = (permission: ACLPermission): ACLPermission => {
+    if (permission === 'manage') {
+        return 'edit'
+    }
+    return permission
+}
+
+const getPermissionOptions = (): ACLPermission[] => {
+    return ['view', 'commenter', 'edit']
+}
+
 export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const [wasCopiedPublic, setWasCopiedPublic] = useState(false)
     const [wasCopiedInternal, setWasCopiedInternal] = useState(false)
     const [showLinkChannelConfirmation, setShowLinkChannelConfirmation] = useState<Channel|null>(null)
     const [sharing, setSharing] = useState<ISharing|undefined>(undefined)
     const [selectedUser, setSelectedUser] = useState<IUser|Channel|null>(null)
+    const [aclEntries, setAclEntries] = useState<BoardACLEntry[]>([])
+    const [orgUnitOptions, setOrgUnitOptions] = useState<ACLSubjectOption[]>([])
+    const [positionOptions, setPositionOptions] = useState<ACLSubjectOption[]>([])
+    const [isACLOptionsLoading, setIsACLOptionsLoading] = useState(false)
+    const [aclOptionsError, setACLOptionsError] = useState('')
+    const [editingEntryKey, setEditingEntryKey] = useState('')
+    const [entryDraft, setEntryDraft] = useState<ACLEntryDraft>({
+        permission: 'view',
+    })
+    const [creatingEntry, setCreatingEntry] = useState(false)
+    const [createDraft, setCreateDraft] = useState<CreateACLDraft>({
+        orgUnitId: '',
+        positionCode: '',
+        permission: 'view',
+    })
+    const [transferOwnerUserId, setTransferOwnerUserId] = useState('')
+    const [isOwnershipTransferring, setIsOwnershipTransferring] = useState(false)
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
 
     // members of the current board
@@ -121,12 +166,41 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const params = useParams<{teamId?: string, boardId: string, viewId: string}>()
 
     const hasSharePermissions = useHasPermissions(board.teamId, boardId, [Permission.ShareBoard])
+    const canManageBoardRoles = useHasPermissions(board.teamId, boardId, [Permission.ManageBoardRoles])
+    const canManageACL = canManageBoardRoles
+    const ownerUserId = typeof board.properties?.board_owner_user_id === 'string' && board.properties.board_owner_user_id ?
+        board.properties.board_owner_user_id :
+        board.createdBy
+    const canTransferOwnership = Boolean(me?.id) && me?.id === ownerUserId
 
     const loadData = async () => {
         if (hasSharePermissions) {
             const newSharing = await client.getSharing(boardId)
             setSharing(newSharing)
             setWasCopiedPublic(false)
+        }
+        if (canManageACL) {
+            setIsACLOptionsLoading(true)
+            setACLOptionsError('')
+            try {
+                const [entries, orgUnits, positions] = await Promise.all([
+                    client.getBoardACL(boardId),
+                    client.getOrgUnits(board.teamId),
+                    client.getPositions(board.teamId),
+                ])
+                setAclEntries(entries.filter((entry) => entry.subjectType !== 'user'))
+                setOrgUnitOptions(orgUnits)
+                setPositionOptions(positions)
+            } catch {
+                setOrgUnitOptions([])
+                setPositionOptions([])
+                setACLOptionsError(intl.formatMessage({
+                    id: 'shareBoard.acl.optionsLoadError',
+                    defaultMessage: '부서/직위 목록을 불러오지 못했습니다. 조직관리 화면과 팀 권한을 확인하세요.',
+                }))
+            } finally {
+                setIsACLOptionsLoading(false)
+            }
         }
     }
 
@@ -187,6 +261,11 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     }
 
     const onUpdateBoardMember = (member: BoardMember, newPermission: string) => {
+        if (member.userId === ownerUserId) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerRoleProtected', defaultMessage: '소유자의 역할은 변경할 수 없습니다. 소유권 이전을 이용하세요.'}), severity: 'low'})
+            return
+        }
+
         if (member.userId === me?.id && isLastAdmin(Object.values(members))) {
             sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.lastAdmin', defaultMessage: 'Boards must have at least one Administrator'}), severity: 'low'})
             return
@@ -247,7 +326,153 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
 
     useEffect(() => {
         loadData()
-    }, [])
+    }, [boardId, hasSharePermissions, canManageACL])
+
+    const defaultCreateDraft = (): CreateACLDraft => ({
+        orgUnitId: '',
+        positionCode: '',
+        permission: 'view',
+    })
+
+    const getACLEntryKey = (entry: BoardACLEntry, index: number): string => {
+        return entry.id || `${entry.subjectType}-${entry.subjectId}-${entry.orgUnitId || ''}-${entry.positionCode || ''}-${entry.permission}-${index}`
+    }
+
+    const validateCreateDraft = (draft: CreateACLDraft): boolean => {
+        if (!draft.orgUnitId && !draft.positionCode) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.orgOrPositionRequired', defaultMessage: '부서 또는 직위를 선택하세요.'}), severity: 'low'})
+            return false
+        }
+        return true
+    }
+
+    const createDraftToEntry = (draft: CreateACLDraft): BoardACLEntry => {
+        const normalizedPermission = normalizePermissionForSubject(draft.permission)
+        if (draft.orgUnitId && draft.positionCode) {
+            return {
+                id: '',
+                subjectType: 'org_position',
+                subjectId: '',
+                orgUnitId: draft.orgUnitId,
+                positionCode: draft.positionCode,
+                permission: normalizedPermission,
+            }
+        }
+
+        if (draft.orgUnitId) {
+            return {
+                id: '',
+                subjectType: 'org_unit',
+                subjectId: draft.orgUnitId,
+                permission: normalizedPermission,
+            }
+        }
+
+        return {
+            id: '',
+            subjectType: 'position',
+            subjectId: draft.positionCode,
+            permission: normalizedPermission,
+        }
+    }
+
+    const saveACL = async (entries: BoardACLEntry[]) => {
+        const saved = await client.putBoardACL(boardId, entries)
+        setAclEntries(saved)
+    }
+
+    const getACLSubjectDuplicateKey = (entry: BoardACLEntry): string => {
+        if (entry.subjectType === 'org_position') {
+            return `org_position:${entry.orgUnitId}:${entry.positionCode}`
+        }
+        return `${entry.subjectType}:${entry.subjectId}`
+    }
+
+    const startCreateEntry = () => {
+        setCreateDraft(defaultCreateDraft())
+        setCreatingEntry(true)
+    }
+
+    const saveNewEntry = async () => {
+        if (!validateCreateDraft(createDraft)) {
+            return
+        }
+        const entry = createDraftToEntry(createDraft)
+        const duplicateKey = getACLSubjectDuplicateKey(entry)
+        const isDuplicate = aclEntries.some((existing) => getACLSubjectDuplicateKey(existing) === duplicateKey)
+        if (isDuplicate) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.duplicateEntry', defaultMessage: '이미 동일한 부서/직위 조합의 권한이 등록되어 있습니다.'}), severity: 'low'})
+            return
+        }
+        const nextEntries = [...aclEntries, entry]
+        await saveACL(nextEntries)
+        setCreatingEntry(false)
+        setCreateDraft(defaultCreateDraft())
+    }
+
+    const startEditEntry = (entry: BoardACLEntry, index: number) => {
+        const entryKey = getACLEntryKey(entry, index)
+        setEditingEntryKey(entryKey)
+        setEntryDraft({
+            permission: normalizePermissionForSubject(toACLPermission(entry.permission)),
+        })
+    }
+
+    const saveEditedEntry = async (entry: BoardACLEntry, index: number) => {
+        const nextEntries = aclEntries.map((item, itemIndex) => {
+            if (itemIndex !== index) {
+                return item
+            }
+            return {...item, permission: normalizePermissionForSubject(entryDraft.permission)}
+        })
+        await saveACL(nextEntries)
+        setEditingEntryKey('')
+    }
+
+    const removeACLEntry = async (index: number) => {
+        const nextEntries = aclEntries.filter((_, itemIndex) => itemIndex !== index)
+        await saveACL(nextEntries)
+    }
+
+    const managerMembers = Object.values(members).filter((member) => member.schemeAdmin && !member.synthetic)
+    const transferCandidates = managerMembers.filter((member) => member.userId !== ownerUserId)
+
+    const handleTransferOwnership = async () => {
+        const targetUserID = transferOwnerUserId.trim()
+        if (!targetUserID) {
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerTransfer.required', defaultMessage: '소유권을 이전할 사용자를 선택하세요.'}), severity: 'low'})
+            return
+        }
+
+        setIsOwnershipTransferring(true)
+        try {
+            const success = await client.transferBoardOwnership(boardId, targetUserID)
+            if (!success) {
+                sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerTransfer.failed', defaultMessage: '소유권 이전에 실패했습니다.'}), severity: 'high'})
+                return
+            }
+
+            setTransferOwnerUserId('')
+            await loadData()
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.ownerTransfer.success', defaultMessage: '소유권을 이전했습니다.'}), severity: 'normal'})
+        } finally {
+            setIsOwnershipTransferring(false)
+        }
+    }
+
+    const orgUnitNameById = useMemo(() => {
+        return orgUnitOptions.reduce((acc: Record<string, string>, option) => {
+            acc[option.id] = option.name
+            return acc
+        }, {})
+    }, [orgUnitOptions])
+
+    const positionNameById = useMemo(() => {
+        return positionOptions.reduce((acc: Record<string, string>, option) => {
+            acc[option.id] = option.name
+            return acc
+        }, {})
+    }, [positionOptions])
 
     const isSharing = Boolean(sharing && sharing.id === boardId && sharing.enabled)
     const readToken = (sharing && isSharing) ? sharing.token : ''
@@ -336,10 +561,10 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     let confirmSubtext
     let confirmButtonText
     if (board.channelId === '') {
-        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to edit it. This excludes members who are guests.'})
+        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to view it. This excludes members who are guests. An admin can change this default permission afterwards.'})
         confirmButtonText = intl.formatMessage({id: 'shareBoard.confirm-link-channel-button', defaultMessage: 'Link channel'})
     } else {
-        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext-with-other-channel', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to edit it. This excludes members who are guests.{lineBreak}This board is currently linked to another channel.\nIt will be unlinked if you choose to link it here.'}, {lineBreak: <p/>})
+        confirmSubtext = intl.formatMessage({id: 'shareBoard.confirm-link-channel-subtext-with-other-channel', defaultMessage: 'When you link a channel to a board, all members of the channel (existing and new) will be able to view it. This excludes members who are guests. An admin can change this default permission afterwards.{lineBreak}This board is currently linked to another channel.\nIt will be unlinked if you choose to link it here.'}, {lineBreak: <p/>})
         confirmButtonText = intl.formatMessage({id: 'shareBoard.confirm-link-channel-button-with-other-channel', defaultMessage: 'Unlink and link here'})
     }
 
@@ -440,10 +665,266 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                             onDeleteBoardMember={onDeleteBoardMember}
                             onUpdateBoardMember={onUpdateBoardMember}
                             isMe={user.id === me?.id}
+                            isOwner={user.id === ownerUserId}
                         />
                     )
                 })}
             </div>
+
+            {canManageACL &&
+            <div className='tabs-content'>
+                <div className='text-heading2 mb-2'>
+                    <FormattedMessage
+                        id='shareBoard.acl.title'
+                        defaultMessage='보드 접근 권한(ACL)'
+                    />
+                </div>
+                <div className='text-light mb-2'>
+                    <FormattedMessage
+                        id='shareBoard.acl.description'
+                        defaultMessage='부서+직위, 직위, 부서 단위의 권한(view/edit)을 관리합니다.'
+                    />
+                </div>
+                <div className='d-flex align-items-center mb-2 ShareBoardDialog__acl-toolbar'>
+                    {!creatingEntry &&
+                        <Button
+                            emphasis='secondary'
+                            size='small'
+                            className='ml-auto'
+                            onClick={startCreateEntry}
+                            disabled={isACLOptionsLoading || !!aclOptionsError}
+                        >
+                            <FormattedMessage
+                                id='shareBoard.acl.addRow'
+                                defaultMessage='행 추가'
+                            />
+                        </Button>
+                    }
+                </div>
+                {isACLOptionsLoading && (
+                    <div className='text-light mb-2'>
+                        <FormattedMessage
+                            id='shareBoard.acl.optionsLoading'
+                            defaultMessage='부서/직위 목록을 불러오는 중입니다...'
+                        />
+                    </div>
+                )}
+                {!!aclOptionsError && (
+                    <div className='text-danger mb-2'>
+                        {aclOptionsError}
+                    </div>
+                )}
+                {!isACLOptionsLoading && !aclOptionsError && (orgUnitOptions.length === 0 || positionOptions.length === 0) && (
+                    <div className='text-light mb-2'>
+                        <FormattedMessage
+                            id='shareBoard.acl.optionsEmpty'
+                            defaultMessage='조직관리에서 부서/직위를 먼저 등록해주세요.'
+                        />
+                    </div>
+                )}
+                <div className='ShareBoardDialog__acl-list'>
+                    <div className='ShareBoardDialog__acl-row ShareBoardDialog__acl-row--header'>
+                        <span><FormattedMessage id='shareBoard.acl.column.orgUnit' defaultMessage='부서'/></span>
+                        <span><FormattedMessage id='shareBoard.acl.column.position' defaultMessage='직위'/></span>
+                        <span><FormattedMessage id='shareBoard.acl.column.permission' defaultMessage='권한'/></span>
+                        <span><FormattedMessage id='shareBoard.acl.column.actions' defaultMessage='동작'/></span>
+                    </div>
+
+                    {aclEntries.map((entry, index) => {
+                        const entryKey = getACLEntryKey(entry, index)
+                        const isEditing = editingEntryKey === entryKey
+                        const activePermission = isEditing ?
+                            normalizePermissionForSubject(entryDraft.permission) :
+                            normalizePermissionForSubject(toACLPermission(entry.permission))
+                        const permissionOptions = getPermissionOptions()
+                        const orgLabel = orgUnitNameById[entry.orgUnitId || ''] || '-'
+                        const positionLabel = positionNameById[entry.positionCode || ''] || '-'
+
+                        return (
+                            <div key={entryKey} className='ShareBoardDialog__acl-row'>
+                                <span>{orgLabel}</span>
+                                <span>{positionLabel}</span>
+
+                                {isEditing ? (
+                                    <select
+                                        value={activePermission}
+                                        onChange={(e) => {
+                                            const next = e.target.value as ACLPermission
+                                            setEntryDraft((prev) => ({...prev, permission: normalizePermissionForSubject(next)}))
+                                        }}
+                                        className='form-control'
+                                        disabled={isACLOptionsLoading}
+                                    >
+                                        {permissionOptions.map((permissionOption) => (
+                                            <option key={`${entryKey}-${permissionOption}`} value={permissionOption}>{permissionOption}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <span>{activePermission}</span>
+                                )}
+
+                                <div className='ShareBoardDialog__acl-actions'>
+                                    {!isEditing && (
+                                        <Button emphasis='tertiary' size='small' onClick={() => startEditEntry(entry, index)}>
+                                            <FormattedMessage id='shareBoard.acl.editEntry' defaultMessage='수정'/>
+                                        </Button>
+                                    )}
+                                    {isEditing && (
+                                        <>
+                                            <Button emphasis='secondary' size='small' onClick={() => saveEditedEntry(entry, index)} disabled={isACLOptionsLoading}>
+                                                <FormattedMessage id='shareBoard.acl.saveEntry' defaultMessage='저장'/>
+                                            </Button>
+                                            <Button emphasis='tertiary' size='small' onClick={() => setEditingEntryKey('')}>
+                                                <FormattedMessage id='shareBoard.acl.cancelEdit' defaultMessage='취소'/>
+                                            </Button>
+                                        </>
+                                    )}
+                                    <Button emphasis='tertiary' size='small' onClick={() => removeACLEntry(index)}>
+                                        <FormattedMessage id='shareBoard.acl.removeEntry' defaultMessage='삭제'/>
+                                    </Button>
+                                </div>
+                            </div>
+                        )
+                    })}
+
+                    {creatingEntry && (
+                        <div className='ShareBoardDialog__acl-row ShareBoardDialog__acl-row--editing'>
+                            <select
+                                value={createDraft.orgUnitId}
+                                onChange={(e) => setCreateDraft((prev) => ({...prev, orgUnitId: e.target.value}))}
+                                className='form-control'
+                                disabled={isACLOptionsLoading}
+                            >
+                                <option value=''>부서 선택</option>
+                                {orgUnitOptions.map((option) => (
+                                    <option key={option.id} value={option.id}>{option.name}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={createDraft.positionCode}
+                                onChange={(e) => setCreateDraft((prev) => ({...prev, positionCode: e.target.value}))}
+                                className='form-control'
+                                disabled={isACLOptionsLoading}
+                            >
+                                <option value=''>직위 선택</option>
+                                {positionOptions.map((option) => (
+                                    <option key={option.id} value={option.id}>{option.name}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={createDraft.permission}
+                                onChange={(e) => setCreateDraft((prev) => ({...prev, permission: normalizePermissionForSubject(e.target.value as ACLPermission)}))}
+                                className='form-control'
+                            >
+                                {getPermissionOptions().map((permissionOption) => (
+                                    <option key={`create-${permissionOption}`} value={permissionOption}>{permissionOption}</option>
+                                ))}
+                            </select>
+
+                            <div className='ShareBoardDialog__acl-actions'>
+                                <Button
+                                    emphasis='secondary'
+                                    size='small'
+                                    onClick={saveNewEntry}
+                                    disabled={isACLOptionsLoading || (!createDraft.orgUnitId && !createDraft.positionCode)}
+                                >
+                                    <FormattedMessage id='shareBoard.acl.addEntry' defaultMessage='추가'/>
+                                </Button>
+                                <Button emphasis='tertiary' size='small' onClick={() => setCreatingEntry(false)}>
+                                    <FormattedMessage id='shareBoard.acl.cancelAdd' defaultMessage='취소'/>
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {aclEntries.length === 0 && !creatingEntry &&
+                        <div className='text-light ShareBoardDialog__acl-empty'>
+                            <FormattedMessage id='shareBoard.acl.empty' defaultMessage='등록된 ACL이 없습니다.'/>
+                        </div>
+                    }
+                </div>
+            </div>
+            }
+
+            {canManageACL &&
+            <div className='tabs-content'>
+                <div className='text-heading2 mb-2'>
+                    <FormattedMessage
+                        id='shareBoard.managerSection.title'
+                        defaultMessage='보드 관리자 섹션'
+                    />
+                </div>
+                <div className='text-light mb-2'>
+                    <FormattedMessage
+                        id='shareBoard.managerSection.description'
+                        defaultMessage='manage 권한 보유자 목록입니다. 보드 소유자만 보드를 삭제할 수 있습니다.'
+                    />
+                </div>
+                {canTransferOwnership && (
+                    <div className='d-flex align-items-center mb-2'>
+                        <select
+                            className='form-control mr-1'
+                            value={transferOwnerUserId}
+                            onChange={(e) => setTransferOwnerUserId(e.target.value)}
+                            disabled={isOwnershipTransferring}
+                        >
+                            <option value=''>{intl.formatMessage({id: 'shareBoard.ownerTransfer.select', defaultMessage: '새 소유자 선택'})}</option>
+                            {transferCandidates.map((candidate) => {
+                                const candidateUser = boardUsers.find((u) => u.id === candidate.userId)
+                                const label = candidateUser ?
+                                    Utils.getUserDisplayName(candidateUser, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay) :
+                                    candidate.userId
+                                return (
+                                    <option key={`owner-candidate-${candidate.userId}`} value={candidate.userId}>{label}</option>
+                                )
+                            })}
+                        </select>
+                        <Button
+                            emphasis='secondary'
+                            size='small'
+                            onClick={handleTransferOwnership}
+                            disabled={!transferOwnerUserId || isOwnershipTransferring}
+                        >
+                            <FormattedMessage id='shareBoard.ownerTransfer.button' defaultMessage='소유권 이전'/>
+                        </Button>
+                    </div>
+                )}
+                <div className='user-items'>
+                    {managerMembers.map((member) => {
+                        const user = boardUsers.find((u) => u.id === member.userId)
+                        return (
+                            <div
+                                key={`manager-${member.userId}`}
+                                className='user-item'
+                            >
+                                <div className='user-item__content'>
+                                    <strong>{user ? Utils.getUserDisplayName(user, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay) : member.userId}</strong>
+                                    {ownerUserId === member.userId &&
+                                        <span className='ml-2 text-light'>
+                                            <FormattedMessage
+                                                id='shareBoard.managerSection.ownerBadge'
+                                                defaultMessage='(소유자)'
+                                            />
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        )
+                    })}
+                    {managerMembers.length === 0 &&
+                        <div className='text-light'>
+                            <FormattedMessage
+                                id='shareBoard.managerSection.empty'
+                                defaultMessage='보드 관리자가 없습니다.'
+                            />
+                        </div>
+                    }
+                </div>
+            </div>
+            }
+
 
             {props.enableSharedBoards && !board.isTemplate && (
                 <div className='tabs-container'>

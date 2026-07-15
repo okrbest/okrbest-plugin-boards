@@ -23,6 +23,7 @@ import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import EmojiIcon from '../emojiIcon'
 import KanbanSubCardChips from './kanbanSubCardChips'
+import {useHasCapabilities} from '../../hooks/permissions'
 
 export const OnboardingCardClassName = 'onboardingCard'
 
@@ -42,7 +43,9 @@ type Props = {
 const KanbanCard = (props: Props) => {
     const {card, board} = props
     const intl = useIntl()
-    const [isDragging, isOver, cardRef] = useSortable('card', card, !props.readonly, props.onDrop)
+    const canEditCard = useHasCapabilities(card.boardId, ['canEditCard'])
+    const isReadOnly = props.readonly || !canEditCard
+    const [isDragging, isOver, cardRef] = useSortable('card', card, !isReadOnly, props.onDrop)
     const visiblePropertyTemplates = props.visiblePropertyTemplates || []
     const params = useParams<{boardId: string, viewId: string, cardId?: string}>()
     let className = props.isSelected ? 'KanbanCard selected' : 'KanbanCard'
@@ -95,13 +98,13 @@ const KanbanCard = (props: Props) => {
     return (
         <>
             <div
-                ref={props.readonly ? (node) => {} : cardRef}
+                ref={isReadOnly ? (node) => {} : cardRef}
                 className={`${className} ${showOnboarding && OnboardingCardClassName}`}
-                draggable={!props.readonly}
+                draggable={!isReadOnly}
                 style={{opacity: isDragging ? 0.5 : 1}}
                 onClick={handleOnClick}
             >
-                {!props.readonly &&
+                {!isReadOnly &&
                 <MenuWrapper
                     className={`optionsMenu ${showOnboarding ? 'show' : ''}`}
                     stopPropagationOnToggle={true}

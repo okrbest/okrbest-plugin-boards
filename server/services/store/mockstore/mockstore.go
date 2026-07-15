@@ -751,6 +751,36 @@ func (mr *MockStoreMockRecorder) GetBoardsInTeamByIds(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoardsInTeamByIds", reflect.TypeOf((*MockStore)(nil).GetBoardsInTeamByIds), arg0, arg1)
 }
 
+// GetBoardsInTeam mocks base method.
+func (m *MockStore) GetBoardsInTeam(arg0 string, arg1 bool) ([]*model.Board, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBoardsInTeam", arg0, arg1)
+	ret0, _ := ret[0].([]*model.Board)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBoardsInTeam indicates an expected call of GetBoardsInTeam.
+func (mr *MockStoreMockRecorder) GetBoardsInTeam(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoardsInTeam", reflect.TypeOf((*MockStore)(nil).GetBoardsInTeam), arg0, arg1)
+}
+
+// GetBoardsInUserTeams mocks base method.
+func (m *MockStore) GetBoardsInUserTeams(arg0 string, arg1 bool) ([]*model.Board, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBoardsInUserTeams", arg0, arg1)
+	ret0, _ := ret[0].([]*model.Board)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBoardsInUserTeams indicates an expected call of GetBoardsInUserTeams.
+func (mr *MockStoreMockRecorder) GetBoardsInUserTeams(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoardsInUserTeams", reflect.TypeOf((*MockStore)(nil).GetBoardsInUserTeams), arg0, arg1)
+}
+
 // GetCardLimitTimestamp mocks base method.
 func (m *MockStore) GetCardLimitTimestamp() (int64, error) {
 	m.ctrl.T.Helper()

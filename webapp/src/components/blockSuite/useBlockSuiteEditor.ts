@@ -163,6 +163,21 @@ export function useBlockSuiteEditor(props: UseBlockSuiteEditorProps): UseBlockSu
     }, [readonly, saveSnapshot, dispatch, cardId])
 
     useEffect(() => {
+        if (!readonly) {
+            return
+        }
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current)
+            saveTimeoutRef.current = null
+        }
+        pendingSnapshotRef.current = null
+        setSaveStatus((current) => (
+            current === 'pending' || current === 'saving' ? 'idle' : current
+        ))
+    }, [readonly])
+
+    useEffect(() => {
         if (initializedRef.current) {
             return
         }

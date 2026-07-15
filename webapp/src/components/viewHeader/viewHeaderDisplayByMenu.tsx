@@ -21,10 +21,12 @@ type Props = {
     properties: readonly IPropertyTemplate[]
     activeView: BoardView
     dateDisplayPropertyName?: string
+    disabled?: boolean
+    disabledReason?: string
 }
 
 const ViewHeaderDisplayByMenu = (props: Props) => {
-    const {properties, activeView, dateDisplayPropertyName} = props
+    const {properties, activeView, dateDisplayPropertyName, disabled, disabledReason} = props
     const intl = useIntl()
 
     const createdDateName = propsRegistry.get('createdTime').displayName(intl)
@@ -37,8 +39,12 @@ const ViewHeaderDisplayByMenu = (props: Props) => {
         <MenuWrapper
             usePortal={true}
             menuPosition='bottom'
+            disabled={disabled}
         >
-            <Button>
+            <Button
+                disabled={disabled}
+                title={disabled ? disabledReason : undefined}
+            >
                 <FormattedMessage
                     id='ViewHeader.display-by'
                     defaultMessage='Display by: {property}'

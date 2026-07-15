@@ -3,12 +3,12 @@
 
 
 import React, {useState, useEffect} from 'react'
-import {useIntl, FormattedMessage} from 'react-intl'
+import {useIntl} from 'react-intl'
 
 import MenuWrapper from '../../widgets/menuWrapper'
 import Menu from '../../widgets/menu'
 
-import {createBoard} from '../../blocks/board'
+import {Board, createBoard, MemberRole} from '../../blocks/board'
 import {useAppSelector} from '../../store/hooks'
 import {getCurrentBoard} from '../../store/boards'
 import {getBoardUsers} from '../../store/users'
@@ -21,6 +21,7 @@ import {Permission} from '../../constants'
 import PrivateIcon from '../../widgets/icons/lockOutline'
 import PublicIcon from '../../widgets/icons/globe'
 import DeleteIcon from '../../widgets/icons/delete'
+import CheckIcon from '../../widgets/icons/check'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import ConfirmationDialogBox from '../confirmationDialogBox'
 
@@ -28,6 +29,17 @@ import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 type Props = {
     teammateNameDisplay?: string
+}
+
+async function updateChannelMinimumRole(board: Board, newMinimumRole: MemberRole) {
+    if (board.minimumRole === newMinimumRole) {
+        return
+    }
+
+    const newBoard = createBoard(board)
+    newBoard.minimumRole = newMinimumRole
+
+    await mutator.updateBoard(newBoard, board, 'update channel minimum role')
 }
 
 const ChannelPermissionsRow = (props: Props): React.JSX.Element => {
@@ -42,6 +54,13 @@ const ChannelPermissionsRow = (props: Props): React.JSX.Element => {
         newBoard.channelId = ''
         mutator.updateBoard(newBoard, board, 'unlinked channel')
         setShowUnlinkChannelConfirmation(false)
+    }
+
+    let currentRoleName = intl.formatMessage({id: 'BoardMember.schemeEditor', defaultMessage: 'Editor'})
+    if (board.minimumRole === MemberRole.Commenter) {
+        currentRoleName = intl.formatMessage({id: 'BoardMember.schemeCommenter', defaultMessage: 'Commenter'})
+    } else if (board.minimumRole === MemberRole.Viewer) {
+        currentRoleName = intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})
     }
 
     useEffect(() => {
@@ -117,19 +136,38 @@ const ChannelPermissionsRow = (props: Props): React.JSX.Element => {
                 {linkedChannel.type !== 'D' && <div className='ml-3'><strong>{linkedChannel.display_name}</strong></div>}
             </div>
             <div>
-                <BoardPermissionGate permissions={[Permission.ManageBoardRoles]}>
+                <BoardPermissionGate permissions={[Permission.ManageBoardType]}>
                     <MenuWrapper>
                         <button className='user-item__button'>
-                            <FormattedMessage
-                                id='BoardMember.schemeEditor'
-                                defaultMessage='Editor'
-                            />
+                            {currentRoleName}
                             <CompassIcon
                                 icon='chevron-down'
                                 className='CompassIcon'
                             />
                         </button>
                         <Menu position='left'>
+                            <Menu.Text
+                                id={MemberRole.Editor}
+                                check={true}
+                                icon={board.minimumRole === undefined || board.minimumRole === MemberRole.None || board.minimumRole === MemberRole.Editor ? <CheckIcon/> : <div className='empty-icon'/>}
+                                name={intl.formatMessage({id: 'BoardMember.schemeEditor', defaultMessage: 'Editor'})}
+                                onClick={() => updateChannelMinimumRole(board, MemberRole.Editor)}
+                            />
+                            <Menu.Text
+                                id={MemberRole.Commenter}
+                                check={true}
+                                icon={board.minimumRole === MemberRole.Commenter ? <CheckIcon/> : <div className='empty-icon'/>}
+                                name={intl.formatMessage({id: 'BoardMember.schemeCommenter', defaultMessage: 'Commenter'})}
+                                onClick={() => updateChannelMinimumRole(board, MemberRole.Commenter)}
+                            />
+                            <Menu.Text
+                                id={MemberRole.Viewer}
+                                check={true}
+                                icon={board.minimumRole === MemberRole.Viewer ? <CheckIcon/> : <div className='empty-icon'/>}
+                                name={intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})}
+                                onClick={() => updateChannelMinimumRole(board, MemberRole.Viewer)}
+                            />
+                            <Menu.Separator/>
                             <Menu.Text
                                 id='Unlink'
                                 icon={<DeleteIcon/>}
@@ -140,13 +178,10 @@ const ChannelPermissionsRow = (props: Props): React.JSX.Element => {
                     </MenuWrapper>
                 </BoardPermissionGate>
                 <BoardPermissionGate
-                    permissions={[Permission.ManageBoardRoles]}
+                    permissions={[Permission.ManageBoardType]}
                     invert={true}
                 >
-                    <FormattedMessage
-                        id='BoardMember.schemeEditor'
-                        defaultMessage='Editor'
-                    />
+                    {currentRoleName}
                 </BoardPermissionGate>
             </div>
         </div>

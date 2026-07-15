@@ -293,6 +293,14 @@ func (s *SQLStore) GetAllTeams() ([]*model.Team, error) {
 
 }
 
+func (s *SQLStore) GetOrgUnitsForTeam(teamID string, includeInactive bool) ([]*model.ACLSubjectOption, error) {
+	return s.getOrgUnitsForTeam(s.db, teamID, includeInactive)
+}
+
+func (s *SQLStore) GetPositionsForTeam(teamID string, includeInactive bool) ([]*model.ACLSubjectOption, error) {
+	return s.getPositionsForTeam(s.db, teamID, includeInactive)
+}
+
 func (s *SQLStore) GetBlock(blockID string) (*model.Block, error) {
 	return s.getBlock(s.db, blockID)
 
@@ -420,6 +428,16 @@ func (s *SQLStore) GetBoardsForUserAndTeam(userID string, teamID string, include
 
 func (s *SQLStore) GetBoardsInTeamByIds(boardIDs []string, teamID string) ([]*model.Board, error) {
 	return s.getBoardsInTeamByIds(s.db, boardIDs, teamID)
+
+}
+
+func (s *SQLStore) GetBoardsInTeam(teamID string, onlyWithACL bool) ([]*model.Board, error) {
+	return s.getBoardsInTeam(s.db, teamID, onlyWithACL)
+
+}
+
+func (s *SQLStore) GetBoardsInUserTeams(userID string, onlyWithACL bool) ([]*model.Board, error) {
+	return s.getBoardsInUserTeams(s.db, userID, onlyWithACL)
 
 }
 

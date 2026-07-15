@@ -269,6 +269,76 @@ func (s *SQLStore) getBoardsInTeamByIds(db sq.BaseRunner, boardIDs []string, tea
 	return boards, nil
 }
 
+// getBoardsInTeam returns boards in a team regardless of membership, so
+// callers can layer ACL/full-visibility checks on top of it (see
+// App.GetBoardsForUserAndTeam). When onlyWithACL is true, the has_acl_entries
+// index narrows this to boards that actually carry ACL entries, so the
+// candidate set scales with the number of ACL-carrying boards rather than
+// total boards in the team.
+func (s *SQLStore) getBoardsInTeam(db sq.BaseRunner, teamID string, onlyWithACL bool) ([]*model.Board, error) {
+	where := sq.Eq{
+		"b.team_id":     teamID,
+		"b.is_template": false,
+	}
+	if onlyWithACL {
+		where["b.has_acl_entries"] = true
+	}
+
+	query := s.getQueryBuilder(db).
+		Select(boardFields("b.")...).
+		From(s.tablePrefix + "boards as b").
+		Where(where)
+
+	rows, err := query.Query()
+	if err != nil {
+		s.logger.Error(`getBoardsInTeam ERROR`, mlog.Err(err))
+		return nil, err
+	}
+	defer s.CloseRows(rows)
+
+	return s.boardsFromRows(rows)
+}
+
+// getBoardsInUserTeams is the cross-team equivalent of getBoardsInTeam,
+// covering every team the user belongs to (used by the global "find boards"
+// search, which has no single teamID). Mirrors the teamMembersQ join used by
+// searchBoardsForUser, but without the type=open restriction.
+func (s *SQLStore) getBoardsInUserTeams(db sq.BaseRunner, userID string, onlyWithACL bool) ([]*model.Board, error) {
+	where := sq.Eq{
+		"b.is_template": false,
+		"tm.userID":     userID,
+		"tm.deleteAt":   0,
+		"t.DeleteAt":    0,
+	}
+	if onlyWithACL {
+		where["b.has_acl_entries"] = true
+	}
+
+	query := s.getQueryBuilder(db).
+		Select(boardFields("b.")...).
+		From(s.tablePrefix + "boards as b").
+		Join("TeamMembers as tm on tm.teamid=b.team_id").
+		Join("Teams as t on t.Id=b.team_id").
+		Where(where)
+
+	rows, err := query.Query()
+	if err != nil {
+		s.logger.Error(`getBoardsInUserTeams ERROR`, mlog.Err(err))
+		return nil, err
+	}
+	defer s.CloseRows(rows)
+
+	return s.boardsFromRows(rows)
+}
+
+// boardHasACLEntries reports whether a board's Properties carry any ACL
+// entries, so writers can keep the has_acl_entries column (and its index)
+// in sync without a caller having to remember to do so.
+func boardHasACLEntries(properties map[string]interface{}) bool {
+	entries, err := model.ParseBoardACLFromProperties(properties)
+	return err == nil && len(entries) > 0
+}
+
 func (s *SQLStore) insertBoard(db sq.BaseRunner, board *model.Board, userID string) (*model.Board, error) {
 	// Generate tracking IDs for in-built templates
 	if board.IsTemplate && board.TeamID == model.GlobalTeamID {
@@ -309,6 +379,7 @@ func (s *SQLStore) insertBoard(db sq.BaseRunner, board *model.Board, userID stri
 	now := utils.GetMillis()
 	board.ModifiedBy = userID
 	board.UpdateAt = now
+	hasACLEntries := boardHasACLEntries(board.Properties)
 
 	insertQueryValues := map[string]interface{}{
 		"id":               board.ID,
@@ -326,6 +397,7 @@ func (s *SQLStore) insertBoard(db sq.BaseRunner, board *model.Board, userID stri
 		"template_version": board.TemplateVersion,
 		"properties":       propertiesBytes,
 		"card_properties":  cardPropertiesBytes,
+		"has_acl_entries":  hasACLEntries,
 		"create_at":        board.CreateAt,
 		"update_at":        board.UpdateAt,
 		"delete_at":        board.DeleteAt,
@@ -346,6 +418,7 @@ func (s *SQLStore) insertBoard(db sq.BaseRunner, board *model.Board, userID stri
 			Set("template_version", board.TemplateVersion).
 			Set("properties", propertiesBytes).
 			Set("card_properties", cardPropertiesBytes).
+			Set("has_acl_entries", hasACLEntries).
 			Set("update_at", board.UpdateAt).
 			Set("delete_at", board.DeleteAt)
 
@@ -606,14 +679,19 @@ func (s *SQLStore) getMemberForBoard(db sq.BaseRunner, boardID, userID string) (
 				return nil, memberErr
 			}
 
+			channelRole := b.MinimumRole
+			if channelRole == model.BoardRoleNone {
+				channelRole = model.BoardRoleEditor
+			}
+
 			return &model.BoardMember{
 				BoardID:         boardID,
 				UserID:          userID,
-				Roles:           "editor",
-				SchemeAdmin:     false,
-				SchemeEditor:    true,
-				SchemeCommenter: false,
-				SchemeViewer:    false,
+				Roles:           string(channelRole),
+				SchemeAdmin:     channelRole == model.BoardRoleAdmin,
+				SchemeEditor:    channelRole == model.BoardRoleEditor || channelRole == model.BoardRoleAdmin,
+				SchemeCommenter: channelRole == model.BoardRoleCommenter,
+				SchemeViewer:    channelRole == model.BoardRoleViewer,
 				Synthetic:       true,
 			}, nil
 		}
@@ -864,6 +942,7 @@ func (s *SQLStore) undeleteBoard(db sq.BaseRunner, boardID string, modifiedBy st
 		"template_version",
 		"properties",
 		"card_properties",
+		"has_acl_entries",
 		"create_at",
 		"update_at",
 		"delete_at",
@@ -885,6 +964,7 @@ func (s *SQLStore) undeleteBoard(db sq.BaseRunner, boardID string, modifiedBy st
 		board.TemplateVersion,
 		propertiesJSON,
 		cardPropertiesJSON,
+		boardHasACLEntries(board.Properties),
 		board.CreateAt,
 		now,
 		0,

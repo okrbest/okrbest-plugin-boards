@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 
-import {createAsyncThunk, createSelector, createSlice, PayloadAction} from '@reduxjs/toolkit'
+import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit'
 
 import {default as client} from '../octoClient'
 
@@ -218,10 +218,9 @@ export const getSidebarCategories = (state: RootState): CategoryBoards[] => stat
 export const getHiddenBoardIDs = (state: RootState): string[] => state.sidebar.hiddenBoardIDs
 
 export function getCategoryOfBoard(boardID: string): (state: RootState) => CategoryBoards | undefined {
-    return createSelector(
-        (state: RootState): CategoryBoards[] => state.sidebar.categoryAttributes,
-        (sidebarCategories) => sidebarCategories.find((category) => category.boardMetadata.findIndex((m) => m.boardID === boardID) >= 0),
-    )
+    return (state: RootState) => {
+        return state.sidebar.categoryAttributes.find((category) => category.boardMetadata.findIndex((m) => m.boardID === boardID) >= 0)
+    }
 }
 
 export const {reducer} = sidebarSlice

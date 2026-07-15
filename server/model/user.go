@@ -71,6 +71,8 @@ type User struct {
 	// Special Permissions the user may have
 	Permissions []string `json:"permissions,omitempty"`
 
+	Props map[string]string `json:"props,omitempty"`
+
 	Roles string `json:"roles"`
 }
 

@@ -64,6 +64,13 @@ const TeamToBoardAndViewRedirect = (): null => {
                 }
             }
 
+            if (!boardID && currentTeamBoardsLoaded) {
+                const firstAccessibleBoard = boardsList.find((board) => board.teamId === teamId && !board.isTemplate && !board.deleteAt)
+                if (firstAccessibleBoard) {
+                    boardID = firstAccessibleBoard.id
+                }
+            }
+
             if (boardID) {
                 const newPath = Utils.buildBoardPath(location.pathname, {...params, boardId: boardID})
                 navigate(newPath, {replace: true})
