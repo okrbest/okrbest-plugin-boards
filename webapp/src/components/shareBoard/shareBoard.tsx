@@ -89,7 +89,7 @@ const styles = {
 }
 
 type ACLPermission = 'view'|'commenter'|'edit'|'manage'
-type ACLSubjectMode = 'org_position'|'org_unit'|'position'|'user'
+type ACLSubjectMode = 'org_position'|'org_unit'|'position'
 type ACLEntryDraft = {
     subjectType: ACLSubjectMode
     orgUnitId: string
@@ -117,17 +117,14 @@ const toACLPermission = (permission: string): ACLPermission => {
     return 'view'
 }
 
-const normalizePermissionForSubject = (subjectType: string, permission: ACLPermission): ACLPermission => {
-    if (subjectType !== 'user' && permission === 'manage') {
+const normalizePermissionForSubject = (permission: ACLPermission): ACLPermission => {
+    if (permission === 'manage') {
         return 'edit'
     }
     return permission
 }
 
-const getPermissionOptionsForSubject = (subjectType: string): ACLPermission[] => {
-    if (subjectType === 'user') {
-        return ['view', 'commenter', 'edit', 'manage']
-    }
+const getPermissionOptions = (): ACLPermission[] => {
     return ['view', 'commenter', 'edit']
 }
 
@@ -142,7 +139,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const [positionOptions, setPositionOptions] = useState<ACLSubjectOption[]>([])
     const [isACLOptionsLoading, setIsACLOptionsLoading] = useState(false)
     const [aclOptionsError, setACLOptionsError] = useState('')
-    const [showAdvancedUserACL, setShowAdvancedUserACL] = useState(false)
     const [editingEntryKey, setEditingEntryKey] = useState('')
     const [entryDraft, setEntryDraft] = useState<ACLEntryDraft>({
         subjectType: 'org_position',
@@ -200,7 +196,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                     client.getOrgUnits(board.teamId),
                     client.getPositions(board.teamId),
                 ])
-                setAclEntries(entries)
+                setAclEntries(entries.filter((entry) => entry.subjectType !== 'user'))
                 setOrgUnitOptions(orgUnits)
                 setPositionOptions(positions)
             } catch {
@@ -364,23 +360,15 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             return true
         }
 
-        if (draft.subjectType === 'position') {
-            if (!draft.subjectId) {
-                sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.positionRequired', defaultMessage: '직위를 선택하세요.'}), severity: 'low'})
-                return false
-            }
-            return true
-        }
-
         if (!draft.subjectId) {
-            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.subjectRequired', defaultMessage: '사용자를 선택하세요.'}), severity: 'low'})
+            sendFlashMessage({content: intl.formatMessage({id: 'shareBoard.acl.positionRequired', defaultMessage: '직위를 선택하세요.'}), severity: 'low'})
             return false
         }
         return true
     }
 
     const draftToEntry = (draft: ACLEntryDraft, source?: BoardACLEntry): BoardACLEntry => {
-        const normalizedPermission = normalizePermissionForSubject(draft.subjectType, draft.permission)
+        const normalizedPermission = normalizePermissionForSubject(draft.permission)
         if (draft.subjectType === 'org_position') {
             return {
                 id: source?.id || '',
@@ -401,18 +389,9 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             }
         }
 
-        if (draft.subjectType === 'position') {
-            return {
-                id: source?.id || '',
-                subjectType: 'position',
-                subjectId: draft.subjectId,
-                permission: normalizedPermission,
-            }
-        }
-
         return {
             id: source?.id || '',
-            subjectType: 'user',
+            subjectType: 'position',
             subjectId: draft.subjectId,
             permission: normalizedPermission,
         }
@@ -437,18 +416,18 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
         const nextEntries = [...aclEntries, entry]
         await saveACL(nextEntries)
         setCreatingEntry(false)
-        setCreateDraft(buildDefaultDraft(showAdvancedUserACL ? createDraft.subjectType : 'org_position'))
+        setCreateDraft(buildDefaultDraft(createDraft.subjectType))
     }
 
     const startEditEntry = (entry: BoardACLEntry, index: number) => {
         const entryKey = getACLEntryKey(entry, index)
         setEditingEntryKey(entryKey)
         setEntryDraft({
-            subjectType: entry.subjectType === 'user' ? 'user' : (entry.subjectType === 'org_unit' ? 'org_unit' : (entry.subjectType === 'position' ? 'position' : 'org_position')),
+            subjectType: entry.subjectType === 'org_unit' ? 'org_unit' : (entry.subjectType === 'position' ? 'position' : 'org_position'),
             orgUnitId: entry.orgUnitId || (entry.subjectType === 'org_unit' ? entry.subjectId : ''),
             positionCode: entry.positionCode || (entry.subjectType === 'position' ? entry.subjectId : ''),
             subjectId: entry.subjectType === 'org_position' ? '' : entry.subjectId || '',
-            permission: normalizePermissionForSubject(entry.subjectType, toACLPermission(entry.permission)),
+            permission: normalizePermissionForSubject(toACLPermission(entry.permission)),
         })
     }
 
@@ -521,32 +500,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             return acc
         }, {})
     }, [positionOptions])
-
-    const boardUserOptions = useMemo(() => {
-        return boardUsers.map((user) => ({
-            id: user.id,
-            name: Utils.getUserDisplayName(user, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay),
-        }))
-    }, [boardUsers, me?.props?.teammateNameDisplay, clientConfig.teammateNameDisplay])
-
-    const resolveACLSubjectLabel = (entry: BoardACLEntry): string => {
-        if (entry.subjectType === 'org_position') {
-            const orgName = orgUnitNameById[entry.orgUnitId || ''] || entry.orgUnitId || '-'
-            const posName = positionNameById[entry.positionCode || ''] || entry.positionCode || '-'
-            return `${orgName} + ${posName}`
-        }
-        if (entry.subjectType === 'org_unit') {
-            return orgUnitNameById[entry.subjectId] || entry.subjectId
-        }
-        if (entry.subjectType === 'position') {
-            return positionNameById[entry.subjectId] || entry.subjectId
-        }
-        const user = boardUsers.find((u) => u.id === entry.subjectId)
-        if (user) {
-            return Utils.getUserDisplayName(user, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay)
-        }
-        return entry.subjectId
-    }
 
     const isSharing = Boolean(sharing && sharing.id === boardId && sharing.enabled)
     const readToken = (sharing && isSharing) ? sharing.token : ''
@@ -755,26 +708,10 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                 <div className='text-light mb-2'>
                     <FormattedMessage
                         id='shareBoard.acl.description'
-                        defaultMessage='부서+직위, 직위, 부서, 사용자 예외 단위의 권한(view/edit/manage)을 관리합니다.'
+                        defaultMessage='부서+직위, 직위, 부서 단위의 권한(view/edit)을 관리합니다.'
                     />
                 </div>
                 <div className='d-flex align-items-center mb-2 ShareBoardDialog__acl-toolbar'>
-                    <Switch
-                        isOn={showAdvancedUserACL}
-                        size='small'
-                        onChanged={(value) => {
-                            setShowAdvancedUserACL(value)
-                            if (!value && creatingEntry && createDraft.subjectType === 'user') {
-                                setCreateDraft(buildDefaultDraft('org_position'))
-                            }
-                        }}
-                    />
-                    <span className='ml-2 text-light'>
-                        <FormattedMessage
-                            id='shareBoard.acl.advancedUserMode'
-                            defaultMessage='고급 모드(예외용 사용자 ACL)'
-                        />
-                    </span>
                     {!creatingEntry &&
                         <Button
                             emphasis='secondary'
@@ -822,16 +759,12 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                     {aclEntries.map((entry, index) => {
                         const entryKey = getACLEntryKey(entry, index)
                         const isEditing = editingEntryKey === entryKey
-                        const isUserEntry = entry.subjectType === 'user'
-                        const activeSubjectType = isEditing ? entryDraft.subjectType : entry.subjectType
                         const activePermission = isEditing ?
-                            normalizePermissionForSubject(activeSubjectType, entryDraft.permission) :
-                            normalizePermissionForSubject(activeSubjectType, toACLPermission(entry.permission))
-                        const permissionOptions = getPermissionOptionsForSubject(activeSubjectType)
-                        const userLabel = resolveACLSubjectLabel(entry)
-                        const orgLabel = isUserEntry ? intl.formatMessage({id: 'shareBoard.acl.userException', defaultMessage: '사용자 예외'}) : (orgUnitNameById[entry.orgUnitId || ''] || '-')
-                        const positionLabel = isUserEntry ? userLabel : (positionNameById[entry.positionCode || ''] || '-')
-                        const debugId = isUserEntry ? entry.subjectId : `${entry.orgUnitId || '-'} + ${entry.positionCode || '-'}`
+                            normalizePermissionForSubject(entryDraft.permission) :
+                            normalizePermissionForSubject(toACLPermission(entry.permission))
+                        const permissionOptions = getPermissionOptions()
+                        const orgLabel = orgUnitNameById[entry.orgUnitId || ''] || '-'
+                        const positionLabel = positionNameById[entry.positionCode || ''] || '-'
 
                         return (
                             <div key={entryKey} className='ShareBoardDialog__acl-row'>
@@ -896,26 +829,10 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     </>
                                 )}
 
-                                {isEditing && entryDraft.subjectType === 'user' && (
-                                    <>
-                                        <span className='text-light'>사용자 예외</span>
-                                        <select
-                                            value={entryDraft.subjectId}
-                                            onChange={(e) => setEntryDraft((prev) => ({...prev, subjectId: e.target.value}))}
-                                            className='form-control'
-                                        >
-                                            <option value=''>사용자 선택</option>
-                                            {boardUserOptions.map((option) => (
-                                                <option key={option.id} value={option.id}>{option.name}</option>
-                                            ))}
-                                        </select>
-                                    </>
-                                )}
-
                                 {!isEditing && (
                                     <>
-                                        <span title={showAdvancedUserACL ? debugId : undefined}>{orgLabel}</span>
-                                        <span title={showAdvancedUserACL ? debugId : undefined}>{positionLabel}</span>
+                                        <span>{orgLabel}</span>
+                                        <span>{positionLabel}</span>
                                     </>
                                 )}
 
@@ -924,14 +841,14 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     onChange={(e) => {
                                         const next = e.target.value as ACLPermission
                                         if (isEditing) {
-                                            setEntryDraft((prev) => ({...prev, permission: normalizePermissionForSubject(prev.subjectType, next)}))
+                                            setEntryDraft((prev) => ({...prev, permission: normalizePermissionForSubject(next)}))
                                             return
                                         }
                                         const nextEntries = aclEntries.map((item, itemIndex) => {
                                             if (itemIndex !== index) {
                                                 return item
                                             }
-                                            return {...item, permission: normalizePermissionForSubject(item.subjectType, next)}
+                                            return {...item, permission: normalizePermissionForSubject(next)}
                                         })
                                         void saveACL(nextEntries)
                                     }}
@@ -969,7 +886,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
 
                     {creatingEntry && (
                         <div className='ShareBoardDialog__acl-row ShareBoardDialog__acl-row--editing'>
-                            {showAdvancedUserACL && (
+                            <div className='ShareBoardDialog__acl-create-primary'>
                                 <select
                                     value={createDraft.subjectType}
                                     onChange={(e) => setCreateDraft(buildDefaultDraft(e.target.value as ACLSubjectMode))}
@@ -978,16 +895,19 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                     <option value='org_position'>부서+직위</option>
                                     <option value='position'>직위</option>
                                     <option value='org_unit'>부서</option>
-                                    <option value='user'>사용자(예외)</option>
                                 </select>
-                            )}
-                            {!showAdvancedUserACL && <span className='text-light'>신규 ACL</span>}
 
-                            {createDraft.subjectType === 'org_position' && (
-                                <>
+                                {(createDraft.subjectType === 'org_position' || createDraft.subjectType === 'org_unit') && (
                                     <select
-                                        value={createDraft.orgUnitId}
-                                        onChange={(e) => setCreateDraft((prev) => ({...prev, orgUnitId: e.target.value}))}
+                                        value={createDraft.subjectType === 'org_position' ? createDraft.orgUnitId : createDraft.subjectId}
+                                        onChange={(e) => {
+                                            const nextValue = e.target.value
+                                            if (createDraft.subjectType === 'org_position') {
+                                                setCreateDraft((prev) => ({...prev, orgUnitId: nextValue}))
+                                                return
+                                            }
+                                            setCreateDraft((prev) => ({...prev, subjectId: nextValue}))
+                                        }}
                                         className='form-control'
                                         disabled={isACLOptionsLoading}
                                     >
@@ -996,6 +916,15 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                             <option key={option.id} value={option.id}>{option.name}</option>
                                         ))}
                                     </select>
+                                )}
+
+                                {createDraft.subjectType === 'position' && (
+                                    <span className='text-light ShareBoardDialog__acl-create-label'>직위</span>
+                                )}
+                            </div>
+
+                            <div className='ShareBoardDialog__acl-create-secondary'>
+                                {createDraft.subjectType === 'org_position' && (
                                     <select
                                         value={createDraft.positionCode}
                                         onChange={(e) => setCreateDraft((prev) => ({...prev, positionCode: e.target.value}))}
@@ -1007,27 +936,8 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                             <option key={option.id} value={option.id}>{option.name}</option>
                                         ))}
                                     </select>
-                                </>
-                            )}
-                            {createDraft.subjectType === 'org_unit' && (
-                                <>
-                                    <span className='text-light'>부서</span>
-                                    <select
-                                        value={createDraft.subjectId}
-                                        onChange={(e) => setCreateDraft((prev) => ({...prev, subjectId: e.target.value}))}
-                                        className='form-control'
-                                        disabled={isACLOptionsLoading}
-                                    >
-                                        <option value=''>부서 선택</option>
-                                        {orgUnitOptions.map((option) => (
-                                            <option key={option.id} value={option.id}>{option.name}</option>
-                                        ))}
-                                    </select>
-                                </>
-                            )}
-                            {createDraft.subjectType === 'position' && (
-                                <>
-                                    <span className='text-light'>직위</span>
+                                )}
+                                {createDraft.subjectType === 'position' && (
                                     <select
                                         value={createDraft.subjectId}
                                         onChange={(e) => setCreateDraft((prev) => ({...prev, subjectId: e.target.value}))}
@@ -1039,30 +949,18 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                             <option key={option.id} value={option.id}>{option.name}</option>
                                         ))}
                                     </select>
-                                </>
-                            )}
-                            {createDraft.subjectType === 'user' && (
-                                <>
-                                    <span className='text-light'>사용자 예외</span>
-                                    <select
-                                        value={createDraft.subjectId}
-                                        onChange={(e) => setCreateDraft((prev) => ({...prev, subjectId: e.target.value}))}
-                                        className='form-control'
-                                    >
-                                        <option value=''>사용자 선택</option>
-                                        {boardUserOptions.map((option) => (
-                                            <option key={option.id} value={option.id}>{option.name}</option>
-                                        ))}
-                                    </select>
-                                </>
-                            )}
+                                )}
+                                {createDraft.subjectType === 'org_unit' && (
+                                    <span className='text-light'>-</span>
+                                )}
+                            </div>
 
                             <select
                                 value={createDraft.permission}
-                                onChange={(e) => setCreateDraft((prev) => ({...prev, permission: normalizePermissionForSubject(prev.subjectType, e.target.value as ACLPermission)}))}
+                                onChange={(e) => setCreateDraft((prev) => ({...prev, permission: normalizePermissionForSubject(e.target.value as ACLPermission)}))}
                                 className='form-control'
                             >
-                                {getPermissionOptionsForSubject(createDraft.subjectType).map((permissionOption) => (
+                                {getPermissionOptions().map((permissionOption) => (
                                     <option key={`create-${permissionOption}`} value={permissionOption}>{permissionOption}</option>
                                 ))}
                             </select>
@@ -1076,8 +974,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                                         isACLOptionsLoading ||
                                         (createDraft.subjectType === 'org_position' && (!createDraft.orgUnitId || !createDraft.positionCode)) ||
                                         (createDraft.subjectType === 'org_unit' && !createDraft.subjectId) ||
-                                        (createDraft.subjectType === 'position' && !createDraft.subjectId) ||
-                                        (createDraft.subjectType === 'user' && !createDraft.subjectId)
+                                        (createDraft.subjectType === 'position' && !createDraft.subjectId)
                                     }
                                 >
                                     <FormattedMessage id='shareBoard.acl.addEntry' defaultMessage='추가'/>
