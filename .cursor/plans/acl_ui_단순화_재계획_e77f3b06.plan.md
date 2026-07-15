@@ -16,5 +16,3 @@ todos:
     status: pending
 isProject: false
 ---
-
-k

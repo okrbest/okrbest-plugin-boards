@@ -317,6 +317,7 @@ func (a *API) handleDeleteBoardACLEntry(w http.ResponseWriter, r *http.Request) 
 }
 
 func (a *API) persistBoardACL(boardID, userID string, entries []model.BoardACLEntry) ([]model.BoardACLEntry, error) {
+	entries = filterOutUserACLEntries(entries)
 	normalizeLegacyOrgManagePermissions(entries)
 
 	updatedProperties := map[string]interface{}{
@@ -329,6 +330,20 @@ func (a *API) persistBoardACL(boardID, userID string, entries []model.BoardACLEn
 	}
 
 	return entries, nil
+}
+
+// filterOutUserACLEntries drops legacy per-user ACL entries. User-level
+// exceptions are no longer configurable from the ACL UI, so any leftover
+// entries from before that removal are pruned the next time ACL is saved.
+func filterOutUserACLEntries(entries []model.BoardACLEntry) []model.BoardACLEntry {
+	filtered := make([]model.BoardACLEntry, 0, len(entries))
+	for _, entry := range entries {
+		if entry.SubjectType == model.BoardACLSubjectUser {
+			continue
+		}
+		filtered = append(filtered, entry)
+	}
+	return filtered
 }
 
 func (a *API) canManageBoardACL(userID, boardID string) bool {
@@ -389,9 +404,6 @@ func validateACLManageScope(entries []model.BoardACLEntry) error {
 func normalizeLegacyOrgManagePermissions(entries []model.BoardACLEntry) {
 	for i := range entries {
 		if entries[i].Permission != model.EffectiveBoardPermissionManage {
-			continue
-		}
-		if entries[i].SubjectType == model.BoardACLSubjectUser {
 			continue
 		}
 		entries[i].Permission = model.EffectiveBoardPermissionEdit

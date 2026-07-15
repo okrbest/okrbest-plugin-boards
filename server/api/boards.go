@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/audit"
-	"github.com/mattermost/mattermost-plugin-boards/server/utils"
 
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
@@ -547,55 +546,6 @@ func (a *API) handleTransferBoardOwnership(w http.ResponseWriter, r *http.Reques
 	if _, err := a.app.PatchBoard(boardPatch, boardID, requestorID); err != nil {
 		a.errorResponse(w, r, err)
 		return
-	}
-
-	updatedBoard, err := a.app.GetBoard(boardID)
-	if err != nil {
-		a.errorResponse(w, r, err)
-		return
-	}
-
-	entries, err := model.ParseBoardACLFromProperties(updatedBoard.Properties)
-	if err != nil {
-		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
-		return
-	}
-
-	updatedEntries := false
-	highestPermission := model.EffectiveBoardPermissionNone
-	ownerEntryIndex := -1
-	for i, entry := range entries {
-		if entry.SubjectType != model.BoardACLSubjectUser || entry.SubjectID != currentOwnerID {
-			continue
-		}
-		ownerEntryIndex = i
-		if model.EffectivePermissionRank(entry.Permission) > model.EffectivePermissionRank(highestPermission) {
-			highestPermission = entry.Permission
-		}
-	}
-	if model.EffectivePermissionRank(highestPermission) < model.EffectivePermissionRank(model.EffectiveBoardPermissionManage) {
-		if ownerEntryIndex >= 0 {
-			entries[ownerEntryIndex].Permission = model.EffectiveBoardPermissionManage
-		} else {
-			entries = append(entries, model.BoardACLEntry{
-				ID:          utils.NewID(utils.IDTypeBlock),
-				SubjectType: model.BoardACLSubjectUser,
-				SubjectID:   currentOwnerID,
-				Permission:  model.EffectiveBoardPermissionManage,
-			})
-		}
-		updatedEntries = true
-	}
-
-	if updatedEntries {
-		if err := normalizeAndValidateACLEntries(entries); err != nil {
-			a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
-			return
-		}
-		if _, err := a.persistBoardACL(boardID, requestorID, entries); err != nil {
-			a.errorResponse(w, r, err)
-			return
-		}
 	}
 
 	jsonStringResponse(w, http.StatusOK, "{}")
