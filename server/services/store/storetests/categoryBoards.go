@@ -25,6 +25,12 @@ func StoreTestCategoryBoardsStore(t *testing.T, setup func(t *testing.T) (store.
 		testAddUpdateCategoryBoard(t, store)
 	})
 
+	t.Run("AddUpdateCategoryBoardSortOrder", func(t *testing.T) {
+		store, tearDown := setup(t)
+		defer tearDown()
+		testAddUpdateCategoryBoardSortOrder(t, store)
+	})
+
 	t.Run("SetBoardVisibility", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
@@ -218,6 +224,64 @@ func testAddUpdateCategoryBoard(t *testing.T, store store.Store) {
 	assert.Equal(t, "category_id", categoryBoards[0].ID)
 	assert.Equal(t, 5, len(categoryBoards[0].BoardMetadata))
 	assert.Contains(t, categoryBoards[0].BoardMetadata, model.CategoryBoardMetadata{BoardID: "board_id_5", Hidden: false})
+}
+
+func testAddUpdateCategoryBoardSortOrder(t *testing.T, store store.Store) {
+	_, _, err := store.CreateBoardsAndBlocksWithAdmin(&model.BoardsAndBlocks{
+		Boards: []*model.Board{
+			{ID: "sort_board_1", TeamID: "team_id"},
+			{ID: "sort_board_2", TeamID: "team_id"},
+			{ID: "sort_board_3", TeamID: "team_id"},
+		},
+	}, "user_id")
+	assert.NoError(t, err)
+
+	err = store.CreateCategory(model.Category{ID: "sort_category_1", Name: "Category 1", UserID: "user_id", TeamID: "team_id"})
+	assert.NoError(t, err)
+	err = store.CreateCategory(model.Category{ID: "sort_category_2", Name: "Category 2", UserID: "user_id", TeamID: "team_id"})
+	assert.NoError(t, err)
+
+	// boards added one at a time should be appended to the end of the
+	// category, in insertion order, rather than always landing at the top
+	err = store.AddUpdateCategoryBoard("user_id", "sort_category_1", []string{"sort_board_1"})
+	assert.NoError(t, err)
+	err = store.AddUpdateCategoryBoard("user_id", "sort_category_1", []string{"sort_board_2"})
+	assert.NoError(t, err)
+
+	categoryBoards, err := store.GetUserCategoryBoards("user_id", "team_id")
+	assert.NoError(t, err)
+
+	category1 := findCategoryBoardsByID(categoryBoards, "sort_category_1")
+	assert.Equal(t, []model.CategoryBoardMetadata{
+		{BoardID: "sort_board_1", Hidden: false},
+		{BoardID: "sort_board_2", Hidden: false},
+	}, category1.BoardMetadata)
+
+	// moving sort_board_1 from category 1 to category 2 should place it at
+	// the end of category 2 (not reuse its stale sort_order from category 1,
+	// and not always reset to the very top)
+	err = store.AddUpdateCategoryBoard("user_id", "sort_category_2", []string{"sort_board_3"})
+	assert.NoError(t, err)
+	err = store.AddUpdateCategoryBoard("user_id", "sort_category_2", []string{"sort_board_1"})
+	assert.NoError(t, err)
+
+	categoryBoards, err = store.GetUserCategoryBoards("user_id", "team_id")
+	assert.NoError(t, err)
+
+	category2 := findCategoryBoardsByID(categoryBoards, "sort_category_2")
+	assert.Equal(t, []model.CategoryBoardMetadata{
+		{BoardID: "sort_board_3", Hidden: false},
+		{BoardID: "sort_board_1", Hidden: false},
+	}, category2.BoardMetadata)
+}
+
+func findCategoryBoardsByID(categoryBoards []model.CategoryBoards, categoryID string) model.CategoryBoards {
+	for _, categoryBoard := range categoryBoards {
+		if categoryBoard.ID == categoryID {
+			return categoryBoard
+		}
+	}
+	return model.CategoryBoards{}
 }
 
 func testSetBoardVisibility(t *testing.T, store store.Store) {

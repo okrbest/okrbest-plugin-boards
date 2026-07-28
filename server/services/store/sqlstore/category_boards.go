@@ -70,6 +70,11 @@ func (s *SQLStore) addUpdateCategoryBoard(db sq.BaseRunner, userID, categoryID s
 		return nil
 	}
 
+	maxSortOrder, err := s.getMaxCategoryBoardSortOrder(db, categoryID)
+	if err != nil {
+		return err
+	}
+
 	query := s.getQueryBuilder(db).
 		Insert(s.tablePrefix+"category_boards").
 		Columns(
@@ -84,7 +89,9 @@ func (s *SQLStore) addUpdateCategoryBoard(db sq.BaseRunner, userID, categoryID s
 		)
 
 	now := utils.GetMillis()
+	nextSortOrder := maxSortOrder
 	for _, boardID := range boardIDs {
+		nextSortOrder += model.CategoryBoardsSortOrderGap
 		query = query.Values(
 			utils.NewID(utils.IDTypeNone),
 			userID,
@@ -92,20 +99,20 @@ func (s *SQLStore) addUpdateCategoryBoard(db sq.BaseRunner, userID, categoryID s
 			boardID,
 			now,
 			now,
-			0,
+			nextSortOrder,
 			false,
 		)
 	}
 
 	if s.dbType == model.MysqlDBType {
 		query = query.Suffix(
-			"ON DUPLICATE KEY UPDATE category_id = ?",
+			"ON DUPLICATE KEY UPDATE category_id = ?, sort_order = VALUES(sort_order)",
 			categoryID,
 		)
 	} else {
 		query = query.Suffix(
 			`ON CONFLICT (user_id, board_id)
-			 DO UPDATE SET category_id = EXCLUDED.category_id, update_at = EXCLUDED.update_at`,
+			 DO UPDATE SET category_id = EXCLUDED.category_id, update_at = EXCLUDED.update_at, sort_order = EXCLUDED.sort_order`,
 		)
 	}
 
@@ -117,6 +124,25 @@ func (s *SQLStore) addUpdateCategoryBoard(db sq.BaseRunner, userID, categoryID s
 	}
 
 	return nil
+}
+
+func (s *SQLStore) getMaxCategoryBoardSortOrder(db sq.BaseRunner, categoryID string) (int, error) {
+	query := s.getQueryBuilder(db).
+		Select("COALESCE(MAX(sort_order), 0)").
+		From(s.tablePrefix + "category_boards").
+		Where(sq.Eq{
+			"category_id": categoryID,
+		})
+
+	row := query.QueryRow()
+
+	var maxSortOrder int
+	if err := row.Scan(&maxSortOrder); err != nil {
+		s.logger.Error("getMaxCategoryBoardSortOrder error fetching max sort_order", mlog.String("categoryID", categoryID), mlog.Err(err))
+		return 0, err
+	}
+
+	return maxSortOrder, nil
 }
 
 func (s *SQLStore) categoryBoardsFromRows(rows *sql.Rows) ([]model.CategoryBoardMetadata, error) {

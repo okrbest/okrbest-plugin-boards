@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useState} from 'react'
+import React, {useCallback, useEffect, useRef, useState} from 'react'
 import {FormattedMessage} from 'react-intl'
 import {DragDropContext, Droppable, DropResult} from '@hello-pangea/dnd'
 
@@ -76,6 +76,7 @@ const Sidebar = (props: Props) => {
     const activeViewID = useAppSelector(getCurrentViewId)
     const currentBoard = useAppSelector(getCurrentBoard)
     const [initialized, setInitialized] = useState(false)
+    const checkedBoardKeysRef = useRef<Set<string>>(new Set())
 
     useEffect(() => {
         const categoryOnChangeHandler = (_: WSClient, categories: Category[]) => {
@@ -133,24 +134,53 @@ const Sidebar = (props: Props) => {
             return
         }
 
+        const key = `${team.id}:${currentBoard.id}`
+        if (checkedBoardKeysRef.current.has(key)) {
+            return
+        }
+
         // find the category the current board belongs to
-        // const category = sidebarCategories.find((c) => c.boardIDs.indexOf(currentBoard.id) >= 0)
         const category = sidebarCategories.find((c) => c.boardMetadata.find((boardMetadata) => boardMetadata.boardID === currentBoard.id))
         if (category) {
             // Boards does belong to a category.
             // All good here. Nothing to do
+            checkedBoardKeysRef.current.add(key)
             return
         }
 
-        // if the board doesn't belong to a category
-        // we need to move it to the default "Boards" category
-        const boardsCategory = sidebarCategories.find((c) => c.name === 'Boards')
-        if (!boardsCategory) {
-            Utils.logError('Boards category not found for user')
-            return
-        }
+        // Local state may be momentarily stale (multi-tab moves, out-of-order
+        // WS events, quick navigation). Mark as checked before re-verifying
+        // against the server so this effect doesn't re-fire for the same
+        // board while the confirmation request is in flight.
+        checkedBoardKeysRef.current.add(key)
+        let cancelled = false
 
-        octoClient.moveBoardToCategory(team.id, currentBoard.id, boardsCategory.id, '')
+        dispatch(fetchSidebarCategories(team.id)).then((result) => {
+            if (cancelled) {
+                return
+            }
+
+            const latestCategories = (result.payload || []) as CategoryBoards[]
+            const stillMissing = !latestCategories.find((c) => c.boardMetadata.find((boardMetadata) => boardMetadata.boardID === currentBoard.id))
+            if (!stillMissing) {
+                // was a stale-state race, board already belongs to a category
+                return
+            }
+
+            // if the board doesn't belong to a category
+            // we need to move it to the default "Boards" category
+            const boardsCategory = latestCategories.find((c) => c.name === 'Boards')
+            if (!boardsCategory) {
+                Utils.logError('Boards category not found for user')
+                return
+            }
+
+            octoClient.moveBoardToCategory(team.id, currentBoard.id, boardsCategory.id, '')
+        })
+
+        return () => {
+            cancelled = true
+        }
     }, [sidebarCategories, currentBoard, team, initialized])
 
     useWebsockets(teamId, (websocketClient: WSClient) => {

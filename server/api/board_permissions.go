@@ -180,11 +180,6 @@ func (a *API) handlePutBoardACL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateACLManageScope(req.Entries); err != nil {
-		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
-		return
-	}
-
 	if err := normalizeAndValidateACLEntries(req.Entries); err != nil {
 		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
 		return
@@ -233,10 +228,6 @@ func (a *API) handleCreateBoardACLEntry(w http.ResponseWriter, r *http.Request) 
 		OrgUnitID:    req.OrgUnitID,
 		PositionCode: req.PositionCode,
 		Permission:   req.Permission,
-	}
-	if err := validateACLManageScope([]model.BoardACLEntry{entry}); err != nil {
-		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
-		return
 	}
 	if err := normalizeAndValidateACLEntries([]model.BoardACLEntry{entry}); err != nil {
 		a.errorResponse(w, r, model.NewErrBadRequest(err.Error()))
@@ -386,18 +377,6 @@ func normalizeAndValidateACLEntries(entries []model.BoardACLEntry) error {
 		}
 	}
 
-	return nil
-}
-
-func validateACLManageScope(entries []model.BoardACLEntry) error {
-	for _, entry := range entries {
-		if entry.Permission != model.EffectiveBoardPermissionManage {
-			continue
-		}
-		if entry.SubjectType != model.BoardACLSubjectUser {
-			return model.NewErrBadRequest("manage permission is only allowed for user subjectType")
-		}
-	}
 	return nil
 }
 

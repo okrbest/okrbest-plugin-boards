@@ -538,13 +538,19 @@ func (a *API) handleDeleteMember(w http.ResponseWriter, r *http.Request) {
 	paramsUserID := mux.Vars(r)["userID"]
 	userID := getUserID(r)
 
-	if _, err := a.app.GetBoard(boardID); err != nil {
+	board, err := a.app.GetBoard(boardID)
+	if err != nil {
 		a.errorResponse(w, r, err)
 		return
 	}
 
 	if !a.canManageBoardMembership(userID, boardID) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to modify board members"))
+		return
+	}
+
+	if paramsUserID == model.ResolveBoardOwnerUserID(board) {
+		a.errorResponse(w, r, model.NewErrBadRequest("owner cannot be removed as a member; use ownership transfer"))
 		return
 	}
 
