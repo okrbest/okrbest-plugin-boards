@@ -57,6 +57,22 @@ Detailed project rules and context have been migrated to the `.gemini/instructio
 ### Server Specific
 *   `make server-test`: Run backend tests.
 
+## Workflow (spec-kit + superpowers)
+
+기능 개발은 spec-kit 파이프라인을 따른다:
+`specify → (clarify) → plan → tasks → (analyze) → implement`. 명세 정본은
+`specs/<NNN-feature>/`이며 한국어로 작성한다. 프로젝트 규칙은
+`.specify/memory/constitution.md`, 팀 가이드는 `SPEC_KIT_GUIDE.md`.
+
+*   **단순/명확한 작업**: 브레인스토밍 없이 바로 명세 작성.
+*   **복잡한 기능**: 브레인스토밍으로 의도·요구사항·설계를 정리한 뒤 명세로 넘긴다.
+    전환은 **반드시 사용자가 명시적으로 선택**한다 (① 명세로 진행 ② 더 다듬기 ③ 보류).
+*   구현 중 규율: 실패 테스트 우선 → 검증 명령 출력 확인 → 완료 선언. 땜질 전에
+    근본 원인 조사.
+*   Gemini CLI에는 spec-kit 스킬이 설치돼 있지 않다. 명세 산출물 생성은 Claude
+    Code(`/speckit-*`)·Codex(`$speckit-*`)·Cursor에서 수행하고, Gemini는 그
+    산출물(`specs/<NNN-feature>/`)을 읽어 따른다.
+
 ## Contribution Guidelines
 *   **Language**: All code comments and documentation responses should be in **Korean** (as per `project.md`).
 *   **Code Style**: Follow the patterns in existing code. Avoid over-engineering.
