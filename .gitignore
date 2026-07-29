@@ -57,11 +57,26 @@ server/**/*.coverage
 # notice
 .notice-work
 
-# Claude 
-.claude
+# Claude Code — 팀 공유 자산은 커밋, 개인 설정·런타임 산출물만 무시한다.
+# 커밋 대상: 스킬(speckit-*, speckit-sync 포함), 서브에이전트, 슬래시 명령, 훅,
+#            프로젝트 공용 settings.json, CLAUDE.md
+# 무시 대상: settings.local.json(개인 권한), CLAUDE.local.md(개인 메모), 런타임 캐시
+.claude/*
+!.claude/skills/
+!.claude/agents/
+!.claude/commands/
+!.claude/hooks/
+!.claude/settings.json
+.claude/settings.local.json
+.claude/**/*.local.*
 **/CLAUDE.local.md
 CLAUDE*.md
+!CLAUDE.md
 .cursorrules
 
 .analysis
 .playwright-mcp
+
+# superpowers 임시 산출물 — 명세 정본은 specs/<NNN-feature>/
+.worktrees/
+docs/superpowers/

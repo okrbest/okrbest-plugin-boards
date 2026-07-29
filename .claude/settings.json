@@ -1,0 +1,35 @@
+{
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(make webapp-ci:*)",
+      "Bash(make server-lint:*)",
+      "Bash(make server-test:*)",
+      "Bash(make check-style:*)",
+      "Bash(make test:*)",
+      "Bash(make generate:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run check-types:*)",
+      "Bash(npm run test:*)",
+      "Bash(go test:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch --show-current)",
+      "Bash(specify version)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "Bash(.specify/scripts/bash/upstream-sync.sh status:*)",
+      "Bash(.specify/scripts/bash/upstream-sync.sh next:*)",
+      "Bash(.specify/scripts/bash/upstream-sync.sh signals:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
+    ]
+  }
+}
