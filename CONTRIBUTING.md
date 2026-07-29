@@ -1,3 +1,18 @@
+# 이 포크에 기여하기 (okrbest/okrbest-plugin-boards)
+
+기능 작업은 spec-kit + superpowers 워크플로를 따릅니다. 시작 전에
+**[SPEC_KIT_GUIDE.md](SPEC_KIT_GUIDE.md)**를 읽으세요.
+
+1. `main`에 직접 커밋하지 않습니다. 작업당 브랜치 1개 + PR.
+2. 기능·API 변경은 `/speckit-specify`로 명세부터 만듭니다 (정본: `specs/<NNN-feature>/`, 한국어).
+3. 머지 전 품질 게이트: webapp은 `make webapp-ci`, server는 `make server-lint` + `make server-test`
+   (server 테스트는 CI가 돌리지 않으므로 로컬 실행 필수).
+4. 전체 규칙: [.specify/memory/constitution.md](.specify/memory/constitution.md).
+
+아래는 upstream(mattermost/focalboard)에서 온 원본 안내입니다.
+
+---
+
 # Disclaimer
 
 > [!WARNING]

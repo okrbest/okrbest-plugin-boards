@@ -8,6 +8,18 @@ Mattermost boards plugins is an open source, multilingual, self-hosted project m
 
 Access the latest releases of the mattermost boards plugin by downloading the `mattermost-plugin-focalboard.tar.gz` file from the releases in this repository: <https://github.com/mattermost/mattermost-plugin-boards/releases>. After downloading and installing the plugin in the System Console, select the menu in the top left corner and select **Boards**. 
 
+### 개발 워크플로 (이 포크 전용 — 팀 필독)
+
+이 저장소는 **spec-kit**(명세 파이프라인) + **superpowers**(구현 규율)로 기능을 개발합니다.
+clone하면 스킬·규칙·프로젝트 설정이 함께 따라오므로 추가 설정은 거의 없습니다.
+
+- 팀 가이드: **[SPEC_KIT_GUIDE.md](SPEC_KIT_GUIDE.md)** — 설치 2단계, 기능 개발 6단계, 명령 치트시트
+- 프로젝트 규칙(품질 게이트·레이어 경계·마이그레이션 규율): [.specify/memory/constitution.md](.specify/memory/constitution.md)
+- upstream(mattermost/mattermost-plugin-boards) 선별 반영: `/speckit-sync` (가이드 6절)
+
+흐름: `아이디어 → (brainstorming) → /speckit-specify → /speckit-plan → /speckit-tasks → /speckit-implement`.
+명세 정본은 `specs/<NNN-feature>/`이며 한국어로 작성합니다.
+
 ### Getting started
 
 Clone [mattermost](https://github.com/mattermost/mattermost-server) into sibling directory.
