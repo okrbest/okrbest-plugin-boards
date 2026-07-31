@@ -293,14 +293,6 @@ func (s *SQLStore) GetAllTeams() ([]*model.Team, error) {
 
 }
 
-func (s *SQLStore) GetOrgUnitsForTeam(teamID string, includeInactive bool) ([]*model.ACLSubjectOption, error) {
-	return s.getOrgUnitsForTeam(s.db, teamID, includeInactive)
-}
-
-func (s *SQLStore) GetPositionsForTeam(teamID string, includeInactive bool) ([]*model.ACLSubjectOption, error) {
-	return s.getPositionsForTeam(s.db, teamID, includeInactive)
-}
-
 func (s *SQLStore) GetBlock(blockID string) (*model.Block, error) {
 	return s.getBlock(s.db, blockID)
 
@@ -428,16 +420,6 @@ func (s *SQLStore) GetBoardsForUserAndTeam(userID string, teamID string, include
 
 func (s *SQLStore) GetBoardsInTeamByIds(boardIDs []string, teamID string) ([]*model.Board, error) {
 	return s.getBoardsInTeamByIds(s.db, boardIDs, teamID)
-
-}
-
-func (s *SQLStore) GetBoardsInTeam(teamID string, onlyWithACL bool) ([]*model.Board, error) {
-	return s.getBoardsInTeam(s.db, teamID, onlyWithACL)
-
-}
-
-func (s *SQLStore) GetBoardsInUserTeams(userID string, onlyWithACL bool) ([]*model.Board, error) {
-	return s.getBoardsInUserTeams(s.db, userID, onlyWithACL)
 
 }
 
@@ -689,6 +671,11 @@ func (s *SQLStore) InsertBoard(board *model.Board, userID string) (*model.Board,
 
 }
 
+func (s *SQLStore) InsertBoardMention(mention *model.BoardMention) error {
+	return s.insertBoardMention(s.db, mention)
+
+}
+
 func (s *SQLStore) InsertBoardWithAdmin(board *model.Board, userID string) (*model.Board, *model.BoardMember, error) {
 	if s.dbType == model.SqliteDBType {
 		return s.insertBoardWithAdmin(s.db, board, userID)
@@ -710,6 +697,16 @@ func (s *SQLStore) InsertBoardWithAdmin(board *model.Board, userID string) (*mod
 	}
 
 	return result, resultVar1, nil
+
+}
+
+func (s *SQLStore) MarkBoardMentionReplied(userID string, cardID string) error {
+	return s.markBoardMentionReplied(s.db, userID, cardID)
+
+}
+
+func (s *SQLStore) MarkBoardMentionRepliedByPostID(userID string, postID string) error {
+	return s.markBoardMentionRepliedByPostID(s.db, userID, postID)
 
 }
 
@@ -1013,16 +1010,4 @@ func (s *SQLStore) UpsertTeamSettings(team model.Team) error {
 func (s *SQLStore) UpsertTeamSignupToken(team model.Team) error {
 	return s.upsertTeamSignupToken(s.db, team)
 
-}
-
-func (s *SQLStore) InsertBoardMention(mention *model.BoardMention) error {
-	return s.insertBoardMention(s.db, mention)
-}
-
-func (s *SQLStore) MarkBoardMentionReplied(userID, cardID string) error {
-	return s.markBoardMentionReplied(s.db, userID, cardID)
-}
-
-func (s *SQLStore) MarkBoardMentionRepliedByPostID(userID, postID string) error {
-	return s.markBoardMentionRepliedByPostID(s.db, userID, postID)
 }

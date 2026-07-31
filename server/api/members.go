@@ -452,13 +452,8 @@ func (a *API) handleUpdateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	board, err := a.app.GetBoard(boardID)
-	if err != nil {
-		a.errorResponse(w, r, err)
-		return
-	}
-	if paramsUserID == model.ResolveBoardOwnerUserID(board) {
-		a.errorResponse(w, r, model.NewErrBadRequest("owner's role cannot be changed here; use ownership transfer"))
+	if _, boardErr := a.app.GetBoard(boardID); boardErr != nil {
+		a.errorResponse(w, r, boardErr)
 		return
 	}
 
@@ -538,19 +533,13 @@ func (a *API) handleDeleteMember(w http.ResponseWriter, r *http.Request) {
 	paramsUserID := mux.Vars(r)["userID"]
 	userID := getUserID(r)
 
-	board, err := a.app.GetBoard(boardID)
-	if err != nil {
+	if _, err := a.app.GetBoard(boardID); err != nil {
 		a.errorResponse(w, r, err)
 		return
 	}
 
 	if !a.canManageBoardMembership(userID, boardID) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to modify board members"))
-		return
-	}
-
-	if paramsUserID == model.ResolveBoardOwnerUserID(board) {
-		a.errorResponse(w, r, model.NewErrBadRequest("owner cannot be removed as a member; use ownership transfer"))
 		return
 	}
 

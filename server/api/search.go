@@ -6,7 +6,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
@@ -135,7 +134,6 @@ func (a *API) handleSearchBoards(w http.ResponseWriter, r *http.Request) {
 	term := r.URL.Query().Get("q")
 	userID := getUserID(r)
 	hasTeamAccess := a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
-	debugPermissions := debugPermissionsEnabled(r)
 	isGuest, err := a.userIsGuest(userID)
 	if err != nil {
 		a.errorResponse(w, r, err)
@@ -157,22 +155,11 @@ func (a *API) handleSearchBoards(w http.ResponseWriter, r *http.Request) {
 		a.errorResponse(w, r, err)
 		return
 	}
-	debugInfo := boardsDebugInfo{}
-	if debugPermissions {
-		debugInfo = resolveDebugInfo(a.permissions, userID, teamID)
-		setBoardsDebugHeaders(w, hasTeamAccess, isGuest, len(boards), debugInfo)
-	}
 	a.logger.Debug("SearchBoards permission evaluation",
 		mlog.String("userID", userID),
 		mlog.String("teamID", teamID),
 		mlog.Bool("hasTeamAccess", hasTeamAccess),
 		mlog.Bool("isGuest", isGuest),
-		mlog.Bool("isCEO", debugInfo.IsCEO),
-		mlog.Bool("isCEOFromProps", debugInfo.IsCEOFromProps),
-		mlog.Bool("isCEOFromFallback", debugInfo.IsCEOFromFallback),
-		mlog.String("orgUnitIDs", strings.Join(debugInfo.OrgUnits, ",")),
-		mlog.String("positionCodes", strings.Join(debugInfo.PositionCodes, ",")),
-		mlog.String("fullVisibilityPositionIDs", strings.Join(debugInfo.FullVisibilityPositionIDs, ",")),
 		mlog.Int("boardsCount", len(boards)),
 	)
 	if !hasTeamAccess && len(boards) == 0 {

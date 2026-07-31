@@ -751,36 +751,6 @@ func (mr *MockStoreMockRecorder) GetBoardsInTeamByIds(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoardsInTeamByIds", reflect.TypeOf((*MockStore)(nil).GetBoardsInTeamByIds), arg0, arg1)
 }
 
-// GetBoardsInTeam mocks base method.
-func (m *MockStore) GetBoardsInTeam(arg0 string, arg1 bool) ([]*model.Board, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoardsInTeam", arg0, arg1)
-	ret0, _ := ret[0].([]*model.Board)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBoardsInTeam indicates an expected call of GetBoardsInTeam.
-func (mr *MockStoreMockRecorder) GetBoardsInTeam(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoardsInTeam", reflect.TypeOf((*MockStore)(nil).GetBoardsInTeam), arg0, arg1)
-}
-
-// GetBoardsInUserTeams mocks base method.
-func (m *MockStore) GetBoardsInUserTeams(arg0 string, arg1 bool) ([]*model.Board, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoardsInUserTeams", arg0, arg1)
-	ret0, _ := ret[0].([]*model.Board)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBoardsInUserTeams indicates an expected call of GetBoardsInUserTeams.
-func (mr *MockStoreMockRecorder) GetBoardsInUserTeams(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoardsInUserTeams", reflect.TypeOf((*MockStore)(nil).GetBoardsInUserTeams), arg0, arg1)
-}
-
 // GetCardLimitTimestamp mocks base method.
 func (m *MockStore) GetCardLimitTimestamp() (int64, error) {
 	m.ctrl.T.Helper()
@@ -1409,6 +1379,20 @@ func (mr *MockStoreMockRecorder) InsertBoard(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBoard", reflect.TypeOf((*MockStore)(nil).InsertBoard), arg0, arg1)
 }
 
+// InsertBoardMention mocks base method.
+func (m *MockStore) InsertBoardMention(arg0 *model.BoardMention) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertBoardMention", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertBoardMention indicates an expected call of InsertBoardMention.
+func (mr *MockStoreMockRecorder) InsertBoardMention(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBoardMention", reflect.TypeOf((*MockStore)(nil).InsertBoardMention), arg0)
+}
+
 // InsertBoardWithAdmin mocks base method.
 func (m *MockStore) InsertBoardWithAdmin(arg0 *model.Board, arg1 string) (*model.Board, *model.BoardMember, error) {
 	m.ctrl.T.Helper()
@@ -1423,6 +1407,34 @@ func (m *MockStore) InsertBoardWithAdmin(arg0 *model.Board, arg1 string) (*model
 func (mr *MockStoreMockRecorder) InsertBoardWithAdmin(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBoardWithAdmin", reflect.TypeOf((*MockStore)(nil).InsertBoardWithAdmin), arg0, arg1)
+}
+
+// MarkBoardMentionReplied mocks base method.
+func (m *MockStore) MarkBoardMentionReplied(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkBoardMentionReplied", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkBoardMentionReplied indicates an expected call of MarkBoardMentionReplied.
+func (mr *MockStoreMockRecorder) MarkBoardMentionReplied(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBoardMentionReplied", reflect.TypeOf((*MockStore)(nil).MarkBoardMentionReplied), arg0, arg1)
+}
+
+// MarkBoardMentionRepliedByPostID mocks base method.
+func (m *MockStore) MarkBoardMentionRepliedByPostID(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkBoardMentionRepliedByPostID", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkBoardMentionRepliedByPostID indicates an expected call of MarkBoardMentionRepliedByPostID.
+func (mr *MockStoreMockRecorder) MarkBoardMentionRepliedByPostID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBoardMentionRepliedByPostID", reflect.TypeOf((*MockStore)(nil).MarkBoardMentionRepliedByPostID), arg0, arg1)
 }
 
 // PatchBlock mocks base method.
@@ -1870,46 +1882,4 @@ func (m *MockStore) UpsertTeamSignupToken(arg0 model.Team) error {
 func (mr *MockStoreMockRecorder) UpsertTeamSignupToken(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertTeamSignupToken", reflect.TypeOf((*MockStore)(nil).UpsertTeamSignupToken), arg0)
-}
-
-// InsertBoardMention mocks base method.
-func (m *MockStore) InsertBoardMention(arg0 *model.BoardMention) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertBoardMention", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InsertBoardMention indicates an expected call of InsertBoardMention.
-func (mr *MockStoreMockRecorder) InsertBoardMention(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBoardMention", reflect.TypeOf((*MockStore)(nil).InsertBoardMention), arg0)
-}
-
-// MarkBoardMentionReplied mocks base method.
-func (m *MockStore) MarkBoardMentionReplied(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkBoardMentionReplied", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkBoardMentionReplied indicates an expected call of MarkBoardMentionReplied.
-func (mr *MockStoreMockRecorder) MarkBoardMentionReplied(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBoardMentionReplied", reflect.TypeOf((*MockStore)(nil).MarkBoardMentionReplied), arg0, arg1)
-}
-
-// MarkBoardMentionRepliedByPostID mocks base method.
-func (m *MockStore) MarkBoardMentionRepliedByPostID(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkBoardMentionRepliedByPostID", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkBoardMentionRepliedByPostID indicates an expected call of MarkBoardMentionRepliedByPostID.
-func (mr *MockStoreMockRecorder) MarkBoardMentionRepliedByPostID(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBoardMentionRepliedByPostID", reflect.TypeOf((*MockStore)(nil).MarkBoardMentionRepliedByPostID), arg0, arg1)
 }
