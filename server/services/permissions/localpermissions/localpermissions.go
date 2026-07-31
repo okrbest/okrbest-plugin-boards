@@ -53,19 +53,10 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *mmMod
 	if err != nil {
 		return false
 	}
-	if permission == model.PermissionDeleteBoard {
-		return response.IsOwner
-	}
 	if permission == model.PermissionCommentBoardCards {
 		return response.Capabilities.CanCommentCard
 	}
 	return model.PermissionSatisfies(response.EffectivePermission, permission)
-}
-
-// ResolveOrgContext is always empty in local/standalone mode: there is no
-// Mattermost user/org context available to resolve.
-func (s *Service) ResolveOrgContext(userID string) (orgUnits []string, positions []string, isCEO bool) {
-	return nil, nil, false
 }
 
 func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermissionsResponse, error) {
@@ -73,9 +64,8 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 		return &model.BoardPermissionsResponse{
 			BoardID:             boardID,
 			EffectivePermission: model.EffectiveBoardPermissionNone,
-			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone, false),
+			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone),
 			DerivedFrom:         model.PermissionDerivedDeny,
-			IsOwner:             false,
 		}, nil
 	}
 
@@ -84,9 +74,8 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 		return &model.BoardPermissionsResponse{
 			BoardID:             boardID,
 			EffectivePermission: model.EffectiveBoardPermissionNone,
-			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone, false),
+			Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone),
 			DerivedFrom:         model.PermissionDerivedDeny,
-			IsOwner:             false,
 		}, nil
 	}
 	if err != nil {
@@ -124,8 +113,7 @@ func (s *Service) GetBoardPermissions(userID, boardID string) (*model.BoardPermi
 	return &model.BoardPermissionsResponse{
 		BoardID:             boardID,
 		EffectivePermission: effective,
-		Capabilities:        model.BuildCapabilities(effective, false),
+		Capabilities:        model.BuildCapabilities(effective),
 		DerivedFrom:         derivedFrom,
-		IsOwner:             false,
 	}, nil
 }

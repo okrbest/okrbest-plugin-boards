@@ -22,13 +22,11 @@ func TestBuildCapabilities(t *testing.T) {
 	tests := []struct {
 		name       string
 		permission EffectiveBoardPermission
-		isOwner    bool
 		expected   BoardPermissionCapabilities
 	}{
 		{
 			name:       "none",
 			permission: EffectiveBoardPermissionNone,
-			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        false,
 				CanCommentCard: false,
@@ -42,7 +40,6 @@ func TestBuildCapabilities(t *testing.T) {
 		{
 			name:       "commenter",
 			permission: EffectiveBoardPermissionCommenter,
-			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
 				CanCommentCard: true,
@@ -56,7 +53,6 @@ func TestBuildCapabilities(t *testing.T) {
 		{
 			name:       "edit",
 			permission: EffectiveBoardPermissionEdit,
-			isOwner:    false,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
 				CanCommentCard: true,
@@ -70,21 +66,6 @@ func TestBuildCapabilities(t *testing.T) {
 		{
 			name:       "manage",
 			permission: EffectiveBoardPermissionManage,
-			isOwner:    false,
-			expected: BoardPermissionCapabilities{
-				CanView:        true,
-				CanCommentCard: true,
-				CanCreateCard:  true,
-				CanEditCard:    true,
-				CanDeleteCard:  true,
-				CanManageBoard: true,
-				CanDeleteBoard: false,
-			},
-		},
-		{
-			name:       "owner manage",
-			permission: EffectiveBoardPermissionManage,
-			isOwner:    true,
 			expected: BoardPermissionCapabilities{
 				CanView:        true,
 				CanCommentCard: true,
@@ -99,28 +80,7 @@ func TestBuildCapabilities(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.expected, BuildCapabilities(tt.permission, tt.isOwner))
+			require.Equal(t, tt.expected, BuildCapabilities(tt.permission))
 		})
 	}
-}
-
-func TestParseBoardACLFromProperties(t *testing.T) {
-	props := map[string]interface{}{
-		BoardACLPropertyKey: []map[string]interface{}{
-			{
-				"id":          "entry-1",
-				"subjectType": "user",
-				"subjectId":   "user-1",
-				"permission":  "manage",
-			},
-		},
-	}
-
-	entries, err := ParseBoardACLFromProperties(props)
-	require.NoError(t, err)
-	require.Len(t, entries, 1)
-	require.Equal(t, "entry-1", entries[0].ID)
-	require.Equal(t, BoardACLSubjectUser, entries[0].SubjectType)
-	require.Equal(t, "user-1", entries[0].SubjectID)
-	require.Equal(t, EffectiveBoardPermissionManage, entries[0].Permission)
 }
