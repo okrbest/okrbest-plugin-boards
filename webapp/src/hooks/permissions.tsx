@@ -16,7 +16,7 @@ const permissionToCapability: Record<Permission, BoardCapability> = {
     [Permission.ViewBoard]: 'canView',
     [Permission.CommentBoardCards]: 'canCommentCard',
     [Permission.ManageBoardCards]: 'canEditCard',
-    // Property edits are edit-level (not manage-level) in ACL model.
+    // Property edits are edit-level, not manage-level.
     [Permission.ManageBoardProperties]: 'canEditCard',
     [Permission.ManageBoardRoles]: 'canManageBoard',
     [Permission.ManageBoardType]: 'canManageBoard',
@@ -57,21 +57,12 @@ export const useHasPermissions = (teamId: string, boardId: string, permissions: 
         return false
     }
 
-    const adminPermissions = [Permission.ManageBoardType, Permission.ShareBoard, Permission.ManageBoardRoles, Permission.DeleteOthersComments]
+    const adminPermissions = [Permission.ManageBoardType, Permission.DeleteBoard, Permission.ShareBoard, Permission.ManageBoardRoles, Permission.DeleteOthersComments]
     const editorPermissions = [Permission.ManageBoardCards, Permission.ManageBoardProperties]
     const commenterPermissions = [Permission.CommentBoardCards]
     const viewerPermissions = [Permission.ViewBoard]
 
     for (const permission of permissions) {
-        if (permission === Permission.DeleteBoard) {
-            const ownerUserId = typeof board.properties?.board_owner_user_id === 'string' && board.properties.board_owner_user_id ?
-                board.properties.board_owner_user_id :
-                board.createdBy
-            if (member.userId === ownerUserId) {
-                return true
-            }
-            continue
-        }
         if (adminPermissions.includes(permission) && member.schemeAdmin) {
             return true
         }

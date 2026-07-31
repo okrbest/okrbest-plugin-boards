@@ -72,14 +72,6 @@ type BoardMember = {
     synthetic: boolean
 }
 
-type BoardACLEntry = {
-    id: string
-    subjectType: 'user' | 'org_unit' | 'position' | 'org_position'
-    subjectId: string
-    orgUnitId?: string
-    positionCode?: string
-    permission: 'view' | 'commenter' | 'edit' | 'manage'
-}
 
 type BoardCapabilities = {
     canView: boolean
@@ -96,13 +88,8 @@ type BoardPermissionsResponse = {
     effectivePermission: 'none' | 'view' | 'commenter' | 'edit' | 'manage'
     capabilities: BoardCapabilities
     derivedFrom: string
-    isOwner: boolean
 }
 
-type ACLSubjectOption = {
-    id: string
-    name: string
-}
 
 type BoardsAndBlocks = {
     boards: Board[]
@@ -384,10 +371,8 @@ export {
     Board,
     BoardPatch,
     BoardMember,
-    BoardACLEntry,
     BoardCapabilities,
     BoardPermissionsResponse,
-    ACLSubjectOption,
     BoardsAndBlocks,
     BoardsAndBlocksPatch,
     PropertyTypeEnum,

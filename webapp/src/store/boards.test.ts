@@ -10,15 +10,15 @@ describe('boards selectors', () => {
         memberBoard.id = 'board-member'
         memberBoard.title = 'B Board'
 
-        const aclBoard = TestBlockFactory.createBoard()
-        aclBoard.id = 'board-acl'
-        aclBoard.title = 'A Board'
+        const altBoard = TestBlockFactory.createBoard()
+        altBoard.id = 'board-alt'
+        altBoard.title = 'A Board'
 
         const state = {
             boards: {
                 boards: {
                     [memberBoard.id]: memberBoard,
-                    [aclBoard.id]: aclBoard,
+                    [altBoard.id]: altBoard,
                 },
                 myBoardMemberships: {
                     [memberBoard.id]: {boardId: memberBoard.id},
@@ -27,6 +27,6 @@ describe('boards selectors', () => {
         } as any
 
         const sortedBoards = getMySortedBoards(state)
-        expect(sortedBoards.map((board) => board.id)).toEqual(['board-acl', 'board-member'])
+        expect(sortedBoards.map((board) => board.id)).toEqual(['board-alt', 'board-member'])
     })
 })

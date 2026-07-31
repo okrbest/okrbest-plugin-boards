@@ -4,7 +4,7 @@
 import { Client4 } from "mattermost-redux/client"
 
 import {Block, BlockPatch, FileInfo} from './blocks/block'
-import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse, BoardACLEntry, ACLSubjectOption} from './blocks/board'
+import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse} from './blocks/board'
 import {ISharing} from './blocks/sharing'
 import {OctoUtils} from './octoUtils'
 import {IUser, UserConfigPatch, UserPreference} from './user'
@@ -348,34 +348,11 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         }))
-        this.logBoardsDebugHeaders(path, response)
         if (response.status !== 200) {
             return []
         }
         const boards = (await this.getJson(response, [])) as Board[]
         return boards
-    }
-
-    private logBoardsDebugHeaders(path: string, response: Response) {
-        const teamAccess = response.headers.get('X-Boards-Debug-TeamAccess')
-        if (!teamAccess) {
-            return
-        }
-
-        console.debug('[Boards Debug Headers]', {
-            path,
-            status: response.status,
-            teamAccess,
-            orgContextSource: response.headers.get('X-Boards-Debug-OrgContextSource'),
-            isGuest: response.headers.get('X-Boards-Debug-IsGuest'),
-            isCEO: response.headers.get('X-Boards-Debug-IsCEO'),
-            boardsCount: response.headers.get('X-Boards-Debug-BoardsCount'),
-            orgUnitIds: response.headers.get('X-Boards-Debug-OrgUnitIds'),
-            positionCodes: response.headers.get('X-Boards-Debug-PositionCodes'),
-            fullVisibilityPositionIds: response.headers.get('X-Boards-Debug-FullVisibilityPositionIds'),
-            isCEOFromProps: response.headers.get('X-Boards-Debug-IsCEO-FromProps'),
-            isCEOFromFallback: response.headers.get('X-Boards-Debug-IsCEO-FromFallback'),
-        })
     }
 
     private async getBoardMembersWithPath(path: string): Promise<BoardMember[]> {
@@ -929,77 +906,6 @@ class OctoClient {
         return this.getJson<BoardPermissionsResponse>(response, {} as BoardPermissionsResponse)
     }
 
-    async getBoardACL(boardID: string): Promise<BoardACLEntry[]> {
-        const path = `/api/v2/boards/${boardID}/acl`
-        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
-            method: 'GET',
-            headers: this.headers(),
-        }))
-
-        if (response.status !== 200) {
-            return []
-        }
-
-        return this.getJson<BoardACLEntry[]>(response, [])
-    }
-
-    async putBoardACL(boardID: string, entries: BoardACLEntry[]): Promise<BoardACLEntry[]> {
-        const path = `/api/v2/boards/${boardID}/acl`
-        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
-            method: 'PUT',
-            headers: this.headers(),
-            body: JSON.stringify({entries}),
-        }))
-
-        if (response.status !== 200) {
-            return []
-        }
-
-        return this.getJson<BoardACLEntry[]>(response, [])
-    }
-
-    async transferBoardOwnership(boardID: string, ownerUserId: string): Promise<boolean> {
-        const path = `/api/v2/boards/${boardID}/owner`
-        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
-            method: 'PUT',
-            headers: this.headers(),
-            body: JSON.stringify({ownerUserId}),
-        }))
-        return response.status === 200
-    }
-
-    async getOrgUnits(teamID: string): Promise<ACLSubjectOption[]> {
-        if (!teamID) {
-            return []
-        }
-        const path = `/api/v2/org/units?teamID=${encodeURIComponent(teamID)}`
-        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
-            method: 'GET',
-            headers: this.headers(),
-        }))
-        if (response.status !== 200) {
-            throw new Error('failed_to_load_org_units')
-        }
-        const units = await this.getJson<Array<{id: string, name: string}>>(response, [])
-        return units.filter((unit) => unit?.id && unit?.name)
-    }
-
-    async getPositions(teamID: string): Promise<ACLSubjectOption[]> {
-        if (!teamID) {
-            return []
-        }
-        const path = `/api/v2/org/positions?teamID=${encodeURIComponent(teamID)}`
-        const response = await fetch(this.getBaseURL() + path, Client4.getOptions({
-            method: 'GET',
-            headers: this.headers(),
-        }))
-        if (response.status !== 200) {
-            throw new Error('failed_to_load_positions')
-        }
-        const positions = await this.getJson<Array<{id: string, name: string}>>(response, [])
-        return positions.filter((position) => position?.id && position?.name)
-    }
-
     async duplicateBoard(boardID: string, asTemplate: boolean, toTeam?: string): Promise<BoardsAndBlocks | undefined> {
         let query = '?asTemplate=false'
         if (asTemplate) {
@@ -1175,7 +1081,6 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         })
-        this.logBoardsDebugHeaders(url, response)
 
         if (response.status !== 200) {
             return []
@@ -1190,7 +1095,6 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         })
-        this.logBoardsDebugHeaders(url, response)
 
         if (response.status !== 200) {
             return []
@@ -1205,7 +1109,6 @@ class OctoClient {
             method: 'GET',
             headers: this.headers(),
         })
-        this.logBoardsDebugHeaders(url, response)
 
         if (response.status !== 200) {
             return []
