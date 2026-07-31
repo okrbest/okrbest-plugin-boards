@@ -307,6 +307,7 @@ func (s *SQLStore) GetTemplateHelperFuncs() template.FuncMap {
 		"addColumnIfNeeded":     s.genAddColumnIfNeeded,
 		"dropColumnIfNeeded":    s.genDropColumnIfNeeded,
 		"createIndexIfNeeded":   s.genCreateIndexIfNeeded,
+		"dropIndexIfNeeded":     s.genDropIndexIfNeeded,
 		"renameTableIfNeeded":   s.genRenameTableIfNeeded,
 		"renameColumnIfNeeded":  s.genRenameColumnIfNeeded,
 		"doesTableExist":        s.doesTableExist,
@@ -425,6 +426,45 @@ func (s *SQLStore) genCreateIndexIfNeeded(tableName, columns string) (string, er
 		`, vars), nil
 	case model.PostgresDBType:
 		return fmt.Sprintf("\nCREATE INDEX IF NOT EXISTS %s ON %s (%s);\n", indexName, normTableName, columns), nil
+	default:
+		return "", ErrUnsupportedDatabaseType
+	}
+}
+
+func (s *SQLStore) genDropIndexIfNeeded(tableName, columns string) (string, error) {
+	indexName := getIndexName(tableName, columns)
+	tableName = addPrefixIfNeeded(tableName, s.tablePrefix)
+	normTableName := s.normalizeTablename(tableName)
+
+	switch s.dbType {
+	case model.SqliteDBType:
+		return fmt.Sprintf("\nDROP INDEX IF EXISTS %s;\n", indexName), nil
+	case model.MysqlDBType:
+		// MySQL has no DROP INDEX IF EXISTS, so look the index up first and
+		// prepare a no-op when it is already gone.
+		vars := map[string]string{
+			"schema":          s.schemaName,
+			"table_name":      tableName,
+			"norm_table_name": normTableName,
+			"index_name":      indexName,
+		}
+		return replaceVars(`
+			SET @stmt = (SELECT IF(
+				(
+				  SELECT COUNT(index_name) FROM INFORMATION_SCHEMA.STATISTICS
+				  WHERE table_name = '[[table_name]]'
+				  AND table_schema = '[[schema]]'
+				  AND index_name = '[[index_name]]'
+				) > 0,
+				'DROP INDEX [[index_name]] ON [[norm_table_name]];',
+				'SELECT 1;'
+			));
+			PREPARE dropIndexIfNeeded FROM @stmt;
+			EXECUTE dropIndexIfNeeded;
+			DEALLOCATE PREPARE dropIndexIfNeeded;
+		`, vars), nil
+	case model.PostgresDBType:
+		return fmt.Sprintf("\nDROP INDEX IF EXISTS %s;\n", indexName), nil
 	default:
 		return "", ErrUnsupportedDatabaseType
 	}
