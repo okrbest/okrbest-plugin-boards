@@ -1,8 +1,24 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {BoardMember} from '../blocks/board'
+
 import {TestBlockFactory} from '../test/testBlockFactory'
-import {getMySortedBoards} from './boards'
+import {getMySortedBoards, reducer, updateMembers} from './boards'
+
+describe('boards members reducer', () => {
+    test('updateMembers stores a member for a board that has no members entry yet', () => {
+        const member = {
+            boardId: 'board-1',
+            userId: 'user-1',
+            schemeViewer: true,
+        } as BoardMember
+
+        const state = reducer(undefined, updateMembers([member]))
+
+        expect(state.membersInBoards['board-1']['user-1']).toEqual(member)
+    })
+})
 
 describe('boards selectors', () => {
     test('getMySortedBoards includes accessible boards without direct membership', () => {

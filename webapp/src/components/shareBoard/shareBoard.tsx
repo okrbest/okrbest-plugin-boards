@@ -9,8 +9,8 @@ import {generatePath, useParams} from 'react-router-dom'
 import Select from 'react-select/async'
 import {CSSObject} from '@emotion/serialize'
 
-import {useAppSelector} from '../../store/hooks'
-import {getCurrentBoard, getCurrentBoardMembers} from '../../store/boards'
+import {useAppDispatch, useAppSelector} from '../../store/hooks'
+import {fetchBoardMembers, getCurrentBoard, getCurrentBoardMembers} from '../../store/boards'
 import {Channel, ChannelTypeOpen, ChannelTypePrivate} from '../../store/channels'
 import {getMe, getBoardUsersList} from '../../store/users'
 
@@ -118,6 +118,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const [publish, setPublish] = useState(false)
 
     const intl = useIntl()
+    const dispatch = useAppDispatch()
     const params = useParams<{teamId?: string, boardId: string, viewId: string}>()
 
     const hasSharePermissions = useHasPermissions(board.teamId, boardId, [Permission.ShareBoard])
@@ -173,7 +174,7 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
         }
     }
 
-    const addUser = (user: IUser) => {
+    const addUser = async (user: IUser) => {
         const minimumRole = board.minimumRole || MemberRole.Viewer
         const newMember = {
             boardId,
@@ -183,7 +184,13 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             schemeCommenter: minimumRole === MemberRole.Editor || minimumRole === MemberRole.Commenter,
             schemeViewer: minimumRole === MemberRole.Editor || minimumRole === MemberRole.Commenter || minimumRole === MemberRole.Viewer,
         } as BoardMember
-        mutator.createBoardMember(newMember)
+        const created = await mutator.createBoardMember(newMember, user)
+        if (!created) {
+            sendFlashMessage({
+                content: intl.formatMessage({id: 'shareBoard.addMemberFailed', defaultMessage: 'Could not add the member to this board'}),
+                severity: 'high',
+            })
+        }
     }
 
     const onUpdateBoardMember = (member: BoardMember, newPermission: string) => {
@@ -248,6 +255,15 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     useEffect(() => {
         loadData()
     }, [boardId, hasSharePermissions])
+
+    // Members can go stale while the dialog is closed if a websocket broadcast
+    // was missed, so re-read them from the server every time it opens.
+    useEffect(() => {
+        if (!boardId || !board.teamId) {
+            return
+        }
+        dispatch(fetchBoardMembers({teamId: board.teamId, boardId}))
+    }, [dispatch, boardId, board.teamId])
 
     const isSharing = Boolean(sharing && sharing.id === boardId && sharing.enabled)
     const readToken = (sharing && isSharing) ? sharing.token : ''

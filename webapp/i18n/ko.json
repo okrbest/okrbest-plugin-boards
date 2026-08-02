@@ -543,6 +543,7 @@
   "rhs-channel-boards-header.title": "보드",
   "share-board.publish": "게재하기",
   "share-board.share": "공유하기",
+  "shareBoard.addMemberFailed": "이 보드에 멤버를 추가하지 못했습니다.",
   "shareBoard.channels-select-group": "채널",
   "shareBoard.confirm-change-team-role.body": "이 보드 사용자 중 {role}보다 낮은 권한을 가진 사용자들은 <b>{role}권한으로 승급합니다.</b> 이 보드의 최소 권한을 변경하시겠습니까?",
   "shareBoard.confirm-change-team-role.confirmBtnText": "최소 권한 수정",

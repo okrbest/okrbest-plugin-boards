@@ -106,7 +106,10 @@ export const updateMembersHandler = (state: BoardsState, action: PayloadAction<B
     }
 
     const boardId = action.payload[0].boardId
-    const boardMembers = state.membersInBoards[boardId] || {}
+    if (!state.membersInBoards[boardId]) {
+        state.membersInBoards[boardId] = {}
+    }
+    const boardMembers = state.membersInBoards[boardId]
 
     for (const member of action.payload) {
         if (!member.schemeAdmin && !member.schemeEditor && !member.schemeViewer && !member.schemeCommenter) {

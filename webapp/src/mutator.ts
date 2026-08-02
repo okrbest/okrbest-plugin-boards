@@ -22,14 +22,26 @@ import TelemetryClient, {TelemetryCategory, TelemetryActions} from './telemetry/
 import {Category} from './store/sidebar'
 
 /* eslint-disable max-lines */
-import {UserConfigPatch, UserPreference} from './user'
+import {IUser, UserConfigPatch, UserPreference} from './user'
 import store from './store'
-import {updateBoards} from './store/boards'
+import {updateBoards, updateMembers} from './store/boards'
 import {updateView, updateViews} from './store/views'
 import {updateCards, markCardModified} from './store/cards'
 import {updateAttachments} from './store/attachments'
 import {updateComments} from './store/comments'
 import {addBoardUsers, removeBoardUsersById} from './store/users'
+
+// A member with every scheme flag cleared is treated as a removal by the
+// board members reducer.
+function removedMember(member: BoardMember): BoardMember {
+    return {
+        ...member,
+        schemeAdmin: false,
+        schemeEditor: false,
+        schemeCommenter: false,
+        schemeViewer: false,
+    }
+}
 
 function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
     return batch(() => {
@@ -371,26 +383,49 @@ class Mutator {
 
     // Board Members
 
-    async createBoardMember(member: BoardMember, description = 'create board member'): Promise<void> {
+    // The list of board members is only refreshed by a websocket broadcast, and
+    // that broadcast is skipped whenever the server no longer has this client
+    // registered as a listener. Applying the server response to the store keeps
+    // the dialog correct even when the broadcast never arrives.
+    async createBoardMember(member: BoardMember, user?: IUser, description = 'create board member'): Promise<BoardMember|undefined> {
+        let createdMember: BoardMember|undefined
+
         await undoManager.perform(
             async () => {
-                await octoClient.createBoardMember(member)
+                createdMember = await octoClient.createBoardMember(member)
+                if (!createdMember) {
+                    return
+                }
+                store.dispatch(updateMembers([createdMember]))
+                if (user) {
+                    store.dispatch(addBoardUsers([user]))
+                }
             },
             async () => {
                 await octoClient.deleteBoardMember(member)
+                store.dispatch(updateMembers([removedMember(member)]))
+                store.dispatch(removeBoardUsersById([member.userId]))
             },
             description,
             this.undoGroupId,
         )
+
+        return createdMember
     }
 
     async updateBoardMember(newMember: BoardMember, oldMember: BoardMember, description = 'update board member'): Promise<void> {
         await undoManager.perform(
             async () => {
-                await octoClient.updateBoardMember(newMember)
+                const response = await octoClient.updateBoardMember(newMember)
+                if (response.status === 200) {
+                    store.dispatch(updateMembers([newMember]))
+                }
             },
             async () => {
-                await octoClient.updateBoardMember(oldMember)
+                const response = await octoClient.updateBoardMember(oldMember)
+                if (response.status === 200) {
+                    store.dispatch(updateMembers([oldMember]))
+                }
             },
             description,
             this.undoGroupId,
@@ -401,10 +436,14 @@ class Mutator {
         await undoManager.perform(
             async () => {
                 await octoClient.deleteBoardMember(member)
+                store.dispatch(updateMembers([removedMember(member)]))
                 store.dispatch(removeBoardUsersById([member.userId]))
             },
             async () => {
-                await octoClient.createBoardMember(member)
+                const restored = await octoClient.createBoardMember(member)
+                if (restored) {
+                    store.dispatch(updateMembers([restored]))
+                }
                 const user = await octoClient.getUser(member.userId)
                 if (user) {
                     store.dispatch(addBoardUsers([user]))

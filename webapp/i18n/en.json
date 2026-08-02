@@ -542,6 +542,7 @@
   "rhs-channel-boards-header.title": "Boards",
   "share-board.publish": "Publish",
   "share-board.share": "Share",
+  "shareBoard.addMemberFailed": "Could not add the member to this board",
   "shareBoard.channels-select-group": "Channels",
   "shareBoard.confirm-change-team-role.body": "Everyone on this board with a lower permission than the \"{role}\" role will <b>now be promoted to {role}</b>. Are you sure you want to change the minimum role for the board?",
   "shareBoard.confirm-change-team-role.confirmBtnText": "Change minimum board role",

@@ -1,21 +1,24 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {act, render, screen} from '@testing-library/react'
+import {act, fireEvent, render, screen} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {Provider as ReduxProvider} from 'react-redux'
-import thunk from 'redux-thunk'
+import {thunk} from 'redux-thunk'
 
 import React from 'react'
 import {mocked} from 'jest-mock'
 
 import {IUser} from '../../user'
 import {ISharing} from '../../blocks/sharing'
+import {BoardMember} from '../../blocks/board'
 import {Channel} from '../../store/channels'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {mockStateStore, wrapDNDIntl} from '../../testUtils'
 import client from '../../octoClient'
 import {Utils} from '../../utils'
+
+import mutator from '../../mutator'
 
 import ShareBoard from './shareBoard'
 
@@ -702,4 +705,71 @@ describe('src/components/shareBoard/shareBoard', () => {
          expect(mockedOctoClient.searchUserChannels).not.toBeCalled()
          expect(container).toMatchSnapshot()
      })
+
+    test('selecting a user adds them to the board users state', async () => {
+        board.isTemplate = false
+        mockedOctoClient.getSharing.mockResolvedValue({id: '', enabled: false, token: ''} as ISharing)
+        mockedOctoClient.getBoardMembers.mockResolvedValue([])
+        mockedOctoClient.getTeamUsersList.mockResolvedValue([])
+        mockedUtils.isFocalboardPlugin.mockReturnValue(true)
+        mockedUtils.getUserDisplayName.mockImplementation((u) => u.username)
+
+        const newUser = {id: 'userid9', username: 'username_9'} as IUser
+        mockedOctoClient.searchTeamUsers.mockResolvedValue([newUser])
+        mockedOctoClient.searchUserChannels.mockResolvedValue([])
+        mockedOctoClient.createBoardMember.mockResolvedValue({boardId, userId: newUser.id, schemeViewer: true} as BoardMember)
+        const createMemberSpy = jest.spyOn(mutator, 'createBoardMember')
+
+        let container: HTMLElement|undefined
+        await act(async () => {
+            const result = render(
+                wrapDNDIntl(
+                    <ReduxProvider store={store}>
+                        <ShareBoard
+                            onClose={jest.fn()}
+                            enableSharedBoards={false}
+                        />
+                    </ReduxProvider>),
+            )
+            container = result.container
+        })
+
+        const selectElement = await screen.findByText('Search for people and channels')
+        await act(async () => {
+            userEvent.click(selectElement!)
+        })
+
+        await screen.findByText('username_9')
+        const input = container!.querySelector('input[id^="react-select"]') as HTMLElement
+        await act(async () => {
+            fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'})
+            fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'})
+        })
+
+        expect(createMemberSpy).toHaveBeenCalledWith(
+            expect.objectContaining({boardId, userId: newUser.id}),
+            newUser,
+        )
+    })
+
+    test('refreshes the board members when the dialog opens', async () => {
+        board.isTemplate = false
+        mockedOctoClient.getSharing.mockResolvedValue({id: '', enabled: false, token: ''} as ISharing)
+        mockedOctoClient.getBoardMembers.mockResolvedValue([])
+        mockedOctoClient.getTeamUsersList.mockResolvedValue([])
+
+        await act(async () => {
+            render(
+                wrapDNDIntl(
+                    <ReduxProvider store={store}>
+                        <ShareBoard
+                            onClose={jest.fn()}
+                            enableSharedBoards={false}
+                        />
+                    </ReduxProvider>),
+            )
+        })
+
+        expect(mockedOctoClient.getBoardMembers).toHaveBeenCalledWith('team-id', boardId)
+    })
 })
