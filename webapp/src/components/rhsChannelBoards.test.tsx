@@ -6,7 +6,7 @@ import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
 import {act, render, screen} from '@testing-library/react'
 import {mocked} from 'jest-mock'
-import thunk from 'redux-thunk'
+import {thunk} from 'redux-thunk'
 
 import octoClient from '../octoClient'
 import {BoardMember, createBoard} from '../blocks/board'

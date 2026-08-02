@@ -8,7 +8,7 @@ import {render} from '@testing-library/react'
 
 import userEvent from '@testing-library/user-event'
 
-import thunk from 'redux-thunk'
+import {thunk} from 'redux-thunk'
 
 import {Provider as ReduxProvider} from 'react-redux'
 

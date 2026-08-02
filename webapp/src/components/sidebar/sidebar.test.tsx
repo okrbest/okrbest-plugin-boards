@@ -9,7 +9,7 @@ import {MemoryRouter} from 'react-router-dom'
 
 import {render, waitFor, screen} from '@testing-library/react'
 
-import thunk from 'redux-thunk'
+import {thunk} from 'redux-thunk'
 
 import {mocked} from 'jest-mock'
 

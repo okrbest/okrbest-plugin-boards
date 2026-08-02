@@ -9,7 +9,7 @@ import {mocked} from 'jest-mock'
 
 import userEvent from '@testing-library/user-event'
 
-import thunk from 'redux-thunk'
+import {thunk} from 'redux-thunk'
 
 import {IUser} from '../user'
 import octoClient from '../octoClient'
