@@ -121,7 +121,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     const params = useParams<{teamId?: string, boardId: string, viewId: string}>()
 
     const hasSharePermissions = useHasPermissions(board.teamId, boardId, [Permission.ShareBoard])
-    const canManageBoardRoles = useHasPermissions(board.teamId, boardId, [Permission.ManageBoardRoles])
 
     const loadData = async () => {
         if (hasSharePermissions) {
@@ -249,8 +248,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
     useEffect(() => {
         loadData()
     }, [boardId, hasSharePermissions])
-
-    const managerMembers = Object.values(members).filter((member) => member.schemeAdmin && !member.synthetic)
 
     const isSharing = Boolean(sharing && sharing.id === boardId && sharing.enabled)
     const readToken = (sharing && isSharing) ? sharing.token : ''
@@ -447,47 +444,6 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                     )
                 })}
             </div>
-
-            {canManageBoardRoles &&
-            <div className='tabs-content'>
-                <div className='text-heading2 mb-2'>
-                    <FormattedMessage
-                        id='shareBoard.managerSection.title'
-                        defaultMessage='보드 관리자 섹션'
-                    />
-                </div>
-                <div className='text-light mb-2'>
-                    <FormattedMessage
-                        id='shareBoard.managerSection.description'
-                        defaultMessage='manage 권한 보유자 목록입니다.'
-                    />
-                </div>
-                <div className='user-items'>
-                    {managerMembers.map((member) => {
-                        const user = boardUsers.find((u) => u.id === member.userId)
-                        return (
-                            <div
-                                key={`manager-${member.userId}`}
-                                className='user-item'
-                            >
-                                <div className='user-item__content'>
-                                    <strong>{user ? Utils.getUserDisplayName(user, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay) : member.userId}</strong>
-                                </div>
-                            </div>
-                        )
-                    })}
-                    {managerMembers.length === 0 &&
-                        <div className='text-light'>
-                            <FormattedMessage
-                                id='shareBoard.managerSection.empty'
-                                defaultMessage='보드 관리자가 없습니다.'
-                            />
-                        </div>
-                    }
-                </div>
-            </div>
-            }
-
 
             {props.enableSharedBoards && !board.isTemplate && (
                 <div className='tabs-container'>
