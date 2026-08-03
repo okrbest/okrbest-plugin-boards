@@ -47,22 +47,22 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### 조직 마스터 조회 (contracts/org-master-api.md)
 
-- [ ] T004 조직 조회 store 메서드를 `server/services/store/sqlstore/org_master.go`에 구현 — `OrgUnits`(active만), `PositionDefinitions`(kind='duty' + active만), `UserOrgProfiles`(팀·사용자 다건 조회). 메인 서버 소유 테이블을 읽기 전용으로만 접근한다 (data-model.md §2.1~2.3)
-- [ ] T005 store 인터페이스에 조회 메서드를 `server/services/store/store.go`에 추가하고 `make generate`로 `mockstore`를 재생성 (constitution 원칙 I)
-- [ ] T006 조직 마스터 조회 app 메서드를 `server/app/org_master.go`에 구현 — 정렬(org-units: type→name, duties: rank→name)과 빈 결과 `[]` 반환 포함
-- [ ] T007 `GET /teams/{teamID}/org-units`·`GET /teams/{teamID}/duties` 라우트를 `server/api/org.go`에 등록하고 `server/api/api.go`의 `RegisterRoutes()`에 연결 — 팀 접근 권한 검사 포함
-- [ ] T008 계약 테스트 C-01~C-07을 `server/api/org_test.go`에 작성 (contracts/org-master-api.md 계약 테스트 항목)
+- [X] T004 조직 조회 store 메서드를 `server/services/store/sqlstore/org_master.go`에 구현 — `OrgUnits`(active만), `PositionDefinitions`(kind='duty' + active만), `UserOrgProfiles`(팀·사용자 다건 조회). 메인 서버 소유 테이블을 읽기 전용으로만 접근한다 (data-model.md §2.1~2.3)
+- [X] T005 store 인터페이스에 조회 메서드를 `server/services/store/store.go`에 추가하고 `make generate`로 `mockstore`를 재생성 (constitution 원칙 I)
+- [X] T006 조직 마스터 조회 app 메서드를 `server/app/org_master.go`에 구현 — 정렬(org-units: type→name, duties: rank→name)과 빈 결과 `[]` 반환 포함
+- [X] T007 `GET /teams/{teamID}/org-units`·`GET /teams/{teamID}/duties` 라우트를 `server/api/org.go`에 등록하고 `server/api/api.go`의 `RegisterRoutes()`에 연결 — 팀 접근 권한 검사 포함
+- [X] T008 계약 테스트 C-01~C-07을 `server/api/org_test.go`에 작성 (contracts/org-master-api.md 계약 테스트 항목)
 
 ### 사용자 조직 해석
 
-- [ ] T009 [P] `UserOrgProfiles`에서 사용자 조직 정보를 읽는 해석기를 `server/app/org_master.go`에 구현 — `PrimaryOrgUnitID`·`PrimaryDutyID`만 쓰고 `PrimaryPositionID`·`ExtraPositions`는 무시한다. `EffectiveFrom`/`EffectiveTo`로 현재 시각 기준 유효한 행만 채택하며, 행이 없거나 유효하지 않으면 미등록으로 처리한다 (data-model.md §2.3, FR-021·FR-024)
-- [ ] T010 [P] 조직 조상 집합 계산을 `server/app/org_master.go`에 구현 — `parentid`를 루트까지 따라가며 수집, 순환 방지 (FR-017, 계층 일반형)
-- [ ] T011 조직 해석·조상 집합 단위 테스트를 `server/app/org_master_test.go`에 작성 — 2단계·3단계 계층, 미등록 사용자, 유효기간 경계(시작 전·종료 후·무제한), 직위 무시 (research.md R5)
+- [X] T009 [P] `UserOrgProfiles`에서 사용자 조직 정보를 읽는 해석기를 `server/app/org_master.go`에 구현 — `PrimaryOrgUnitID`·`PrimaryDutyID`만 쓰고 `PrimaryPositionID`·`ExtraPositions`는 무시한다. `EffectiveFrom`/`EffectiveTo`로 현재 시각 기준 유효한 행만 채택하며, 행이 없거나 유효하지 않으면 미등록으로 처리한다 (data-model.md §2.3, FR-021·FR-024)
+- [X] T010 [P] 조직 조상 집합 계산을 `server/app/org_master.go`에 구현 — `parentid`를 루트까지 따라가며 수집, 순환 방지 (FR-017, 계층 일반형)
+- [X] T011 조직 해석·조상 집합 단위 테스트를 `server/app/org_master_test.go`에 작성 — 2단계·3단계 계층, 미등록 사용자, 유효기간 경계(시작 전·종료 후·무제한), 직위 무시 (research.md R5)
 
 ### 평가기 골격
 
-- [ ] T012 평가기 실패 테스트를 `server/app/property_access_test.go`에 먼저 작성 — 관리자 우회, 스위치 꺼짐, 규칙 밖 카드가 보드 권한을 그대로 받는 케이스 (research.md R6 판정표의 마지막 3행)
-- [ ] T013 `Evaluator` 생성과 `For(card)` 골격을 `server/app/property_access.go`에 구현 — 관리자 우회, 스위치 확인, 규칙 밖 카드는 보드 권한 반환 (data-model.md §3.2)
+- [X] T012 평가기 실패 테스트를 `server/app/property_access_test.go`에 먼저 작성 — 관리자 우회, 스위치 꺼짐, 규칙 밖 카드가 보드 권한을 그대로 받는 케이스 (research.md R6 판정표의 마지막 3행)
+- [X] T013 `Evaluator` 생성과 `For(card)` 골격을 `server/app/property_access.go`에 구현 — 관리자 우회, 스위치 확인, 규칙 밖 카드는 보드 권한 반환 (data-model.md §3.2)
 
 **Checkpoint**: 조직 데이터를 조회할 수 있고 평가기가 존재한다. 아직 어떤 카드도 걸러지지 않는다
 

@@ -443,6 +443,11 @@ func (s *SQLStore) GetChannel(teamID string, channelID string) (*mmModel.Channel
 
 }
 
+func (s *SQLStore) GetDutiesForTeam(teamID string) ([]*model.Duty, error) {
+	return s.getDutiesForTeam(s.db, teamID)
+
+}
+
 func (s *SQLStore) GetFileInfo(id string) (*mmModel.FileInfo, error) {
 	return s.getFileInfo(s.db, id)
 
@@ -475,6 +480,11 @@ func (s *SQLStore) GetNextNotificationHint(remove bool) (*model.NotificationHint
 
 func (s *SQLStore) GetNotificationHint(blockID string) (*model.NotificationHint, error) {
 	return s.getNotificationHint(s.db, blockID)
+
+}
+
+func (s *SQLStore) GetOrgUnitsForTeam(teamID string) ([]*model.OrgUnit, error) {
+	return s.getOrgUnitsForTeam(s.db, teamID)
 
 }
 
@@ -595,6 +605,11 @@ func (s *SQLStore) GetUserCategories(userID string, teamID string) ([]model.Cate
 
 func (s *SQLStore) GetUserCategoryBoards(userID string, teamID string) ([]model.CategoryBoards, error) {
 	return s.getUserCategoryBoards(s.db, userID, teamID)
+
+}
+
+func (s *SQLStore) GetUserOrgProfiles(teamID string, userIDs []string) ([]*model.UserOrgProfile, error) {
+	return s.getUserOrgProfiles(s.db, teamID, userIDs)
 
 }
 

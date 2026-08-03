@@ -811,6 +811,21 @@ func (mr *MockStoreMockRecorder) GetChannel(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannel", reflect.TypeOf((*MockStore)(nil).GetChannel), arg0, arg1)
 }
 
+// GetDutiesForTeam mocks base method.
+func (m *MockStore) GetDutiesForTeam(arg0 string) ([]*model.Duty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDutiesForTeam", arg0)
+	ret0, _ := ret[0].([]*model.Duty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDutiesForTeam indicates an expected call of GetDutiesForTeam.
+func (mr *MockStoreMockRecorder) GetDutiesForTeam(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDutiesForTeam", reflect.TypeOf((*MockStore)(nil).GetDutiesForTeam), arg0)
+}
+
 // GetFileInfo mocks base method.
 func (m *MockStore) GetFileInfo(arg0 string) (*model0.FileInfo, error) {
 	m.ctrl.T.Helper()
@@ -913,6 +928,21 @@ func (m *MockStore) GetNotificationHint(arg0 string) (*model.NotificationHint, e
 func (mr *MockStoreMockRecorder) GetNotificationHint(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotificationHint", reflect.TypeOf((*MockStore)(nil).GetNotificationHint), arg0)
+}
+
+// GetOrgUnitsForTeam mocks base method.
+func (m *MockStore) GetOrgUnitsForTeam(arg0 string) ([]*model.OrgUnit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrgUnitsForTeam", arg0)
+	ret0, _ := ret[0].([]*model.OrgUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrgUnitsForTeam indicates an expected call of GetOrgUnitsForTeam.
+func (mr *MockStoreMockRecorder) GetOrgUnitsForTeam(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrgUnitsForTeam", reflect.TypeOf((*MockStore)(nil).GetOrgUnitsForTeam), arg0)
 }
 
 // GetRegisteredUserCount mocks base method.
@@ -1274,6 +1304,21 @@ func (m *MockStore) GetUserCategoryBoards(arg0, arg1 string) ([]model.CategoryBo
 func (mr *MockStoreMockRecorder) GetUserCategoryBoards(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserCategoryBoards", reflect.TypeOf((*MockStore)(nil).GetUserCategoryBoards), arg0, arg1)
+}
+
+// GetUserOrgProfiles mocks base method.
+func (m *MockStore) GetUserOrgProfiles(arg0 string, arg1 []string) ([]*model.UserOrgProfile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserOrgProfiles", arg0, arg1)
+	ret0, _ := ret[0].([]*model.UserOrgProfile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserOrgProfiles indicates an expected call of GetUserOrgProfiles.
+func (mr *MockStoreMockRecorder) GetUserOrgProfiles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserOrgProfiles", reflect.TypeOf((*MockStore)(nil).GetUserOrgProfiles), arg0, arg1)
 }
 
 // GetUserPreferences mocks base method.

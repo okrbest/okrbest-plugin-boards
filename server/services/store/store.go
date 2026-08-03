@@ -70,6 +70,12 @@ type Store interface {
 
 	GetActiveUserCount(updatedSecondsAgo int64) (int, error)
 
+	// Organization masters owned by the main server. Read-only.
+	// See docs/upstream-org-role-requests.md
+	GetOrgUnitsForTeam(teamID string) ([]*model.OrgUnit, error)
+	GetDutiesForTeam(teamID string) ([]*model.Duty, error)
+	GetUserOrgProfiles(teamID string, userIDs []string) ([]*model.UserOrgProfile, error)
+
 	UpsertSharing(sharing model.Sharing) error
 	GetSharing(rootID string) (*model.Sharing, error)
 

@@ -48,7 +48,7 @@ func (p PropertyAccessPermission) AsEffectivePermission() EffectiveBoardPermissi
 // applies to. The subject side (DivisionID, DepartmentID, DutyID) selects
 // which users it applies to; an empty field means "no constraint on this axis".
 //
-// All three subject axes store IDs: OrgUnits.id for the organisation axes and
+// All three subject axes store IDs: OrgUnits.id for the organization axes and
 // PositionDefinitions.id for the duty axis. UserOrgProfiles binds both the same
 // way, so no conversion is needed. See specs/002-card-property-access/research.md R5.
 type PropertyAccessRule struct {
@@ -61,7 +61,7 @@ type PropertyAccessRule struct {
 	Permission      PropertyAccessPermission `json:"permission"`
 }
 
-// HasOrgCondition reports whether the row constrains the organisation axis.
+// HasOrgCondition reports whether the row constrains the organization axis.
 // Rows that do act as a gate: a user matching none of them gets no rule
 // permission at all, however high their duty is.
 func (r PropertyAccessRule) HasOrgCondition() bool {

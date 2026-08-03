@@ -78,6 +78,7 @@ func (a *API) RegisterRoutes(r *mux.Router) {
 	a.registerCategoriesRoutes(apiv2)
 	a.registerSharingRoutes(apiv2)
 	a.registerTeamsRoutes(apiv2)
+	a.registerOrgRoutes(apiv2)
 	a.registerAchivesRoutes(apiv2)
 	a.registerSubscriptionsRoutes(apiv2)
 	a.registerFilesRoutes(apiv2)

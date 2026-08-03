@@ -3,7 +3,7 @@
 
 package model
 
-// Organisation unit types stored in the OrgUnits master table.
+// Organization unit types stored in the OrgUnits master table.
 const (
 	OrgUnitTypeDivision   = "division"   // 본부
 	OrgUnitTypeDepartment = "department" // 부서
@@ -21,7 +21,7 @@ const (
 	UserOrgProfilesTable   = "UserOrgProfiles"
 )
 
-// OrgUnit is one row of the organisation master, exposed read-only so the
+// OrgUnit is one row of the organization master, exposed read-only so the
 // share dialog can populate its division and department selectors.
 type OrgUnit struct {
 	ID       string `json:"id"`
@@ -42,10 +42,10 @@ type Duty struct {
 	FullVisibility bool   `json:"fullVisibility"`
 }
 
-// UserOrgProfile is a user's organisation binding, read from the main server's
+// UserOrgProfile is a user's organization binding, read from the main server's
 // UserOrgProfiles table. This plugin only reads it.
 //
-// PrimaryPositionID (직위) and ExtraPositions are deliberately not modelled —
+// PrimaryPositionID (직위) and ExtraPositions are deliberately not modeled —
 // this feature never considers them (FR-024).
 type UserOrgProfile struct {
 	TeamID           string
@@ -68,8 +68,8 @@ func (p UserOrgProfile) IsEffectiveAt(nowMillis int64) bool {
 	return true
 }
 
-// IsEmpty reports whether the user has no organisation information at all.
-// Such users fail every organisation condition (FR-021).
+// IsEmpty reports whether the user has no organization information at all.
+// Such users fail every organization condition (FR-021).
 func (p UserOrgProfile) IsEmpty() bool {
 	return p.PrimaryOrgUnitID == "" && p.PrimaryDutyID == ""
 }
