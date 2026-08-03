@@ -89,7 +89,17 @@ kkv 팀 멤버(봇 제외) 15 / UserOrgProfiles 보유 15 / 누락 0
 
 `docs/upstream-org-role-requests.md` 부록 B-3 참조. 관련 과제 없음.
 
-### 4. US3·US4 검증 조건
+### 4. T3 전환 가능 여부 — 메인 서버 회신 대기
+
+`plugin.API`에 조직 조회 메서드가 없고 `PluginHTTP`는 플러그인 간 호출용이라, **api4에 추가되는 T1~T3을 Boards가 부를 수단이 없다.** 부록 A-3의 "내부 구현을 메인 서버 호출로 교체"가 현재 통합 표면으로는 실행 불가능하다.
+
+또 `UserCanSeeOtherUser`가 요청 사용자 관점 검사라 웹소켓 팬아웃 맥락과 맞지 않는다.
+
+Boards 입장은 **현행 유지(DB 직접 읽기)** 권장이다. `docs/upstream-org-role-requests.md` 부록 B-6 참조.
+
+**구현에는 영향 없다** — 어느 결론이든 지금 코드(DB 직접 읽기)가 버려지지 않는다.
+
+### 5. US3·US4 검증 조건
 
 직책 가산(US3)과 전체보기 하한(US4)을 검증하려면 아래 계정이 필요하다. `UserOrgProfiles` 기준으로 이미 존재한다.
 
