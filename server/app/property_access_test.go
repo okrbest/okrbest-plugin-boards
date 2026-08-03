@@ -95,8 +95,6 @@ func multiSelectCard(propertyID string, valueIDs ...string) *model.Block {
 
 // evaluatorFor builds an evaluator for a user sitting in one org unit with one
 // duty, against the two rule decision table of research.md R6.
-//
-//nolint:unparam // the board permission is spelled out at each call site because it is what the rule has to override
 func evaluatorFor(orgUnitID, dutyID string, boardPermission model.EffectiveBoardPermission) *PropertyAccessEvaluator {
 	var profile *model.UserOrgProfile
 	if orgUnitID != "" || dutyID != "" {
@@ -390,5 +388,123 @@ func TestFilterBlockRecipients(t *testing.T) {
 		}
 
 		require.Equal(t, []string{"outsider"}, th.App.FilterBlockRecipients([]string{"outsider"}, openCard))
+	})
+}
+
+// TestEvaluatorDutyIsAdditive covers the duty rows of the research.md R6
+// decision table: a duty raises what the user may do inside an organization it
+// already admits them to, and never opens one it does not.
+func TestEvaluatorDutyIsAdditive(t *testing.T) {
+	strategyCard := card(propCLevel, valueStrategy)
+
+	t.Run("US3-1 a 본부장 of the matching division takes the higher of both rows", func(t *testing.T) {
+		evaluator := evaluatorFor(depPlanning, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard))
+	})
+
+	t.Run("US3-2 a 팀장 of the same division only takes the organization row", func(t *testing.T) {
+		evaluator := evaluatorFor(depPlanning, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(strategyCard))
+	})
+
+	t.Run("US3-3 a 본부장 of another division gets no rule permission", func(t *testing.T) {
+		evaluator := evaluatorFor(depFactory, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		// The gate closed, so the duty row grants nothing. What is left is the
+		// full visibility floor this duty carries — see the US4 tests.
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(strategyCard),
+			"the duty must not open an organization the rules keep shut")
+	})
+
+	t.Run("a 팀장 of another division is left with nothing", func(t *testing.T) {
+		evaluator := evaluatorFor(depFactory, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(strategyCard))
+	})
+}
+
+// TestEvaluatorDutyOnlyRule covers US3-4: a row with a duty and no organization
+// condition applies wherever that duty is held.
+func TestEvaluatorDutyOnlyRule(t *testing.T) {
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{{
+			ID: "r1", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+			DutyID: dutyLead, Permission: model.PropertyAccessCommenter,
+		}},
+	}
+
+	build := func(orgUnitID, dutyID string) *PropertyAccessEvaluator {
+		return NewPropertyAccessEvaluator(EvaluatorInput{
+			Settings:        settings,
+			OrgUnits:        testOrgUnits(),
+			Duties:          testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: orgUnitID, PrimaryDutyID: dutyID},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+	}
+
+	strategyCard := card(propCLevel, valueStrategy)
+
+	require.Equal(t, model.EffectiveBoardPermissionCommenter, build(depPlanning, dutyLead).For(strategyCard))
+	require.Equal(t, model.EffectiveBoardPermissionCommenter, build(depFactory, dutyLead).For(strategyCard),
+		"no organization row means no gate, so the division does not matter")
+
+	require.Equal(t, model.EffectiveBoardPermissionNone, build(depFactory, "").For(strategyCard),
+		"a user without the duty gets nothing from a duty-only row")
+}
+
+// TestEvaluatorDutyIsNotAGate covers FR-018: a member with no duty at all still
+// earns what the organization row grants.
+func TestEvaluatorDutyIsNotAGate(t *testing.T) {
+	evaluator := evaluatorFor(depPlanning, "", model.EffectiveBoardPermissionEdit)
+
+	require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(card(propCLevel, valueStrategy)),
+		"membership alone has to be expressible")
+}
+
+// TestEvaluatorFullVisibilityFloor covers US4: the floor reaches across
+// organization boundaries but never lowers what a rule already granted.
+func TestEvaluatorFullVisibilityFloor(t *testing.T) {
+	strategyCard := card(propCLevel, valueStrategy)
+
+	t.Run("US4-1 a blocked card is still readable", func(t *testing.T) {
+		evaluator := evaluatorFor(depFactory, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(strategyCard))
+	})
+
+	t.Run("US4-2 the floor does not lower a rule that grants more", func(t *testing.T) {
+		evaluator := evaluatorFor(depPlanning, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard))
+	})
+
+	t.Run("a duty without full visibility carries no floor", func(t *testing.T) {
+		evaluator := evaluatorFor(depFactory, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(strategyCard))
+	})
+
+	t.Run("the floor also applies to cards no rule mentions", func(t *testing.T) {
+		evaluator := evaluatorFor(depFactory, dutyHead, model.EffectiveBoardPermissionNone)
+
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(card(propCLevel, valueProduction)),
+			"a board member with no board permission still reads what full visibility grants")
+	})
+
+	t.Run("a duty the master no longer lists carries no floor", func(t *testing.T) {
+		evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+			Settings:        testSettings(),
+			OrgUnits:        testOrgUnits(),
+			Duties:          testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depFactory, PrimaryDutyID: "duty-retired"},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(strategyCard),
+			"FR-036 — a reference that no longer resolves simply stops matching")
 	})
 }

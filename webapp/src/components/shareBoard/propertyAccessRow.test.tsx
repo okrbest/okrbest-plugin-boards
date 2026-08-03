@@ -160,6 +160,30 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         }))
     })
 
+    test('duties are offered in the order the server sends them', async () => {
+        // The server orders by rank, then name; the selector must not reshuffle.
+        const {container} = await renderRow({...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'})
+
+        await openSelector(container, 4)
+
+        const options = Array.from(document.querySelectorAll('.MenuOption')).map((node) => node.textContent)
+        const head = options.findIndex((text) => text?.includes('본부장'))
+        const lead = options.findIndex((text) => text?.includes('팀장'))
+
+        expect(head).toBeGreaterThan(-1)
+        expect(lead).toBeGreaterThan(head)
+    })
+
+    test('a duty is stored by id, not by name or code', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 4)
+        await userEvent.click(screen.getByText('본부장'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({dutyId: 'duty-head'}))
+    })
+
     test('an incomplete row is marked invalid', async () => {
         const {container} = await renderRow(emptyRule)
 

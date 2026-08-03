@@ -282,6 +282,13 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	// beneath it (FR-017).
 	units := orgUnitAncestors(input.OrgUnits, orgUnitID)
 
+	// "보드 전체보기" is the one thing that reaches across the organization gate.
+	// It is a floor rather than a grant: it guarantees reading and never lowers
+	// what a rule already gave (FR-022).
+	if hasFullVisibility(input.Duties, dutyID) {
+		evaluator.floor = model.EffectiveBoardPermissionView
+	}
+
 	for _, rule := range input.Settings.Rules {
 		condition := cardCondition{propertyID: rule.PropertyID, valueID: rule.PropertyValueID}
 		orgMatches := ruleOrgMatches(rule, units)
@@ -306,6 +313,24 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	}
 
 	return evaluator
+}
+
+// hasFullVisibility reports whether the duty the user holds carries the board
+// wide read flag.
+//
+// A duty ID the master no longer lists carries nothing: the master belongs to
+// the main server and a duty may be retired after someone was assigned it
+// (FR-036).
+func hasFullVisibility(duties []*model.Duty, dutyID string) bool {
+	if dutyID == "" {
+		return false
+	}
+	for _, duty := range duties {
+		if duty != nil && duty.ID == dutyID {
+			return duty.FullVisibility
+		}
+	}
+	return false
 }
 
 // ruleOrgMatches reports whether the user satisfies the organization axes this

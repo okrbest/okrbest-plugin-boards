@@ -148,14 +148,14 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 3 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T045 [P] [US3] 직책 가산 판정 테스트를 `server/app/property_access_test.go`에 추가 — research.md R6 판정표의 전략본부 본부장(편집자)·전략본부 팀장(열람자)·생산본부 본부장(관문 차단) 행
-- [ ] T046 [P] [US3] 직책 조건만 걸린 규칙 테스트를 `server/app/property_access_test.go`에 추가 (spec US3-4)
+- [X] T045 [P] [US3] 직책 가산 판정 테스트를 `server/app/property_access_test.go`에 추가 — research.md R6 판정표의 전략본부 본부장(편집자)·전략본부 팀장(열람자)·생산본부 본부장(관문 차단) 행
+- [X] T046 [P] [US3] 직책 조건만 걸린 규칙 테스트를 `server/app/property_access_test.go`에 추가 (spec US3-4)
 
 ### 구현
 
-- [ ] T047 [US3] 직책 축 매칭을 `server/app/property_access.go`에 구현 — 사용자 `PrimaryDutyID`와 규칙 `dutyId` 비교. 직위(`PrimaryPositionID`)는 읽지 않는다 (FR-024, research.md R5)
-- [ ] T048 [US3] 직책이 관문으로 작동하지 않음을 `server/app/property_access.go`에 반영 — 직책 없는 사용자도 조직 조건만으로 권한을 얻는다 (FR-018)
-- [ ] T049 [US3] 직책 셀렉터를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 연결 — `kind='duty'` 목록만, `rank` 순 정렬. 선택 값은 `id`로 저장한다
+- [X] T047 [US3] 직책 축 매칭을 `server/app/property_access.go`에 구현 — 사용자 `PrimaryDutyID`와 규칙 `dutyId` 비교. 직위(`PrimaryPositionID`)는 읽지 않는다 (FR-024, research.md R5)
+- [X] T048 [US3] 직책이 관문으로 작동하지 않음을 `server/app/property_access.go`에 반영 — 직책 없는 사용자도 조직 조건만으로 권한을 얻는다 (FR-018)
+- [X] T049 [US3] 직책 셀렉터를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 연결 — `kind='duty'` 목록만, `rank` 순 정렬. 선택 값은 `id`로 저장한다
 
 **Checkpoint**: 같은 조직 안에서 직책으로 권한이 갈린다
 
@@ -169,13 +169,13 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 4 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T050 [P] [US4] 전체보기 하한 테스트를 `server/app/property_access_test.go`에 추가 — 관문에 막힌 카드가 열람 가능(US4-1), 규칙이 편집자를 주면 편집 유지(US4-2)
-- [ ] T051 [P] [US4] 보드 진입 권한은 바뀌지 않음을 `server/integrationtests/property_access_test.go`에 검증 (US4-3)
+- [X] T050 [P] [US4] 전체보기 하한 테스트를 `server/app/property_access_test.go`에 추가 — 관문에 막힌 카드가 열람 가능(US4-1), 규칙이 편집자를 주면 편집 유지(US4-2)
+- [X] T051 [P] [US4] 보드 진입 권한은 바뀌지 않음을 `server/api/blocks_test.go`에 검증 (US4-3) — 통합 테스트는 이 환경에서 실행되지 않는다
 
 ### 구현
 
-- [ ] T052 [US4] 전체보기 하한 계산을 `server/app/property_access.go`의 평가기 생성에 추가 — 사용자의 `PrimaryDutyID`가 가리키는 직책의 `fullvisibility`가 켜져 있으면 하한 `viewer` (FR-022)
-- [ ] T053 [US4] 최종 반환을 `max(규칙권한, 하한)`으로 `server/app/property_access.go`에 반영 — 하한이 권한을 낮추지 않는다 (FR-022)
+- [X] T052 [US4] 전체보기 하한 계산을 `server/app/property_access.go`의 평가기 생성에 추가 — 사용자의 `PrimaryDutyID`가 가리키는 직책의 `fullvisibility`가 켜져 있으면 하한 `viewer` (FR-022)
+- [X] T053 [US4] 최종 반환을 `max(규칙권한, 하한)`으로 `server/app/property_access.go`에 반영 — 하한이 권한을 낮추지 않는다 (FR-022)
 
 **Checkpoint**: 전체보기 직책이 조직 경계를 넘어 열람할 수 있고, 규칙이 준 더 높은 권한은 유지된다
 

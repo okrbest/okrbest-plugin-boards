@@ -320,3 +320,26 @@ func TestWriteEnforcementPropertyAccess(t *testing.T) {
 			"FR-032 — rules never bar creation, only what happens to a card afterwards")
 	})
 }
+
+// US4-3. Full visibility widens what a user sees inside a board they can
+// already open; it is not a way into a board at all.
+func TestFullVisibilityDoesNotGrantBoardEntry(t *testing.T) {
+	th, tearDown := setupAPITestHelper(t)
+	defer tearDown()
+
+	// The duty carries full visibility, but the board grants this user nothing.
+	th.Store.EXPECT().GetOrgUnitsForTeam(ruleTeamID).Return([]*model.OrgUnit{}, nil).AnyTimes()
+	th.Store.EXPECT().GetDutiesForTeam(ruleTeamID).Return([]*model.Duty{
+		{ID: "duty-head", Name: "본부장", Rank: 2, FullVisibility: true},
+	}, nil).AnyTimes()
+	th.Store.EXPECT().GetUserOrgProfiles(ruleTeamID, gomock.Any()).Return([]*model.UserOrgProfile{
+		{TeamID: ruleTeamID, UserID: "executive", PrimaryDutyID: "duty-head"},
+	}, nil).AnyTimes()
+	th.Store.EXPECT().GetBoard(ruleBoardID).Return(accessBoard(t, true, model.PropertyAccessViewer), nil).AnyTimes()
+
+	rec := th.callHandler(th.API.handleGetBlocks, "/boards/"+ruleBoardID+"/blocks?all=true", "executive",
+		map[string]string{"boardID": ruleBoardID})
+
+	require.Equal(t, http.StatusForbidden, rec.Code,
+		"the board bar is checked before any card is judged")
+}
