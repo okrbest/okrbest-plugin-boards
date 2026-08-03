@@ -116,6 +116,30 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         expect(container.querySelector('.Switch')!.className).toContain(' on')
     })
 
+    test('a header names each column once rules exist', async () => {
+        const board = buildBoard({
+            propertyAccess: {
+                enabled: true,
+                updatedBy: '',
+                updatedAt: 0,
+                rules: [
+                    {id: 'r1', propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', divisionId: 'div-strategy', departmentId: '', dutyId: '', permission: 'viewer'},
+                ],
+            },
+        })
+        const {container} = await renderSection(board)
+
+        const header = container.querySelector('.PropertyAccessSection__header')
+        expect(header).not.toBeNull()
+        expect(header!.querySelectorAll('.PropertyAccessSection__column').length).toBe(6)
+    })
+
+    test('an empty rule list shows no header', async () => {
+        const {container} = await renderSection(buildBoard())
+
+        expect(container.querySelector('.PropertyAccessSection__header')).toBeNull()
+    })
+
     test('existing rules are listed', async () => {
         const board = buildBoard({
             propertyAccess: {

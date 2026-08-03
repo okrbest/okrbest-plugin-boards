@@ -267,7 +267,58 @@
 
     // Card access rules. The section borrows .tabs-content, .user-items and
     // .user-item wholesale; only the six-across row layout is new.
+    //
+    // The axes are a grid rather than a flex row so the header labels line up
+    // with the controls beneath them. Six dropdowns showing only their values
+    // do not say which axis each one is.
+    .PropertyAccessRow__axes {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 4px 12px;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+
+        // Grid items refuse to shrink below their content unless told to, and
+        // an organization name is long enough to push the columns apart.
+        > * {
+            min-width: 0;
+        }
+
+        .user-item__button {
+            max-width: 100%;
+            min-width: 0;
+
+            // The label is the flexible part; the chevron keeps its size.
+            .PropertyAccessRow__label {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .CompassIcon {
+                flex: 0 0 auto;
+            }
+        }
+    }
+
     .PropertyAccessSection {
+        .PropertyAccessSection__header {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px 0;
+            // Leaves room for the delete button each row carries, so the
+            // columns above and below share the same track widths.
+            padding-right: calc(16px + 24px);
+        }
+
+        .PropertyAccessSection__column {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
         .PropertyAccessSection__rules {
             padding: 8px 0;
             border-bottom: 0;
@@ -279,13 +330,7 @@
     }
 
     .PropertyAccessRow {
-        padding: 0;
-
-        .PropertyAccessRow__axes {
-            flex: 1;
-            flex-wrap: wrap;
-            gap: 4px 16px;
-        }
+        padding: 0 16px;
 
         .PropertyAccessRow__broken {
             color: rgba(var(--error-text-color-rgb), 1);

@@ -294,6 +294,7 @@
   "PropertyAccess.selectDepartment": "Department",
   "PropertyAccess.selectDivision": "Division",
   "PropertyAccess.selectDuty": "Duty",
+  "PropertyAccess.selectPermission": "Permission",
   "PropertyAccess.selectProperty": "Property",
   "PropertyAccess.selectValue": "Value",
   "PropertyAccess.title": "Card access by property",

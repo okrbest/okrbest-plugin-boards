@@ -44,7 +44,7 @@ const Selector = (props: {
         <div ref={menuWrapperRef}>
             <MenuWrapper>
                 <button className={className}>
-                    {selected ? selected.name : props.label}
+                    <span className='PropertyAccessRow__label'>{selected ? selected.name : props.label}</span>
                     <CompassIcon
                         icon='chevron-down'
                         className='CompassIcon'
@@ -111,7 +111,7 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
 
     return (
         <div className={className}>
-            <div className='user-item__content PropertyAccessRow__axes'>
+            <div className='PropertyAccessRow__axes'>
                 <Selector
                     label={intl.formatMessage({id: 'PropertyAccess.selectProperty', defaultMessage: 'Property'})}
                     selectedId={rule.propertyId}
@@ -154,7 +154,7 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
                     onSelect={(id) => props.onChange({...rule, dutyId: id})}
                 />
                 <Selector
-                    label={intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})}
+                    label={intl.formatMessage({id: 'PropertyAccess.selectPermission', defaultMessage: 'Permission'})}
                     selectedId={rule.permission}
                     choices={permissions}
                     broken={false}

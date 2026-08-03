@@ -294,6 +294,7 @@
   "PropertyAccess.selectDepartment": "부서",
   "PropertyAccess.selectDivision": "본부",
   "PropertyAccess.selectDuty": "직책",
+  "PropertyAccess.selectPermission": "권한",
   "PropertyAccess.selectProperty": "속성",
   "PropertyAccess.selectValue": "속성값",
   "PropertyAccess.title": "속성 기준 카드 접근 권한",

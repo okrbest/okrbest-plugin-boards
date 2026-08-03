@@ -48,6 +48,18 @@ export const readSettings = (board: Board): PropertyAccessSettings => {
     }
 }
 
+// The six axes of a rule row, in the order propertyAccessRow renders them. The
+// header exists because six unlabelled dropdowns in a row are unreadable — the
+// values alone do not say which axis each one is.
+const columnLabels = [
+    {id: 'PropertyAccess.selectProperty', defaultMessage: 'Property'},
+    {id: 'PropertyAccess.selectValue', defaultMessage: 'Value'},
+    {id: 'PropertyAccess.selectDivision', defaultMessage: 'Division'},
+    {id: 'PropertyAccess.selectDepartment', defaultMessage: 'Department'},
+    {id: 'PropertyAccess.selectDuty', defaultMessage: 'Duty'},
+    {id: 'PropertyAccess.selectPermission', defaultMessage: 'Permission'},
+]
+
 const isComplete = (rule: PropertyAccessRule): boolean =>
     rule.propertyId !== '' &&
     rule.propertyValueId !== '' &&
@@ -154,6 +166,19 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                                 {id: 'PropertyAccess.lastUpdated', defaultMessage: 'Last changed by {user} on {date}'},
                                 {user: lastEditorName, date: intl.formatDate(settings.updatedAt, {dateStyle: 'medium', timeStyle: 'short'})},
                             )}
+                        </div>}
+                    {rules.length > 0 &&
+                        <div className='PropertyAccessSection__header'>
+                            <div className='PropertyAccessRow__axes'>
+                                {columnLabels.map((label) => (
+                                    <div
+                                        key={label.id}
+                                        className='text-light PropertyAccessSection__column'
+                                    >
+                                        {intl.formatMessage(label)}
+                                    </div>
+                                ))}
+                            </div>
                         </div>}
                     <div className='user-items PropertyAccessSection__rules'>
                         {rules.map((rule) => (
