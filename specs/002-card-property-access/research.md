@@ -59,6 +59,10 @@
 
 **웹소켓 특이사항**: 블록 변경 1건 × 수신자 N명이므로 평가기를 사용자별로 캐시하고, 보드의 `propertyAccess`가 바뀌면 그 보드 캐시를 버린다.
 
+수신자 조직 정보를 `WHERE TeamID = ? AND UserID IN (...)`로 일괄 조회하기 전에 **ID를 중복 제거한다.** `getUserIDsForTeamAndBoard`(`ws/plugin_adapter.go:215`)는 `ensureUserIDs`가 없으면 중복 제거 없이 반환하고, 블록 브로드캐스트가 정확히 그 경로를 탄다. 현재 중복이 없는 것은 상류 `getMembersForBoard`가 implicit를 explicit에 대해 걸러내는 덕분이지 이 함수의 보장이 아니다.
+
+수신자 수는 `보드 멤버 ∩ 활성 리스너`로 상한이 보드 멤버 수다. 실측상 명시 멤버 최대 22명, 채널 연동 synthetic 포함 최대 54명이므로 배치 크기가 문제되는 규모가 아니다.
+
 ---
 
 ## R4. 평가기를 어느 레이어에 두는가

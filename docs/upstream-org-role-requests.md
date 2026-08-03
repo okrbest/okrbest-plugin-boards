@@ -281,7 +281,43 @@ Response: []UserOrgProfileSummary        // T2의 ID 포함 형태
 
 **응답 정책**: 볼 수 없는 사용자는 403으로 전체를 실패시키지 말고 **응답에서 제외**한다. 브로드캐스트 필터링 용도이므로 부분 결과가 자연스럽다. 팀 멤버가 아니거나 프로필이 없는 사용자도 마찬가지로 생략한다 — 호출자는 "응답에 없으면 조직 정보 없음"으로 해석한다.
 
-**배치 상한**: 요청 ID 개수에 상한을 둔다(제안: 200, 초과 시 400). Mattermost의 다른 `by-ids` 계열과 맞춘다.
+**배치 상한**: 요청 ID 개수 상한 **1000**, 초과 시 `400`.
+
+값의 근거 — 메인 서버에서 상한을 둔 `by-ids` 계열은 전부 1000이다.
+
+| 엔드포인트 | 상한 | 위치 |
+|---|---|---|
+| `POST /channels/{team}/ids` | 1000 | `maxListSize` 상수 (`api4/channel.go:18`, 사용 `:1861`) |
+| `POST /channels/members/ids` | 1000 | 같은 상수 (`api4/channel.go:2084`) |
+| `POST /posts/ids` | 1000 | 하드코딩 (`api4/post.go:645`) |
+| `POST /users/ids` | 없음 | 빈 배열만 거절 (`api4/user.go:1047`) |
+| `POST /teams/{team}/members/ids` | 없음 | 동일 (`api4/team.go:764`) |
+| `POST /users/status/ids` | 없음 | ID 길이 검증만 (`api4/status.go:61`) |
+
+**신규 상수를 선언하지 않는다.** `maxListSize`는 `package api4`의 패키지 스코프 상수이고 `team.go`도 같은 패키지이므로 임포트 없이 그대로 참조한다. 새로 만들면 같은 의미의 1000이 세 군데로 늘어난다. 상수를 공용 파일로 옮기는 리팩터도 하지 않는다 — upstream이 `channel.go`를 건드릴 때마다 충돌한다.
+
+```go
+userIDs, err := model.SortedArrayFromJSON(r.Body)   // 중복 제거 포함
+if err != nil {
+	c.Err = model.NewAppError("getOrgProfilesByIds", model.PayloadParseError, nil, "", http.StatusBadRequest).Wrap(err)
+	return
+} else if len(userIDs) == 0 {
+	c.SetInvalidParam("user_ids")
+	return
+}
+if len(userIDs) > maxListSize {
+	c.Err = model.NewAppError("getOrgProfilesByIds",
+		"api.team.org_profiles_by_ids.invalid_body.request_error",
+		map[string]any{"MaxLength": maxListSize}, "", http.StatusBadRequest)
+	return
+}
+```
+
+**파싱은 반드시 `model.SortedArrayFromJSON`을 쓴다.** 이 헬퍼가 중복 ID를 제거한다(`model/utils.go:508-517` — "Remove duplicate IDs as it can bring a significant load to the database"). `json.Decode`로 직접 받으면 같은 ID를 1000번 보내는 증폭을 막지 못한다.
+
+에러 메시지 i18n 키가 신규이므로 `server/i18n/en.json` 추가와 함께 `ko.json` 번역을 동반해야 한다 (constitution 원칙 V).
+
+**참고 — 상한이 없어도 무한은 아니다.** 전역 요청 본문 제한이 기본 300,000바이트다(`ServiceSettings.MaximumPayloadSizeBytes`, `model/config.go:999`, 적용 `web/handlers.go:209-212`). ID 하나가 약 29바이트이므로 약 10,300개에서 `413`으로 잘린다. 개수 상한은 코드 상수, 바이트 상한은 설정값으로 관리 계층이 다르다 — 운영 중 조정 가능한 것은 후자뿐이다.
 
 **성능 — 이 작업의 핵심 주의점**
 
@@ -435,3 +471,29 @@ T1의 부수 결정(`includeInactive` 허용 여부)에 대한 의견: **읽기 
 부록 A-3의 판단에 동의한다. **T1~T3이 반영되기 전에는 현행 DB 직접 읽기를 유지한다.** Boards 기능 구현을 이 작업들에 묶지 않는다.
 
 반영되면 A-3 표대로 내부 구현만 교체한다. 자체 경로(`/plugins/focalboard/api/v2/teams/{teamID}/org-units`, `/duties`)의 외부 계약은 바뀌지 않으므로 웹앱은 영향받지 않는다.
+
+## B-5. T3 상한 1000·파싱 변경 검토 (2026-08-03)
+
+서버 쪽에서 배치 상한을 200 → **1000**으로 올리고 `model.SortedArrayFromJSON` 사용을 명시한 데 대한 Boards 확인이다.
+
+**결론: Boards 코드에 지금 필요한 변경은 없다.** T3은 아직 없고 부록 A-3·B-4대로 반영 전까지 DB 직접 읽기를 유지하므로, 상한 값은 현재 코드에 닿지 않는다.
+
+### 전환 시점에 유효한 것 셋
+
+| 서버 변경 | Boards 영향 |
+|---|---|
+| 상한 200 → 1000 | **완화.** 200이면 분할 로직을 고려해야 했으나 1000은 사실상 걸리지 않는다 |
+| `SortedArrayFromJSON` = 정렬 | 응답 순서가 요청 순서와 다르다. **인덱스 대응 금지, `userId` 키 맵으로 받는다** |
+| 볼 수 없는 사용자 응답 제외 | "응답에 없으면 조직 정보 없음". Boards의 FR-021과 이미 일치 |
+
+**1000이 걸리지 않는 근거** — 수신자 수 상한은 보드 멤버 수다(`보드 멤버 ∩ 활성 리스너`). 개발 DB 실측: 명시 멤버 최대 22명, 채널 연동 synthetic 포함 최대 54명. 두 자릿수다.
+
+### 중복 제거 지적은 Boards에도 유효하다
+
+`SortedArrayFromJSON`을 강제한 이유(중복 ID의 DB 부하 증폭)가 Boards의 현재 구현에도 그대로 적용된다. 웹소켓 필터가 `WHERE TeamID = ? AND UserID IN (...)`를 쓰기 때문이다.
+
+`getUserIDsForTeamAndBoard`(`server/ws/plugin_adapter.go:215`)를 확인한 결과 **반환 경로 둘의 중복 보장이 다르다**. `ensureUserIDs`가 있으면 맵으로 dedup하지만, 없으면 nested loop의 `append` 결과를 그대로 반환한다. **블록 브로드캐스트가 후자를 탄다.**
+
+실제로 중복이 생기지는 않는다 — 상류 `getMembersForBoard`가 implicit를 explicit에 대해 걸러내고 explicit는 PK로 유일하기 때문이다. 그러나 그 보장이 두 계층 아래 우연에 의존한다.
+
+**조치**: Boards 과제 T043에 "조직 정보 일괄 조회 전 수신자 ID 중복 제거"를 명시했다. `research.md` R3에도 근거를 남겼다. 메인 서버에 요청할 것은 없다.

@@ -133,7 +133,7 @@ description: "Task list for 속성 기준 카드 접근 권한"
 - [ ] T040 [US2] 블록 수정·삭제 가드를 `server/app/blocks.go`에 구현 — 대상 카드 판정이 `editor` 미만이면 `model.NewErrPermission()` (FR-027, contracts E-03~E-05)
 - [ ] T041 [US2] 블록 생성은 보드 권한으로 통과시키도록 `server/app/blocks.go`에 명시 — 규칙을 적용하지 않는다 (FR-032, contracts E-06)
 - [ ] T042 [US2] 검색 결과 필터를 `server/api/search.go`와 대응 app 경로에 구현 (FR-028)
-- [ ] T043 [US2] 블록 브로드캐스트 수신자별 필터를 `server/ws/plugin_adapter.go`의 `sendBoardMessage` 경로에 구현 — 수신자 목록을 만든 뒤 각자 평가기로 판정해 제외 (FR-029)
+- [ ] T043 [US2] 블록 브로드캐스트 수신자별 필터를 `server/ws/plugin_adapter.go`의 `sendBoardMessage` 경로에 구현 — 수신자 목록을 만든 뒤 각자 평가기로 판정해 제외. **조직 정보를 일괄 조회하기 전에 수신자 ID를 중복 제거한다** — `getUserIDsForTeamAndBoard`의 `ensureUserIDs` 없는 경로(블록 브로드캐스트가 타는 경로)가 중복 제거 없이 반환하며, 현재 중복이 없는 것은 상류 `getMembersForBoard`의 dedup에 기댄 우연이다 (FR-029)
 - [ ] T044 [US2] 평가기 사용자별 캐시를 `server/app/property_access.go`에 구현 — 웹소켓 브로드캐스트 1건 처리 범위로 수명을 한정하고 보드의 `propertyAccess`가 바뀌면 그 보드 항목을 버린다. 사용자 조직 정보 변경이 다음 요청에 반영되도록 요청 경계를 넘겨 보관하지 않는다 (research.md R3, SC-006)
 
 **Checkpoint**: 클라이언트를 우회한 요청·검색·실시간 경로로 내용이 새지 않는다. **여기까지 와야 보안이 성립한다**
