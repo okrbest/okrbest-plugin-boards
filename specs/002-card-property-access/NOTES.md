@@ -89,15 +89,15 @@ kkv 팀 멤버(봇 제외) 15 / UserOrgProfiles 보유 15 / 누락 0
 
 `docs/upstream-org-role-requests.md` 부록 B-3 참조. 관련 과제 없음.
 
-### 4. T3 전환 가능 여부 — 메인 서버 회신 대기
+### 4. ~~메인 서버 API 전환~~ — 하지 않기로 결정 (2026-08-03)
 
-`plugin.API`에 조직 조회 메서드가 없고 `PluginHTTP`는 플러그인 간 호출용이라, **api4에 추가되는 T1~T3을 Boards가 부를 수단이 없다.** 부록 A-3의 "내부 구현을 메인 서버 호출로 교체"가 현재 통합 표면으로는 실행 불가능하다.
+**Boards는 메인 서버 조직 API를 쓰지 않는다.** DB 직접 읽기로 확정이며 전환 계획도 없다.
 
-또 `UserCanSeeOtherUser`가 요청 사용자 관점 검사라 웹소켓 팬아웃 맥락과 맞지 않는다.
+`plugin.API`에 조직 조회 메서드가 없고 `PluginHTTP`는 플러그인 간 호출용이라 api4를 부를 수단 자체가 없다. `UserCanSeeOtherUser`도 요청 사용자 관점 검사라 웹소켓 팬아웃 맥락과 맞지 않는다.
 
-Boards 입장은 **현행 유지(DB 직접 읽기)** 권장이다. `docs/upstream-org-role-requests.md` 부록 B-6 참조.
+`docs/upstream-org-role-requests.md`의 Boards 요청은 **전건 철회**됐고, 그 문서는 이제 의존성 통지 역할만 한다 — 메인 서버가 `OrgUnits`·`PositionDefinitions`·`UserOrgProfiles` 스키마를 바꿀 때 알려달라는 것 하나.
 
-**구현에는 영향 없다** — 어느 결론이든 지금 코드(DB 직접 읽기)가 버려지지 않는다.
+**구현에 영향 없다.** 이 기능의 범위는 카드 속성 기준 접근 권한에 한정한다.
 
 ### 5. US3·US4 검증 조건
 

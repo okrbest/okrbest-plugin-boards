@@ -159,20 +159,19 @@ webapp/i18n/{en,ko}.json              # 수정 — 신규 문자열
 
 **Structure Decision**: 기존 레이어 구조(`api → app → store`)를 그대로 따르고 신규 파일을 각 레이어에 하나씩 추가한다. 평가기를 `server/app/property_access.go` 한 파일에 격리해 순수 함수에 가깝게 유지하고, 집행 지점은 그 평가기를 호출하기만 한다. UI는 `shareBoard.tsx`가 이미 큰 파일이므로 섹션을 별도 컴포넌트 파일로 분리해 `shareBoard.tsx`에는 삽입 지점만 남긴다.
 
-## 조직 데이터 접근 — 현재와 이후
+## 조직 데이터 접근
 
-조직 마스터와 사용자 배정은 메인 서버 소유다. **지금은 같은 DB를 읽기 전용으로 직접 SELECT 한다**(research.md R5.1).
+조직 마스터와 사용자 배정은 메인 서버 소유다. **Boards는 같은 DB를 읽기 전용으로 직접 SELECT 한다**(research.md R5.1). 쓰기·마이그레이션은 하지 않는다.
 
-메인 서버가 아래 개선을 반영하면 내부 구현만 교체한다. `docs/upstream-org-role-requests.md` 부록 A·B 참조.
-
-| 메인 서버 작업 | 반영 후 Boards 조치 |
+| 테이블 | 용도 |
 |---|---|
-| T1 읽기 전용 권한 헬퍼 분리 | 자체 경로는 유지하고 내부를 메인 서버 호출로 교체 |
-| T2 `UserOrgProfileSummary`에 ID 추가 | `UserOrgProfiles` 직접 SELECT 제거 |
-| T3 다건 조직 프로필 조회 | 웹소켓 수신자 필터의 `WHERE UserID IN (...)`을 API 호출로 교체 |
-| T4 기능 플래그 정책 확정 | **없음** — 플래그를 읽지 않기로 확정. fail-open 회피 |
+| `OrgUnits` | 본부·부서 셀렉터, 조상 집합 계산 |
+| `PositionDefinitions` (`kind='duty'`) | 직책 셀렉터, `fullvisibility` 판정 |
+| `UserOrgProfiles` | 사용자 소속·직책 판정 |
 
-**이 계획의 과제(T004~T063)는 메인 서버 작업에 의존하지 않는다.** 자체 경로의 외부 계약(`/plugins/focalboard/api/v2/teams/{teamID}/org-units`·`/duties`)이 바뀌지 않으므로 웹앱도 영향받지 않는다.
+**메인 서버 API로 전환할 계획은 없다.** `plugin.API`에 조직 조회 메서드가 없고 `PluginHTTP`는 플러그인 간 호출용이라 api4를 부를 수단 자체가 없다. 상세는 `docs/upstream-org-role-requests.md` 부록 B-6.
+
+스키마 소유권은 메인 서버에 있으므로 컬럼 삭제·의미 변경 시 Boards가 깨질 수 있다. 그 통지 요청만 위 문서에 남겼다.
 
 ## 구현 단계
 
