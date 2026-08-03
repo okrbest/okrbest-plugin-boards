@@ -39,7 +39,7 @@
 | `propertyValueId` | string | ✓ | `cardProperties[].options[].id` | 속성값 옵션 |
 | `divisionId` | string | | `OrgUnits.id` (`type='division'`) | 본부. 빈 문자열이면 제약 없음 |
 | `departmentId` | string | | `OrgUnits.id` (`type='department'`) | 부서. 빈 문자열이면 제약 없음 |
-| `dutyCode` | string | | `PositionDefinitions.code` (`kind='duty'`) | 직책. 빈 문자열이면 제약 없음 |
+| `dutyId` | string | | `PositionDefinitions.id` (`kind='duty'`) | 직책. 빈 문자열이면 제약 없음 |
 | `permission` | enum | ✓ | | `viewer` \| `commenter` \| `editor` (FR-010) |
 
 **검증 규칙**
@@ -47,11 +47,11 @@
 | 규칙 | 근거 |
 |---|---|
 | `propertyId`·`propertyValueId`·`permission`은 비어 있을 수 없다 | FR-011 |
-| `divisionId`·`departmentId`·`dutyCode` 중 최소 하나는 비어 있지 않아야 한다 | FR-011 — 셋 다 비면 전원 접근이라 규칙의 의미가 없다 |
+| `divisionId`·`departmentId`·`dutyId` 중 최소 하나는 비어 있지 않아야 한다 | FR-011 — 셋 다 비면 전원 접근이라 규칙의 의미가 없다 |
 | `permission`은 세 값 중 하나여야 한다 | FR-010 |
-| 조직·직책 축은 **id/code 존재 여부를 저장 시점에 검증하지 않는다** | 마스터가 외부에서 관리되어 나중에 사라질 수 있다. 판정 시점에 매칭 실패로 처리하고 화면에 표시한다 (FR-036) |
+| 조직·직책 축은 **id 존재 여부를 저장 시점에 검증하지 않는다** | 마스터가 외부에서 관리되어 나중에 사라질 수 있다. 판정 시점에 매칭 실패로 처리하고 화면에 표시한다 (FR-036) |
 
-**축별 키가 다른 이유**: 사용자 프로필이 조직은 id로, 직책은 code로 들고 있다(R5). 규칙도 같은 키를 써야 변환 없이 대조된다.
+**세 축 모두 id로 저장한다.** `UserOrgProfiles`가 조직·직책을 모두 id로 들고 있어 변환 없이 대조된다(R5).
 
 ### 1.3 제거 대상 잔재
 
@@ -71,7 +71,7 @@ card_acl_rules · card_acl_enabled · card_acl_org_map · board_owner_user_id
 
 | 컬럼 | 사용 |
 |---|---|
-| `id` | 규칙의 `divisionId`·`departmentId`, 사용자 `org_unit_ids`의 값 |
+| `id` | 규칙의 `divisionId`·`departmentId`, `UserOrgProfiles.PrimaryOrgUnitID`의 값 |
 | `teamid` | 팀 스코프 필터 |
 | `name` | 셀렉터 표시 |
 | `type` | `division`(본부) \| `department`(부서) 구분 |
@@ -86,7 +86,8 @@ card_acl_rules · card_acl_enabled · card_acl_org_map · board_owner_user_id
 
 | 컬럼 | 사용 |
 |---|---|
-| `code` | 규칙의 `dutyCode`, 사용자 `position_codes`의 값 |
+| `id` | 규칙의 `dutyId`, `UserOrgProfiles.PrimaryDutyID`의 값 |
+| `code` | 표시·디버깅용. 판정에는 쓰지 않는다 |
 | `teamid` | 팀 스코프 필터 |
 | `name` | 셀렉터 표시 |
 | `rank` | 셀렉터 정렬 |
@@ -96,14 +97,21 @@ card_acl_rules · card_acl_enabled · card_acl_org_map · board_owner_user_id
 
 ### 2.3 UserOrgProfile — 사용자 조직 정보
 
-Mattermost 사용자 프로필의 `props`에서 읽는다. 이 기능은 쓰지 않는다.
+메인 서버가 소유한 `UserOrgProfiles` 테이블. PK `(TeamID, UserID)`. 이 기능은 읽기만 한다.
 
-| 키 | 형태 | 참조 |
-|---|---|---|
-| `org_unit_ids` | 쉼표 구분 문자열 또는 배열 | `OrgUnits.id` |
-| `position_codes` | 쉼표 구분 문자열 또는 배열 | `PositionDefinitions.code` |
+| 컬럼 | 사용 |
+|---|---|
+| `TeamID` | 보드의 팀으로 조회 범위를 좁힌다 |
+| `UserID` | 대상 사용자 |
+| `PrimaryOrgUnitID` | `OrgUnits.id`. 본부·부서 조건의 기준 |
+| `PrimaryDutyID` | `PositionDefinitions.id` (`kind='duty'`). 직책 조건의 기준 |
+| `PrimaryPositionID` | 직위 — **읽지 않는다** (FR-024) |
+| `ExtraPositions` | 부가 직위 — **읽지 않는다** |
+| `EffectiveFrom` · `EffectiveTo` | 유효기간(밀리초). 0이면 무제한 |
 
-값이 없거나 빈 문자열이면 조직 정보 미등록으로 보고, 조직 조건을 만족하지 못한 것으로 처리한다(FR-021).
+**유효기간 판정**: 현재 시각을 `now`라 할 때, `EffectiveFrom == 0 || EffectiveFrom <= now` 이고 `EffectiveTo == 0 || now < EffectiveTo` 인 행만 유효하다. 유효하지 않으면 조직 정보 미등록과 동일하게 처리한다.
+
+행이 없거나 `PrimaryOrgUnitID`가 비어 있으면 조직 정보 미등록으로 보고 조직 조건을 만족하지 못한 것으로 처리한다(FR-021).
 
 ---
 
@@ -126,7 +134,7 @@ none < viewer < commenter < editor < manage
 | 필드 | 계산 시점 | 설명 |
 |---|---|---|
 | `isAdmin` | 생성 | 보드 관리자 또는 시스템 관리자인가 |
-| `floor` | 생성 | 전체보기 하한. `viewer` 또는 `none` |
+| `floor` | 생성 | 전체보기 하한. 사용자 직책의 `fullvisibility`로 결정. `viewer` 또는 `none` |
 | `boardPermission` | 생성 | 기존 보드 단위 권한 |
 | `enabled` | 생성 | 규칙 스위치 |
 | `orgGateByProperty` | 생성 | `(propertyId, valueId)` → 그 카드조건에 조직행이 존재하는지, 그리고 U가 통과하는지 |
@@ -143,7 +151,7 @@ Board ─1:1─ RuleSet ─1:N─ AccessRule
                               │
                               ├─ propertyId/propertyValueId → Board.cardProperties
                               ├─ divisionId/departmentId    → OrgUnit (읽기 전용)
-                              └─ dutyCode                   → Duty (읽기 전용)
+                              └─ dutyId                     → Duty (읽기 전용)
 
 User ─1:1─ UserOrgProfile ─N:M─ OrgUnit
                             └──N:M─ Duty

@@ -26,7 +26,7 @@
           "propertyValueId": "strategy-option-id",
           "divisionId": "e178154ru3g88gotpw4op7h9jr",
           "departmentId": "",
-          "dutyCode": "",
+          "dutyId": "",
           "permission": "viewer"
         }
       ]
@@ -91,7 +91,7 @@
 | S-01 | 멤버 역할 관리 권한이 없는 사용자의 규칙 저장이 `403`으로 거부된다 |
 | S-02 | 클라이언트가 보낸 `updatedBy`가 무시되고 세션 사용자로 덮어써진다 |
 | S-03 | 클라이언트가 보낸 `updatedAt`이 무시되고 서버 시각으로 덮어써진다 |
-| S-04 | 조직·직책 세 축이 모두 빈 규칙 저장이 `400`으로 거부된다 |
+| S-04 | 조직·직책 세 축(`divisionId`·`departmentId`·`dutyId`)이 모두 빈 규칙 저장이 `400`으로 거부된다 |
 | S-05 | `permission`이 허용 값이 아니면 `400`으로 거부된다 |
 | S-06 | 저장 후 보드 `properties`에서 잔재 키 4개가 사라진다 |
 | S-07 | 규칙을 저장한 뒤 보드를 다시 조회하면 규칙이 그대로 돌아온다 |

@@ -2,7 +2,9 @@
 
 **Feature**: [../spec.md](../spec.md) | **Research**: [../research.md](../research.md) R8
 
-공유 팝업의 본부·부서·직책 셀렉터를 채우기 위한 **읽기 전용** 경로 두 개. 조직 마스터는 이 플러그인 밖에서 관리되며 이 API는 조회만 제공한다.
+공유 팝업의 본부·부서·직책 셀렉터를 채우기 위한 **읽기 전용** 경로 두 개. 조직 마스터는 메인 서버(Org Role Management)가 소유하며 이 API는 같은 DB를 읽어 조회만 제공한다.
+
+메인 서버에도 `/api/v4/teams/{team_id}/org-units`·`/positions`가 있지만 쓰지 않는다. 그쪽은 팀 관리자 이상을 요구하는데 규칙 편집은 보드 관리자면 열려야 하기 때문이다(research.md R5.1).
 
 기준 경로: `/plugins/focalboard/api/v2`
 
@@ -75,16 +77,17 @@
 
 ```json
 [
-  {"code": "ceo-2",  "name": "CEO",    "rank": 0, "fullVisibility": true},
-  {"code": "duty",   "name": "고문",   "rank": 1, "fullVisibility": false},
-  {"code": "duty-2", "name": "본부장", "rank": 2, "fullVisibility": true},
-  {"code": "duty-3", "name": "팀장",   "rank": 3, "fullVisibility": false}
+  {"id": "oddg5sedsidsxr7n5zq5sq7jry", "code": "ceo-2",  "name": "CEO",    "rank": 0, "fullVisibility": true},
+  {"id": "c1kkg4xsbbgdmfk53wj76fq4bo", "code": "duty",   "name": "고문",   "rank": 1, "fullVisibility": false},
+  {"id": "u97fitej37nkbxmc313aqim15w", "code": "duty-2", "name": "본부장", "rank": 2, "fullVisibility": true},
+  {"id": "9fucss94jfdy8mfwk7xkshno9y", "code": "duty-3", "name": "팀장",   "rank": 3, "fullVisibility": false}
 ]
 ```
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
-| `code` | string | 규칙의 `dutyCode`에 저장할 값. 사용자 `position_codes`와 대조된다 |
+| `id` | string | 규칙의 `dutyId`에 저장할 값. `UserOrgProfiles.PrimaryDutyID`와 대조된다 |
+| `code` | string | 표시·디버깅용 안정 식별자. 판정에는 쓰지 않는다 |
 | `name` | string | 셀렉터 표시명 |
 | `rank` | number | 정렬 기준. 작을수록 상위 |
 | `fullVisibility` | boolean | 보드 전체보기 여부 |
@@ -110,3 +113,4 @@
 | C-05 | `duties`가 `active=false` 행을 반환하지 않는다 |
 | C-06 | `duties`의 `fullVisibility`가 마스터 값과 일치한다 |
 | C-07 | 마스터 테이블이 비어 있을 때 `[]`을 반환하고 `500`이 아니다 |
+| C-08 | 두 경로 모두 **보드 관리자 권한만으로도** 조회된다 (메인 서버 조직 API는 팀 관리자를 요구하므로 이 경로가 따로 필요하다) |

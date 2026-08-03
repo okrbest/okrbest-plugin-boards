@@ -91,6 +91,44 @@ type BoardPermissionsResponse = {
 }
 
 
+// Card level access rules stored under board.properties.propertyAccess.
+// The card side (propertyId, propertyValueId) picks which cards a row applies
+// to; the subject side (divisionId, departmentId, dutyId) picks which users.
+// An empty subject field means no constraint on that axis.
+type PropertyAccessPermission = 'viewer' | 'commenter' | 'editor'
+
+type PropertyAccessRule = {
+    id: string
+    propertyId: string
+    propertyValueId: string
+    divisionId: string
+    departmentId: string
+    dutyId: string
+    permission: PropertyAccessPermission
+}
+
+type PropertyAccessSettings = {
+    enabled: boolean
+    updatedBy: string
+    updatedAt: number
+    rules: PropertyAccessRule[]
+}
+
+// Read-only organisation master entries used by the rule selectors.
+type OrgUnit = {
+    id: string
+    name: string
+    type: 'division' | 'department'
+    parentId: string
+}
+
+type Duty = {
+    code: string
+    name: string
+    rank: number
+    fullVisibility: boolean
+}
+
 type BoardsAndBlocks = {
     boards: Board[]
     blocks: Block[]
@@ -373,6 +411,11 @@ export {
     BoardMember,
     BoardCapabilities,
     BoardPermissionsResponse,
+    PropertyAccessPermission,
+    PropertyAccessRule,
+    PropertyAccessSettings,
+    OrgUnit,
+    Duty,
     BoardsAndBlocks,
     BoardsAndBlocksPatch,
     PropertyTypeEnum,

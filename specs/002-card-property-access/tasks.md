@@ -31,9 +31,9 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 **Purpose**: 이후 모든 단계가 참조하는 타입과 상수를 정의한다
 
-- [ ] T001 [P] 규칙·규칙집합·권한 등급 타입을 `server/model/property_access.go`에 정의 (data-model.md §1.1~1.2, §3.1)
-- [ ] T002 [P] 조직 단위·직책 조회 응답 타입을 `server/model/org.go`에 정의 (contracts/org-master-api.md 응답 스키마)
-- [ ] T003 [P] `PropertyAccessRule`·`PropertyAccessSettings` 타입을 `webapp/src/blocks/board.ts`에 추가 (서버 JSON 스키마와 필드명 일치)
+- [X] T001 [P] 규칙·규칙집합·권한 등급 타입을 `server/model/property_access.go`에 정의 (data-model.md §1.1~1.2, §3.1)
+- [X] T002 [P] 조직 단위·직책 조회 응답 타입을 `server/model/org.go`에 정의 (contracts/org-master-api.md 응답 스키마)
+- [X] T003 [P] `PropertyAccessRule`·`PropertyAccessSettings` 타입을 `webapp/src/blocks/board.ts`에 추가 (서버 JSON 스키마와 필드명 일치)
 
 **Checkpoint**: 서버·웹앱이 같은 규칙 스키마를 공유한다
 
@@ -47,7 +47,7 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### 조직 마스터 조회 (contracts/org-master-api.md)
 
-- [ ] T004 조직 단위·직책 조회 store 메서드를 `server/services/store/sqlstore/org_master.go`에 구현 — `OrgUnits`(active만), `PositionDefinitions`(kind='duty' + active만) (data-model.md §2.1~2.2)
+- [ ] T004 조직 조회 store 메서드를 `server/services/store/sqlstore/org_master.go`에 구현 — `OrgUnits`(active만), `PositionDefinitions`(kind='duty' + active만), `UserOrgProfiles`(팀·사용자 다건 조회). 메인 서버 소유 테이블을 읽기 전용으로만 접근한다 (data-model.md §2.1~2.3)
 - [ ] T005 store 인터페이스에 조회 메서드를 `server/services/store/store.go`에 추가하고 `make generate`로 `mockstore`를 재생성 (constitution 원칙 I)
 - [ ] T006 조직 마스터 조회 app 메서드를 `server/app/org_master.go`에 구현 — 정렬(org-units: type→name, duties: rank→name)과 빈 결과 `[]` 반환 포함
 - [ ] T007 `GET /teams/{teamID}/org-units`·`GET /teams/{teamID}/duties` 라우트를 `server/api/org.go`에 등록하고 `server/api/api.go`의 `RegisterRoutes()`에 연결 — 팀 접근 권한 검사 포함
@@ -55,9 +55,9 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### 사용자 조직 해석
 
-- [ ] T009 [P] 사용자 `props`에서 `org_unit_ids`·`position_codes`를 읽는 해석기를 `server/app/org_master.go`에 구현 — 쉼표 구분 문자열과 배열 형태 모두 처리, 빈 값은 미등록으로 (data-model.md §2.3)
+- [ ] T009 [P] `UserOrgProfiles`에서 사용자 조직 정보를 읽는 해석기를 `server/app/org_master.go`에 구현 — `PrimaryOrgUnitID`·`PrimaryDutyID`만 쓰고 `PrimaryPositionID`·`ExtraPositions`는 무시한다. `EffectiveFrom`/`EffectiveTo`로 현재 시각 기준 유효한 행만 채택하며, 행이 없거나 유효하지 않으면 미등록으로 처리한다 (data-model.md §2.3, FR-021·FR-024)
 - [ ] T010 [P] 조직 조상 집합 계산을 `server/app/org_master.go`에 구현 — `parentid`를 루트까지 따라가며 수집, 순환 방지 (FR-017, 계층 일반형)
-- [ ] T011 조직 해석·조상 집합 단위 테스트를 `server/app/org_master_test.go`에 작성 — 2단계·3단계 계층, 미등록 사용자, id↔code 바인딩 구분 (research.md R5)
+- [ ] T011 조직 해석·조상 집합 단위 테스트를 `server/app/org_master_test.go`에 작성 — 2단계·3단계 계층, 미등록 사용자, 유효기간 경계(시작 전·종료 후·무제한), 직위 무시 (research.md R5)
 
 ### 평가기 골격
 
@@ -153,9 +153,9 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### 구현
 
-- [ ] T047 [US3] 직책 축 매칭을 `server/app/property_access.go`에 구현 — 사용자 `position_codes`에 `dutyCode` 포함 여부. 해당 code의 `kind`가 `duty`가 아니면 무시 (FR-024, research.md R5)
+- [ ] T047 [US3] 직책 축 매칭을 `server/app/property_access.go`에 구현 — 사용자 `PrimaryDutyID`와 규칙 `dutyId` 비교. 직위(`PrimaryPositionID`)는 읽지 않는다 (FR-024, research.md R5)
 - [ ] T048 [US3] 직책이 관문으로 작동하지 않음을 `server/app/property_access.go`에 반영 — 직책 없는 사용자도 조직 조건만으로 권한을 얻는다 (FR-018)
-- [ ] T049 [US3] 직책 셀렉터를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 연결 — `kind='duty'` 목록만, `rank` 순 정렬
+- [ ] T049 [US3] 직책 셀렉터를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 연결 — `kind='duty'` 목록만, `rank` 순 정렬. 선택 값은 `id`로 저장한다
 
 **Checkpoint**: 같은 조직 안에서 직책으로 권한이 갈린다
 
@@ -174,7 +174,7 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### 구현
 
-- [ ] T052 [US4] 전체보기 하한 계산을 `server/app/property_access.go`의 평가기 생성에 추가 — 사용자 직책 중 `fullvisibility`가 하나라도 켜져 있으면 하한 `viewer` (FR-022)
+- [ ] T052 [US4] 전체보기 하한 계산을 `server/app/property_access.go`의 평가기 생성에 추가 — 사용자의 `PrimaryDutyID`가 가리키는 직책의 `fullvisibility`가 켜져 있으면 하한 `viewer` (FR-022)
 - [ ] T053 [US4] 최종 반환을 `max(규칙권한, 하한)`으로 `server/app/property_access.go`에 반영 — 하한이 권한을 낮추지 않는다 (FR-022)
 
 **Checkpoint**: 전체보기 직책이 조직 경계를 넘어 열람할 수 있고, 규칙이 준 더 높은 권한은 유지된다

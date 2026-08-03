@@ -80,29 +80,51 @@
 
 ## R5. 조직 데이터 바인딩
 
-**Decision**: 본부·부서는 `OrgUnits.id`로, 직책은 `PositionDefinitions.code`로 규칙에 저장한다. 직책은 `kind='duty'`만 사용한다. 본부 판정은 사용자 소속에서 루트까지 조상을 모아 포함 여부를 본다.
+**Decision**: 사용자 조직 정보는 메인 서버가 소유한 `UserOrgProfiles` 테이블에서 읽는다. 본부·부서는 `OrgUnits.id`, 직책은 `PositionDefinitions.id`로 규칙에 저장한다. 직책은 `kind='duty'`만 쓴다. 본부 판정은 사용자 소속에서 루트까지 조상을 모아 포함 여부를 본다.
 
-**Rationale** (전부 로컬 DB에서 확인):
+**Rationale** (메인 서버 `okrbest/okrbest` 코드와 로컬 DB에서 확인):
 
-- 사용자 프로필의 바인딩 키가 축마다 다르다.
+- 조직 관리(Org Role Management)는 **메인 서버가 소유한 정식 서브시스템**이다.
+  - 모델: `server/public/model/org_role.go` — `OrgUnit`, `PositionDefinition`, `UserOrgProfile`, `UserOrgProfileSummary`, `OrgRoleAuditLog`
+  - API: `server/channels/api4/team.go` — `/api/v4/teams/{team_id}/positions`, `/org-units`, `/users/{id}/org-profile`, `/org-profiles`, `/org-role-audit`
+  - 기능 플래그: `FeatureFlags.EnableOrgRoleManagement` (기본 켜짐, 꺼지면 501)
 
-  | 사용자 프로필 필드 | 참조 대상 | 키 |
+- `UserOrgProfiles`가 사용자 소속의 정본이다. PK `(TeamID, UserID)`.
+
+  | 컬럼 | 참조 | 용도 |
   |---|---|---|
-  | `org_unit_ids` | `OrgUnits` | **id** (26자) |
-  | `position_codes` | `PositionDefinitions` | **code** (문자열) |
+  | `PrimaryOrgUnitID` | `OrgUnits.id` | 소속 조직(대개 부서) |
+  | `PrimaryDutyID` | `PositionDefinitions.id` (`kind='duty'`) | **직책** |
+  | `PrimaryPositionID` | `PositionDefinitions.id` (`kind='position'`) | 직위 — 이 기능은 쓰지 않는다 |
+  | `ExtraPositions` | JSON 배열 | 부가 직위 — 쓰지 않는다 |
+  | `EffectiveFrom` / `EffectiveTo` | 밀리초 | 유효기간 |
 
-  규칙도 같은 키를 저장해야 조인이 맞는다.
+  **직책과 직위가 컬럼으로 이미 분리돼 있다.** `PrimaryDutyID`만 읽으면 직위가 섞이지 않으므로 code 접두사로 `kind`를 추론할 필요가 없다.
 
-- `OrgUnits.type`이 `division`(본부, 4개)과 `department`(부서, 10개)로 나뉘고 `parentid`로 연결된다. **사용자는 부서에만 배정된다** — 본부 조건을 만족시키려면 계층을 올라가야 한다(FR-017). 현재 2단계지만 일반형으로 구현해 깊어져도 동작하게 한다.
-- `PositionDefinitions.kind`가 `duty`(직책: CEO·고문·본부장·팀장)와 `position`(직위: 부회장~사원)으로 나뉜다. 명세가 다루는 것은 **직책**이며, 예시의 본부장은 `duty` 쪽이다. 직위는 이전 코드의 잔재이므로 전 구간에서 배제한다(FR-024).
-- `PositionDefinitions.fullvisibility`가 "보드 전체보기"다. `duty` 중에서는 CEO와 본부장에 켜져 있다.
+- `PositionDefinitions.kind`가 `duty`(직책: CEO·고문·본부장·팀장)와 `position`(직위: 부회장~사원)을 한 테이블에서 구분한다. 메인 서버 모델 주석이 이를 명시한다.
+- `OrgUnits.type`이 `division`(본부, 4개)과 `department`(부서, 10개)로 나뉘고 `parentid`로 연결된다. 사용자는 대개 부서에 배정되므로 본부 조건은 계층을 올라가 판정한다(FR-017). 현재 2단계지만 일반형으로 구현한다.
+- `PositionDefinitions.fullvisibility`가 "보드 전체보기"다. `duty` 중 CEO와 본부장에 켜져 있다.
+
+**유효기간**: `EffectiveFrom`/`EffectiveTo`가 설정된 행은 현재 시각이 그 구간 안일 때만 유효하다. 값이 0이면 무제한으로 본다. 인사 발령 예약이 쓰이기 시작하면 미리 권한이 새는 것을 막는다.
 
 **Alternatives considered**:
 
-- **양쪽 다 id로 통일** — 규칙 스키마가 균일해진다. 기각 이유: 사용자 프로필이 직책을 code로 들고 있어, id로 저장하면 매 판정마다 code↔id 변환이 필요하고 마스터가 바뀌면 깨진다.
-- **직위도 조건에 포함** — 표현력이 는다. 기각 이유: 명세가 직책만 다루기로 확정했다(FR-024).
+- **Mattermost `users.props`의 `org_unit_ids`·`position_codes`** — 초기 설계안이었다. 기각 이유: 커버리지가 낮고(조직 11명, 직책 1명 — 그마저 직위였다), 직책과 직위가 한 필드에 섞이며, 팀 스코프가 없고, 조직은 id·직책은 code로 바인딩이 비대칭이다. `UserOrgProfiles`는 이 넷을 모두 해결한다(조직 15명, 직책 9명 — 본부장 3·팀장 6).
+- **메인 서버 조직 API 호출** — 스키마 소유권을 존중한다. 기각 이유는 R5.1 참조.
 
-**운영 유의**: 확인 시점 활성 사용자 20명 중 조직 단위가 등록된 사람은 11명, 직책·직위 코드가 등록된 사람은 1명이다. 조직 정보가 없는 사용자는 규칙이 걸린 카드에 접근할 수 없으며(FR-021) 이는 의도된 동작이다. 기능 결함이 아니라 운영 데이터를 채워야 하는 문제다.
+### R5.1 왜 메인 서버 API를 부르지 않는가
+
+플러그인은 메인 서버와 **같은 DB를 공유**하며, 이 저장소는 이미 Mattermost 소유 테이블을 직접 읽는다 — `sqlstore/user.go`의 `baseUserQuery`가 `Users`를, `searchUsersByTeam`이 `TeamMembers`를 직접 SELECT 한다. 조직 마스터 조회도 같은 계열이다.
+
+메인 서버 API를 쓸 수 없는 실제 이유는 셋이다.
+
+1. **권한 기준이 안 맞는다.** `getTeamPositions`·`getTeamOrgUnits`가 `requireOrgRoleManagement`를 요구한다 — `PermissionSysconsoleReadUserManagementTeams` 또는 `PermissionManageTeamRoles`, 즉 **팀 관리자 이상**. 규칙 편집은 **보드 관리자**(`ManageBoardRoles`)면 열려야 하고 보드 관리자가 팀 관리자가 아닌 경우가 일반적이다.
+2. **`org-profile-summary`는 이름만 준다.** `division_name`·`duty_name` 같은 표시용 문자열뿐이고 id가 없다. 판정에는 id가 필요하다.
+3. **타인의 조직 정보를 세션 권한으로 못 읽는다.** 웹소켓 수신자별 판정은 다른 사용자의 소속을 서버가 알아야 하는데 `/org-profiles`는 관리자 전용이다.
+
+플러그인이 자기 서버에 HTTP로 되묻는 구조 자체도 불필요하다.
+
+**단, 스키마 소유권은 메인 서버에 있다.** 이 기능은 세 테이블을 **읽기 전용**으로만 쓰고 쓰기·마이그레이션을 하지 않는다. 장기적으로 필요한 메인 서버 개선은 `docs/upstream-org-role-requests.md`에 남긴다.
 
 ---
 

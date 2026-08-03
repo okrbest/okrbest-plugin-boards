@@ -18,14 +18,30 @@
 
 ### 필요한 계정
 
-| 역할 | `org_unit_ids` | `position_codes` | 용도 |
+조직 정보는 메인 서버의 조직 관리 화면에서 설정한다(`UserOrgProfiles`). 로컬 DB 기준 이미 조직 15명·직책 9명이 등록돼 있으므로 대부분 그대로 쓸 수 있다.
+
+| 역할 | 소속(`PrimaryOrgUnitID`) | 직책(`PrimaryDutyID`) | 용도 |
 |---|---|---|---|
-| 전략본부 본부장 | 전략 산하 부서 id | `duty-2` | 관문 통과 + 직책 가산 |
-| 전략본부 팀장 | 전략 산하 부서 id | `duty-3` | 관문 통과, 가산 없음 |
-| 생산본부 본부장 | 생산 산하 부서 id | `duty-2` | 관문 차단 + 전체보기 하한 |
-| 조직정보 없는 사용자 | (비움) | (비움) | 미등록자 차단 |
+| 전략본부 본부장 | 전략 산하 부서 | 본부장 | 관문 통과 + 직책 가산 + 전체보기 하한 |
+| 전략본부 팀장 | 전략 산하 부서 | 팀장 | 관문 통과, 가산 없음 |
+| 생산본부 본부장 | 생산 산하 부서 | 본부장 | 관문 차단 + 전체보기 하한 |
+| 조직정보 없는 사용자 | (행 없음) | — | 미등록자 차단 |
 
 계정은 보드 멤버(편집자)로 등록한다. 보드 관리자 계정은 별도로 하나 둔다.
+
+현재 등록 상태 확인:
+
+```bash
+PW=$(docker inspect mattermost-postgres --format '{{range .Config.Env}}{{println .}}{{end}}' \
+     | grep POSTGRES_PASSWORD | cut -d= -f2)
+docker exec -e PGPASSWORD="$PW" mattermost-postgres psql -U mmuser -d mattermost_test -c "
+  select u.username, o.name as org, d.name as duty, p.effectivefrom, p.effectiveto
+  from userorgprofiles p
+  join users u on u.id = p.userid
+  left join orgunits o on o.id = p.primaryorgunitid
+  left join positiondefinitions d on d.id = p.primarydutyid
+  order by u.username;"
+```
 
 ---
 

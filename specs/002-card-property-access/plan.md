@@ -18,7 +18,7 @@
 
 **Primary Dependencies**: Gorilla Mux + Squirrel (server), Redux Toolkit 2.11 + react-select 5.2 (webapp)
 
-**Storage**: 규칙은 `focalboard_boards.properties` JSON 컬럼. 조직 마스터는 기존 `OrgUnits`·`PositionDefinitions` 테이블(읽기 전용). 신규 테이블·마이그레이션 없음
+**Storage**: 규칙은 `focalboard_boards.properties` JSON 컬럼. 조직 정보는 메인 서버 소유 `OrgUnits`·`PositionDefinitions`·`UserOrgProfiles` 테이블을 **읽기 전용 직접 조회**(기존 `sqlstore/user.go`가 `Users`를 직접 읽는 관례와 동일). 신규 테이블·마이그레이션 없음
 
 **Testing**: `go test -race ./...` (colocated `_test.go`), Jest + React Testing Library (colocated `*.test.tsx`)
 
@@ -30,7 +30,7 @@
 
 **Constraints**: 서버 전면 집행 — 클라이언트 우회 요청에도 동일 적용(FR-031). 카드 제외 시 자식 블록(설명·댓글·첨부) 동반 제외(FR-026). 실시간 알림은 수신자별 판정(FR-029)
 
-**Scale/Scope**: 조직 마스터 본부 4 · 부서 10 · 직책 4. 실사용 보드 카드 수 수십~수천. 규칙 개수 상한 없음(FR-013)
+**Scale/Scope**: 조직 마스터 본부 4 · 부서 10 · 직책 4. 조직 배정 15명(직책 9명). 실사용 보드 카드 수 수십~수천. 규칙 개수 상한 없음(FR-013)
 
 ## Constitution Check
 
@@ -110,7 +110,7 @@ server/
 └── services/store/
     ├── store.go                      # 수정 — 조직 마스터 조회 인터페이스 추가
     ├── mockstore/mockstore.go        # 재생성 — make generate
-    └── sqlstore/org_master.go        # 신규 — OrgUnits·PositionDefinitions 조회
+    └── sqlstore/org_master.go        # 신규 — OrgUnits·PositionDefinitions·UserOrgProfiles 조회
 
 webapp/src/
 ├── blocks/board.ts                   # 수정 — PropertyAccessRule 타입 추가
