@@ -1,18 +1,23 @@
 <!--
 Sync Impact Report
-- Version change: (없음) → 1.0.0 (초기 제정)
-- Modified principles: 없음 (신규 제정)
-- Added sections:
-  - Core Principles I~IX
-  - 기술·범위 제약
-  - 개발 워크플로
-  - Governance
+- Version change: 1.0.0 → 1.1.0 (MINOR — 기존 원칙의 실질 확장)
+- Modified principles:
+  - II. 레이어 경계 준수 → II. 레이어 경계·기존 패턴 준수
+    (UI 일관성 규칙 추가: 기존 패턴 우선 차용, 신규 SCSS 파일·색상 하드코딩·
+     중복 컴포넌트 신설 금지, 예외 시 Complexity Tracking 기록)
+- Added sections: 없음 (원칙 II 내부 확장)
 - Removed sections: 없음
 - Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md (Constitution Check — 범용 게이트, 수정 불필요)
-  - ✅ .specify/templates/spec-template.md (수정 불필요)
-  - ✅ .specify/templates/tasks-template.md (수정 불필요)
+  - ✅ .specify/templates/plan-template.md (Constitution Check가 constitution을
+       동적 참조 — 구조 변경 불필요)
+  - ✅ .specify/templates/spec-template.md (수정 불필요 — 명세는 구현 방식을 다루지 않음)
+  - ✅ .specify/templates/tasks-template.md (수정 불필요 — 과제 분류 체계 변화 없음)
+  - ✅ CLAUDE.md (SPECKIT 블록은 plan 참조만 — 수정 불필요)
 - Follow-up TODOs: 없음
+- 개정 계기: specs/002-card-property-access의 /speckit-analyze에서 신규 UI 계획이
+  기존 shareBoard 패턴(MenuWrapper+Menu.Text, .tabs-content, .user-item 계열,
+  CSS 변수) 재사용 지시 없이 작성된 것을 CRITICAL로 검출. plan·tasks 수정만으로는
+  다음 기능에서 재발하므로 원칙에 반영.
 -->
 
 # OKR.BEST Boards Plugin (okrbest-plugin-boards) Constitution
@@ -40,7 +45,7 @@ Sync Impact Report
 
 게이트를 통과하지 못한 변경은 준비되지 않은 것이다. 게이트를 우회하는 커밋·머지 금지.
 
-### II. 레이어 경계 준수 (NON-NEGOTIABLE)
+### II. 레이어 경계·기존 패턴 준수 (NON-NEGOTIABLE)
 
 서버 코드는 `API → App → Store` 단방향 흐름을 지킨다. 레이어를 건너뛰는 호출
 (예: `server/api/`에서 `services/store`를 직접 호출)을 금지한다.
@@ -51,6 +56,28 @@ Sync Impact Report
 
 webapp은 상태를 Redux Toolkit 슬라이스(`webapp/src/store/`)로 관리하고, 컴포넌트는
 함수형 + 훅으로 작성한다. 스타일은 SCSS + BEM, 테마 값은 CSS 변수를 쓴다.
+
+**UI를 추가할 때는 같은 화면·같은 역할의 기존 패턴을 먼저 차용한다.** 새 시각 언어
+도입은 사용자가 명시적으로 새 디자인이나 수정을 요청했을 때만 한다. 요청이 없으면
+기존 화면과 구별되지 않는 것이 정답이다.
+
+구체적으로, 새 UI 요소를 만들기 전에 다음을 순서대로 확인한다.
+
+1. 같은 화면에 같은 역할의 컨트롤이 이미 있는가 — 있으면 그 컴포넌트를 그대로 쓴다
+   (예: 선택 드롭다운은 `MenuWrapper` + `Menu.Text`).
+2. `webapp/src/widgets/`에 재사용 가능한 위젯이 있는가.
+3. 그 화면의 SCSS에 쓸 수 있는 클래스가 있는가 — 있으면 새 클래스를 만들지 않는다.
+
+다음은 명시적 요청 없이는 금지한다.
+
+- 같은 다이얼로그·화면에 대한 **신규 SCSS 파일** 생성 (기존 파일의 해당 블록에 추가한다).
+- 색상·폰트·간격 **하드코딩** (CSS 변수와 기존 규격을 쓴다).
+- 같은 역할을 하는 기존 위젯을 두고 **새 컴포넌트 신설**.
+
+불가피하게 새 시각 요소를 도입하면 그 이유를 plan의 Complexity Tracking에 남긴다.
+
+**근거**: 기능 단위로 UI를 만들다 보면 화면마다 컨트롤 종류·간격·색상이 갈라진다.
+사용자가 요청하지 않은 디자인 변경은 가치를 만들지 않으면서 일관성만 깎는다.
 
 ### III. 타입·오류 처리 엄격성 (NON-NEGOTIABLE)
 
@@ -176,4 +203,4 @@ FR/SC 식별자·BDD 키워드(Given/When/Then)는 원형을 유지한다.
 plan의 Complexity Tracking에 문서화한다. `/speckit-plan`·`/speckit-analyze`가
 Constitution Check 게이트로 자동 참조한다.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-07-29
+**Version**: 1.1.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-08-03

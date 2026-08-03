@@ -322,7 +322,7 @@ git branch upstream-main upstream/main
 파일 경로, FR/SC 식별자, BDD 키워드(Given/When/Then)는 원형 유지.
 (상세: [CLAUDE.md](CLAUDE.md))
 
-**프로젝트 규칙 (Constitution 요약):** ① 패키지별 품질 게이트 ② 레이어 경계
+**프로젝트 규칙 (Constitution 요약):** ① 패키지별 품질 게이트 ② 레이어 경계·기존 UI 패턴 차용
 (`API → App → Store`) ③ 타입·오류 처리 엄격성(`as any`·`@ts-ignore`·빈 catch 금지)
 ④ 동작 변경 시 테스트 동반 ⑤ i18n `en.json`+`ko.json` 동기화 ⑥ upstream·라이선스
 충실성 ⑦ DB 마이그레이션 규율(`.down.sql`은 `SELECT 1;`) ⑧ 작업당 브랜치 +

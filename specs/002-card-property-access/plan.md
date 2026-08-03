@@ -39,7 +39,7 @@
 | 원칙 | 게이트 | 판정 |
 |---|---|---|
 | I. 패키지별 품질 게이트 | `webapp/`·`server/` 둘 다 변경 → `make webapp-ci` + `make server-lint` + `make server-test` 모두 실행하고 출력을 근거로 제시 | ✅ 계획에 반영 |
-| II. 레이어 경계 | 평가기는 `server/app/`에 둔다. `server/api/`가 store를 직접 부르지 않는다. 조직 마스터 조회는 `api → app → store` 단방향 | ✅ |
+| II. 레이어 경계·기존 패턴 | 평가기는 `server/app/`에 둔다. `server/api/`가 store를 직접 부르지 않는다. 조직 마스터 조회는 `api → app → store` 단방향. **UI는 기존 shareBoard 패턴을 차용한다 — 아래 「UI 일관성 제약」 절** | ✅ |
 | III. 타입·오류 엄격성 | `as any`·`@ts-ignore` 금지. Go 오류는 `model.NewErrForbidden()` 등 도메인 생성자 사용 | ✅ |
 | IV. 동작 변경 시 테스트 동반 | 평가기 표 기반 단위 테스트 + 집행 지점별 통합 테스트 + UI 컴포넌트 테스트. 실패 테스트 우선(superpowers TDD) | ✅ |
 | V. i18n 동기화 | 신규 UI 문자열은 `webapp/i18n/en.json`·`ko.json`을 같은 변경에서 갱신 | ✅ |
@@ -59,7 +59,7 @@
 | 원칙 | 재확인 결과 |
 |---|---|
 | I | quickstart.md에 세 게이트 실행과 "출력을 근거로 제시" 요건을 완료 판정에 넣었다 |
-| II | data-model.md의 Evaluator가 `app` 계층에만 존재한다. contracts/org-master-api.md의 두 경로는 `api → app → store`를 지난다 |
+| II | data-model.md의 Evaluator가 `app` 계층에만 존재한다. contracts/org-master-api.md의 두 경로는 `api → app → store`를 지난다. UI 일관성 제약 절에서 재사용 대상과 금지 사항을 명시하고 T030·T031·T032·T035로 집행한다 |
 | III | 신규 Go 오류는 `403`(권한 없음)과 `400`(검증 실패)뿐이며 도메인 오류 생성자로 만든다. contracts에 코드가 명시돼 있다 |
 | IV | contracts에 계약 테스트 항목 26건(C-01~07, S-01~07, E-01~12)을 정의했다. plan의 파일 구조에 테스트 파일이 포함돼 있다 |
 | V | 신규 UI 문자열이 생기므로 `en.json`·`ko.json` 동시 갱신이 필요하다. 파일 구조에 명시했다 |
