@@ -87,19 +87,9 @@ kkv 팀 멤버(봇 제외) 15 / UserOrgProfiles 보유 15 / 누락 0
 
 접근 제어가 설정 플래그로 열리는 fail-open을 피하고, 판정에 쓰는 조직 데이터는 플래그와 무관하게 DB에 그대로 있기 때문이다. 규칙을 끄려면 보드별 스위치(`propertyAccess.enabled`)를 쓴다.
 
-`docs/upstream-org-role-requests.md` 부록 B-3 참조. 관련 과제 없음.
+관련 과제 없음.
 
-### 4. ~~메인 서버 API 전환~~ — 하지 않기로 결정 (2026-08-03)
-
-**Boards는 메인 서버 조직 API를 쓰지 않는다.** DB 직접 읽기로 확정이며 전환 계획도 없다.
-
-`plugin.API`에 조직 조회 메서드가 없고 `PluginHTTP`는 플러그인 간 호출용이라 api4를 부를 수단 자체가 없다. `UserCanSeeOtherUser`도 요청 사용자 관점 검사라 웹소켓 팬아웃 맥락과 맞지 않는다.
-
-`docs/upstream-org-role-requests.md`의 Boards 요청은 **전건 철회**됐고, 그 문서는 이제 의존성 통지 역할만 한다 — 메인 서버가 `OrgUnits`·`PositionDefinitions`·`UserOrgProfiles` 스키마를 바꿀 때 알려달라는 것 하나.
-
-**구현에 영향 없다.** 이 기능의 범위는 카드 속성 기준 접근 권한에 한정한다.
-
-### 5. US3·US4 검증 조건
+### 4. US3·US4 검증 조건
 
 직책 가산(US3)과 전체보기 하한(US4)을 검증하려면 아래 계정이 필요하다. `UserOrgProfiles` 기준으로 이미 존재한다.
 

@@ -116,19 +116,13 @@
 - **Mattermost `users.props`의 `org_unit_ids`·`position_codes`** — 초기 설계안이었다. 기각 이유: 커버리지가 낮고(조직 11명, 직책 1명 — 그마저 직위였다), 직책과 직위가 한 필드에 섞이며, 팀 스코프가 없고, 조직은 id·직책은 code로 바인딩이 비대칭이다. `UserOrgProfiles`는 이 넷을 모두 해결한다(조직 15명, 직책 9명 — 본부장 3·팀장 6).
 - **메인 서버 조직 API 호출** — 스키마 소유권을 존중한다. 기각 이유는 R5.1 참조.
 
-### R5.1 왜 메인 서버 API를 부르지 않는가
+### R5.1 조회 방식
 
-플러그인은 메인 서버와 **같은 DB를 공유**하며, 이 저장소는 이미 Mattermost 소유 테이블을 직접 읽는다 — `sqlstore/user.go`의 `baseUserQuery`가 `Users`를, `searchUsersByTeam`이 `TeamMembers`를 직접 SELECT 한다. 조직 마스터 조회도 같은 계열이다.
+플러그인은 메인 서버와 같은 DB를 공유하며, 이 저장소는 이미 Mattermost 소유 테이블을 직접 읽는다 — `sqlstore/user.go`의 `baseUserQuery`가 `Users`를, `searchUsersByTeam`이 `TeamMembers`를 직접 SELECT 한다. 조직 마스터·사용자 배정 조회도 같은 계열로 처리한다.
 
-메인 서버 API를 쓸 수 없는 실제 이유는 셋이다.
+**Alternative considered**: 메인 서버 조직 API 호출. 기각 이유 — `plugin.API`에 조직 관련 메서드가 없어 호출 수단 자체가 없다. `PluginHTTP`는 플러그인 간 호출용이다.
 
-1. **권한 기준이 안 맞는다.** `getTeamPositions`·`getTeamOrgUnits`가 `requireOrgRoleManagement`를 요구한다 — `PermissionSysconsoleReadUserManagementTeams` 또는 `PermissionManageTeamRoles`, 즉 **팀 관리자 이상**. 규칙 편집은 **보드 관리자**(`ManageBoardRoles`)면 열려야 하고 보드 관리자가 팀 관리자가 아닌 경우가 일반적이다.
-2. **`org-profile-summary`는 이름만 준다.** `division_name`·`duty_name` 같은 표시용 문자열뿐이고 id가 없다. 판정에는 id가 필요하다.
-3. **타인의 조직 정보를 세션 권한으로 못 읽는다.** 웹소켓 수신자별 판정은 다른 사용자의 소속을 서버가 알아야 하는데 `/org-profiles`는 관리자 전용이다.
-
-플러그인이 자기 서버에 HTTP로 되묻는 구조 자체도 불필요하다.
-
-**단, 스키마 소유권은 메인 서버에 있다.** 이 기능은 세 테이블을 **읽기 전용**으로만 쓰고 쓰기·마이그레이션을 하지 않는다. 장기적으로 필요한 메인 서버 개선은 `docs/upstream-org-role-requests.md`에 남긴다.
+**스키마 소유권은 메인 서버에 있다.** 이 기능은 세 테이블을 읽기 전용으로만 쓰고 쓰기·마이그레이션을 하지 않는다. 의존 컬럼과 깨지는 변경 목록은 `docs/upstream-org-role-requests.md`에 통지했다.
 
 ---
 
