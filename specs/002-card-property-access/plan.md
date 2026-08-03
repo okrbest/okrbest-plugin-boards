@@ -170,7 +170,7 @@ webapp/i18n/{en,ko}.json              # 수정 — 신규 문자열
 | T1 읽기 전용 권한 헬퍼 분리 | 자체 경로는 유지하고 내부를 메인 서버 호출로 교체 |
 | T2 `UserOrgProfileSummary`에 ID 추가 | `UserOrgProfiles` 직접 SELECT 제거 |
 | T3 다건 조직 프로필 조회 | 웹소켓 수신자 필터의 `WHERE UserID IN (...)`을 API 호출로 교체 |
-| T4 기능 플래그 정책 확정 | 플래그 off 시 동작 구현 (미결 — NOTES.md) |
+| T4 기능 플래그 정책 확정 | **없음** — 플래그를 읽지 않기로 확정. fail-open 회피 |
 
 **이 계획의 과제(T004~T063)는 메인 서버 작업에 의존하지 않는다.** 자체 경로의 외부 계약(`/plugins/focalboard/api/v2/teams/{teamID}/org-units`·`/duties`)이 바뀌지 않으므로 웹앱도 영향받지 않는다.
 

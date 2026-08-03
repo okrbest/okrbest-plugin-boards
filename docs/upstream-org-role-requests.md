@@ -322,7 +322,7 @@ func (ss *SqlStore) ListUserOrgProfilesByUserIDs(teamID string, userIDs []string
 
 메인 서버가 강제할 수단은 없다 — Boards는 DB를 직접 읽으므로 API 게이트를 우회한다. 따라서 Boards 쪽에서 플래그를 읽어 스스로 판단해야 한다. 플러그인은 `p.API.GetConfig()`로 접근할 수 있다 (`Config.FeatureFlags`는 `access:"*_read"`, `model/config.go:4002`).
 
-**메인 서버 산출물**: 위 해석을 `server/channels/api4/team.go`의 `requireOrgRoleManagement` 주석과 spec 문서에 명시. **Boards 산출물**: 플래그 off 시 규칙 평가 중단 로직.
+**메인 서버 산출물**: 위 해석을 `server/channels/api4/team.go`의 `requireOrgRoleManagement` 주석과 spec 문서에 명시. **Boards 산출물**: 없음 — 부록 B-3의 결정 참조.
 
 ## A-2. 순서와 의존
 
@@ -345,7 +345,7 @@ T4 ──────────────► (독립, 코드 변경 없음)
 | T1 | 자체 경로(`/teams/{teamID}/org-units`, `/duties`)는 유지하되 내부 구현을 메인 서버 호출로 교체. 외부 계약은 안 바뀐다 |
 | T2 | 판정용 ID를 API에서 얻을 수 있게 된다. `UserOrgProfiles` 직접 SELECT 제거 가능 |
 | T3 | 웹소켓 수신자 필터링의 `WHERE UserID IN (...)` 직접 조회를 API 호출로 교체 |
-| T4 | 플래그 off 시 규칙 평가 중단 로직 추가 |
+| T4 | **없음** — Boards는 플래그를 읽지 않기로 확정 (부록 B-3) |
 
 **메인 서버가 Boards에 회신 요청하는 항목 1건**: T2의 필드 구성 — `division_id`/`department_id` 분리 vs `primary_org_unit_id` 단일. Boards 규칙 스키마가 본부와 부서를 구분해 저장하는지에 달려 있다.
 
@@ -419,9 +419,16 @@ T1의 부수 결정(`includeInactive` 허용 여부)에 대한 의견: **읽기 
 | 잠김 | 규칙은 계속 평가, 규칙 편집 UI만 감춤 | 기밀 유지. 조직 데이터를 못 읽으면 전원 차단 위험 |
 | 유지 | 플래그를 읽지 않는다 (현행) | 조직 관리 화면과 Boards 규칙이 독립적으로 동작 |
 
-**Boards는 아직 결정하지 않았다.** 접근 제어의 fail-open은 신중해야 한다고 보며, 메인 서버가 플래그를 "조직 데이터 자체의 유효성"으로 정의하는지 "관리 화면 노출 여부"로 정의하는지에 따라 답이 갈린다.
+**Boards 결정 (2026-08-03): 「유지」 — 플래그를 읽지 않는다.**
 
-결정되면 Boards가 그에 맞춰 구현한다. 플래그 접근 경로는 확인해뒀다 — `sqlstore.Params.ConfigFn`과 `servicesAPI.GetConfig()`가 이미 있다.
+근거는 둘이다.
+
+1. **fail-open을 피한다.** 접근 제어 기능이 설정 플래그 하나로 열리면, 플래그를 끄는 사람이 카드 노출까지 열린다는 사실을 알기 어렵다. 의도치 않은 정보 노출 경로를 만들지 않는다.
+2. **판정에 필요한 데이터는 플래그와 무관하게 유효하다.** 플래그가 막는 것은 API 표면이지 `OrgUnits`·`PositionDefinitions`·`UserOrgProfiles`의 내용이 아니다. 플래그가 꺼져도 조직 배정은 그대로 존재하므로 판정 결과가 달라질 이유가 없다.
+
+즉 Boards의 규칙 평가는 조직 관리 화면의 노출 여부와 **독립적으로** 동작한다. 규칙을 끄고 싶으면 보드별 스위치(`propertyAccess.enabled`)를 쓴다 — 그쪽이 의도가 명확하고 보드 관리자가 직접 제어한다.
+
+**메인 서버에 요청할 것은 없다.** 이 결정으로 T4의 Boards 산출물이 사라진다. 메인 서버는 플래그 의미를 문서화하는 것만 하면 된다.
 
 ## B-4. 반영 시점
 

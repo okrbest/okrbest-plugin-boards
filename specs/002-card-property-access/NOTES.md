@@ -62,7 +62,7 @@ focalboard_11614dccd7965a58_bundle.js   ← feat/permission의 development 모�
 
 ---
 
-## 미결 사항
+## 결정·미결 사항
 
 ### 1. ~~constitution 커밋 분리~~ — 결정됨 (2026-08-03)
 
@@ -81,7 +81,15 @@ kkv 팀 멤버(봇 제외) 15 / UserOrgProfiles 보유 15 / 누락 0
 
 **실사용 전환 전에 필요한 데이터 작업은 없다.** `docs/upstream-org-role-requests.md` 요청 4는 철회했다.
 
-### 3. US3·US4 검증 조건
+### 3. ~~기능 플래그 대응~~ — 결정됨 (2026-08-03)
+
+`EnableOrgRoleManagement`가 꺼져도 **Boards는 규칙 평가를 계속한다.** 플래그를 읽지 않는다.
+
+접근 제어가 설정 플래그로 열리는 fail-open을 피하고, 판정에 쓰는 조직 데이터는 플래그와 무관하게 DB에 그대로 있기 때문이다. 규칙을 끄려면 보드별 스위치(`propertyAccess.enabled`)를 쓴다.
+
+`docs/upstream-org-role-requests.md` 부록 B-3 참조. 관련 과제 없음.
+
+### 4. US3·US4 검증 조건
 
 직책 가산(US3)과 전체보기 하한(US4)을 검증하려면 아래 계정이 필요하다. `UserOrgProfiles` 기준으로 이미 존재한다.
 
