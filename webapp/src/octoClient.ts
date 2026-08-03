@@ -4,7 +4,7 @@
 import { Client4 } from "mattermost-redux/client"
 
 import {Block, BlockPatch, FileInfo} from './blocks/block'
-import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse} from './blocks/board'
+import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse, OrgUnit, Duty} from './blocks/board'
 import {ISharing} from './blocks/sharing'
 import {OctoUtils} from './octoUtils'
 import {IUser, UserConfigPatch, UserPreference} from './user'
@@ -904,6 +904,26 @@ class OctoClient {
         }
 
         return this.getJson<BoardPermissionsResponse>(response, {} as BoardPermissionsResponse)
+    }
+
+    // Organisation masters backing the card access rule selectors. Both are
+    // read-only and scoped to a team.
+    async getOrgUnits(teamId?: string): Promise<OrgUnit[]> {
+        const path = this.teamPath(teamId) + '/org-units'
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as OrgUnit[]
+    }
+
+    async getDuties(teamId?: string): Promise<Duty[]> {
+        const path = this.teamPath(teamId) + '/duties'
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as Duty[]
     }
 
     async duplicateBoard(boardID: string, asTemplate: boolean, toTeam?: string): Promise<BoardsAndBlocks | undefined> {

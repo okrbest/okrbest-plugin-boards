@@ -3,6 +3,8 @@
 
 package model
 
+import "encoding/json"
+
 // PropertyAccessKey is the board properties key that holds the card level
 // access rules. See specs/002-card-property-access/data-model.md.
 const PropertyAccessKey = "propertyAccess"
@@ -75,4 +77,56 @@ type PropertyAccessSettings struct {
 	UpdatedBy string               `json:"updatedBy"`
 	UpdatedAt int64                `json:"updatedAt"`
 	Rules     []PropertyAccessRule `json:"rules"`
+}
+
+// PropertyAccessSettingsFromProperties reads the rule set out of a board's
+// properties bag.
+//
+// Board.Properties is an untyped map that round trips through the database as
+// JSON, so the stored value arrives as a generic map. Re-encoding is the
+// cheapest way to get a typed value back without hand walking the map.
+//
+// A board with no rule set is not an error — it returns nil, which every caller
+// treats exactly like a disabled switch.
+func PropertyAccessSettingsFromProperties(properties map[string]interface{}) (*PropertyAccessSettings, error) {
+	raw, ok := properties[PropertyAccessKey]
+	if !ok || raw == nil {
+		return nil, nil
+	}
+
+	if settings, ok := raw.(*PropertyAccessSettings); ok {
+		return settings, nil
+	}
+
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return nil, NewErrBadRequest("invalid propertyAccess: " + err.Error())
+	}
+
+	settings := &PropertyAccessSettings{}
+	if err := json.Unmarshal(encoded, settings); err != nil {
+		return nil, NewErrBadRequest("invalid propertyAccess: " + err.Error())
+	}
+
+	return settings, nil
+}
+
+// AsProperty renders the rule set back into the generic shape Board.Properties
+// holds, so what a patch writes and what a later read parses are identical.
+func (s *PropertyAccessSettings) AsProperty() (map[string]interface{}, error) {
+	if s.Rules == nil {
+		s.Rules = []PropertyAccessRule{}
+	}
+
+	encoded, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	value := map[string]interface{}{}
+	if err := json.Unmarshal(encoded, &value); err != nil {
+		return nil, err
+	}
+
+	return value, nil
 }

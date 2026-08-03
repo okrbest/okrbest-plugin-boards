@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -380,6 +381,15 @@ func (a *API) handlePatchBoard(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// Card access rules decide who may read which cards, so editing them is
+	// barred at the same level as editing board membership (FR-002), not at the
+	// looser bar that guards ordinary board properties.
+	if patchTouchesPropertyAccess(patch) {
+		if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) {
+			a.errorResponse(w, r, model.NewErrPermission("access denied to modifying card access rules"))
+			return
+		}
+	}
 
 	auditRec := a.makeAuditRecord(r, "patchBoard", audit.Fail)
 	defer a.audit.LogRecord(audit.LevelModify, auditRec)
@@ -408,6 +418,15 @@ func (a *API) handlePatchBoard(w http.ResponseWriter, r *http.Request) {
 	jsonBytesResponse(w, http.StatusOK, data)
 
 	auditRec.Success()
+}
+
+// patchTouchesPropertyAccess reports whether a board patch writes or clears the
+// card access rule set.
+func patchTouchesPropertyAccess(patch *model.BoardPatch) bool {
+	if _, ok := patch.UpdatedProperties[model.PropertyAccessKey]; ok {
+		return true
+	}
+	return slices.Contains(patch.DeletedProperties, model.PropertyAccessKey)
 }
 
 func (a *API) handleDeleteBoard(w http.ResponseWriter, r *http.Request) {

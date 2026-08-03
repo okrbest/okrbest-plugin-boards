@@ -4,7 +4,9 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,6 +17,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-boards/server/app"
 	"github.com/mattermost/mattermost-plugin-boards/server/auth"
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
+	"github.com/mattermost/mattermost-plugin-boards/server/services/audit"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/config"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/metrics"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/store/mockstore"
@@ -33,22 +36,31 @@ import (
 type fakePermissions struct {
 	// team[userID+teamID] grants HasPermissionToTeam regardless of which
 	// permission is asked for. Handlers under test check one permission each.
-	team  map[string]bool
-	board map[string]bool
-	sys   map[string]bool
+	team map[string]bool
+	// board[userID+boardID] grants every board permission; boardDenied takes
+	// one back, keyed by permission ID, for handlers that check more than one.
+	board       map[string]bool
+	boardDenied map[string]bool
+	sys         map[string]bool
 }
 
 func newFakePermissions() *fakePermissions {
 	return &fakePermissions{
-		team:  map[string]bool{},
-		board: map[string]bool{},
-		sys:   map[string]bool{},
+		team:        map[string]bool{},
+		board:       map[string]bool{},
+		boardDenied: map[string]bool{},
+		sys:         map[string]bool{},
 	}
 }
 
 //nolint:unparam // teamID varies once later phases add multi-team cases
 func (f *fakePermissions) allowTeam(userID, teamID string) {
 	f.team[userID+"|"+teamID] = true
+}
+
+//nolint:unparam // boardID varies once later phases add multi-board cases
+func (f *fakePermissions) allowBoard(userID, boardID string) {
+	f.board[userID+"|"+boardID] = true
 }
 
 func (f *fakePermissions) HasPermissionTo(userID string, _ *mmModel.Permission) bool {
@@ -63,7 +75,16 @@ func (f *fakePermissions) HasPermissionToChannel(_, _ string, _ *mmModel.Permiss
 	return false
 }
 
-func (f *fakePermissions) HasPermissionToBoard(userID, boardID string, _ *mmModel.Permission) bool {
+// denyBoardPermission carves one permission back out of an otherwise allowed
+// board, which is how a "board admin minus role management" caller is expressed.
+func (f *fakePermissions) denyBoardPermission(userID, boardID string, permission *mmModel.Permission) {
+	f.boardDenied[userID+"|"+boardID+"|"+permission.Id] = true
+}
+
+func (f *fakePermissions) HasPermissionToBoard(userID, boardID string, permission *mmModel.Permission) bool {
+	if permission != nil && f.boardDenied[userID+"|"+boardID+"|"+permission.Id] {
+		return false
+	}
 	return f.board[userID+"|"+boardID]
 }
 
@@ -105,8 +126,21 @@ func setupAPITestHelper(t *testing.T) (*APITestHelper, func()) {
 		SkipTemplateInit: true,
 	})
 
+	// Board changes are broadcast from a background queue, which asks the store
+	// who the recipients are. That call is incidental to every handler test, so
+	// it is answered once here rather than in each of them.
+	store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).AnyTimes()
+
 	perms := newFakePermissions()
-	api := NewAPI(boardsApp, "", "native", perms, logger, nil)
+
+	// Handlers that record audit entries dereference the service unconditionally,
+	// so it has to be present even though nothing here asserts on its output.
+	auditService, err := audit.NewAudit()
+	if err != nil {
+		t.Fatalf("cannot create audit service: %v", err)
+	}
+
+	api := NewAPI(boardsApp, "", "native", perms, logger, auditService)
 
 	router := mux.NewRouter()
 	api.RegisterRoutes(router)
@@ -123,7 +157,17 @@ func setupAPITestHelper(t *testing.T) (*APITestHelper, func()) {
 // with a session already attached, so a test can target the handler's own
 // permission check rather than the wrapper's.
 func (h *APITestHelper) callHandler(handler func(http.ResponseWriter, *http.Request), path, userID string, vars map[string]string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodGet, path, nil)
+	return h.callHandlerWithBody(handler, http.MethodGet, path, userID, vars, nil)
+}
+
+// callHandlerWithBody is callHandler for the verbs that carry a request body.
+func (h *APITestHelper) callHandlerWithBody(handler func(http.ResponseWriter, *http.Request), method, path, userID string, vars map[string]string, body []byte) *httptest.ResponseRecorder {
+	var reader io.Reader
+	if body != nil {
+		reader = bytes.NewReader(body)
+	}
+
+	req := httptest.NewRequest(method, path, reader)
 	session := &model.Session{ID: "session-" + userID, UserID: userID}
 	req = req.WithContext(context.WithValue(req.Context(), sessionContextKey, session))
 	req = mux.SetURLVars(req, vars)

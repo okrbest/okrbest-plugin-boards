@@ -76,40 +76,40 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 1 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T014 [P] [US1] 조직 관문·max 판정 테스트를 `server/app/property_access_test.go`에 추가 — research.md R6 판정표의 조직 관련 행(전략본부 팀장 열람, 생산본부 팀장 차단, 조직정보 없음 차단)
-- [ ] T015 [P] [US1] 규칙 저장 계약 테스트 S-01~S-07을 `server/api/boards_test.go`에 추가 (contracts/property-access-rules.md)
-- [ ] T016 [P] [US1] 읽기 집행 계약 테스트 E-01·E-02·E-10~E-12를 `server/integrationtests/property_access_test.go`에 작성
-- [ ] T017 [P] [US1] 섹션 컴포넌트 테스트를 `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 작성 — 권한 게이트, 스위치 기본 꺼짐, 규칙 재조회
-- [ ] T018 [P] [US1] 규칙 행 컴포넌트 테스트를 `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 작성 — 연쇄 셀렉터, 저장 형식, 검증 규칙
+- [X] T014 [P] [US1] 조직 관문·max 판정 테스트를 `server/app/property_access_test.go`에 추가 — research.md R6 판정표의 조직 관련 행(전략본부 팀장 열람, 생산본부 팀장 차단, 조직정보 없음 차단)
+- [X] T015 [P] [US1] 규칙 저장 계약 테스트 S-01~S-07을 `server/api/boards_test.go`에 추가 (contracts/property-access-rules.md)
+- [X] T016 [P] [US1] 읽기 집행 계약 테스트 E-01·E-02·E-10~E-12를 `server/integrationtests/property_access_test.go`에 작성
+- [X] T017 [P] [US1] 섹션 컴포넌트 테스트를 `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 작성 — 권한 게이트, 스위치 기본 꺼짐, 규칙 재조회
+- [X] T018 [P] [US1] 규칙 행 컴포넌트 테스트를 `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 작성 — 연쇄 셀렉터, 저장 형식, 검증 규칙
 
 ### 규칙 저장 (서버)
 
-- [ ] T019 [US1] 규칙 검증을 `server/app/property_access.go`에 구현 — 필수 필드, 조직·직책 세 축 최소 하나, `permission` 허용 값. 실패 시 `model.NewErrBadRequest()` (data-model.md §1.2)
-- [ ] T020 [US1] 보드 패치 처리에서 `propertyAccess` 저장을 `server/app/boards.go`에 구현 — `updatedBy`·`updatedAt`을 서버 값으로 덮어쓰고 클라이언트 값을 무시 (FR-035, contracts S-02·S-03)
-- [ ] T021 [US1] 잔재 키 제거를 `server/app/boards.go`의 보드 저장 경로에 구현 — `card_acl_rules`·`card_acl_enabled`·`card_acl_org_map`·`board_owner_user_id` (data-model.md §1.3)
+- [X] T019 [US1] 규칙 검증을 `server/app/property_access.go`에 구현 — 필수 필드, 조직·직책 세 축 최소 하나, `permission` 허용 값. 실패 시 `model.NewErrBadRequest()` (data-model.md §1.2)
+- [X] T020 [US1] 보드 패치 처리에서 `propertyAccess` 저장을 `server/app/boards.go`에 구현 — `updatedBy`·`updatedAt`을 서버 값으로 덮어쓰고 클라이언트 값을 무시 (FR-035, contracts S-02·S-03)
+- [X] T021 [US1] 잔재 키 제거를 `server/app/boards.go`의 보드 저장 경로에 구현 — `card_acl_rules`·`card_acl_enabled`·`card_acl_org_map`·`board_owner_user_id` (data-model.md §1.3)
 
 ### 판정 (서버)
 
-- [ ] T022 [US1] 카드조건 매칭을 `server/app/property_access.go`에 구현 — `fields.properties[propertyId]`와 `propertyValueId` 비교, multiSelect는 포함 여부 (FR-023)
-- [ ] T023 [US1] 조직 관문과 max 산출을 `server/app/property_access.go`에 구현 — 관문 판정 시 그 행의 조직 조건만 본다 (research.md R6)
-- [ ] T024 [US1] 사용자별 허용 맵 선계산을 `server/app/property_access.go`의 평가기 생성에 추가 — `(propertyId, valueId)` → 관문 통과 여부·최대 권한 (research.md R3, data-model.md §3.2)
+- [X] T022 [US1] 카드조건 매칭을 `server/app/property_access.go`에 구현 — `fields.properties[propertyId]`와 `propertyValueId` 비교, multiSelect는 포함 여부 (FR-023)
+- [X] T023 [US1] 조직 관문과 max 산출을 `server/app/property_access.go`에 구현 — 관문 판정 시 그 행의 조직 조건만 본다 (research.md R6)
+- [X] T024 [US1] 사용자별 허용 맵 선계산을 `server/app/property_access.go`의 평가기 생성에 추가 — `(propertyId, valueId)` → 관문 통과 여부·최대 권한 (research.md R3, data-model.md §3.2)
 
 ### 읽기 집행 (서버)
 
-- [ ] T025 [US1] 사용자 컨텍스트를 받는 블록 조회 진입점을 `server/app/blocks.go`에 추가 — 기존 `GetBlocks`는 유지하고 평가기를 거치는 경로를 신설 (research.md R4)
-- [ ] T026 [US1] 권한 없는 카드와 그 자식 블록 제거를 `server/app/blocks.go`에 구현 — `parentId`가 제거된 카드인 블록도 함께 제외 (FR-026, contracts E-02)
-- [ ] T027 [US1] `GET /boards/{id}/blocks`·`/cards`·`/cards/by-ids` 핸들러가 새 진입점을 쓰도록 `server/api/blocks.go`를 수정
+- [X] T025 [US1] 사용자 컨텍스트를 받는 블록 조회 진입점을 `server/app/blocks.go`에 추가 — 기존 `GetBlocks`는 유지하고 평가기를 거치는 경로를 신설 (research.md R4)
+- [X] T026 [US1] 권한 없는 카드와 그 자식 블록 제거를 `server/app/blocks.go`에 구현 — `parentId`가 제거된 카드인 블록도 함께 제외 (FR-026, contracts E-02)
+- [X] T027 [US1] `GET /boards/{id}/blocks`·`/cards`·`/cards/by-ids` 핸들러가 새 진입점을 쓰도록 `server/api/blocks.go`를 수정
 
 ### UI (웹앱)
 
-- [ ] T028 [P] [US1] 조직 마스터 조회 메서드 2개를 `webapp/src/octoClient.ts`에 추가 (contracts/org-master-api.md)
-- [ ] T029 [P] [US1] 조직 마스터 Redux 슬라이스를 `webapp/src/store/orgMaster.ts`에 작성 — 팀별 캐시, 셀렉터
-- [ ] T030 [US1] 규칙 행 컴포넌트를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 셀렉터 6개를 `userPermissionsRow.tsx`의 `MenuWrapper` + `Menu.Text` + `CheckIcon` 패턴으로 만들고 `.user-item` / `.user-item__content` / `.user-item__button` 클래스를 재사용한다. `react-select`를 쓰지 않는다. 속성값은 속성명에, 부서는 본부에 종속 (FR-006~FR-010, plan.md UI 일관성 제약)
-- [ ] T031 [US1] 섹션 컨테이너를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 구현 — `.tabs-content` 규격과 `.text-heading2` / `.text-light`를 그대로 쓰고 사용 스위치는 기존 `Switch` 위젯을 재사용한다. 행 추가·삭제, `ManageBoardRoles` 게이트 (FR-001~FR-004)
-- [ ] T032 [US1] 섹션 스타일을 `webapp/src/components/shareBoard/shareBoard.scss`의 `.ShareBoardDialog` 블록 안에 추가 — **신규 SCSS 파일을 만들지 않는다.** 색상은 `--center-channel-color-rgb` 등 CSS 변수만 쓰고 값을 하드코딩하지 않는다
-- [ ] T033 [US1] 섹션을 멤버 목록 아래에 `webapp/src/components/shareBoard/shareBoard.tsx`에 삽입 (FR-001)
-- [ ] T034 [P] [US1] 신규 UI 문자열을 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 (constitution 원칙 V)
-- [ ] T035 [US1] 신규 섹션이 멤버 목록과 시각적으로 일관되는지 검증한다 — `webapp/src/components/shareBoard/` 에서 하드코딩된 색상·폰트·간격 0건, 신규 SCSS 파일 0개, 같은 역할에 기존 위젯 대신 새로 만든 컴포넌트 0건 (plan.md UI 일관성 제약)
+- [X] T028 [P] [US1] 조직 마스터 조회 메서드 2개를 `webapp/src/octoClient.ts`에 추가 (contracts/org-master-api.md)
+- [X] T029 [P] [US1] 조직 마스터 Redux 슬라이스를 `webapp/src/store/orgMaster.ts`에 작성 — 팀별 캐시, 셀렉터
+- [X] T030 [US1] 규칙 행 컴포넌트를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 셀렉터 6개를 `userPermissionsRow.tsx`의 `MenuWrapper` + `Menu.Text` + `CheckIcon` 패턴으로 만들고 `.user-item` / `.user-item__content` / `.user-item__button` 클래스를 재사용한다. `react-select`를 쓰지 않는다. 속성값은 속성명에, 부서는 본부에 종속 (FR-006~FR-010, plan.md UI 일관성 제약)
+- [X] T031 [US1] 섹션 컨테이너를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 구현 — `.tabs-content` 규격과 `.text-heading2` / `.text-light`를 그대로 쓰고 사용 스위치는 기존 `Switch` 위젯을 재사용한다. 행 추가·삭제, `ManageBoardRoles` 게이트 (FR-001~FR-004)
+- [X] T032 [US1] 섹션 스타일을 `webapp/src/components/shareBoard/shareBoard.scss`의 `.ShareBoardDialog` 블록 안에 추가 — **신규 SCSS 파일을 만들지 않는다.** 색상은 `--center-channel-color-rgb` 등 CSS 변수만 쓰고 값을 하드코딩하지 않는다
+- [X] T033 [US1] 섹션을 멤버 목록 아래에 `webapp/src/components/shareBoard/shareBoard.tsx`에 삽입 (FR-001)
+- [X] T034 [P] [US1] 신규 UI 문자열을 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 (constitution 원칙 V)
+- [X] T035 [US1] 신규 섹션이 멤버 목록과 시각적으로 일관되는지 검증한다 — `webapp/src/components/shareBoard/` 에서 하드코딩된 색상·폰트·간격 0건, 신규 SCSS 파일 0개, 같은 역할에 기존 위젯 대신 새로 만든 컴포넌트 0건 (plan.md UI 일관성 제약)
 
 **Checkpoint**: 규칙을 등록·활성화하면 조건에 맞지 않는 사용자의 카드 목록에서 카드가 사라진다. **화면상 격리는 완성되지만 보안은 아직 성립하지 않는다**
 

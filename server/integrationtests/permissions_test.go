@@ -21,6 +21,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// The IDs the fixture users end up with. In plugin mode they equal the
+// usernames in clienttestlib.go; in local mode setupLocalClients fills them in
+// from the registered accounts, which is why they are variables rather than
+// constants. They live here rather than beside the usernames because only the
+// integration build compiles their users.
+var (
+	userAnonID         string
+	userNoTeamMemberID string
+	userTeamMemberID   string
+	userViewerID       string
+	userCommenterID    string
+	userEditorID       string
+	userAdminID        string
+	userGuestID        string
+)
+
 type Clients struct {
 	Anon         *client.Client
 	NoTeamMember *client.Client

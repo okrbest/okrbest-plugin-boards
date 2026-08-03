@@ -182,6 +182,49 @@ exports[`src/components/shareBoard/shareBoard confirm unlinking linked channel 1
           </div>
         </div>
         <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
           class="tabs-container"
         >
           <button
@@ -390,6 +433,49 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Copy l
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
           </div>
         </div>
         <div
@@ -1090,6 +1176,49 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
           </div>
         </div>
         <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
           class="tabs-content"
         >
           <div>
@@ -1325,6 +1454,49 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
           </div>
         </div>
         <div
@@ -1566,6 +1738,49 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
           </div>
         </div>
         <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
           class="tabs-content"
         >
           <div>
@@ -1801,6 +2016,49 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
           </div>
         </div>
         <div
@@ -2041,6 +2299,49 @@ exports[`src/components/shareBoard/shareBoard return shareBoard template and cli
             </div>
           </div>
         </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2226,6 +2527,49 @@ exports[`src/components/shareBoard/shareBoard return shareBoard template and cli
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -2843,6 +3187,49 @@ exports[`src/components/shareBoard/shareBoard should match snapshot 1`] = `
           </div>
         </div>
         <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
           class="tabs-container"
         >
           <button
@@ -3051,6 +3438,49 @@ exports[`src/components/shareBoard/shareBoard should match snapshot with sharing
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
           </div>
         </div>
         <div
@@ -3265,6 +3695,49 @@ exports[`src/components/shareBoard/shareBoard should match snapshot with sharing
           </div>
         </div>
         <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
           class="tabs-container"
         >
           <button
@@ -3473,6 +3946,49 @@ exports[`src/components/shareBoard/shareBoard should match snapshot with sharing
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
           </div>
         </div>
         <div
@@ -3725,6 +4241,49 @@ exports[`src/components/shareBoard/shareBoard should match snapshot, with templa
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content PropertyAccessSection"
+        >
+          <div>
+            <div
+              class="d-flex justify-content-between"
+            >
+              <div
+                class="d-flex flex-column"
+              >
+                <div
+                  class="text-heading2"
+                >
+                  Card access by property
+                </div>
+                <div
+                  class="text-light"
+                >
+                  Limit who can see or edit cards based on a property value and the viewer's organisation.
+                </div>
+              </div>
+              <div>
+                <div
+                  class="Switch override-main size--medium"
+                >
+                  <div
+                    class="octo-switch-inner"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="user-items PropertyAccessSection__rules"
+            />
+            <button
+              type="button"
+            >
+              <span>
+                Add rule
+              </span>
+            </button>
           </div>
         </div>
       </div>

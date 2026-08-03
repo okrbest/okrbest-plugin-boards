@@ -51,6 +51,7 @@ import {useHasPermissions} from '../../hooks/permissions'
 import TeamPermissionsRow from './teamPermissionsRow'
 import ChannelPermissionsRow from './channelPermissionsRow'
 import UserPermissionsRow from './userPermissionsRow'
+import PropertyAccessSection from './propertyAccessSection'
 
 import './shareBoard.scss'
 
@@ -460,6 +461,8 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
                     )
                 })}
             </div>
+
+            <PropertyAccessSection board={board}/>
 
             {props.enableSharedBoards && !board.isTemplate && (
                 <div className='tabs-container'>

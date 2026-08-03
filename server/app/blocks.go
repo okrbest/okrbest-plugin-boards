@@ -32,6 +32,164 @@ func (a *App) GetBlocks(boardID, parentID string, blockType string) ([]*model.Bl
 	return a.store.GetBlocksWithParent(boardID, parentID)
 }
 
+// GetBlocksForUser is GetBlocks with card level access applied. The rule-free
+// GetBlocks stays as it is for the internal callers that act on the board's own
+// behalf — duplication, export, notifications — rather than on a user's.
+func (a *App) GetBlocksForUser(userID, boardID, parentID, blockType string) ([]*model.Block, error) {
+	blocks, err := a.GetBlocks(boardID, parentID, blockType)
+	if err != nil {
+		return nil, err
+	}
+	return a.FilterBlocksForUser(userID, boardID, blocks)
+}
+
+// GetBlocksForBoardForUser is GetBlocksForBoard with card level access applied.
+func (a *App) GetBlocksForBoardForUser(userID, boardID string) ([]*model.Block, error) {
+	blocks, err := a.GetBlocksForBoard(boardID)
+	if err != nil {
+		return nil, err
+	}
+	return a.FilterBlocksForUser(userID, boardID, blocks)
+}
+
+// FilterBlocksForUser removes the cards the user may not read together with the
+// blocks that hang off them (FR-025, FR-026).
+//
+// Dropping the card alone would leave its description, comments and attachments
+// in the response, which is the whole of the content the rule was written to
+// hide.
+func (a *App) FilterBlocksForUser(userID, boardID string, blocks []*model.Block) ([]*model.Block, error) {
+	if len(blocks) == 0 {
+		return blocks, nil
+	}
+
+	board, err := a.GetBoard(boardID)
+	if err != nil {
+		return nil, err
+	}
+
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return nil, err
+	}
+	if !evaluator.Enforces() {
+		return blocks, nil
+	}
+
+	denied := a.deniedCardIDs(evaluator, blocks)
+	if len(denied) == 0 {
+		return blocks, nil
+	}
+
+	filtered := make([]*model.Block, 0, len(blocks))
+	for _, block := range blocks {
+		if block == nil || denied[block.ID] || denied[block.ParentID] {
+			continue
+		}
+		filtered = append(filtered, block)
+	}
+
+	return filtered, nil
+}
+
+// FilterCardsForUser is FilterBlocksForUser for the card shaped endpoints.
+func (a *App) FilterCardsForUser(userID, boardID string, cards []*model.Card) ([]*model.Card, error) {
+	if len(cards) == 0 {
+		return cards, nil
+	}
+
+	board, err := a.GetBoard(boardID)
+	if err != nil {
+		return nil, err
+	}
+
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return nil, err
+	}
+	if !evaluator.Enforces() {
+		return cards, nil
+	}
+
+	allowed := make([]*model.Card, 0, len(cards))
+	for _, card := range cards {
+		if card == nil {
+			continue
+		}
+		if evaluator.For(model.Card2Block(card)) == model.EffectiveBoardPermissionNone {
+			continue
+		}
+		allowed = append(allowed, card)
+	}
+
+	return allowed, nil
+}
+
+// deniedCardIDs judges every card the batch touches.
+//
+// A request narrowed by parent — the card detail view asks for one card's
+// children — carries the children without the card itself, so the cards missing
+// from the batch are fetched before judging. Skipping them would hand back the
+// content of a card the rule hides.
+func (a *App) deniedCardIDs(evaluator *PropertyAccessEvaluator, blocks []*model.Block) map[string]bool {
+	cards := map[string]*model.Block{}
+	for _, block := range blocks {
+		if block != nil && block.Type == model.TypeCard {
+			cards[block.ID] = block
+		}
+	}
+
+	var missing []string
+	for _, block := range blocks {
+		if block == nil || block.Type == model.TypeCard {
+			continue
+		}
+		if block.ParentID == "" || block.ParentID == block.BoardID {
+			continue
+		}
+		if _, ok := cards[block.ParentID]; !ok {
+			missing = append(missing, block.ParentID)
+		}
+	}
+
+	denied := map[string]bool{}
+
+	if parents := dedupeStrings(missing); len(parents) > 0 {
+		fetched, err := a.store.GetBlocksByIDs(parents)
+		if err != nil {
+			a.logger.Warn("cannot load parent cards for access filtering", mlog.Err(err))
+		}
+
+		resolved := map[string]bool{}
+		for _, parent := range fetched {
+			if parent == nil {
+				continue
+			}
+			resolved[parent.ID] = true
+			if parent.Type == model.TypeCard {
+				cards[parent.ID] = parent
+			}
+		}
+
+		// A parent that could not be read cannot be judged, and a filter that
+		// cannot judge has to deny — otherwise a lookup failure becomes a way
+		// to see hidden content.
+		for _, id := range parents {
+			if !resolved[id] {
+				denied[id] = true
+			}
+		}
+	}
+
+	for id, card := range cards {
+		if evaluator.For(card) == model.EffectiveBoardPermissionNone {
+			denied[id] = true
+		}
+	}
+
+	return denied
+}
+
 func (a *App) DuplicateBlock(boardID string, blockID string, userID string, asTemplate bool) ([]*model.Block, error) {
 	board, err := a.GetBoard(boardID)
 	if err != nil {

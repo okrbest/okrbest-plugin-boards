@@ -21,6 +21,7 @@ import {reducer as sidebarReducer} from './sidebar'
 import {reducer as limitsReducer} from './limits'
 import {reducer as attachmentsReducer} from './attachments'
 import {reducer as boardPermissionsReducer} from './boardPermissions'
+import {reducer as orgMasterReducer} from './orgMaster'
 import rhsReducer from './rhs'
 
 const store = configureStore({
@@ -42,6 +43,7 @@ const store = configureStore({
         limits: limitsReducer,
         attachments: attachmentsReducer,
         boardPermissions: boardPermissionsReducer,
+        orgMaster: orgMasterReducer,
         rhs: rhsReducer,
     },
 })

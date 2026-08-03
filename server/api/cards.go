@@ -219,6 +219,12 @@ func (a *API) handleGetCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cards, err = a.app.FilterCardsForUser(userID, boardID, cards)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
 	a.logger.Debug("GetCards",
 		mlog.String("boardID", boardID),
 		mlog.String("userID", userID),
@@ -272,6 +278,12 @@ func (a *API) handleQueryCardsByIDs(w http.ResponseWriter, r *http.Request) {
 	auditRec.AddMeta("idsCount", len(request.IDs))
 
 	cards, err := a.app.GetCardsByIDs(boardID, request.IDs)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	cards, err = a.app.FilterCardsForUser(userID, boardID, cards)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return

@@ -265,4 +265,38 @@
         }
     }
 
+    // Card access rules. The section borrows .tabs-content, .user-items and
+    // .user-item wholesale; only the six-across row layout is new.
+    .PropertyAccessSection {
+        .PropertyAccessSection__rules {
+            padding: 8px 0;
+            border-bottom: 0;
+        }
+
+        .PropertyAccessSection__add {
+            margin-top: 8px;
+        }
+    }
+
+    .PropertyAccessRow {
+        padding: 0;
+
+        .PropertyAccessRow__axes {
+            flex: 1;
+            flex-wrap: wrap;
+            gap: 4px 16px;
+        }
+
+        .PropertyAccessRow__broken {
+            color: rgba(var(--error-text-color-rgb), 1);
+            text-decoration: line-through;
+        }
+    }
+
+    .PropertyAccessRow--invalid {
+        .PropertyAccessRow__axes {
+            opacity: 0.72;
+        }
+    }
+
 }

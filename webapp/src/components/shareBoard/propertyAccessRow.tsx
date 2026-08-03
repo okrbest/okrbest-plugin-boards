@@ -1,0 +1,174 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import React, {useRef} from 'react'
+import {useIntl} from 'react-intl'
+
+import MenuWrapper from '../../widgets/menuWrapper'
+import Menu from '../../widgets/menu'
+import CheckIcon from '../../widgets/icons/check'
+import CompassIcon from '../../widgets/icons/compassIcon'
+import IconButton from '../../widgets/buttons/iconButton'
+import DeleteIcon from '../../widgets/icons/delete'
+
+import {Board, PropertyAccessPermission, PropertyAccessRule} from '../../blocks/board'
+import {useAppSelector} from '../../store/hooks'
+import {getDivisions, getDepartments, getDuties, isOrgMasterLoaded} from '../../store/orgMaster'
+
+type Props = {
+    board: Board
+    rule: PropertyAccessRule
+    onChange: (rule: PropertyAccessRule) => void
+    onDelete: (ruleId: string) => void
+}
+
+type Choice = {
+    id: string
+    name: string
+}
+
+// Selector renders one axis of the rule with the same control the member list
+// uses for board roles, so nothing in this dialog is operated two different ways.
+const Selector = (props: {
+    label: string
+    selectedId: string
+    choices: Choice[]
+    broken: boolean
+    onSelect: (id: string) => void
+}): React.JSX.Element => {
+    const menuWrapperRef = useRef<HTMLDivElement>(null)
+    const selected = props.choices.find((choice) => choice.id === props.selectedId)
+    const className = props.broken ? 'user-item__button PropertyAccessRow__broken' : 'user-item__button'
+
+    return (
+        <div ref={menuWrapperRef}>
+            <MenuWrapper>
+                <button className={className}>
+                    {selected ? selected.name : props.label}
+                    <CompassIcon
+                        icon='chevron-down'
+                        className='CompassIcon'
+                    />
+                </button>
+                <Menu
+                    position='left'
+                    parentRef={menuWrapperRef}
+                >
+                    {props.choices.map((choice) => (
+                        <Menu.Text
+                            key={choice.id || 'any'}
+                            id={choice.id || 'any'}
+                            check={true}
+                            icon={props.selectedId === choice.id ? <CheckIcon/> : <div className='empty-icon'/>}
+                            name={choice.name}
+                            onClick={() => props.onSelect(choice.id)}
+                        />
+                    ))}
+                </Menu>
+            </MenuWrapper>
+        </div>
+    )
+}
+
+const PropertyAccessRow = (props: Props): React.JSX.Element => {
+    const intl = useIntl()
+    const {board, rule} = props
+
+    const divisions = useAppSelector(getDivisions(board.teamId))
+    const departments = useAppSelector(getDepartments(board.teamId, rule.divisionId))
+    const duties = useAppSelector(getDuties(board.teamId))
+    const orgMasterLoaded = useAppSelector(isOrgMasterLoaded(board.teamId))
+
+    // Only properties that carry a fixed set of options can name a value, so
+    // free text and date properties are not offered.
+    const selectableProperties = board.cardProperties.filter((property) => (property.options || []).length > 0)
+    const selectedProperty = selectableProperties.find((property) => property.id === rule.propertyId)
+    const propertyValues = selectedProperty ? selectedProperty.options : []
+
+    const anyLabel = intl.formatMessage({id: 'PropertyAccess.any', defaultMessage: 'Any'})
+    const withAny = (choices: Choice[]): Choice[] => [{id: '', name: anyLabel}, ...choices]
+
+    const permissions: Choice[] = [
+        {id: 'viewer', name: intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})},
+        {id: 'commenter', name: intl.formatMessage({id: 'BoardMember.schemeCommenter', defaultMessage: 'Commenter'})},
+        {id: 'editor', name: intl.formatMessage({id: 'BoardMember.schemeEditor', defaultMessage: 'Editor'})},
+    ]
+
+    // A rule may outlive the property or organisation entry it points at. Such a
+    // row stops matching any card, and saying so on the row is the only way an
+    // admin finds out (FR-036).
+    const brokenProperty = rule.propertyId !== '' && !selectedProperty
+    const brokenValue = rule.propertyValueId !== '' && !propertyValues.some((option) => option.id === rule.propertyValueId)
+    const brokenDivision = orgMasterLoaded && rule.divisionId !== '' && !divisions.some((unit) => unit.id === rule.divisionId)
+    const brokenDepartment = orgMasterLoaded && rule.departmentId !== '' && !departments.some((unit) => unit.id === rule.departmentId)
+    const brokenDuty = orgMasterLoaded && rule.dutyId !== '' && !duties.some((duty) => duty.id === rule.dutyId)
+
+    const hasCardCondition = rule.propertyId !== '' && rule.propertyValueId !== ''
+    const hasSubjectCondition = rule.divisionId !== '' || rule.departmentId !== '' || rule.dutyId !== ''
+    const invalid = !hasCardCondition || !hasSubjectCondition
+
+    const className = `user-item PropertyAccessRow${invalid ? ' PropertyAccessRow--invalid' : ''}`
+
+    return (
+        <div className={className}>
+            <div className='user-item__content PropertyAccessRow__axes'>
+                <Selector
+                    label={intl.formatMessage({id: 'PropertyAccess.selectProperty', defaultMessage: 'Property'})}
+                    selectedId={rule.propertyId}
+                    choices={selectableProperties.map((property) => ({id: property.id, name: property.name}))}
+                    broken={brokenProperty}
+                    onSelect={(id) => props.onChange({...rule, propertyId: id, propertyValueId: ''})}
+                />
+                <Selector
+                    label={intl.formatMessage({id: 'PropertyAccess.selectValue', defaultMessage: 'Value'})}
+                    selectedId={rule.propertyValueId}
+                    choices={propertyValues.map((option) => ({id: option.id, name: option.value}))}
+                    broken={brokenValue}
+                    onSelect={(id) => props.onChange({...rule, propertyValueId: id})}
+                />
+                <Selector
+                    label={intl.formatMessage({id: 'PropertyAccess.selectDivision', defaultMessage: 'Division'})}
+                    selectedId={rule.divisionId}
+                    choices={withAny(divisions.map((unit) => ({id: unit.id, name: unit.name})))}
+                    broken={brokenDivision}
+                    onSelect={(id) => {
+                        // The department list is scoped to the division, so a
+                        // department left over from the previous one would be a
+                        // condition the admin can no longer see.
+                        const keepDepartment = departments.some((unit) => unit.id === rule.departmentId && unit.parentId === id)
+                        props.onChange({...rule, divisionId: id, departmentId: keepDepartment ? rule.departmentId : ''})
+                    }}
+                />
+                <Selector
+                    label={intl.formatMessage({id: 'PropertyAccess.selectDepartment', defaultMessage: 'Department'})}
+                    selectedId={rule.departmentId}
+                    choices={withAny(departments.map((unit) => ({id: unit.id, name: unit.name})))}
+                    broken={brokenDepartment}
+                    onSelect={(id) => props.onChange({...rule, departmentId: id})}
+                />
+                <Selector
+                    label={intl.formatMessage({id: 'PropertyAccess.selectDuty', defaultMessage: 'Duty'})}
+                    selectedId={rule.dutyId}
+                    choices={withAny(duties.map((duty) => ({id: duty.id, name: duty.name})))}
+                    broken={brokenDuty}
+                    onSelect={(id) => props.onChange({...rule, dutyId: id})}
+                />
+                <Selector
+                    label={intl.formatMessage({id: 'BoardMember.schemeViewer', defaultMessage: 'Viewer'})}
+                    selectedId={rule.permission}
+                    choices={permissions}
+                    broken={false}
+                    onSelect={(id) => props.onChange({...rule, permission: id as PropertyAccessPermission})}
+                />
+            </div>
+            <IconButton
+                className='PropertyAccessRow__delete'
+                onClick={() => props.onDelete(rule.id)}
+                icon={<DeleteIcon/>}
+                title={intl.formatMessage({id: 'PropertyAccess.removeRule', defaultMessage: 'Remove rule'})}
+            />
+        </div>
+    )
+}
+
+export default PropertyAccessRow

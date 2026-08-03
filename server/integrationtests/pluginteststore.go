@@ -316,6 +316,77 @@ func (s *PluginTestStore) SearchBoardsForUser(term string, field model.BoardSear
 	return resultBoards, nil
 }
 
+// Organization master fixtures for the card access rule tests.
+//
+// OrgUnits, PositionDefinitions and UserOrgProfiles belong to the main server
+// and are not part of this plugin's schema, so there is nothing in the test
+// database to read. The chart below mirrors the decision table in
+// specs/002-card-property-access/research.md R6.
+//
+//	div-strategy   (division)          div-production (division)
+//	 └ dep-planning (department)        └ dep-factory  (department)
+//
+//	editor    → dep-planning, 팀장    passes a 전략 division condition
+//	commenter → dep-factory,  팀장    stopped by it
+//	viewer    → no assignment         stopped by it
+const (
+	orgDivStrategy   = "div-strategy"
+	orgDivProduction = "div-production"
+	orgDepPlanning   = "dep-planning"
+	orgDepFactory    = "dep-factory"
+
+	orgDutyHead = "duty-head" // 본부장, full visibility
+	orgDutyLead = "duty-lead" // 팀장
+)
+
+func (s *PluginTestStore) GetOrgUnitsForTeam(teamID string) ([]*model.OrgUnit, error) {
+	if teamID != s.testTeam.ID && teamID != testTeamID {
+		return []*model.OrgUnit{}, nil
+	}
+
+	return []*model.OrgUnit{
+		{ID: orgDivStrategy, Name: "전략본부", Type: model.OrgUnitTypeDivision},
+		{ID: orgDivProduction, Name: "생산본부", Type: model.OrgUnitTypeDivision},
+		{ID: orgDepPlanning, Name: "경영개선팀", Type: model.OrgUnitTypeDepartment, ParentID: orgDivStrategy},
+		{ID: orgDepFactory, Name: "생산1팀", Type: model.OrgUnitTypeDepartment, ParentID: orgDivProduction},
+	}, nil
+}
+
+func (s *PluginTestStore) GetDutiesForTeam(teamID string) ([]*model.Duty, error) {
+	if teamID != s.testTeam.ID && teamID != testTeamID {
+		return []*model.Duty{}, nil
+	}
+
+	return []*model.Duty{
+		{ID: orgDutyHead, Code: "duty-2", Name: "본부장", Rank: 2, FullVisibility: true},
+		{ID: orgDutyLead, Code: "duty-3", Name: "팀장", Rank: 3, FullVisibility: false},
+	}, nil
+}
+
+func (s *PluginTestStore) GetUserOrgProfiles(teamID string, userIDs []string) ([]*model.UserOrgProfile, error) {
+	assignments := map[string]*model.UserOrgProfile{
+		userEditor:    {PrimaryOrgUnitID: orgDepPlanning, PrimaryDutyID: orgDutyLead},
+		userCommenter: {PrimaryOrgUnitID: orgDepFactory, PrimaryDutyID: orgDutyLead},
+		userAdmin:     {PrimaryOrgUnitID: orgDepPlanning, PrimaryDutyID: orgDutyHead},
+	}
+
+	profiles := []*model.UserOrgProfile{}
+	for _, userID := range userIDs {
+		assignment, ok := assignments[userID]
+		if !ok {
+			continue
+		}
+		profiles = append(profiles, &model.UserOrgProfile{
+			TeamID:           teamID,
+			UserID:           userID,
+			PrimaryOrgUnitID: assignment.PrimaryOrgUnitID,
+			PrimaryDutyID:    assignment.PrimaryDutyID,
+		})
+	}
+
+	return profiles, nil
+}
+
 func (s *PluginTestStore) GetLicense() *mmModel.License {
 	license := s.Store.GetLicense()
 

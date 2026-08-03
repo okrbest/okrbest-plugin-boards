@@ -37,7 +37,7 @@ type Board = {
     showDescription: boolean
     isTemplate: boolean
     templateVersion: number
-    properties: Record<string, string | string[]>
+    properties: Record<string, string | string[] | PropertyAccessSettings>
     cardProperties: IPropertyTemplate[]
 
     createAt: number
@@ -123,6 +123,7 @@ type OrgUnit = {
 }
 
 type Duty = {
+    id: string
     code: string
     name: string
     rank: number

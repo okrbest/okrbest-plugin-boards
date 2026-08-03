@@ -128,7 +128,7 @@ func (a *API) handleGetBlocks(w http.ResponseWriter, r *http.Request) {
 	var block *model.Block
 	switch {
 	case all != "":
-		blocks, err = a.app.GetBlocksForBoard(boardID)
+		blocks, err = a.app.GetBlocksForBoardForUser(userID, boardID)
 		if err != nil {
 			a.errorResponse(w, r, err)
 			return
@@ -145,9 +145,15 @@ func (a *API) handleGetBlocks(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		blocks = append(blocks, block)
+		// A single block goes through the same filter, so asking for a hidden
+		// card by ID returns nothing rather than the card (FR-031).
+		blocks, err = a.app.FilterBlocksForUser(userID, boardID, []*model.Block{block})
+		if err != nil {
+			a.errorResponse(w, r, err)
+			return
+		}
 	default:
-		blocks, err = a.app.GetBlocks(boardID, parentID, blockType)
+		blocks, err = a.app.GetBlocksForUser(userID, boardID, parentID, blockType)
 		if err != nil {
 			a.errorResponse(w, r, err)
 			return

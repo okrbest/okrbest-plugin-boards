@@ -6,6 +6,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 	"github.com/mattermost/mattermost-plugin-boards/server/services/notify"
@@ -254,6 +255,7 @@ func (a *App) CreateBoard(board *model.Board, userID string, addMember bool) (*m
 		return nil, ErrNewBoardCannotHaveID
 	}
 	board.ID = utils.NewID(utils.IDTypeBoard)
+	stripLegacyAccessKeys(board.Properties)
 
 	var newBoard *model.Board
 	var member *model.BoardMember
@@ -324,47 +326,112 @@ func (a *App) addBoardsToDefaultCategory(userID, teamID string, boards []*model.
 	return nil
 }
 
-func (a *App) PatchBoard(patch *model.BoardPatch, boardID, userID string) (*model.Board, error) {
-	var oldChannelID string
-	var isTemplate bool
-	var oldMembers []*model.BoardMember
+// stripLegacyAccessKeys removes the keys the deleted board ACL feature left in
+// board properties. Nothing reads them; they are cleared on the way past so the
+// stored document converges on the current shape (data-model.md §1.3).
+func stripLegacyAccessKeys(properties map[string]interface{}) {
+	for _, key := range model.LegacyAccessKeys {
+		delete(properties, key)
+	}
+}
 
-	if patch.Type != nil || patch.ChannelID != nil {
-		testChannel := ""
-		if patch.ChannelID != nil && *patch.ChannelID == "" {
-			var err error
-			oldMembers, err = a.GetMembersForBoard(boardID)
-			if err != nil {
-				a.logger.Error("Unable to get the board members", mlog.Err(err))
-			}
-		} else if patch.ChannelID != nil && *patch.ChannelID != "" {
-			testChannel = *patch.ChannelID
+// applyPropertyAccessPatch normalizes the card access rule set a board patch
+// carries, and schedules the legacy key cleanup on every board save.
+//
+// The client's updatedBy and updatedAt are discarded rather than trusted: they
+// are the audit trail the share dialog shows, so they have to come from the
+// session and the server clock (FR-035).
+func (a *App) applyPropertyAccessPatch(patch *model.BoardPatch, userID string) error {
+	for _, key := range model.LegacyAccessKeys {
+		if !slices.Contains(patch.DeletedProperties, key) {
+			patch.DeletedProperties = append(patch.DeletedProperties, key)
 		}
+	}
 
-		board, err := a.store.GetBoard(boardID)
-		if model.IsErrNotFound(err) {
-			return nil, model.NewErrNotFound("board ID=" + boardID)
-		}
+	if _, ok := patch.UpdatedProperties[model.PropertyAccessKey]; !ok {
+		return nil
+	}
+
+	settings, err := model.PropertyAccessSettingsFromProperties(patch.UpdatedProperties)
+	if err != nil {
+		return err
+	}
+	if settings == nil {
+		return nil
+	}
+
+	if validationErr := validatePropertyAccessSettings(settings); validationErr != nil {
+		return validationErr
+	}
+
+	settings.UpdatedBy = userID
+	settings.UpdatedAt = utils.GetMillis()
+
+	value, err := settings.AsProperty()
+	if err != nil {
+		return err
+	}
+	patch.UpdatedProperties[model.PropertyAccessKey] = value
+
+	return nil
+}
+
+// prepareChannelPatch handles the part of a board patch that concerns the linked
+// channel: it checks the caller may post there, supplies a default minimum role
+// for a board being linked for the first time, and reports the state PatchBoard
+// needs afterwards to broadcast the change.
+//
+// Extracted from PatchBoard, which the complexity linter already flagged before
+// this feature added anything to it.
+func (a *App) prepareChannelPatch(patch *model.BoardPatch, boardID, userID string) (oldChannelID string, isTemplate bool, oldMembers []*model.BoardMember, err error) {
+	if patch.Type == nil && patch.ChannelID == nil {
+		return "", false, nil, nil
+	}
+
+	testChannel := ""
+	if patch.ChannelID != nil && *patch.ChannelID == "" {
+		oldMembers, err = a.GetMembersForBoard(boardID)
 		if err != nil {
-			return nil, err
+			a.logger.Error("Unable to get the board members", mlog.Err(err))
 		}
-		oldChannelID = board.ChannelID
-		isTemplate = board.IsTemplate
-		if testChannel == "" {
-			testChannel = oldChannelID
-		}
+	} else if patch.ChannelID != nil && *patch.ChannelID != "" {
+		testChannel = *patch.ChannelID
+	}
 
-		if testChannel != "" {
-			if !a.permissions.HasPermissionToChannel(userID, testChannel, model.PermissionCreatePost) {
-				return nil, model.NewErrPermission("access denied to channel")
-			}
-		}
+	board, err := a.store.GetBoard(boardID)
+	if model.IsErrNotFound(err) {
+		return "", false, nil, model.NewErrNotFound("board ID=" + boardID)
+	}
+	if err != nil {
+		return "", false, nil, err
+	}
+	oldChannelID = board.ChannelID
+	isTemplate = board.IsTemplate
+	if testChannel == "" {
+		testChannel = oldChannelID
+	}
 
-		if patch.ChannelID != nil && *patch.ChannelID != "" && oldChannelID == "" &&
-			board.MinimumRole == model.BoardRoleNone && patch.MinimumRole == nil {
-			viewerRole := model.BoardRoleViewer
-			patch.MinimumRole = &viewerRole
-		}
+	if testChannel != "" && !a.permissions.HasPermissionToChannel(userID, testChannel, model.PermissionCreatePost) {
+		return "", false, nil, model.NewErrPermission("access denied to channel")
+	}
+
+	if patch.ChannelID != nil && *patch.ChannelID != "" && oldChannelID == "" &&
+		board.MinimumRole == model.BoardRoleNone && patch.MinimumRole == nil {
+		viewerRole := model.BoardRoleViewer
+		patch.MinimumRole = &viewerRole
+	}
+
+	return oldChannelID, isTemplate, oldMembers, nil
+}
+
+func (a *App) PatchBoard(patch *model.BoardPatch, boardID, userID string) (*model.Board, error) {
+	if err := a.applyPropertyAccessPatch(patch, userID); err != nil {
+		return nil, err
+	}
+
+	oldChannelID, isTemplate, oldMembers, err := a.prepareChannelPatch(patch, boardID, userID)
+	if err != nil {
+		return nil, err
 	}
 
 	updatedBoard, err := a.store.PatchBoard(boardID, patch, userID)

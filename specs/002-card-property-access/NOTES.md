@@ -2,7 +2,7 @@
 
 이 기능의 **작업 상태와 미결 사항**을 기록한다. 명세·계획은 다른 파일이 갖고 있고, 여기엔 "지금 어디까지 왔고 무엇이 열려 있는가"만 둔다. 세션이 바뀌어도 이 파일과 `tasks.md`만 보면 이어갈 수 있어야 한다.
 
-**최종 갱신**: 2026-08-03 (Phase 2 완료)
+**최종 갱신**: 2026-08-03 (Phase 3 완료)
 
 ---
 
@@ -11,9 +11,9 @@
 | 항목 | 값 |
 |---|---|
 | 브랜치 | `002-card-property-access` (`feat/permission` 기반, `c9d9cd1d`) |
-| 완료 | **T001 ~ T013** (Phase 1 Setup + Phase 2 Foundational) |
-| 다음 | **T014** (Phase 3 US1 — MVP) |
-| 워킹트리 | clean |
+| 완료 | **T001 ~ T035** (Phase 1~3 — Setup · Foundational · US1 MVP) |
+| 다음 | **T036** (Phase 4 US2 — 우회 경로 차단) |
+| 워킹트리 | Phase 3 미커밋 |
 
 `tasks.md`의 `[X]` 표시가 정본이다. 이 표는 요약일 뿐이다.
 
@@ -31,15 +31,38 @@ server/api/helper_test.go                    API 테스트 하네스 (mockstore 
 webapp/src/blocks/board.ts                   대응 TS 타입 5종
 ```
 
-테스트 33건 전부 RED 확인 후 구현했다 — app 22 · 평가기 4 · API 계약 7.
+Phase 3(US1)에서 더한 것:
 
-**아직 어떤 카드도 걸러지지 않는다.** 판정 재료를 모으고 뼈대만 세운 상태다. 조직 관문·직책 가산·전체보기 하한은 US1·US3·US4에서 채운다.
+```
+server/app/property_access.go                조직 관문·카드조건 매칭·허용맵 선계산·규칙 검증·평가기 조립
+server/app/boards.go                         규칙 저장 정규화(updatedBy/At 덮어쓰기)·잔재 키 제거
+                                             prepareChannelPatch 추출 (PatchBoard gocyclo 해소)
+server/app/blocks.go                         GetBlocksForUser·FilterBlocksForUser·FilterCardsForUser
+server/api/boards.go                         규칙 수정에 ManageBoardRoles 게이트
+server/api/blocks.go · cards.go              조회 3경로를 필터 진입점으로 전환
+server/api/boards_test.go                    저장 계약 S-01~S-07
+server/integrationtests/property_access_test.go  집행 계약 E-01·E-02·E-10~E-12
+server/integrationtests/pluginteststore.go   조직 마스터 픽스처 (메인 서버 테이블은 테스트 DB에 없다)
+webapp/src/octoClient.ts                     getOrgUnits · getDuties
+webapp/src/store/orgMaster.ts                팀별 캐시 슬라이스 + 연쇄 셀렉터
+webapp/src/components/shareBoard/propertyAccessSection.tsx   섹션 + 스위치 + 행 추가
+webapp/src/components/shareBoard/propertyAccessRow.tsx       연쇄 셀렉터 6개 (MenuWrapper 재사용)
+webapp/src/components/shareBoard/shareBoard.scss             .ShareBoardDialog 안에 스타일 추가
+webapp/i18n/{en,ko}.json                     PropertyAccess.* 10개
+```
+
+**규칙을 켜면 조회 경로에서 카드가 걸러진다.** 다만 쓰기·검색·웹소켓은 아직 뚫려 있다 — US2(Phase 4) 전까지 배포하면 안 된다.
+
+직책 가산(T047)·전체보기 하한(T052)은 아직 없다. 평가기의 `floor`는 항상 `none`이고 `dutyId` 매칭만 들어가 있다.
 
 ### 다음 세션이 알아야 할 것
 
 - **API 계약 테스트는 `server/api/`에 일반 테스트로 쓴다.** `server/integrationtests/`는 `integration` 빌드 태그라 `make server-test`가 실행하지 않는다. 하네스는 `server/api/helper_test.go`의 `setupAPITestHelper`
 - **`make generate`는 실패한다.** `ws/plugin_adapter.go`·`mmpermissions_test.go`가 go.mod에 없는 `mattermost-server/v6`를 참조한다. 다만 mockstore는 그 실패 전에 재생성되므로 `git diff mockstore/`로 확인하면 된다
-- **회귀 판정은 실패 테스트 목록 diff로.** `server/app` 기존 실패 7~8건, webapp 145건. 개수는 진동한다
+- **회귀 판정은 실패 테스트 목록 diff로.** `server/app` 기존 실패 8건, `server/model` 1건, webapp 실패 스위트 57개. 개수는 진동한다
+- **`server/integrationtests`는 이 환경에서 실행되지 않는다.** 두 겹의 선행 문제가 있다 — (1) 패키지가 `undefined: userAnonID`로 컴파일되지 않던 것을 이번에 고쳤고, (2) 그래도 모든 통합 테스트가 `no such table: TeamMembers`로 죽는다. 메인 서버 스키마가 없는 sqlite 테스트 DB의 한계이며 기존 테스트도 똑같이 죽는다. E-01·E-02·E-10~E-12는 작성만 되어 있고 **실행 검증되지 않았다**
+- **통합 테스트를 돌리려면 `-tags 'json1 sqlite3 integration'`이 필요하다.** `json1` 없이는 마이그레이션이 `no such function: json_set`으로 죽는다
+- **`shareBoard.test.tsx` 스냅샷 13개를 갱신했다.** 섹션을 삽입했으니 당연한 변화다. 이 스위트는 갱신 전후 모두 5건 실패(기존)
 
 ---
 
@@ -70,7 +93,7 @@ webapp/src/blocks/board.ts                   대응 TS 타입 5종
 focalboard_11614dccd7965a58_bundle.js   ← feat/permission의 development 모드 빌드
 ```
 
-아직 서버 기능이 없어 재배포해도 보이는 변화가 없으므로 그대로 뒀다. **Phase 3에서 UI가 나오면 그때 재배포한다.**
+**Phase 3에서 UI가 생겼으므로 이제 재배포가 필요하다.** 공유 팝업 멤버 목록 아래에 "속성 기준 카드 접근 권한" 섹션이 나와야 한다. quickstart.md 시나리오 1~5 수동 검증(T062)은 재배포 후에 한다.
 
 배포 방법은 `quickstart.md`의 "배포" 절 참조. 요약하면 `MM_DEBUG=1` + `npm run debug:watch`를 켜두면 저장할 때마다 자동 배포된다(약 11초).
 
@@ -121,15 +144,13 @@ kkv 팀 멤버(봇 제외) 15 / UserOrgProfiles 보유 15 / 누락 0
 ## 남은 작업 규모
 
 ```
-Phase 2  Foundational   T004 ~ T013   10건   조직 조회(store·app·api) + 평가기 골격
-Phase 3  US1 (P1) MVP   T014 ~ T035   22건   규칙 저장·판정·읽기 집행·UI
 Phase 4  US2 (P2)       T036 ~ T044    9건   쓰기 403·검색·웹소켓
 Phase 5  US3 (P3)       T045 ~ T049    5건   직책 가산
 Phase 6  US4 (P4)       T050 ~ T053    4건   전체보기 하한
 Phase 7  US5 (P5)       T054 ~ T056    3건   마지막 변경자
 Phase 8  Polish         T057 ~ T063    7건   정합성·성능·품질 게이트
                                      ─────
-                                      60건
+                                      28건
 ```
 
 **US1만 배포하면 보안이 성립하지 않는다.** 화면에서만 격리되고 API·검색·실시간 경로로 샌다. US1과 US2는 함께 배포한다. 상세는 `tasks.md`의 "Implementation Strategy".
