@@ -2,7 +2,7 @@
 
 이 기능의 **작업 상태와 미결 사항**을 기록한다. 명세·계획은 다른 파일이 갖고 있고, 여기엔 "지금 어디까지 왔고 무엇이 열려 있는가"만 둔다. 세션이 바뀌어도 이 파일과 `tasks.md`만 보면 이어갈 수 있어야 한다.
 
-**최종 갱신**: 2026-08-03 (메인 서버 검토 반영)
+**최종 갱신**: 2026-08-03 (Phase 2 완료)
 
 ---
 
@@ -11,8 +11,8 @@
 | 항목 | 값 |
 |---|---|
 | 브랜치 | `002-card-property-access` (`feat/permission` 기반, `c9d9cd1d`) |
-| 완료 | **T001 ~ T003** (Phase 1 Setup) |
-| 다음 | **T004** (Phase 2 Foundational) |
+| 완료 | **T001 ~ T013** (Phase 1 Setup + Phase 2 Foundational) |
+| 다음 | **T014** (Phase 3 US1 — MVP) |
 | 워킹트리 | clean |
 
 `tasks.md`의 `[X]` 표시가 정본이다. 이 표는 요약일 뿐이다.
@@ -20,12 +20,26 @@
 ### 실제로 작성된 코드
 
 ```
-server/model/property_access.go    신규 — 규칙·규칙집합 타입, 권한 등급, 잔재 키 목록
-server/model/org.go                신규 — OrgUnit·Duty·UserOrgProfile, 유효기간 판정
-webapp/src/blocks/board.ts         수정 — 대응 TS 타입 5종 추가
+server/model/property_access.go              규칙·규칙집합 타입, 권한 등급, 잔재 키 목록
+server/model/org.go                          OrgUnit·Duty·UserOrgProfile, 유효기간 판정
+server/services/store/sqlstore/org_master.go 메인 서버 3개 테이블 읽기 전용 조회
+server/services/store/store.go               인터페이스 메서드 3개 추가 (mockstore 재생성됨)
+server/app/org_master.go                     조회 정규화·ID 중복 제거·유효기간 필터·조상 집합
+server/app/property_access.go                평가기 골격 (관리자 우회·스위치·규칙 밖 카드)
+server/api/org.go                            GET /teams/{teamID}/org-units · /duties
+server/api/helper_test.go                    API 테스트 하네스 (mockstore + fake permissions)
+webapp/src/blocks/board.ts                   대응 TS 타입 5종
 ```
 
-Go 빌드 통과, `board.ts` 타입 오류 0. **동작 코드는 아직 없다** — 타입 정의뿐이다.
+테스트 33건 전부 RED 확인 후 구현했다 — app 22 · 평가기 4 · API 계약 7.
+
+**아직 어떤 카드도 걸러지지 않는다.** 판정 재료를 모으고 뼈대만 세운 상태다. 조직 관문·직책 가산·전체보기 하한은 US1·US3·US4에서 채운다.
+
+### 다음 세션이 알아야 할 것
+
+- **API 계약 테스트는 `server/api/`에 일반 테스트로 쓴다.** `server/integrationtests/`는 `integration` 빌드 태그라 `make server-test`가 실행하지 않는다. 하네스는 `server/api/helper_test.go`의 `setupAPITestHelper`
+- **`make generate`는 실패한다.** `ws/plugin_adapter.go`·`mmpermissions_test.go`가 go.mod에 없는 `mattermost-server/v6`를 참조한다. 다만 mockstore는 그 실패 전에 재생성되므로 `git diff mockstore/`로 확인하면 된다
+- **회귀 판정은 실패 테스트 목록 diff로.** `server/app` 기존 실패 7~8건, webapp 145건. 개수는 진동한다
 
 ---
 
