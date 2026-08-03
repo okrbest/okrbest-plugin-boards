@@ -123,7 +123,7 @@ func (a *App) DeleteBoardsAndBlocks(dbab *model.DeleteBoardsAndBlocks, userID st
 
 	a.blockChangeNotifier.Enqueue(func() error {
 		for _, block := range blocks {
-			a.wsAdapter.BroadcastBlockDelete(firstBoard.TeamID, block.ID, block.BoardID)
+			a.wsAdapter.BroadcastBlockChange(firstBoard.TeamID, deletedBlockMessage(block))
 			a.metrics.IncrementBlocksDeleted(1)
 			a.notifyBlockChanged(notify.Update, block, block, userID)
 		}

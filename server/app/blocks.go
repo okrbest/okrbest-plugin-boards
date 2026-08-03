@@ -125,6 +125,91 @@ func (a *App) FilterCardsForUser(userID, boardID string, cards []*model.Card) ([
 	return allowed, nil
 }
 
+// requireCardEditPermission refuses a change to a card the rules do not let this
+// user edit (FR-027).
+//
+// The judgement is made on the card the block belongs to, not on the block
+// itself: editing a comment or a description writes into the card's content, so
+// it answers to the card's permission rather than the board's.
+//
+// Creation is deliberately not covered. A new card is allowed by the board
+// permission alone (FR-032) — the rules govern what happens to a card once it
+// carries the property value, not who may add one.
+func (a *App) requireCardEditPermission(userID string, block *model.Block, board *model.Board) error {
+	if block == nil || board == nil {
+		return nil
+	}
+
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return err
+	}
+	if !evaluator.Enforces() {
+		return nil
+	}
+
+	card, err := a.cardForBlock(block)
+	if err != nil {
+		// The card could not be read, so it cannot be judged. Refusing is the
+		// only safe answer: otherwise a lookup failure becomes a way to write
+		// into a card the rules protect.
+		return model.NewErrPermission("access denied to card")
+	}
+	if card == nil {
+		// The block hangs off the board rather than a card — a view, or the
+		// board description. No rule applies to it.
+		return nil
+	}
+
+	if model.EffectivePermissionRank(evaluator.For(card)) < model.EffectivePermissionRank(model.EffectiveBoardPermissionEdit) {
+		return model.NewErrPermission("access denied to card")
+	}
+
+	return nil
+}
+
+// deletedBlockMessage is the block a deletion is announced with.
+//
+// BroadcastBlockDelete builds this message from an ID alone, which leaves the
+// websocket filter nothing to judge: a deletion of a card the rules hide would
+// reach everyone. Announcing the block that was actually deleted gives the
+// filter the property values it needs. The wire format is unchanged — a delete
+// has always been sent as a block change carrying deleteAt.
+func deletedBlockMessage(block *model.Block) *model.Block {
+	deleted := *block
+	deleted.UpdateAt = utils.GetMillis()
+	deleted.DeleteAt = deleted.UpdateAt
+	return &deleted
+}
+
+// cardForBlock walks up from a block to the card that owns it, returning nil
+// when the block is not under a card at all.
+func (a *App) cardForBlock(block *model.Block) (*model.Block, error) {
+	iter := block
+	for depth := 0; depth < maxSearchDepth; depth++ {
+		if iter.Type == model.TypeCard {
+			return iter, nil
+		}
+		if iter.ParentID == "" || iter.ParentID == iter.BoardID {
+			return nil, nil
+		}
+
+		parent, err := a.store.GetBlock(iter.ParentID)
+		if model.IsErrNotFound(err) {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if parent == nil {
+			return nil, nil
+		}
+		iter = parent
+	}
+
+	return nil, nil
+}
+
 // deniedCardIDs judges every card the batch touches.
 //
 // A request narrowed by parent — the card detail view asks for one card's
@@ -241,6 +326,10 @@ func (a *App) PatchBlockAndNotify(blockID string, blockPatch *model.BlockPatch, 
 		return nil, err
 	}
 
+	if permErr := a.requireCardEditPermission(modifiedByID, oldBlock, board); permErr != nil {
+		return nil, permErr
+	}
+
 	err = a.store.PatchBlock(blockID, blockPatch, modifiedByID)
 	if err != nil {
 		return nil, err
@@ -281,6 +370,32 @@ func (a *App) PatchBlocksAndNotify(teamID string, blockPatches *model.BlockPatch
 	oldBlocks, err := a.store.GetBlocksByIDs(blockPatches.BlockIDs)
 	if err != nil {
 		return err
+	}
+
+	// A batch is refused whole. Applying the allowed half would leave the
+	// client's undo stack describing a change that never happened.
+	//
+	// Boards are read once each: a batch is normally one board's worth of
+	// blocks, and asking per block would multiply the query by the batch size.
+	boards := map[string]*model.Board{}
+	for _, oldBlock := range oldBlocks {
+		if oldBlock == nil || oldBlock.BoardID == "" {
+			continue
+		}
+
+		board, seen := boards[oldBlock.BoardID]
+		if !seen {
+			loaded, boardErr := a.store.GetBoard(oldBlock.BoardID)
+			if boardErr != nil {
+				return boardErr
+			}
+			board = loaded
+			boards[oldBlock.BoardID] = board
+		}
+
+		if permErr := a.requireCardEditPermission(modifiedByID, oldBlock, board); permErr != nil {
+			return permErr
+		}
 	}
 
 	if err := a.store.PatchBlocks(blockPatches, modifiedByID); err != nil {
@@ -467,6 +582,10 @@ func (a *App) DeleteBlockAndNotify(blockID string, modifiedBy string, disableNot
 		return nil
 	}
 
+	if permErr := a.requireCardEditPermission(modifiedBy, block, board); permErr != nil {
+		return permErr
+	}
+
 	err = a.store.DeleteBlock(blockID, modifiedBy)
 	if err != nil {
 		return err
@@ -479,7 +598,7 @@ func (a *App) DeleteBlockAndNotify(blockID string, modifiedBy string, disableNot
 	}
 
 	a.blockChangeNotifier.Enqueue(func() error {
-		a.wsAdapter.BroadcastBlockDelete(board.TeamID, blockID, block.BoardID)
+		a.wsAdapter.BroadcastBlockChange(board.TeamID, deletedBlockMessage(block))
 		a.metrics.IncrementBlocksDeleted(1)
 		if !disableNotify {
 			a.notifyBlockChanged(notify.Delete, block, block, modifiedBy)

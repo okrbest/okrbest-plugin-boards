@@ -41,15 +41,19 @@ type fakePermissions struct {
 	// one back, keyed by permission ID, for handlers that check more than one.
 	board       map[string]bool
 	boardDenied map[string]bool
-	sys         map[string]bool
+	// boardEffective answers GetBoardPermissions, which the card access
+	// evaluator reads to know what the board grants before any rule applies.
+	boardEffective map[string]model.EffectiveBoardPermission
+	sys            map[string]bool
 }
 
 func newFakePermissions() *fakePermissions {
 	return &fakePermissions{
-		team:        map[string]bool{},
-		board:       map[string]bool{},
-		boardDenied: map[string]bool{},
-		sys:         map[string]bool{},
+		team:           map[string]bool{},
+		board:          map[string]bool{},
+		boardDenied:    map[string]bool{},
+		boardEffective: map[string]model.EffectiveBoardPermission{},
+		sys:            map[string]bool{},
 	}
 }
 
@@ -58,7 +62,6 @@ func (f *fakePermissions) allowTeam(userID, teamID string) {
 	f.team[userID+"|"+teamID] = true
 }
 
-//nolint:unparam // boardID varies once later phases add multi-board cases
 func (f *fakePermissions) allowBoard(userID, boardID string) {
 	f.board[userID+"|"+boardID] = true
 }
@@ -88,12 +91,29 @@ func (f *fakePermissions) HasPermissionToBoard(userID, boardID string, permissio
 	return f.board[userID+"|"+boardID]
 }
 
-func (f *fakePermissions) GetBoardPermissions(_, boardID string) (*model.BoardPermissionsResponse, error) {
+// setBoardPermission states the board level permission a user resolves to. The
+// card access evaluator starts from it, so a test that exercises the rules has
+// to say what the board itself already grants.
+func (f *fakePermissions) setBoardPermission(userID, boardID string, permission model.EffectiveBoardPermission) {
+	f.boardEffective[userID+"|"+boardID] = permission
+}
+
+func (f *fakePermissions) GetBoardPermissions(userID, boardID string) (*model.BoardPermissionsResponse, error) {
+	effective, ok := f.boardEffective[userID+"|"+boardID]
+	if !ok {
+		effective = model.EffectiveBoardPermissionNone
+	}
+
+	derivedFrom := model.PermissionDerivedMember
+	if effective == model.EffectiveBoardPermissionNone {
+		derivedFrom = model.PermissionDerivedDeny
+	}
+
 	return &model.BoardPermissionsResponse{
 		BoardID:             boardID,
-		EffectivePermission: model.EffectiveBoardPermissionNone,
-		Capabilities:        model.BuildCapabilities(model.EffectiveBoardPermissionNone),
-		DerivedFrom:         model.PermissionDerivedDeny,
+		EffectivePermission: effective,
+		Capabilities:        model.BuildCapabilities(effective),
+		DerivedFrom:         derivedFrom,
 	}, nil
 }
 
@@ -117,6 +137,8 @@ func setupAPITestHelper(t *testing.T) (*APITestHelper, func()) {
 	authService := auth.New(&cfg, store, nil)
 	wsServer := ws.NewServer(authService, logger, store)
 
+	perms := newFakePermissions()
+
 	boardsApp := app.New(&cfg, wsServer, app.Services{
 		Auth:             authService,
 		Store:            store,
@@ -124,14 +146,15 @@ func setupAPITestHelper(t *testing.T) (*APITestHelper, func()) {
 		Metrics:          metrics.NewMetrics(metrics.InstanceInfo{}),
 		Logger:           logger,
 		SkipTemplateInit: true,
+		// The app shares the handler's permission fake: card access evaluation
+		// happens in the app layer and starts from the board permission.
+		Permissions: perms,
 	})
 
 	// Board changes are broadcast from a background queue, which asks the store
 	// who the recipients are. That call is incidental to every handler test, so
 	// it is answered once here rather than in each of them.
 	store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).AnyTimes()
-
-	perms := newFakePermissions()
 
 	// Handlers that record audit entries dereference the service unconditionally,
 	// so it has to be present even though nothing here asserts on its output.

@@ -21,8 +21,10 @@ import (
 // Rules ride along the existing board patch route, so these exercise
 // handlePatchBoard rather than an endpoint of their own (research.md R8).
 
-const (
-	ruleBoardID = "board-1"
+// Block validation rejects IDs that are not in the generated format, so the
+// board these tests act on carries a real one rather than a readable stand-in.
+var (
+	ruleBoardID = utils.NewID(utils.IDTypeBoard)
 	ruleTeamID  = "team-1"
 )
 

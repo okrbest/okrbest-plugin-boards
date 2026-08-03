@@ -100,6 +100,28 @@ describe('csvExporter', () => {
         expect(URL.revokeObjectURL).toBeCalledWith('blob:test-url')
     })
 
+    // FR-030. The exporter is handed the cards the client already holds, and the
+    // server drops the ones a rule hides before they ever reach the client. This
+    // asserts the export adds nothing back — it never refetches.
+    test('exports only the cards it is given, so hidden cards cannot reappear', () => {
+        const {intl, board, activeView, card} = createExportData()
+        const hidden = TestBlockFactory.createCard(board)
+        hidden.id = 'hidden-card'
+        hidden.title = 'Hidden by a card access rule'
+        card.title = 'Visible card'
+
+        const openInNewBrowser = jest.fn()
+        window.openInNewBrowser = openInNewBrowser
+        jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+
+        CsvExporter.exportTableCsv(board, activeView, [card], intl)
+
+        const csv = decodeCsvFromDataUri(openInNewBrowser.mock.calls[0][0])
+        expect(csv).toContain('Visible card')
+        expect(csv).not.toContain('Hidden by a card access rule')
+        expect(csv).not.toContain(hidden.id)
+    })
+
     test('exports person properties using display names instead of ids', () => {
         const {intl, board, activeView, card} = createExportData()
         const personProperty = {

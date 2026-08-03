@@ -5,6 +5,7 @@
 package ws
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -50,6 +51,17 @@ type PluginAdapter struct {
 	subscriptionsMU  sync.RWMutex
 	listenersByTeam  map[string][]*PluginAdapterClient
 	listenersByBlock map[string][]*PluginAdapterClient
+
+	// blockAccess is nil until the app registers itself, which happens after
+	// this adapter is built. A nil filter lets every message through, which is
+	// the behavior boards had before card level access existed.
+	blockAccess BlockAccessFilter
+}
+
+// SetBlockAccessFilter registers the card level access filter applied to block
+// broadcasts. Called once at start up, before any listener can connect.
+func (pa *PluginAdapter) SetBlockAccessFilter(filter BlockAccessFilter) {
+	pa.blockAccess = filter
 }
 
 // servicesAPI is the interface required by the PluginAdapter to interact with
@@ -245,7 +257,11 @@ func (pa *PluginAdapter) getUserIDsForTeamAndBoard(teamID, boardID string, ensur
 	// if we don't have to make sure that some IDs are included, we
 	// can return at this point
 	if len(ensureUserIDs) == 0 {
-		return userIDs
+		// The loops above pair every member against every connected user, so a
+		// user holding both an explicit and a synthetic membership appears
+		// twice. The block fan-out takes this path, and a repeated ID would be
+		// judged — and messaged — twice.
+		return dedupeUserIDs(userIDs)
 	}
 
 	completeUserMap := map[string]bool{}
@@ -435,7 +451,62 @@ func (pa *PluginAdapter) sendTeamMessage(event, teamID string, payload map[strin
 // subscribed to a given team that belong to one of its boards.
 func (pa *PluginAdapter) sendBoardMessageSkipCluster(teamID, boardID string, payload map[string]interface{}, ensureUserIDs ...string) {
 	userIDs := pa.getUserIDsForTeamAndBoard(teamID, boardID, ensureUserIDs...)
+	userIDs = pa.filterBlockRecipients(userIDs, payload)
 	pa.sendUserMessageSkipCluster(websocketActionUpdateBoard, payload, userIDs...)
+}
+
+// filterBlockRecipients applies card level access to a board message that
+// carries a block.
+//
+// The filter sits here, where the recipient list is assembled, rather than at
+// the broadcast call sites: a message arriving from another cluster node
+// re-enters through this same function, so it is judged by the receiving node's
+// own view of the rules.
+func (pa *PluginAdapter) filterBlockRecipients(userIDs []string, payload map[string]interface{}) []string {
+	if pa.blockAccess == nil || len(userIDs) == 0 {
+		return userIDs
+	}
+
+	block := blockFromPayload(payload)
+	if block == nil {
+		return userIDs
+	}
+
+	return pa.blockAccess.FilterBlockRecipients(userIDs, block)
+}
+
+func dedupeUserIDs(userIDs []string) []string {
+	seen := make(map[string]bool, len(userIDs))
+	unique := make([]string, 0, len(userIDs))
+	for _, userID := range userIDs {
+		if seen[userID] {
+			continue
+		}
+		seen[userID] = true
+		unique = append(unique, userID)
+	}
+	return unique
+}
+
+// blockFromPayload recovers the block a message carries, or nil when the
+// message is about something else — a board, a member, a category.
+func blockFromPayload(payload map[string]interface{}) *model.Block {
+	raw, ok := payload["block"]
+	if !ok || raw == nil {
+		return nil
+	}
+
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return nil
+	}
+
+	block := &model.Block{}
+	if err := json.Unmarshal(encoded, block); err != nil {
+		return nil
+	}
+
+	return block
 }
 
 // sendBoardMessage sends and propagates a message that is aimed for

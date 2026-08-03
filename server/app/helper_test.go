@@ -27,6 +27,9 @@ type TestHelper struct {
 	FilesBackend *mocks.FileBackend
 	logger       mlog.LoggerIFace
 	API          *mmpermissionsMocks.MockAPI
+	// PermissionsStore backs the permissions service, which reads boards and
+	// memberships through its own narrower store interface.
+	PermissionsStore *permissionsMocks.MockStore
 }
 
 func SetupTestHelper(t *testing.T) (*TestHelper, func()) {
@@ -64,10 +67,11 @@ func SetupTestHelper(t *testing.T) (*TestHelper, func()) {
 	}
 
 	return &TestHelper{
-		App:          app2,
-		Store:        store,
-		FilesBackend: filesBackend,
-		logger:       logger,
-		API:          mockAPI,
+		App:              app2,
+		Store:            store,
+		FilesBackend:     filesBackend,
+		logger:           logger,
+		API:              mockAPI,
+		PermissionsStore: mockStore,
 	}, tearDown
 }

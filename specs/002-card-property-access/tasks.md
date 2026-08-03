@@ -123,18 +123,18 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 2 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T036 [P] [US2] 쓰기 집행 계약 테스트 E-03~E-06을 `server/integrationtests/property_access_test.go`에 추가
-- [ ] T037 [P] [US2] 검색 집행 계약 테스트 E-07을 `server/integrationtests/property_access_test.go`에 추가
-- [ ] T038 [P] [US2] 웹소켓 수신자별 필터 테스트 E-08·E-09를 `server/ws/plugin_adapter_test.go`에 추가
-- [ ] T039 [P] [US2] 내보내기 결과물에 권한 없는 카드가 없음을 `webapp/src/csvExporter.test.ts`에 검증 — 조회 필터링의 자동 반영을 확인한다 (FR-030)
+- [X] T036 [P] [US2] 쓰기 집행 계약 테스트 E-03~E-06을 `server/api/blocks_test.go`에 추가 — `server/integrationtests/`는 메인 서버 스키마가 없는 테스트 DB에서 전 테스트가 죽어 검증 근거가 되지 못한다
+- [X] T037 [P] [US2] 검색 집행 계약 테스트 E-07을 `webapp/src/store/cards.test.ts`에 추가 — 카드 검색은 서버 경로가 없고 로드된 카드에 대한 클라이언트 필터다
+- [X] T038 [P] [US2] 웹소켓 수신자별 필터 테스트 E-08·E-09를 `server/ws/plugin_adapter_test.go`에 추가
+- [X] T039 [P] [US2] 내보내기 결과물에 권한 없는 카드가 없음을 `webapp/src/csvExporter.test.ts`에 검증 — 조회 필터링의 자동 반영을 확인한다 (FR-030)
 
 ### 구현
 
-- [ ] T040 [US2] 블록 수정·삭제 가드를 `server/app/blocks.go`에 구현 — 대상 카드 판정이 `editor` 미만이면 `model.NewErrPermission()` (FR-027, contracts E-03~E-05)
-- [ ] T041 [US2] 블록 생성은 보드 권한으로 통과시키도록 `server/app/blocks.go`에 명시 — 규칙을 적용하지 않는다 (FR-032, contracts E-06)
-- [ ] T042 [US2] 검색 결과 필터를 `server/api/search.go`와 대응 app 경로에 구현 (FR-028)
-- [ ] T043 [US2] 블록 브로드캐스트 수신자별 필터를 `server/ws/plugin_adapter.go`의 `sendBoardMessage` 경로에 구현 — 수신자 목록을 만든 뒤 각자 평가기로 판정해 제외. **조직 정보를 일괄 조회하기 전에 수신자 ID를 중복 제거한다** — `getUserIDsForTeamAndBoard`의 `ensureUserIDs` 없는 경로(블록 브로드캐스트가 타는 경로)가 중복 제거 없이 반환하며, 현재 중복이 없는 것은 상류 `getMembersForBoard`의 dedup에 기댄 우연이다 (FR-029)
-- [ ] T044 [US2] 평가기 사용자별 캐시를 `server/app/property_access.go`에 구현 — 웹소켓 브로드캐스트 1건 처리 범위로 수명을 한정하고 보드의 `propertyAccess`가 바뀌면 그 보드 항목을 버린다. 사용자 조직 정보 변경이 다음 요청에 반영되도록 요청 경계를 넘겨 보관하지 않는다 (research.md R3, SC-006)
+- [X] T040 [US2] 블록 수정·삭제 가드를 `server/app/blocks.go`에 구현 — 대상 카드 판정이 `editor` 미만이면 `model.NewErrPermission()` (FR-027, contracts E-03~E-05)
+- [X] T041 [US2] 블록 생성은 보드 권한으로 통과시키도록 `server/app/blocks.go`에 명시 — 규칙을 적용하지 않는다 (FR-032, contracts E-06)
+- [X] T042 [US2] 검색 경로 확인 — **서버 구현 불필요**. `server/api/search.go`는 보드만 검색하고 카드 검색은 `webapp/src/store/cards.ts`의 `searchFilterCards`가 로드된 카드에 대해 수행하므로 조회 필터링이 그대로 적용된다 (FR-028). 대신 남아 있던 카드 조회 구멍 2개(`GET /cards/{cardID}`, `GET /cards/{cardID}/subcards`)를 `server/api/cards.go`에서 막았다
+- [X] T043 [US2] 블록 브로드캐스트 수신자별 필터를 `server/ws/plugin_adapter.go`의 `sendBoardMessage` 경로에 구현 — 수신자 목록을 만든 뒤 각자 평가기로 판정해 제외. **조직 정보를 일괄 조회하기 전에 수신자 ID를 중복 제거한다** — `getUserIDsForTeamAndBoard`의 `ensureUserIDs` 없는 경로(블록 브로드캐스트가 타는 경로)가 중복 제거 없이 반환하며, 현재 중복이 없는 것은 상류 `getMembersForBoard`의 dedup에 기댄 우연이다 (FR-029)
+- [X] T044 [US2] 평가기 사용자별 캐시를 `server/app/property_access.go`에 구현 — 웹소켓 브로드캐스트 1건 처리 범위로 수명을 한정하고 보드의 `propertyAccess`가 바뀌면 그 보드 항목을 버린다. 사용자 조직 정보 변경이 다음 요청에 반영되도록 요청 경계를 넘겨 보관하지 않는다 (research.md R3, SC-006)
 
 **Checkpoint**: 클라이언트를 우회한 요청·검색·실시간 경로로 내용이 새지 않는다. **여기까지 와야 보안이 성립한다**
 

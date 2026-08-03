@@ -58,6 +58,26 @@ describe('store/cards selectors', () => {
         return {state, parentCard, subCard}
     }
 
+    // FR-028. Card search is a client side pass over the cards already in the
+    // store; the server drops the ones a rule hides before the client ever sees
+    // them. This asserts search never reaches past the store to find one.
+    test('search only ever returns cards the store holds', () => {
+        const {state, parentCard} = setupState('Parent')
+
+        const result = getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit(state as unknown as RootState)
+
+        expect(result.map((card) => card.id)).toEqual([parentCard.id])
+
+        const withoutParent = {
+            ...state,
+            cards: {cards: {[state.cards.cards['sub-card'].id]: state.cards.cards['sub-card']}},
+        }
+
+        const filtered = getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit(withoutParent as unknown as RootState)
+
+        expect(filtered.map((card) => card.id)).not.toContain(parentCard.id)
+    })
+
     test('parent-card selector keeps subcards excluded', () => {
         const {state, parentCard} = setupState()
 

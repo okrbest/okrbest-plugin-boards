@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
+
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 // Card level access evaluation.
@@ -96,6 +98,90 @@ func (a *App) newPropertyAccessEvaluator(userID string, board *model.Board) (*Pr
 	input.Profile = profiles[userID]
 
 	return NewPropertyAccessEvaluator(input), nil
+}
+
+// FilterBlockRecipients narrows a websocket recipient list to the users allowed
+// to hear about one block (FR-029).
+//
+// The whole fan-out is answered in one pass: the board, the organization master
+// and every recipient's assignment are read once, and one evaluator per user is
+// built over that shared data. Nothing is kept afterwards — a user whose
+// assignment changes is judged fresh on the next broadcast (SC-006).
+//
+// The recipient list arrives with duplicates: the path the block fan-out takes
+// through getUserIDsForTeamAndBoard has no deduplication of its own, and today's
+// absence of duplicates rests on an upstream accident rather than a guarantee.
+func (a *App) FilterBlockRecipients(userIDs []string, block *model.Block) []string {
+	if block == nil || len(userIDs) == 0 {
+		return userIDs
+	}
+
+	board, err := a.GetBoard(block.BoardID)
+	if err != nil {
+		// Without the board nothing can be judged. Sending anyway would make a
+		// lookup failure a way to receive hidden content.
+		a.logger.Warn("cannot load board for websocket access filtering",
+			mlog.String("boardID", block.BoardID), mlog.Err(err))
+		return nil
+	}
+	if board == nil {
+		return userIDs
+	}
+
+	settings, err := model.PropertyAccessSettingsFromProperties(board.Properties)
+	if err != nil || settings == nil || !settings.Enabled {
+		return userIDs
+	}
+
+	// A block outside any card — a view, the board description — is never
+	// governed by a rule, so the fan-out is left alone.
+	card, err := a.cardForBlock(block)
+	if err != nil {
+		return nil
+	}
+	if card == nil {
+		return userIDs
+	}
+
+	unique := dedupeStrings(userIDs)
+
+	orgUnits, err := a.GetOrgUnitsForTeam(board.TeamID)
+	if err != nil {
+		return nil
+	}
+	duties, err := a.GetDutiesForTeam(board.TeamID)
+	if err != nil {
+		return nil
+	}
+	profiles, err := a.GetUserOrgProfiles(board.TeamID, unique)
+	if err != nil {
+		return nil
+	}
+
+	allowed := make([]string, 0, len(unique))
+	for _, userID := range unique {
+		resolved, permErr := a.permissions.GetBoardPermissions(userID, board.ID)
+		if permErr != nil {
+			continue
+		}
+
+		boardPermission := model.NormalizeEffectivePermission(resolved.EffectivePermission)
+		evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+			Settings:        settings,
+			OrgUnits:        orgUnits,
+			Duties:          duties,
+			Profile:         profiles[userID],
+			BoardPermission: boardPermission,
+			IsAdmin: model.EffectivePermissionRank(boardPermission) >=
+				model.EffectivePermissionRank(model.EffectiveBoardPermissionManage),
+		})
+
+		if evaluator.For(card) != model.EffectiveBoardPermissionNone {
+			allowed = append(allowed, userID)
+		}
+	}
+
+	return allowed
 }
 
 // validatePropertyAccessSettings rejects a rule set the share dialog should

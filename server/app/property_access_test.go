@@ -6,9 +6,12 @@ package app
 import (
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
+
+	mmModel "github.com/mattermost/mattermost/server/public/model"
 )
 
 // The decision table these tests encode lives in
@@ -280,4 +283,112 @@ func TestEvaluatorMultiSelectCard(t *testing.T) {
 	require.Equal(t, model.EffectiveBoardPermissionEdit,
 		blocked.For(multiSelectCard(propCLevel, valueProduction)),
 		"no matching value leaves the card outside every rule")
+}
+
+// The websocket fan-out asks one question per broadcast, not one per recipient.
+// These cover the batching promise of research.md R3 and the recipient level
+// enforcement of FR-029.
+func TestFilterBlockRecipients(t *testing.T) {
+	const (
+		boardID = "board-ws"
+		teamID  = "team-ws"
+	)
+
+	setup := func(t *testing.T, enabled bool) (*TestHelper, func()) {
+		t.Helper()
+		th, tearDown := SetupTestHelper(t)
+
+		settings := &model.PropertyAccessSettings{
+			Enabled: enabled,
+			Rules: []model.PropertyAccessRule{{
+				ID: "r1", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+				DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+			}},
+		}
+		value, err := settings.AsProperty()
+		require.NoError(t, err)
+
+		board := &model.Board{
+			ID: boardID, TeamID: teamID,
+			Properties: map[string]interface{}{model.PropertyAccessKey: value},
+		}
+
+		th.Store.EXPECT().GetBoard(boardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetBoard(boardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetMemberForBoard(boardID, gomock.Any()).
+			Return(&model.BoardMember{BoardID: boardID, SchemeEditor: true}, nil).AnyTimes()
+		// View team only. Granting manage-team as well would make every member a
+		// board manager, and admins bypass the rules entirely (FR-014).
+		th.API.EXPECT().HasPermissionToTeam(gomock.Any(), teamID, gomock.Any()).
+			DoAndReturn(func(_, _ string, permission *mmModel.Permission) bool {
+				return permission == model.PermissionViewTeam
+			}).AnyTimes()
+
+		th.Store.EXPECT().GetOrgUnitsForTeam(teamID).Return(testOrgUnits(), nil).AnyTimes()
+		th.Store.EXPECT().GetDutiesForTeam(teamID).Return(testDuties(), nil).AnyTimes()
+
+		return th, tearDown
+	}
+
+	strategyCard := &model.Block{
+		ID: "card-1", BoardID: boardID, ParentID: boardID, Type: model.TypeCard,
+		Fields: map[string]interface{}{"properties": map[string]interface{}{propCLevel: valueStrategy}},
+	}
+
+	t.Run("E-08 and E-09 only recipients the rule admits are kept", func(t *testing.T) {
+		th, tearDown := setup(t, true)
+		defer tearDown()
+
+		th.Store.EXPECT().GetUserOrgProfiles(teamID, gomock.Any()).Return([]*model.UserOrgProfile{
+			{TeamID: teamID, UserID: "insider", PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+			{TeamID: teamID, UserID: "outsider", PrimaryOrgUnitID: depFactory, PrimaryDutyID: dutyLead},
+		}, nil).Times(1)
+
+		kept := th.App.FilterBlockRecipients([]string{"insider", "outsider"}, strategyCard)
+
+		require.Equal(t, []string{"insider"}, kept)
+	})
+
+	t.Run("recipient IDs are deduplicated before the organization lookup", func(t *testing.T) {
+		th, tearDown := setup(t, true)
+		defer tearDown()
+
+		var asked []string
+		th.Store.EXPECT().GetUserOrgProfiles(teamID, gomock.Any()).
+			DoAndReturn(func(_ string, userIDs []string) ([]*model.UserOrgProfile, error) {
+				asked = userIDs
+				return []*model.UserOrgProfile{
+					{TeamID: teamID, UserID: "insider", PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+				}, nil
+			}).Times(1)
+
+		kept := th.App.FilterBlockRecipients([]string{"insider", "insider", "insider"}, strategyCard)
+
+		require.Equal(t, []string{"insider"}, asked, "one lookup, one entry per user")
+		require.Equal(t, []string{"insider"}, kept)
+	})
+
+	t.Run("E-11 with the switch off the recipient list is untouched", func(t *testing.T) {
+		th, tearDown := setup(t, false)
+		defer tearDown()
+
+		kept := th.App.FilterBlockRecipients([]string{"insider", "outsider"}, strategyCard)
+
+		require.Equal(t, []string{"insider", "outsider"}, kept,
+			"no organization lookup should happen at all")
+	})
+
+	t.Run("a card no rule mentions reaches everyone", func(t *testing.T) {
+		th, tearDown := setup(t, true)
+		defer tearDown()
+
+		th.Store.EXPECT().GetUserOrgProfiles(teamID, gomock.Any()).Return([]*model.UserOrgProfile{}, nil).Times(1)
+
+		openCard := &model.Block{
+			ID: "card-2", BoardID: boardID, ParentID: boardID, Type: model.TypeCard,
+			Fields: map[string]interface{}{"properties": map[string]interface{}{propCLevel: valueProduction}},
+		}
+
+		require.Equal(t, []string{"outsider"}, th.App.FilterBlockRecipients([]string{"outsider"}, openCard))
+	})
 }

@@ -32,6 +32,16 @@ type Store interface {
 	GetMembersForBoard(boardID string) ([]*model.BoardMember, error)
 }
 
+// BlockAccessFilter narrows a recipient list to the users allowed to hear about
+// one block.
+//
+// It is an interface rather than a direct call because the dependency runs the
+// other way: the app layer already owns the websocket adapter, so ws cannot
+// import app. The app registers itself once at start up.
+type BlockAccessFilter interface {
+	FilterBlockRecipients(userIDs []string, block *model.Block) []string
+}
+
 type Adapter interface {
 	BroadcastBlockChange(teamID string, block *model.Block)
 	BroadcastBlockDelete(teamID, blockID, boardID string)

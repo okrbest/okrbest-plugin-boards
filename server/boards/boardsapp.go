@@ -146,6 +146,10 @@ func NewBoardsApp(api model.ServicesAPI, manifest *mm_model.Manifest) (*BoardsAp
 
 	backendParams.appAPI.init(db, server.App())
 
+	// The adapter is built before the app exists, so the card level access
+	// filter is registered here rather than at construction (FR-029).
+	wsPluginAdapter.SetBlockAccessFilter(server.App())
+
 	// ToDo: Cloud Limits have been disabled by design. We should
 	// revisit the decision and update the related code accordingly
 	/*

@@ -22,6 +22,18 @@ import (
 // "editor" fixture sits under 전략본부 and the "commenter" fixture under
 // 생산본부. Both are given the same board role, so any difference in what they
 // see comes from the rule and not from the board.
+//
+// Where the rest of the contract lives:
+//
+//	E-01 ~ E-06, E-10, E-11   server/api/blocks_test.go   (runs in the default gate)
+//	E-07                      webapp/src/store/cards.test.ts — search is client side
+//	E-08, E-09                server/ws/property_access_test.go
+//	                          server/app/property_access_test.go
+//
+// This file is the end-to-end pass over a real server. It does not run today:
+// every test in this package dies in migration with "no such table:
+// TeamMembers" because the test database carries no main server schema. The
+// coverage above is what the quality gate actually executes.
 
 const (
 	propCLevel      = "prop-clevel"

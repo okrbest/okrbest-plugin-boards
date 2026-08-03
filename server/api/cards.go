@@ -444,6 +444,18 @@ func (a *API) handleGetCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Asking for a card by ID has to answer to the rules too, otherwise the
+	// filter on the list endpoints is only a display convention (FR-031).
+	visible, err := a.app.FilterCardsForUser(userID, card.BoardID, []*model.Card{card})
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+	if len(visible) == 0 {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to fetch card"))
+		return
+	}
+
 	auditRec := a.makeAuditRecord(r, "getCard", audit.Fail)
 	defer a.audit.LogRecord(audit.LevelRead, auditRec)
 	auditRec.AddMeta("boardID", card.BoardID)
@@ -657,6 +669,12 @@ func (a *API) handleGetSubCards(w http.ResponseWriter, r *http.Request) {
 	auditRec.AddMeta("per_page", perPage)
 
 	cards, err := a.app.GetSubCards(cardID, page, perPage)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	cards, err = a.app.FilterCardsForUser(userID, parentCard.BoardID, cards)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return
