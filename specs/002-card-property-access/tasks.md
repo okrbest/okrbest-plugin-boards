@@ -104,11 +104,12 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 - [ ] T028 [P] [US1] 조직 마스터 조회 메서드 2개를 `webapp/src/octoClient.ts`에 추가 (contracts/org-master-api.md)
 - [ ] T029 [P] [US1] 조직 마스터 Redux 슬라이스를 `webapp/src/store/orgMaster.ts`에 작성 — 팀별 캐시, 셀렉터
-- [ ] T030 [US1] 규칙 행 컴포넌트를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 셀렉터 6개, 속성값은 속성명에 종속, 부서는 본부에 종속 (FR-006~FR-010)
-- [ ] T031 [US1] 섹션 컨테이너를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 구현 — 사용 스위치(기본 꺼짐), 행 추가·삭제, `ManageBoardRoles` 게이트 (FR-001~FR-004)
-- [ ] T032 [P] [US1] 섹션 스타일을 `webapp/src/components/shareBoard/propertyAccess.scss`에 작성 (SCSS + BEM, 테마 값은 CSS 변수)
+- [ ] T030 [US1] 규칙 행 컴포넌트를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 셀렉터 6개를 `userPermissionsRow.tsx`의 `MenuWrapper` + `Menu.Text` + `CheckIcon` 패턴으로 만들고 `.user-item` / `.user-item__content` / `.user-item__button` 클래스를 재사용한다. `react-select`를 쓰지 않는다. 속성값은 속성명에, 부서는 본부에 종속 (FR-006~FR-010, plan.md UI 일관성 제약)
+- [ ] T031 [US1] 섹션 컨테이너를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 구현 — `.tabs-content` 규격과 `.text-heading2` / `.text-light`를 그대로 쓰고 사용 스위치는 기존 `Switch` 위젯을 재사용한다. 행 추가·삭제, `ManageBoardRoles` 게이트 (FR-001~FR-004)
+- [ ] T032 [US1] 섹션 스타일을 `webapp/src/components/shareBoard/shareBoard.scss`의 `.ShareBoardDialog` 블록 안에 추가 — **신규 SCSS 파일을 만들지 않는다.** 색상은 `--center-channel-color-rgb` 등 CSS 변수만 쓰고 값을 하드코딩하지 않는다
 - [ ] T033 [US1] 섹션을 멤버 목록 아래에 `webapp/src/components/shareBoard/shareBoard.tsx`에 삽입 (FR-001)
 - [ ] T034 [P] [US1] 신규 UI 문자열을 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 (constitution 원칙 V)
+- [ ] T035 [US1] 신규 섹션이 멤버 목록과 시각적으로 일관되는지 검증한다 — `webapp/src/components/shareBoard/` 에서 하드코딩된 색상·폰트·간격 0건, 신규 SCSS 파일 0개, 같은 역할에 기존 위젯 대신 새로 만든 컴포넌트 0건 (plan.md UI 일관성 제약)
 
 **Checkpoint**: 규칙을 등록·활성화하면 조건에 맞지 않는 사용자의 카드 목록에서 카드가 사라진다. **화면상 격리는 완성되지만 보안은 아직 성립하지 않는다**
 
@@ -122,17 +123,18 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 2 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T035 [P] [US2] 쓰기 집행 계약 테스트 E-03~E-06을 `server/integrationtests/property_access_test.go`에 추가
-- [ ] T036 [P] [US2] 검색 집행 계약 테스트 E-07을 `server/integrationtests/property_access_test.go`에 추가
-- [ ] T037 [P] [US2] 웹소켓 수신자별 필터 테스트 E-08·E-09를 `server/ws/plugin_adapter_test.go`에 추가
+- [ ] T036 [P] [US2] 쓰기 집행 계약 테스트 E-03~E-06을 `server/integrationtests/property_access_test.go`에 추가
+- [ ] T037 [P] [US2] 검색 집행 계약 테스트 E-07을 `server/integrationtests/property_access_test.go`에 추가
+- [ ] T038 [P] [US2] 웹소켓 수신자별 필터 테스트 E-08·E-09를 `server/ws/plugin_adapter_test.go`에 추가
+- [ ] T039 [P] [US2] 내보내기 결과물에 권한 없는 카드가 없음을 `webapp/src/csvExporter.test.ts`에 검증 — 조회 필터링의 자동 반영을 확인한다 (FR-030)
 
 ### 구현
 
-- [ ] T038 [US2] 블록 수정·삭제 가드를 `server/app/blocks.go`에 구현 — 대상 카드 판정이 `editor` 미만이면 `model.NewErrPermission()` (FR-027, contracts E-03~E-05)
-- [ ] T039 [US2] 블록 생성은 보드 권한으로 통과시키도록 `server/app/blocks.go`에 명시 — 규칙을 적용하지 않는다 (FR-032, contracts E-06)
-- [ ] T040 [US2] 검색 결과 필터를 `server/api/search.go`와 대응 app 경로에 구현 (FR-028)
-- [ ] T041 [US2] 블록 브로드캐스트 수신자별 필터를 `server/ws/plugin_adapter.go`의 `sendBoardMessage` 경로에 구현 — 수신자 목록을 만든 뒤 각자 평가기로 판정해 제외 (FR-029)
-- [ ] T042 [US2] 평가기 사용자별 캐시와 보드 규칙 변경 시 무효화를 `server/app/property_access.go`에 구현 (research.md R3 웹소켓 특이사항, SC-006)
+- [ ] T040 [US2] 블록 수정·삭제 가드를 `server/app/blocks.go`에 구현 — 대상 카드 판정이 `editor` 미만이면 `model.NewErrPermission()` (FR-027, contracts E-03~E-05)
+- [ ] T041 [US2] 블록 생성은 보드 권한으로 통과시키도록 `server/app/blocks.go`에 명시 — 규칙을 적용하지 않는다 (FR-032, contracts E-06)
+- [ ] T042 [US2] 검색 결과 필터를 `server/api/search.go`와 대응 app 경로에 구현 (FR-028)
+- [ ] T043 [US2] 블록 브로드캐스트 수신자별 필터를 `server/ws/plugin_adapter.go`의 `sendBoardMessage` 경로에 구현 — 수신자 목록을 만든 뒤 각자 평가기로 판정해 제외 (FR-029)
+- [ ] T044 [US2] 평가기 사용자별 캐시를 `server/app/property_access.go`에 구현 — 웹소켓 브로드캐스트 1건 처리 범위로 수명을 한정하고 보드의 `propertyAccess`가 바뀌면 그 보드 항목을 버린다. 사용자 조직 정보 변경이 다음 요청에 반영되도록 요청 경계를 넘겨 보관하지 않는다 (research.md R3, SC-006)
 
 **Checkpoint**: 클라이언트를 우회한 요청·검색·실시간 경로로 내용이 새지 않는다. **여기까지 와야 보안이 성립한다**
 
@@ -146,14 +148,14 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 3 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T043 [P] [US3] 직책 가산 판정 테스트를 `server/app/property_access_test.go`에 추가 — research.md R6 판정표의 전략본부 본부장(편집자)·전략본부 팀장(열람자)·생산본부 본부장(관문 차단) 행
-- [ ] T044 [P] [US3] 직책 조건만 걸린 규칙 테스트를 `server/app/property_access_test.go`에 추가 (spec US3-4)
+- [ ] T045 [P] [US3] 직책 가산 판정 테스트를 `server/app/property_access_test.go`에 추가 — research.md R6 판정표의 전략본부 본부장(편집자)·전략본부 팀장(열람자)·생산본부 본부장(관문 차단) 행
+- [ ] T046 [P] [US3] 직책 조건만 걸린 규칙 테스트를 `server/app/property_access_test.go`에 추가 (spec US3-4)
 
 ### 구현
 
-- [ ] T045 [US3] 직책 축 매칭을 `server/app/property_access.go`에 구현 — 사용자 `position_codes`에 `dutyCode` 포함 여부. 해당 code의 `kind`가 `duty`가 아니면 무시 (FR-024, research.md R5)
-- [ ] T046 [US3] 직책이 관문으로 작동하지 않음을 `server/app/property_access.go`에 반영 — 직책 없는 사용자도 조직 조건만으로 권한을 얻는다 (FR-018)
-- [ ] T047 [US3] 직책 셀렉터를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 연결 — `kind='duty'` 목록만, `rank` 순 정렬
+- [ ] T047 [US3] 직책 축 매칭을 `server/app/property_access.go`에 구현 — 사용자 `position_codes`에 `dutyCode` 포함 여부. 해당 code의 `kind`가 `duty`가 아니면 무시 (FR-024, research.md R5)
+- [ ] T048 [US3] 직책이 관문으로 작동하지 않음을 `server/app/property_access.go`에 반영 — 직책 없는 사용자도 조직 조건만으로 권한을 얻는다 (FR-018)
+- [ ] T049 [US3] 직책 셀렉터를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 연결 — `kind='duty'` 목록만, `rank` 순 정렬
 
 **Checkpoint**: 같은 조직 안에서 직책으로 권한이 갈린다
 
@@ -167,13 +169,13 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 4 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T048 [P] [US4] 전체보기 하한 테스트를 `server/app/property_access_test.go`에 추가 — 관문에 막힌 카드가 열람 가능(US4-1), 규칙이 편집자를 주면 편집 유지(US4-2)
-- [ ] T049 [P] [US4] 보드 진입 권한은 바뀌지 않음을 `server/integrationtests/property_access_test.go`에 검증 (US4-3)
+- [ ] T050 [P] [US4] 전체보기 하한 테스트를 `server/app/property_access_test.go`에 추가 — 관문에 막힌 카드가 열람 가능(US4-1), 규칙이 편집자를 주면 편집 유지(US4-2)
+- [ ] T051 [P] [US4] 보드 진입 권한은 바뀌지 않음을 `server/integrationtests/property_access_test.go`에 검증 (US4-3)
 
 ### 구현
 
-- [ ] T050 [US4] 전체보기 하한 계산을 `server/app/property_access.go`의 평가기 생성에 추가 — 사용자 직책 중 `fullvisibility`가 하나라도 켜져 있으면 하한 `viewer` (FR-022)
-- [ ] T051 [US4] 최종 반환을 `max(규칙권한, 하한)`으로 `server/app/property_access.go`에 반영 — 하한이 권한을 낮추지 않는다 (FR-022)
+- [ ] T052 [US4] 전체보기 하한 계산을 `server/app/property_access.go`의 평가기 생성에 추가 — 사용자 직책 중 `fullvisibility`가 하나라도 켜져 있으면 하한 `viewer` (FR-022)
+- [ ] T053 [US4] 최종 반환을 `max(규칙권한, 하한)`으로 `server/app/property_access.go`에 반영 — 하한이 권한을 낮추지 않는다 (FR-022)
 
 **Checkpoint**: 전체보기 직책이 조직 경계를 넘어 열람할 수 있고, 규칙이 준 더 높은 권한은 유지된다
 
@@ -187,12 +189,12 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 5 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T052 [P] [US5] 마지막 변경자 표시 테스트를 `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 추가 — 미저장 보드는 표시 없음(US5-1), 저장 후 변경자·시각 표시(US5-2)
+- [ ] T054 [P] [US5] 마지막 변경자 표시 테스트를 `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 추가 — 미저장 보드는 표시 없음(US5-1), 저장 후 변경자·시각 표시(US5-2)
 
 ### 구현
 
-- [ ] T053 [US5] 마지막 변경자·시각 표시를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`의 섹션 헤더에 구현 — 사용자 표시명 해석 포함 (FR-034)
-- [ ] T054 [P] [US5] 표시 문자열을 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 (constitution 원칙 V)
+- [ ] T055 [US5] 마지막 변경자·시각 표시를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`의 섹션 헤더에 구현 — 사용자 표시명 해석 포함 (FR-034)
+- [ ] T056 [P] [US5] 표시 문자열을 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 (constitution 원칙 V)
 
 **Checkpoint**: 모든 사용자 스토리가 독립적으로 동작한다
 
@@ -202,12 +204,13 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 **Purpose**: 여러 스토리에 걸친 마무리
 
-- [ ] T055 [P] 깨진 참조 표시를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 규칙이 가리키는 속성·속성값·조직·직책이 사라졌거나 비활성이면 그 행에 경고 표시 (FR-036)
-- [ ] T056 [P] 깨진 참조가 매칭 실패로 처리됨을 `server/app/property_access_test.go`에 검증 (FR-036)
-- [ ] T057 규칙 100개 보드에서 카드 목록 표시 시간을 측정해 규칙 없는 같은 보드 대비 20% 이내임을 확인 (SC-006)
-- [ ] T058 `make server-lint`·`make server-test`·`make webapp-ci`를 실행하고 출력을 완료 근거로 제시 (constitution 원칙 I)
-- [ ] T059 [quickstart.md](quickstart.md)의 시나리오 1~5를 배포된 플러그인에서 수동 검증
-- [ ] T060 브랜치를 `feat/permission`에 선형 병합할 수 있도록 정리 (rebase 기반, constitution 원칙 VIII)
+- [ ] T057 [P] 깨진 참조 표시를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 규칙이 가리키는 속성·속성값·조직·직책이 사라졌거나 비활성이면 그 행에 경고 표시 (FR-036)
+- [ ] T058 [P] 깨진 참조가 매칭 실패로 처리됨을 `server/app/property_access_test.go`에 검증 (FR-036)
+- [ ] T059 보드를 복제·템플릿화했을 때 규칙이 따라가는지 `server/integrationtests/property_access_test.go`에 검증 (FR-012)
+- [ ] T060 규칙 100개 보드에서 카드 목록 표시 시간을 측정해 규칙 없는 같은 보드 대비 20% 이내임을 확인 (SC-006)
+- [ ] T061 `make server-lint`·`make server-test`·`make webapp-ci`를 실행하고 출력을 완료 근거로 제시 (constitution 원칙 I)
+- [ ] T062 [quickstart.md](quickstart.md)의 시나리오 1~5를 배포된 플러그인에서 수동 검증
+- [ ] T063 브랜치를 `feat/permission`에 선형 병합할 수 있도록 정리 (rebase 기반, constitution 원칙 VIII)
 
 ---
 
@@ -219,7 +222,7 @@ description: "Task list for 속성 기준 카드 접근 권한"
 - **Foundational (Phase 2)**: Setup 완료에 의존 — **모든 사용자 스토리를 차단한다**
 - **US1 (Phase 3)**: Foundational 완료에 의존
 - **US2 (Phase 4)**: **US1에 의존** — 평가기의 조직 관문·매칭이 있어야 집행할 대상이 정해진다
-- **US3 (Phase 5)**: Foundational에 의존. US1과 병렬 가능하나 UI 셀렉터(T047)는 T030 완료 후
+- **US3 (Phase 5)**: Foundational에 의존. US1과 병렬 가능하나 UI 셀렉터(T049)는 T030 완료 후
 - **US4 (Phase 6)**: Foundational에 의존. US1·US2·US3와 병렬 가능
 - **US5 (Phase 7)**: US1의 저장 경로(T020)에 의존
 - **Polish (Phase 8)**: 원하는 스토리가 모두 끝난 뒤
@@ -241,10 +244,10 @@ description: "Task list for 속성 기준 카드 접근 권한"
 - **Phase 1**: T001·T002·T003 전부 병렬
 - **Phase 2**: T009·T010 병렬. T004~T008은 store → app → api 순차
 - **Phase 3 테스트**: T014~T018 전부 병렬 (서로 다른 파일)
-- **Phase 3 구현**: T028·T029·T032·T034가 서버 작업(T019~T027)과 병렬
-- **Phase 4 테스트**: T035·T036·T037 병렬
+- **Phase 3 구현**: T028·T029·T034가 서버 작업(T019~T027)과 병렬. T032는 `shareBoard.scss`를 T033과 함께 건드리므로 병렬 아님
+- **Phase 4 테스트**: T036·T037·T038·T039 병렬
 - **Phase 5·6**: US3와 US4가 서로 병렬. 각 스토리의 테스트끼리도 병렬
-- **Phase 8**: T055·T056 병렬
+- **Phase 8**: T057·T058 병렬. T059~T063은 순차
 
 ---
 
@@ -260,7 +263,7 @@ T018  webapp/src/components/shareBoard/propertyAccessRow.test.tsx
 
 # 실패 확인 후, 서버와 웹앱을 두 갈래로 나눠 진행
 서버:  T019 → T020 → T021 → T022 → T023 → T024 → T025 → T026 → T027
-웹앱:  T028 ∥ T029 ∥ T032 ∥ T034  →  T030 → T031 → T033
+웹앱:  T028 ∥ T029 ∥ T034  →  T030 → T031 → T032 → T033 → T035
 ```
 
 ---

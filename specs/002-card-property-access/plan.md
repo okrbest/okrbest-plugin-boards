@@ -63,7 +63,7 @@
 | III | 신규 Go 오류는 `403`(권한 없음)과 `400`(검증 실패)뿐이며 도메인 오류 생성자로 만든다. contracts에 코드가 명시돼 있다 |
 | IV | contracts에 계약 테스트 항목 26건(C-01~07, S-01~07, E-01~12)을 정의했다. plan의 파일 구조에 테스트 파일이 포함돼 있다 |
 | V | 신규 UI 문자열이 생기므로 `en.json`·`ko.json` 동시 갱신이 필요하다. 파일 구조에 명시했다 |
-| VI | 신규 파일이 모두 기존 디렉터리 안이다. 새 최상위 디렉터리를 만들지 않는다 |
+| VI | 신규 파일이 모두 기존 디렉터리 안이다. 새 최상위 디렉터리를 만들지 않는다. 신규 SCSS 파일도 만들지 않는다 |
 | VII | 설계 확정 후에도 마이그레이션이 없다 |
 | VIII | 브랜치 `002-card-property-access` 단일. 잔재 키 정리는 이 기능의 데이터 모델에 직접 속하므로 무관한 리팩터가 아니다 |
 | IX | 산출물이 모두 `specs/002-card-property-access/`에 있다 |
@@ -107,8 +107,10 @@ server/
 │   └── search.go                     # 수정 — 검색 결과 필터
 ├── ws/
 │   └── plugin_adapter.go             # 수정 — 블록 브로드캐스트 수신자별 필터
-└── services/store/sqlstore/
-    └── org_master.go                 # 신규 — OrgUnits·PositionDefinitions 조회
+└── services/store/
+    ├── store.go                      # 수정 — 조직 마스터 조회 인터페이스 추가
+    ├── mockstore/mockstore.go        # 재생성 — make generate
+    └── sqlstore/org_master.go        # 신규 — OrgUnits·PositionDefinitions 조회
 
 webapp/src/
 ├── blocks/board.ts                   # 수정 — PropertyAccessRule 타입 추가
@@ -119,13 +121,41 @@ webapp/src/
 └── components/shareBoard/
     ├── propertyAccessSection.tsx     # 신규 — 섹션 컨테이너 + 사용 스위치
     ├── propertyAccessRow.tsx         # 신규 — 규칙 행(연쇄 셀렉터 6개)
-    ├── propertyAccess.scss           # 신규
     ├── propertyAccessSection.test.tsx # 신규
     ├── propertyAccessRow.test.tsx    # 신규
-    └── shareBoard.tsx                # 수정 — 섹션 삽입
+    ├── shareBoard.tsx                # 수정 — 섹션 삽입
+    └── shareBoard.scss               # 수정 — 섹션 스타일 추가 (신규 SCSS 파일 없음)
 
 webapp/i18n/{en,ko}.json              # 수정 — 신규 문자열
 ```
+
+## UI 일관성 제약
+
+**이 기능은 새 디자인을 도입하지 않는다.** 신규 UI 요소는 공유 팝업에 이미 있는 패턴을 차용한다. 새 컴포넌트·클래스·색상 값을 만들기 전에 `webapp/src/widgets/`와 `shareBoard.scss`에서 같은 역할의 기존 자산을 먼저 찾는다. 새 시각 요소가 불가피하면 그 이유를 과제 설명에 남긴다.
+
+### 재사용 대상
+
+| 자산 | 위치 | 신규 섹션에서의 용도 |
+|---|---|---|
+| `MenuWrapper` + `Menu.Text` + `CheckIcon` | `webapp/src/components/shareBoard/userPermissionsRow.tsx` (역할 드롭다운) | 셀렉터 6개 전부 |
+| `.tabs-content` (padding 24px 32px, border-radius 8px) | `webapp/src/components/shareBoard/shareBoard.scss` | 섹션 컨테이너 |
+| `.user-items` · `.user-item` · `.user-item__content` · `.user-item__button` | 같은 파일 | 규칙 행 레이아웃 |
+| `.text-heading2` · `.text-light` | 전역 | 섹션 제목·설명 |
+| `getSelectBaseStyle()` | `webapp/src/theme.ts` | react-select를 쓰게 될 경우에만 |
+| CSS 변수 `--center-channel-color-rgb`, `--button-bg-rgb` | 전역 | 색상. 하드코딩 금지 |
+| `Metropolis, sans-serif` | shareBoard.scss | 제목 폰트 |
+
+### 축별 컨트롤 확정
+
+여섯 셀렉터 전부 **`MenuWrapper` + `Menu.Text` 계열**로 통일한다. 멤버 행의 역할 드롭다운과 같은 컨트롤이므로 한 화면 안에서 조작 방식이 갈리지 않는다.
+
+`react-select`는 쓰지 않는다. 그 컴포넌트는 원격 검색이 필요한 멤버 검색 전용이며, 이 섹션의 선택지는 전부 이미 로드된 유한 목록(속성 옵션 · 본부 4 · 부서 10 · 직책 4 · 권한 3)이라 원격 검색이 필요 없다.
+
+### 스타일 파일
+
+**신규 SCSS 파일을 만들지 않는다.** 섹션 스타일은 `shareBoard.scss`의 `.ShareBoardDialog` 블록 안에 추가한다. 같은 다이얼로그의 스타일이 두 파일로 갈리면 규격이 어긋나기 시작한다.
+
+---
 
 **Structure Decision**: 기존 레이어 구조(`api → app → store`)를 그대로 따르고 신규 파일을 각 레이어에 하나씩 추가한다. 평가기를 `server/app/property_access.go` 한 파일에 격리해 순수 함수에 가깝게 유지하고, 집행 지점은 그 평가기를 호출하기만 한다. UI는 `shareBoard.tsx`가 이미 큰 파일이므로 섹션을 별도 컴포넌트 파일로 분리해 `shareBoard.tsx`에는 삽입 지점만 남긴다.
 
