@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef} from 'react'
+import React from 'react'
 import {useIntl} from 'react-intl'
 
 import MenuWrapper from '../../widgets/menuWrapper'
@@ -36,13 +36,22 @@ const Selector = (props: {
     broken: boolean
     onSelect: (id: string) => void
 }): React.JSX.Element => {
-    const menuWrapperRef = useRef<HTMLDivElement>(null)
     const selected = props.choices.find((choice) => choice.id === props.selectedId)
     const className = props.broken ? 'user-item__button PropertyAccessRow__broken' : 'user-item__button'
 
     return (
-        <div ref={menuWrapperRef}>
-            <MenuWrapper>
+        <div className='PropertyAccessRow__axis'>
+            {/*
+              * The dialog scrolls, so a menu positioned inside it is clipped.
+              * The portal is the house pattern for that, and it also puts each
+              * menu under its own control — the member list pins every menu to
+              * one spot, which reads fine for a single dropdown per row and not
+              * at all for six.
+              */}
+            <MenuWrapper
+                usePortal={true}
+                menuPosition='bottom'
+            >
                 <button className={className}>
                     <span className='PropertyAccessRow__label'>{selected ? selected.name : props.label}</span>
                     <CompassIcon
@@ -50,10 +59,7 @@ const Selector = (props: {
                         className='CompassIcon'
                     />
                 </button>
-                <Menu
-                    position='left'
-                    parentRef={menuWrapperRef}
-                >
+                <Menu position='bottom'>
                     {props.choices.map((choice) => (
                         <Menu.Text
                             key={choice.id || 'any'}

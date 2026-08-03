@@ -3,7 +3,9 @@
 
 .ShareBoardDialog {
     .dialog {
-        width: 600px;
+        // Six rule columns do not fit in the 600px this dialog used to be; the
+        // property and organization names were all elided.
+        width: 900px;
         max-width: 90%;
         height: auto;
         max-height: calc(100vh - 64px);
