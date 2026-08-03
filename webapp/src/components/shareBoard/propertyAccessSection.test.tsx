@@ -46,6 +46,7 @@ const buildState = (board: Board, schemeAdmin: boolean) => ({
     users: {
         me: {id: 'user-1', username: 'user1', props: {}, roles: 'system_user'},
         boardUsers: {'user-1': {id: 'user-1', username: 'user1'}},
+        blockSubscriptions: [],
     },
     boards: {
         current: board.id,
@@ -58,6 +59,9 @@ const buildState = (board: Board, schemeAdmin: boolean) => ({
         orgUnitsByTeamId: {},
         dutiesByTeamId: {},
         loadedTeamIds: [],
+    },
+    clientConfig: {
+        value: {teammateNameDisplay: 'username'},
     },
 })
 
@@ -127,6 +131,35 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         const {container} = await renderSection(board)
 
         expect(container.querySelectorAll('.PropertyAccessRow').length).toBe(2)
+    })
+
+    // US5-1 and US5-2.
+    test('a board that never saved rules shows no change record', async () => {
+        const {container} = await renderSection(buildBoard())
+
+        expect(container.querySelector('.PropertyAccessSection__updated')).toBeNull()
+    })
+
+    test('a saved rule set names who changed it and when', async () => {
+        const board = buildBoard({
+            propertyAccess: {enabled: true, updatedBy: 'user-1', updatedAt: 1767225600000, rules: []},
+        })
+        const {container} = await renderSection(board)
+
+        const updated = container.querySelector('.PropertyAccessSection__updated')
+        expect(updated).not.toBeNull()
+        expect(updated!.textContent).toContain('user1')
+    })
+
+    test('an unknown last editor does not blank the record', async () => {
+        const board = buildBoard({
+            propertyAccess: {enabled: true, updatedBy: 'someone-who-left', updatedAt: 1767225600000, rules: []},
+        })
+        const {container} = await renderSection(board)
+
+        const updated = container.querySelector('.PropertyAccessSection__updated')
+        expect(updated).not.toBeNull()
+        expect(updated!.textContent).not.toBe('')
     })
 
     test('the organisation master is fetched for the board team', async () => {

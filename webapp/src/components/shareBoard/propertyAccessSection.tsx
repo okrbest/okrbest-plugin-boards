@@ -13,6 +13,8 @@ import {Utils} from '../../utils'
 import mutator from '../../mutator'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {fetchOrgMaster, isOrgMasterLoaded} from '../../store/orgMaster'
+import {getBoardUsers, getMe} from '../../store/users'
+import {getClientConfig} from '../../store/clientConfig'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
@@ -59,6 +61,9 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const settings = readSettings(board)
     const [rules, setRules] = React.useState<PropertyAccessRule[]>(settings.rules)
     const masterLoaded = useAppSelector(isOrgMasterLoaded(board.teamId))
+    const boardUsers = useAppSelector(getBoardUsers)
+    const me = useAppSelector(getMe)
+    const clientConfig = useAppSelector(getClientConfig)
 
     useEffect(() => {
         setRules(readSettings(board).rules)
@@ -115,6 +120,13 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
         }])
     }
 
+    // The last editor may have left the board, or the team. Falling back to the
+    // stored ID keeps the record readable instead of blanking it (FR-034).
+    const lastEditor = boardUsers[settings.updatedBy]
+    const lastEditorName = lastEditor ?
+        Utils.getUserDisplayName(lastEditor, me?.props?.teammateNameDisplay || clientConfig.teammateNameDisplay) :
+        settings.updatedBy
+
     return (
         <BoardPermissionGate permissions={[Permission.ManageBoardRoles]}>
             <div className='tabs-content PropertyAccessSection'>
@@ -136,6 +148,13 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                             />
                         </div>
                     </div>
+                    {settings.updatedAt > 0 &&
+                        <div className='text-light PropertyAccessSection__updated'>
+                            {intl.formatMessage(
+                                {id: 'PropertyAccess.lastUpdated', defaultMessage: 'Last changed by {user} on {date}'},
+                                {user: lastEditorName, date: intl.formatDate(settings.updatedAt, {dateStyle: 'medium', timeStyle: 'short'})},
+                            )}
+                        </div>}
                     <div className='user-items PropertyAccessSection__rules'>
                         {rules.map((rule) => (
                             <PropertyAccessRow

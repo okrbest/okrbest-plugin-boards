@@ -373,16 +373,18 @@ func (e *PropertyAccessEvaluator) For(card *model.Block) model.EffectiveBoardPer
 		rulePermission = model.EffectiveBoardPermissionNone
 	)
 
-	for condition := range cardConditions(card) {
+	// Walked in place rather than collected first: this runs once per card per
+	// request, and once per card per recipient in the websocket fan-out.
+	eachCardCondition(card, func(condition cardCondition) {
 		gate, ok := e.gates[condition]
 		if !ok {
-			continue
+			return
 		}
 		matched = true
 		gated = gated || gate.constrained
 		gatePassed = gatePassed || gate.passed
 		rulePermission = higherPermission(rulePermission, e.grants[condition])
-	}
+	})
 
 	if !matched {
 		return higherPermission(e.boardPermission, e.floor)
@@ -397,50 +399,49 @@ func (e *PropertyAccessEvaluator) For(card *model.Block) model.EffectiveBoardPer
 	return higherPermission(rulePermission, e.floor)
 }
 
-// cardConditions returns every (property, value) pair the card carries. A
+// eachCardCondition visits every (property, value) pair the card carries. A
 // multiSelect property contributes one pair per selected value (FR-023).
-func cardConditions(card *model.Block) map[cardCondition]bool {
-	conditions := map[cardCondition]bool{}
+//
+// Repeats do not need filtering out: the caller combines with max and with or,
+// so seeing the same pair twice changes nothing.
+func eachCardCondition(card *model.Block, visit func(cardCondition)) {
 	if card == nil {
-		return conditions
+		return
 	}
 
 	properties, ok := card.Fields["properties"].(map[string]interface{})
 	if !ok {
-		return conditions
+		return
 	}
 
 	for propertyID, raw := range properties {
-		for _, valueID := range propertyValueIDs(raw) {
-			conditions[cardCondition{propertyID: propertyID, valueID: valueID}] = true
-		}
+		eachPropertyValueID(raw, func(valueID string) {
+			visit(cardCondition{propertyID: propertyID, valueID: valueID})
+		})
 	}
-
-	return conditions
 }
 
-// propertyValueIDs flattens one stored property value. Select properties store
+// eachPropertyValueID visits one stored property value. Select properties store
 // a string, multiSelect properties a list; both arrive as interface{} because
 // the block fields round trip through JSON.
-func propertyValueIDs(raw interface{}) []string {
+func eachPropertyValueID(raw interface{}, visit func(string)) {
 	switch value := raw.(type) {
 	case string:
-		if value == "" {
-			return nil
+		if value != "" {
+			visit(value)
 		}
-		return []string{value}
 	case []string:
-		return value
-	case []interface{}:
-		values := make([]string, 0, len(value))
 		for _, item := range value {
-			if str, ok := item.(string); ok && str != "" {
-				values = append(values, str)
+			if item != "" {
+				visit(item)
 			}
 		}
-		return values
-	default:
-		return nil
+	case []interface{}:
+		for _, item := range value {
+			if str, ok := item.(string); ok && str != "" {
+				visit(str)
+			}
+		}
 	}
 }
 

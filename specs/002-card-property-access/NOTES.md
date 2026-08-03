@@ -2,7 +2,7 @@
 
 이 기능의 **작업 상태와 미결 사항**을 기록한다. 명세·계획은 다른 파일이 갖고 있고, 여기엔 "지금 어디까지 왔고 무엇이 열려 있는가"만 둔다. 세션이 바뀌어도 이 파일과 `tasks.md`만 보면 이어갈 수 있어야 한다.
 
-**최종 갱신**: 2026-08-03 (Phase 4 완료)
+**최종 갱신**: 2026-08-03 (Phase 8 코드 완료 — T062·T063만 남음)
 
 ---
 
@@ -11,9 +11,9 @@
 | 항목 | 값 |
 |---|---|
 | 브랜치 | `002-card-property-access` (`feat/permission` 기반, `c9d9cd1d`) |
-| 완료 | **T001 ~ T044** (Phase 1~4 — US1 MVP + US2 우회 차단) |
-| 다음 | **T045** (Phase 5 US3 — 직책 가산) |
-| 워킹트리 | Phase 4 미커밋 |
+| 완료 | **T001 ~ T061** (Phase 1~8 — 코드·테스트 전량) |
+| 다음 | **T062** 수동 검증(배포 필요) · **T063** 브랜치 정리 |
+| 워킹트리 | Phase 7~8 미커밋 |
 
 `tasks.md`의 `[X]` 표시가 정본이다. 이 표는 요약일 뿐이다.
 
@@ -69,13 +69,29 @@ webapp/src/csvExporter.test.ts               FR-030 내보내기
 
 **여기까지가 보안이 성립하는 지점이다.** 조회·쓰기·검색·실시간·내보내기 전 경로가 같은 판정을 지난다.
 
-직책 가산(T047)·전체보기 하한(T052)은 아직 없다. 평가기의 `floor`는 항상 `none`이고 `dutyId` 매칭만 들어가 있다.
+Phase 5~8에서 더한 것:
+
+```
+server/app/property_access.go                전체보기 하한(fullVisibility) + 카드당 맵 할당 제거
+server/model/property_access_test.go         저장 형태 왕복·복제 생존·검증 경계
+server/app/property_access_test.go           US3·US4 판정표 전량 + 깨진 참조 + SC-006 벤치마크
+server/api/blocks_test.go                    US4-3 (전체보기가 보드 진입을 주지 않음)
+webapp/.../propertyAccessSection.tsx         마지막 변경자·시각 표시
+webapp/i18n/{en,ko}.json                     PropertyAccess.lastUpdated
+```
+
+판정표(research.md R6) 아홉 행이 전부 테스트로 고정됐다.
 
 ### Phase 4에서 확인된 사실
 
 - **서버에 카드 검색 경로가 없다.** `server/api/search.go`는 보드만 검색한다. 카드 검색은 `webapp/src/store/cards.ts`의 `searchFilterCards`가 이미 로드된 카드에 대해 수행하므로, 조회 필터링이 그대로 FR-028을 만족한다. T042는 서버 구현 대신 확인 + 카드 조회 구멍 차단으로 대체했다
 - **삭제 알림은 블록 ID만 실어 보내던 것을 블록 전체로 바꿨다.** `BroadcastBlockDelete`가 만들던 메시지에는 속성값이 없어 필터가 판정할 수 없었다. 와이어 포맷은 그대로다 — 삭제는 원래부터 `deleteAt`이 붙은 블록 변경으로 나간다
-- **남은 구멍 1개**: `GET /cards/{cardID}/subcards/count`는 개수만 돌려주며 필터를 지나지 않는다. 내용이 아니라 숫자만 새므로 막지 않았다. Phase 8 정합성 검토(T059) 때 판단할 것
+- **남은 구멍 1개**: `GET /cards/{cardID}/subcards/count`는 개수만 돌려주며 필터를 지나지 않는다. 내용이 아니라 숫자만 새므로 막지 않았다. 막으려면 COUNT 질의를 전건 조회로 바꿔야 한다 — 실사용에서 문제가 되면 그때 바꿀 것
+
+### Phase 8에서 확인된 사실
+
+- **SC-006 여유가 크다.** 규칙 100개 보드에서 카드당 판정 52.6 ns/op(규칙 없음 0.75 ns/op). 카드 1,000개면 53µs로, 목록 표시 시간의 0.1% 미만이다. 측정하다 카드당 맵 할당을 발견해 제거했다(195 → 53 ns/op)
+- **`server/services/store/sqlstore` 테스트 4건도 기존 실패다.** 기능 착수 커밋(`e3285af8`)에서도 같은 4건이 죽는다 — `TestCheckForMismatchedCollation`·`TestSQLStore`·`TestConcatenationSelector`·`TestElementInColumn`
 
 ### 다음 세션이 알아야 할 것
 
@@ -166,15 +182,13 @@ kkv 팀 멤버(봇 제외) 15 / UserOrgProfiles 보유 15 / 누락 0
 ## 남은 작업 규모
 
 ```
-Phase 5  US3 (P3)       T045 ~ T049    5건   직책 가산
-Phase 6  US4 (P4)       T050 ~ T053    4건   전체보기 하한
-Phase 7  US5 (P5)       T054 ~ T056    3건   마지막 변경자
-Phase 8  Polish         T057 ~ T063    7건   정합성·성능·품질 게이트
+T062  quickstart.md 시나리오 1~5 수동 검증   ← 배포 후에만 가능
+T063  feat/permission 선형 병합 정리        ← 사용자 판단
                                      ─────
-                                      19건
+                                       2건
 ```
 
-US1+US2가 끝났으므로 **1차 배포 단위가 완성됐다.** 남은 것은 직책·전체보기 세분화와 운영 편의다. 상세는 `tasks.md`의 "Implementation Strategy".
+**코드는 전부 끝났다.** 남은 두 건은 사람이 해야 하는 일이다 — 배포 후 시나리오 확인과 브랜치 정리.
 
 ---
 

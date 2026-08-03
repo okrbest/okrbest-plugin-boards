@@ -4,6 +4,7 @@
 package app
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -507,4 +508,107 @@ func TestEvaluatorFullVisibilityFloor(t *testing.T) {
 		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(strategyCard),
 			"FR-036 — a reference that no longer resolves simply stops matching")
 	})
+}
+
+// TestEvaluatorBrokenReferences covers FR-036 from the evaluation side: a rule that
+// points at something the master no longer has simply stops matching. The share
+// dialog marks such a row; the evaluator must not guess at what was meant.
+func TestEvaluatorBrokenReferences(t *testing.T) {
+	build := func(rule model.PropertyAccessRule) *PropertyAccessEvaluator {
+		return NewPropertyAccessEvaluator(EvaluatorInput{
+			Settings:        &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{rule}},
+			OrgUnits:        testOrgUnits(),
+			Duties:          testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+	}
+
+	strategyCard := card(propCLevel, valueStrategy)
+
+	t.Run("a property that no longer exists matches no card", func(t *testing.T) {
+		evaluator := build(model.PropertyAccessRule{
+			ID: "r1", PropertyID: "prop-deleted", PropertyValueID: valueStrategy,
+			DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+		})
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard),
+			"the card falls outside every rule and keeps the board permission")
+	})
+
+	t.Run("a value that no longer exists matches no card", func(t *testing.T) {
+		evaluator := build(model.PropertyAccessRule{
+			ID: "r1", PropertyID: propCLevel, PropertyValueID: "opt-deleted",
+			DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+		})
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard))
+	})
+
+	t.Run("a division that no longer exists closes the gate on everyone", func(t *testing.T) {
+		evaluator := build(model.PropertyAccessRule{
+			ID: "r1", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+			DivisionID: "div-deleted", Permission: model.PropertyAccessViewer,
+		})
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(strategyCard),
+			"the row still constrains the organization axis, and nobody satisfies it")
+	})
+
+	t.Run("a duty that no longer exists grants nothing", func(t *testing.T) {
+		evaluator := build(model.PropertyAccessRule{
+			ID: "r1", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+			DutyID: "duty-deleted", Permission: model.PropertyAccessEditor,
+		})
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(strategyCard),
+			"a duty-only row that matches nobody leaves the card with no rule permission")
+	})
+}
+
+// BenchmarkEvaluatorHundredRules backs SC-006: a board carrying a hundred rules
+// must not cost meaningfully more per card than a board carrying none. The work
+// that scales with the rule count happens once, when the evaluator is built.
+func BenchmarkEvaluatorHundredRules(b *testing.B) {
+	rules := make([]model.PropertyAccessRule, 0, 100)
+	for i := 0; i < 100; i++ {
+		rules = append(rules, model.PropertyAccessRule{
+			ID:              fmt.Sprintf("r%d", i),
+			PropertyID:      propCLevel,
+			PropertyValueID: fmt.Sprintf("opt-%d", i),
+			DivisionID:      divStrategy,
+			Permission:      model.PropertyAccessViewer,
+		})
+	}
+	rules = append(rules, model.PropertyAccessRule{
+		ID: "r-match", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+		DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+	})
+
+	evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+		Settings:        &model.PropertyAccessSettings{Enabled: true, Rules: rules},
+		OrgUnits:        testOrgUnits(),
+		Duties:          testDuties(),
+		Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+		BoardPermission: model.EffectiveBoardPermissionEdit,
+	})
+	target := card(propCLevel, valueStrategy)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		evaluator.For(target)
+	}
+}
+
+// BenchmarkEvaluatorNoRules is the comparison point for the benchmark above.
+func BenchmarkEvaluatorNoRules(b *testing.B) {
+	evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+		BoardPermission: model.EffectiveBoardPermissionEdit,
+	})
+	target := card(propCLevel, valueStrategy)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		evaluator.For(target)
+	}
 }

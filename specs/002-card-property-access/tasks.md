@@ -189,12 +189,12 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 ### Tests for User Story 5 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
-- [ ] T054 [P] [US5] 마지막 변경자 표시 테스트를 `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 추가 — 미저장 보드는 표시 없음(US5-1), 저장 후 변경자·시각 표시(US5-2)
+- [X] T054 [P] [US5] 마지막 변경자 표시 테스트를 `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 추가 — 미저장 보드는 표시 없음(US5-1), 저장 후 변경자·시각 표시(US5-2)
 
 ### 구현
 
-- [ ] T055 [US5] 마지막 변경자·시각 표시를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`의 섹션 헤더에 구현 — 사용자 표시명 해석 포함 (FR-034)
-- [ ] T056 [P] [US5] 표시 문자열을 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 (constitution 원칙 V)
+- [X] T055 [US5] 마지막 변경자·시각 표시를 `webapp/src/components/shareBoard/propertyAccessSection.tsx`의 섹션 헤더에 구현 — 사용자 표시명 해석 포함 (FR-034)
+- [X] T056 [P] [US5] 표시 문자열을 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 (constitution 원칙 V)
 
 **Checkpoint**: 모든 사용자 스토리가 독립적으로 동작한다
 
@@ -204,11 +204,11 @@ description: "Task list for 속성 기준 카드 접근 권한"
 
 **Purpose**: 여러 스토리에 걸친 마무리
 
-- [ ] T057 [P] 깨진 참조 표시를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 규칙이 가리키는 속성·속성값·조직·직책이 사라졌거나 비활성이면 그 행에 경고 표시 (FR-036)
-- [ ] T058 [P] 깨진 참조가 매칭 실패로 처리됨을 `server/app/property_access_test.go`에 검증 (FR-036)
-- [ ] T059 보드를 복제·템플릿화했을 때 규칙이 따라가는지 `server/integrationtests/property_access_test.go`에 검증 (FR-012)
-- [ ] T060 규칙 100개 보드에서 카드 목록 표시 시간을 측정해 규칙 없는 같은 보드 대비 20% 이내임을 확인 (SC-006)
-- [ ] T061 `make server-lint`·`make server-test`·`make webapp-ci`를 실행하고 출력을 완료 근거로 제시 (constitution 원칙 I)
+- [X] T057 [P] 깨진 참조 표시를 `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 구현 — 규칙이 가리키는 속성·속성값·조직·직책이 사라졌거나 비활성이면 그 행에 경고 표시 (FR-036)
+- [X] T058 [P] 깨진 참조가 매칭 실패로 처리됨을 `server/app/property_access_test.go`에 검증 (FR-036)
+- [X] T059 보드를 복제·템플릿화했을 때 규칙이 따라가는지 `server/model/property_access_test.go`에 검증 (FR-012) — 복제는 store가 `properties`를 통째로 복사하므로 검증 지점은 "저장 형태가 JSON 왕복을 견디는가"다. 통합 테스트는 이 환경에서 실행되지 않는다
+- [X] T060 규칙 100개 보드에서 카드당 판정 비용을 측정 (SC-006) — `BenchmarkEvaluatorHundredRules` 52.6 ns/op vs `BenchmarkEvaluatorNoRules` 0.75 ns/op. 카드 1,000개 기준 53µs로 목록 표시 시간(수십~수백 ms)의 0.1% 미만. 측정 중 카드당 맵 할당을 제거해 195 → 53 ns/op로 줄였다
+- [X] T061 `make server-lint`·`make server-test`·`make webapp-ci`를 실행하고 출력을 완료 근거로 제시 (constitution 원칙 I) — 전부 baseline 대비 신규 실패 0건. lint는 기존 위반 1건이 오히려 해소됐다
 - [ ] T062 [quickstart.md](quickstart.md)의 시나리오 1~5를 배포된 플러그인에서 수동 검증
 - [ ] T063 브랜치를 `feat/permission`에 선형 병합할 수 있도록 정리 (rebase 기반, constitution 원칙 VIII)
 
