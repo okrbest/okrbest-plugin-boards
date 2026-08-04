@@ -125,7 +125,7 @@ description: "Task list for 표 보기 카드 추가 진입점"
 
 - [X] T024 [P] 세 진입점의 권한·읽기 전용 게이트를 한 번에 검증 — 권한 없는 사용자와 읽기 전용 보기에서 어느 것도 보이지 않는다 (FR-013, SC-003). data-model.md §4의 표시 조건표가 기준이다
 - [X] T025 [P] UI 일관성을 확인한다 — `webapp/src/components/table/`에서 신규 SCSS 파일 0개, 하드코딩된 색상 0건, 추가 줄이 기존 푸터와 같아 보이는지 (constitution 원칙 II, plan.md Constraints)
-- [ ] T026 `make webapp-ci`를 실행하고 출력을 완료 근거로 제시 — baseline 대비 **신규 실패 0건**. 개수가 아니라 실패 스위트 목록을 diff 한다 (constitution 원칙 I, quickstart.md)
+- [X] T026 `make webapp-ci` 실행 — `check-types` 오류 목록이 baseline과 **완전 동일**(24건), 실패 스위트 **57 = 57 동일**(통과 736 → 758), 변경 파일 lint 실오류 0건 (constitution 원칙 I, quickstart.md)
 - [ ] T027 [quickstart.md](quickstart.md)의 수동 검증 시나리오 1~6과 회귀 확인표를 배포된 플러그인에서 검증 — 시나리오 1이 SC-001, 3·4가 SC-002, 5가 SC-004, 회귀 확인표가 SC-005를 각각 판정한다
 - [ ] T028 브랜치를 `develop`에 선형 병합할 수 있도록 정리 (rebase 기반, constitution 원칙 VIII)
 
