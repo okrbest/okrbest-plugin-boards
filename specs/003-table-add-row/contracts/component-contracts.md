@@ -16,14 +16,14 @@
 |---|---|---|---|
 | `label` | `string` | ✓ | 표시할 문구. 호출부가 번역해서 넘긴다 |
 | `onClick` | `() => void` | ✓ | 눌렀을 때 부를 것 |
-| `indented` | `boolean` | | 하위 목록용 들여쓰기. 기본 `false` |
+| `depth` | `number` | | 이 줄이 만들 카드의 깊이. 그룹 추가 줄은 0(생략), 깊이 N-1 부모의 하위 목록을 닫는 줄은 N |
 
 ### 계약
 
 | 동작 | 규정 |
 |---|---|
 | 권한 | `BoardPermissionGate permissions={[Permission.ManageBoardCards]}`로 감싼다. 권한이 없으면 **아무것도 렌더하지 않는다** |
-| 스타일 | 기존 `.octo-table-footer` / `.octo-table-cell`을 쓴다. **새 클래스를 정의하지 않는다**. 들여쓰기만 한 클래스 추가 |
+| 스타일 | 기존 `.octo-table-footer` / `.octo-table-cell`을 쓴다. **새 클래스를 정의하지 않는다.** 들여쓰기는 행과 같은 `.sub-card-indent`(레벨당 22px) + `.expand-toggle-placeholder`로 만든다 — 고정 오프셋을 쓰면 모든 레벨의 추가 줄이 한 칸에 겹쳐 어느 부모의 것인지 알 수 없다 |
 | 상태 | 갖지 않는다. 읽기 전용·깊이·하위 개수 판정은 전부 호출부의 몫 |
 | 접근성 | 클릭 가능한 요소로 키보드 접근이 된다 |
 
@@ -105,7 +105,7 @@ centerPanel ──▶ table ──▶ tableGroup ──▶ tableRows ──▶ t
 | T-01 | `label`을 표시한다 |
 | T-02 | 클릭하면 `onClick`이 불린다 |
 | T-03 | `ManageBoardCards` 권한이 없으면 렌더되지 않는다 |
-| T-04 | `indented`가 클래스에 반영된다 |
+| T-04 | `depth`에 비례해 들여쓴다 (레벨당 22px). 그룹 추가 줄은 들여쓰지 않는다 |
 
 ### 그룹 추가 줄 (US1)
 

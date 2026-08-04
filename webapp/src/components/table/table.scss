@@ -241,12 +241,6 @@
             display: none;
         }
 
-        // Sub-card add rows step in by one nesting level. Sub-card rows
-        // themselves indent inside the title cell (`sub-card-indent`, 22px per
-        // level), so this adds one such step to the footer's own offset.
-        &.octo-table-footer--indented {
-            margin-left: 54px;
-        }
     }
 
     .octo-table-row {

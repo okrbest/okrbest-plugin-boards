@@ -103,7 +103,23 @@ describe('components/table/tableSubCardRows', () => {
         const addRow = container.querySelector('.octo-table-footer')
         expect(addRow).not.toBeNull()
         expect(addRow!.textContent).toContain('+ New sub-card')
-        expect(container.querySelector('.octo-table-footer--indented')).not.toBeNull()
+
+        // Indented to the level of the sub-cards it creates, so it is obvious
+        // which parent it belongs to when several levels are open at once.
+        const indent = addRow!.querySelector('.sub-card-indent') as HTMLElement
+        expect(indent).not.toBeNull()
+        expect(indent.style.width).toBe('22px')
+    })
+
+    test('the add row follows the parent down the nesting levels', () => {
+        const deepParent = TestBlockFactory.createCard(board)
+        deepParent.id = 'deep-parent'
+        deepParent.fields.depth = 2
+
+        const {container} = renderSubRows(deepParent)
+
+        const indent = container.querySelector('.octo-table-footer .sub-card-indent') as HTMLElement
+        expect(indent.style.width).toBe('66px')
     })
 
     test('T-10 drops the add row once the parent is at the depth limit', () => {

@@ -51,7 +51,7 @@ const buildState = (canEditCard: boolean) => ({
     },
 })
 
-const renderRow = (props: {label: string, onClick: () => void, indented?: boolean}, canEditCard = true) => {
+const renderRow = (props: {label: string, onClick: () => void, depth?: number}, canEditCard = true) => {
     const store = mockStateStore([thunk], buildState(canEditCard))
     return render(
         wrapDNDIntl(
@@ -87,12 +87,28 @@ describe('components/table/tableAddRow', () => {
         expect(container.textContent).not.toContain('+ 새 카드')
     })
 
-    test('T-04 reflects the indented flag in the class list', () => {
-        const plain = renderRow({label: '+ 새 카드', onClick: jest.fn()})
-        expect(plain.container.querySelector('.octo-table-footer--indented')).toBeNull()
+    test('T-04 indents to the depth of the cards it creates', () => {
+        // The row has to sit where its future siblings sit. Rows indent inside
+        // the title cell by 22px per level, so this one does the same — a fixed
+        // offset would stack every level's add row in one column and there
+        // would be no telling which parent an add row belongs to.
+        const top = renderRow({label: '+ 새 카드', onClick: jest.fn()})
+        expect(top.container.querySelector('.sub-card-indent')).toBeNull()
 
-        const indented = renderRow({label: '+ 새 하위 카드', onClick: jest.fn(), indented: true})
-        expect(indented.container.querySelector('.octo-table-footer--indented')).not.toBeNull()
+        const first = renderRow({label: '+ 새 하위 카드', onClick: jest.fn(), depth: 1})
+        expect((first.container.querySelector('.sub-card-indent') as HTMLElement).style.width).toBe('22px')
+
+        const third = renderRow({label: '+ 새 하위 카드', onClick: jest.fn(), depth: 3})
+        expect((third.container.querySelector('.sub-card-indent') as HTMLElement).style.width).toBe('66px')
+    })
+
+    test('lines the label up with the titles of the rows above it', () => {
+        // Sub-card rows reserve the expand toggle's width even when they have
+        // no children. Without the same placeholder the "+" sits one toggle to
+        // the left of the titles it belongs with.
+        const {container} = renderRow({label: '+ 새 하위 카드', onClick: jest.fn(), depth: 1})
+
+        expect(container.querySelector('.expand-toggle-placeholder')).not.toBeNull()
     })
 
     test('borrows the existing footer markup rather than inventing its own', () => {
