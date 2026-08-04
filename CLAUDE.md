@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-[specs/002-card-property-access/plan.md](specs/002-card-property-access/plan.md)
+[specs/003-table-add-row/plan.md](specs/003-table-add-row/plan.md)
 <!-- SPECKIT END -->
 
 ## Workflow
