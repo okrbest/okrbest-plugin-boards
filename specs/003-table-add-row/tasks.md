@@ -129,6 +129,13 @@ description: "Task list for 표 보기 카드 추가 진입점"
 - [ ] T027 [quickstart.md](quickstart.md)의 수동 검증 시나리오 1~6과 회귀 확인표를 배포된 플러그인에서 검증 — 시나리오 1이 SC-001, 3·4가 SC-002, 5가 SC-004, 회귀 확인표가 SC-005를 각각 판정한다
 - [ ] T028 브랜치를 `develop`에 선형 병합할 수 있도록 정리 (rebase 기반, constitution 원칙 VIII)
 
+### 구현 중 발견해 함께 고친 결함 (003 범위 밖, 사용자 승인 후 이 브랜치에서 처리)
+
+실시간 반영이 안 되는 증상을 systematic-debugging으로 추적한 결과 003도 002도 아닌 웹소켓 구독 결함 둘이었다. 계측으로 지점을 특정하고 각각 실패 테스트를 먼저 썼다.
+
+- [X] W1 서버 — 플러그인이 모르는 webConn의 명령을 버리지 않고 그 자리에서 등록한다 (`server/ws/plugin_adapter.go`, 커밋 `5f91bd9f`). 플러그인 재시작이 인메모리 리스너 맵을 비우는데 브라우저 소켓은 살아 있어 생긴다. 테스트 2건
+- [X] W2 클라이언트 — `open()`에서 소켓이 이미 열려 있으면 오지 않을 최초 연결 이벤트를 기다리지 않고 즉시 구독을 흘려보낸다 (`webapp/src/wsclient.ts`, 커밋 `2671d3f8`). React가 자식 효과를 먼저 실행해 `subscribeToTeam`이 클라이언트 초기화 전에 불리는 것이 원인. 테스트 3건
+
 ---
 
 ## Dependencies & Execution Order

@@ -108,9 +108,11 @@ BoardView ──(groupById)──▶ 그룹 보기 여부
 
 Group ──(option.id)──▶ addCard(groupByOptionId) ──▶ 새 카드 (그룹 속성값 채워짐)
 
-Card ──(id, boardId)──▶ mutator.createSubCard ──▶ 새 하위 카드
+Card ──(id, boardId)──▶ mutator.createSubCard ──▶ 서버
   │                                                    │
-  └─(fields.depth)──▶ 깊이 한도 판정                    └─▶ store addSubCard
+  └─(fields.depth)──▶ 깊이 한도 판정                    └─▶ 웹소켓 UPDATE_BLOCK
+                                                              │
+                                                          updateCards
                                                               │
                                                      useSubCardInfo ──▶ 하위 행 렌더
 ```
