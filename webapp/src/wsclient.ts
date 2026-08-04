@@ -377,6 +377,20 @@ class WSClient {
             this.client.addCloseListener(onClose)
             this.client.addReconnectListener(onReconnect)
 
+            // Mattermost's socket is normally connected before the Boards
+            // bundle even loads, so its first-connect event has already fired
+            // and will not fire again. Anything a component subscribed to
+            // before this point is still unsent — flush it now rather than
+            // wait for an event that is not coming.
+            //
+            // This is the path a page load landing straight on a board takes:
+            // the board page's effect runs before this one (React runs child
+            // effects first) and registers its team subscription against a
+            // client that could not send yet.
+            if (this.client.conn?.readyState === 1) {
+                onConnect()
+            }
+
             return
         }
 
