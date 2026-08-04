@@ -44,7 +44,7 @@ addSubCard(parentCard: Card): Promise<void>
 | # | 규정 |
 |---|---|
 | C-01 | 부모 깊이가 한도 미만일 때만 생성한다. 한도 이상이면 아무 일도 하지 않는다 |
-| C-02 | 성공하면 새 하위 카드를 `store/cards.ts`의 `addSubCard` 리듀서로 넣는다 |
+| C-02 | 성공하면 새 하위 카드를 `store/cards.ts`의 `addSubCard` 리듀서로 넣는다. **다만 화면 갱신은 이것이 아니라 웹소켓 에코가 만든다** — 하위 행이 읽는 `getCurrentBoardSubCardsByParent`는 `state.cards.cards`에서 파생하고 리듀서가 쓰는 `subCardsByParent` 필드를 보지 않는다. 카드 생성(`addCard`)도 같은 방식이다 |
 | C-03 | 성공하면 새 카드를 포커스 대상(`cardIdToFocusOnRender`)으로 지정한다 |
 | C-04 | 실패하면 `sendFlashMessage`로 알린다. 빈 `catch`로 삼키지 않는다 (constitution III) |
 | C-05 | 실패해도 표에 빈 행이 남지 않는다 — 낙관적 행을 만들지 않으므로 되돌릴 상태가 없다 |

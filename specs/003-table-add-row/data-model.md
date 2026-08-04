@@ -65,7 +65,9 @@
 
 ### 2.3 하위 카드 목록 (`store/cards.ts`)
 
-기존 `subCardsByParent` 상태와 `addSubCard` 리듀서를 그대로 쓴다. 생성 성공 시 리듀서로 넣으면 `useSubCardInfo`가 새 목록을 내주고 행이 그려진다 (R6).
+기존 `subCardsByParent` 상태와 `addSubCard` 리듀서를 그대로 쓴다.
+
+**화면 갱신의 실제 경로는 웹소켓 에코다.** `useSubCardInfo`가 읽는 `getCurrentBoardSubCardsByParent`는 `state.cards.cards`에서 파생하며 리듀서가 쓰는 `subCardsByParent` 필드를 보지 않는다. 서버가 되돌려주는 `UPDATE_BLOCK`이 `updateCards`로 들어와야 행이 그려진다 — 카드 생성(`addCard`)도 똑같이 에코에 의존한다. 리듀서 호출은 스토어 필드를 정합하게 유지할 뿐이다.
 
 ---
 
