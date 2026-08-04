@@ -20,6 +20,7 @@ type Props = {
     cardIdToFocusOnRender: string
     showCard: (cardId?: string) => void
     addCard: (groupByOptionId?: string) => Promise<void>
+    addSubCard: (parentCard: Card) => Promise<void>
     onCardClicked: (e: React.MouseEvent, card: Card) => void
     onDrop: (srcCard: Card, dstCard: Card) => void
 }
@@ -46,6 +47,7 @@ const TableRows = (props: Props): React.JSX.Element => {
                         isLastCard={idx === (cards.length - 1)}
                         showCard={props.showCard}
                         addCard={props.addCard}
+                addSubCard={props.addSubCard}
                         onCardClicked={onClickRow}
                         onDrop={props.onDrop}
                     />)

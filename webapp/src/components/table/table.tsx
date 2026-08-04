@@ -39,6 +39,7 @@ type Props = {
     cardIdToFocusOnRender: string
     showCard: (cardId?: string) => void
     addCard: (groupByOptionId?: string) => Promise<void>
+    addSubCard: (parentCard: Card) => Promise<void>
     onCardClicked: (e: React.MouseEvent, card: Card) => void
     hiddenCardsCount: number
     showHiddenCardCountNotification: (show: boolean) => void
@@ -272,6 +273,7 @@ const Table = (props: Props): React.JSX.Element => {
                                 cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                                 hideGroup={hideGroup}
                                 addCard={props.addCard}
+                addSubCard={props.addSubCard}
                                 showCard={props.showCard}
                                 propertyNameChanged={propertyNameChanged}
                                 onCardClicked={props.onCardClicked}
@@ -293,6 +295,7 @@ const Table = (props: Props): React.JSX.Element => {
                             cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                             showCard={props.showCard}
                             addCard={props.addCard}
+                addSubCard={props.addSubCard}
                             onCardClicked={props.onCardClicked}
                             onDrop={onDropToCard}
                         />

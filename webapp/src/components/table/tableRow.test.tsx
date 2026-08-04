@@ -4,8 +4,9 @@
 
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {render} from '@testing-library/react'
+import {render, screen} from '@testing-library/react'
 import configureStore from 'redux-mock-store'
+import userEvent from '@testing-library/user-event'
 
 import '@testing-library/jest-dom'
 import {wrapDNDIntl} from '../../testUtils'
@@ -13,6 +14,7 @@ import {wrapDNDIntl} from '../../testUtils'
 import 'isomorphic-fetch'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
+import {Constants} from '../../constants'
 
 import {ColumnResizeProvider} from './tableColumnResizeContext'
 import TableRow from './tableRow'
@@ -292,5 +294,110 @@ describe('components/table/TableRow', () => {
         )
 
         expect(container.querySelector('.TableRow')).toHaveClass('hidden')
+    })
+})
+
+// Contract tests T-12 ~ T-14 from
+// specs/003-table-add-row/contracts/component-contracts.md §5.
+//
+// A separate harness: the suite above renders without board capabilities, which
+// makes every row read only and hides the actions menu entirely.
+describe('components/table/TableRow sub-card menu item', () => {
+    const board = TestBlockFactory.createBoard()
+    const view = TestBlockFactory.createBoardView(board)
+    const card = TestBlockFactory.createCard(board)
+
+    const state = {
+        users: {},
+        comments: {comments: {}},
+        contents: {contents: {}},
+        cards: {cards: {[card.id]: card}},
+        boards: {
+            current: board.id,
+            boards: {[board.id]: board},
+            myBoardMemberships: {[board.id]: {userId: 'user-1', boardId: board.id, schemeAdmin: true}},
+        },
+        teams: {current: {id: board.teamId, title: 'Test Team'}},
+        boardPermissions: {
+            byBoardId: {
+                [board.id]: {
+                    boardId: board.id,
+                    effectivePermission: 'edit',
+                    capabilities: {
+                        canView: true,
+                        canCommentCard: true,
+                        canCreateCard: true,
+                        canEditCard: true,
+                        canDeleteCard: true,
+                        canManageBoard: false,
+                        canDeleteBoard: false,
+                    },
+                    derivedFrom: 'member',
+                },
+            },
+        },
+    }
+
+    const renderRow = (options: {hasSubCards: boolean, depth: number}) => {
+        const store = configureStore([])(state)
+        const rowCard = {...card, fields: {...card.fields, depth: options.depth}}
+
+        return render(wrapDNDIntl(
+            <ColumnResizeProvider
+                columnWidths={{}}
+                onResizeColumn={jest.fn()}
+            >
+                <ReduxProvider store={store}>
+                    <TableRow
+                        board={board}
+                        columnWidths={view.fields.columnWidths}
+                        addCard={jest.fn()}
+                        addSubCard={jest.fn()}
+                        visiblePropertyIds={view.fields.visiblePropertyIds}
+                        isManualSort={view.fields.sortOptions.length === 0}
+                        groupById={view.fields.groupById}
+                        isLastCard={false}
+                        collapsedOptionIds={view.fields.collapsedOptionIds}
+                        card={rowCard}
+                        isSelected={false}
+                        focusOnMount={false}
+                        showCard={jest.fn()}
+                        readonly={false}
+                        onDrop={jest.fn()}
+                        hasSubCards={options.hasSubCards}
+                    />
+                </ReduxProvider>
+            </ColumnResizeProvider>,
+        ))
+    }
+
+    const openMenu = async (container: Element) => {
+        const button = container.querySelector('.optionsMenu button')
+        expect(button).not.toBeNull()
+        await userEvent.click(button!)
+    }
+
+    test('T-12 offers the item on a card with no sub-cards', async () => {
+        const {container} = renderRow({hasSubCards: false, depth: 0})
+
+        await openMenu(container)
+
+        expect(screen.queryByText('Add sub-card')).not.toBeNull()
+    })
+
+    test('T-13 withholds the item once the card has sub-cards', async () => {
+        const {container} = renderRow({hasSubCards: true, depth: 0})
+
+        await openMenu(container)
+
+        expect(screen.queryByText('Add sub-card')).toBeNull()
+    })
+
+    test('T-14 withholds the item at the depth limit', async () => {
+        const {container} = renderRow({hasSubCards: false, depth: Constants.maxCardDepth})
+
+        await openMenu(container)
+
+        expect(screen.queryByText('Add sub-card')).toBeNull()
     })
 })

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback, useEffect, useMemo} from 'react'
+import React, {useState, useCallback, useEffect, useMemo, useRef} from 'react'
 import {useIntl} from 'react-intl'
 import {useHotkeys} from 'react-hotkeys-hook'
 
@@ -16,7 +16,7 @@ import {CardFilter} from '../cardFilter'
 import mutator from '../mutator'
 import {Utils} from '../utils'
 import {UserSettings} from '../userSettings'
-import {getCurrentCard, getCurrentBoardTemplates, getCurrentBoardViewCardsSortedFilteredAndGrouped, addCard as addCardAction, addTemplate as addTemplateAction, showCardHiddenWarning} from '../store/cards'
+import {getCurrentCard, getCurrentBoardTemplates, getCurrentBoardViewCardsSortedFilteredAndGrouped, addCard as addCardAction, addSubCard as addSubCardAction, addTemplate as addTemplateAction, showCardHiddenWarning} from '../store/cards'
 import {getCardLimitTimestamp} from '../store/limits'
 import {updateView} from '../store/views'
 import {getVisibleAndHiddenGroups} from '../boardUtils'
@@ -40,6 +40,9 @@ import {
 import {UserConfigPatch} from '../user'
 
 import octoClient from '../octoClient'
+import {Constants} from '../constants'
+
+import {sendFlashMessage} from './flashMessages'
 
 import ShareBoardButton from './shareBoard/shareBoardButton'
 import ShareBoardLoginButton from './shareBoard/shareBoardLoginButton'
@@ -79,6 +82,10 @@ const CenterPanel = (props: Props) => {
     const intl = useIntl()
     const [selectedCardIds, setSelectedCardIds] = useState<string[]>([])
     const [cardIdToFocusOnRender, setCardIdToFocusOnRender] = useState('')
+
+    // A ref rather than state: a second click must be dropped during the same
+    // render pass, before any re-render could deliver a state update.
+    const addingSubCardRef = useRef(false)
     const [showHiddenCardCountNotification, setShowHiddenCardCountNotification] = useState(false)
 
     const onboardingTourStarted = useAppSelector(getOnboardingTourStarted)
@@ -346,6 +353,45 @@ const CenterPanel = (props: Props) => {
 
     const addEmptyCardAndShow = useCallback(() => addCard('', true), [addCard])
 
+    // Creating a sub-card from the table. The card detail's sub-card section
+    // opens the new card; here we stay in the table and put the cursor in its
+    // title, because the point of a row-level entry point is to keep adding.
+    //
+    // No optimistic row is drawn: if the request fails there is nothing to roll
+    // back and no empty row is left behind (spec FR-014).
+    const addSubCard = useCallback(async (parentCard: Card): Promise<void> => {
+        if ((parentCard.fields.depth || 0) >= Constants.maxCardDepth) {
+            return
+        }
+        if (addingSubCardRef.current) {
+            return
+        }
+        addingSubCardRef.current = true
+
+        try {
+            await mutator.createSubCard(
+                props.board.id,
+                parentCard.id,
+                '',
+                async (created: Card) => {
+                    dispatch(addSubCardAction({parentCardId: parentCard.id, subCard: created}))
+                    setCardIdToFocusOnRender(created.id)
+                    setTimeout(() => setCardIdToFocusOnRender(''), 300)
+                },
+            )
+        } catch (error) {
+            sendFlashMessage({
+                content: intl.formatMessage({
+                    id: 'TableRow.addSubCardFailed',
+                    defaultMessage: 'Could not add the sub-card',
+                }),
+                severity: 'high',
+            })
+        } finally {
+            addingSubCardRef.current = false
+        }
+    }, [props.board.id, dispatch, intl])
+
     const shouldStartBoardsTour = useCallback((): boolean => {
         const isOnboardingBoard = props.board.title === 'Welcome to Boards!'
         const isTourStarted = onboardingTourStarted
@@ -604,6 +650,7 @@ const CenterPanel = (props: Props) => {
                     cardIdToFocusOnRender={cardIdToFocusOnRender}
                     showCard={showCard}
                     addCard={addCard}
+                    addSubCard={addSubCard}
                     onCardClicked={cardClicked}
                     hiddenCardsCount={props.hiddenCardsCount}
                     showHiddenCardCountNotification={hiddenCardCountNotifyHandler}

@@ -122,6 +122,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                 readonly={false}
                 cardIdToFocusOnRender={''}
                 onCardClicked={() => null}
+                addSubCard={() => Promise.resolve()}
                 addCard={() => Promise.resolve()}
                 showCard={() => null}
                 hiddenCardsCount={0}

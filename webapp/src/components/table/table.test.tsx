@@ -107,6 +107,7 @@ describe('components/table/Table', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -137,6 +138,7 @@ describe('components/table/Table', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -167,6 +169,7 @@ describe('components/table/Table', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -204,6 +207,7 @@ describe('components/table/Table', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -212,6 +216,40 @@ describe('components/table/Table', () => {
         )
         const {container} = render(component)
         expect(container).toMatchSnapshot()
+    })
+
+    // FR-005 and FR-006. The grouped view gained an add row per group; the two
+    // entry points that existed before must be untouched by that.
+    test('the ungrouped view keeps exactly the add row it always had', async () => {
+        const mockStore = configureStore([])
+        const store = mockStore(state)
+
+        const {container} = render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <Table
+                    board={board}
+                    activeView={view}
+                    visibleGroups={[]}
+                    cards={[card]}
+                    views={[view, view2]}
+                    selectedCardIds={[]}
+                    readonly={false}
+                    cardIdToFocusOnRender=''
+                    showCard={jest.fn()}
+                    addCard={jest.fn()}
+                    addSubCard={jest.fn()}
+                    onCardClicked={jest.fn()}
+                    hiddenCardsCount={0}
+                    showHiddenCardCountNotification={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+
+        // One footer, the one this view has always had. The grouped view's new
+        // per-group row must not leak into the ungrouped one.
+        expect(container.querySelectorAll('.octo-table-footer')).toHaveLength(1)
+        expect(container.textContent).not.toContain('+ New card')
+        expect(container.querySelector('.octo-table-footer--indented')).toBeNull()
     })
 
     test('does not render group rows when group is collapsed', async () => {
@@ -259,6 +297,7 @@ describe('components/table/Table', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -321,6 +360,7 @@ describe('components/table/Table', () => {
                      cardIdToFocusOnRender=''
                      showCard={callback}
                      addCard={addCard}
+                    addSubCard={jest.fn()}
                      onCardClicked={jest.fn()}
                      hiddenCardsCount={2}
                      showHiddenCardCountNotification={jest.fn()}
@@ -435,6 +475,7 @@ describe('components/table/Table extended', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -521,6 +562,7 @@ describe('components/table/Table extended', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -580,6 +622,7 @@ describe('components/table/Table extended', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -672,6 +715,7 @@ describe('components/table/Table extended', () => {
                     cardIdToFocusOnRender=''
                     showCard={callback}
                     addCard={addCard}
+                    addSubCard={jest.fn()}
                     onCardClicked={jest.fn()}
                     hiddenCardsCount={0}
                     showHiddenCardCountNotification={jest.fn()}
@@ -725,6 +769,7 @@ describe('components/table/Table extended', () => {
                      cardIdToFocusOnRender=''
                      showCard={jest.fn()}
                      addCard={jest.fn()}
+                    addSubCard={jest.fn()}
                      onCardClicked={jest.fn()}
                      hiddenCardsCount={0}
                      showHiddenCardCountNotification={jest.fn()}
@@ -786,6 +831,7 @@ describe('components/table/Table extended', () => {
                      cardIdToFocusOnRender=''
                      showCard={jest.fn()}
                      addCard={jest.fn()}
+                    addSubCard={jest.fn()}
                      onCardClicked={jest.fn()}
                      hiddenCardsCount={0}
                      showHiddenCardCountNotification={jest.fn()}

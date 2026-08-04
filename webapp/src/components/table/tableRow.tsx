@@ -24,6 +24,8 @@ import Tooltip from '../../widgets/tooltip'
 import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmationDialogBox'
 import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../telemetry/telemetryClient'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
+import Menu from '../../widgets/menu'
+import AddIcon from '../../widgets/icons/add'
 import EmojiIcon from '../emojiIcon'
 import {useHasCapabilities} from '../../hooks/permissions'
 
@@ -48,6 +50,7 @@ type Props = {
     onClick?: (e: React.MouseEvent<HTMLDivElement>, card: Card) => void
     onDrop: (srcCard: Card, dstCard: Card) => void
     hasSubCards?: boolean
+    addSubCard?: (parentCard: Card) => Promise<void>
     isExpanded?: boolean
     onToggleExpand?: (e: React.MouseEvent) => void
     isSubCard?: boolean
@@ -65,6 +68,12 @@ const TableRow = (props: Props) => {
     const [isDragging, isOver, cardRef] = useSortable('card', card, !isReadOnly && (isManualSort || isGrouped), props.onDrop)
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = useState<boolean>(false)
     const columnResize = useColumnResize()
+
+    // A card at the depth limit cannot hold another level, and a card that
+    // already has sub-cards is served by the add row under them.
+    const canAddFirstSubCard = Boolean(props.addSubCard) &&
+        !props.hasSubCards &&
+        (card.fields.depth || 0) < Constants.maxCardDepth
 
     useEffect(() => {
         if (props.focusOnMount) {
@@ -234,7 +243,21 @@ const TableRow = (props: Props) => {
                                     },
                                 )
                             }}
-                        />
+                        >
+                            {/*
+                              * Only for a card that has no sub-card list yet.
+                              * Once it has one, the add row at the end of that
+                              * list is the entry point and this would be a
+                              * second way to do the same thing (spec FR-009).
+                              */}
+                            {canAddFirstSubCard &&
+                            <Menu.Text
+                                id='addSubCard'
+                                icon={<AddIcon/>}
+                                name={intl.formatMessage({id: 'CardActionsMenu.addSubCard', defaultMessage: 'Add sub-card'})}
+                                onClick={() => props.addSubCard?.(card)}
+                            />}
+                        </CardActionsMenu>
                     </MenuWrapper>
                 )}
 

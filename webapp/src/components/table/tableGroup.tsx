@@ -1,7 +1,8 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react'
+import React, {useCallback} from 'react'
+import {useIntl} from 'react-intl'
 
 import {useDrop} from 'react-dnd'
 
@@ -9,6 +10,7 @@ import {Board, IPropertyOption, IPropertyTemplate, BoardGroup} from '../../block
 import {BoardView} from '../../blocks/boardView'
 import {Card} from '../../blocks/card'
 
+import TableAddRow from './tableAddRow'
 import TableGroupHeaderRow from './tableGroupHeaderRow'
 import TableRows from './tableRows'
 
@@ -22,6 +24,7 @@ type Props = {
     cardIdToFocusOnRender: string
     hideGroup: (groupByOptionId: string) => void
     addCard: (groupByOptionId?: string) => Promise<void>
+    addSubCard: (parentCard: Card) => Promise<void>
     showCard: (cardId?: string) => void
     propertyNameChanged: (option: IPropertyOption, text: string) => Promise<void>
     onCardClicked: (e: React.MouseEvent, card: Card) => void
@@ -31,6 +34,7 @@ type Props = {
 }
 
 const TableGroup = (props: Props): React.JSX.Element => {
+    const intl = useIntl()
     const {board, activeView, group, onDropToGroup, groupByProperty} = props
     const groupId = group.option.id
     const isCollapsed = activeView.fields.collapsedOptionIds.includes(group.option.id || 'undefined')
@@ -46,6 +50,12 @@ const TableGroup = (props: Props): React.JSX.Element => {
             }
         },
     }), [onDropToGroup, groupId])
+
+    // The group's own option ID, so the new card lands in this group with its
+    // property already set. addCard does the filling.
+    const onAddCard = useCallback(() => {
+        props.addCard(groupId)
+    }, [props.addCard, groupId])
 
     let className = 'octo-table-group'
     if (isOver) {
@@ -80,8 +90,20 @@ const TableGroup = (props: Props): React.JSX.Element => {
                 cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                 showCard={props.showCard}
                 addCard={props.addCard}
+                addSubCard={props.addSubCard}
                 onCardClicked={props.onCardClicked}
                 onDrop={props.onDropToCard}
+            />}
+
+            {/*
+              * Outside the cards.length check on purpose: an empty group needs
+              * the add row too, and it is the only way to put the first card
+              * in one. Collapsed groups show neither rows nor this.
+              */}
+            {!isCollapsed && !props.readonly &&
+            <TableAddRow
+                label={intl.formatMessage({id: 'TableComponent.plus-new-card', defaultMessage: '+ New card'})}
+                onClick={onAddCard}
             />}
         </div>
     )

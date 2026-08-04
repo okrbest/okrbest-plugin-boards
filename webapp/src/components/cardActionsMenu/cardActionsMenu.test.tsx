@@ -77,6 +77,28 @@ describe('components/cardActionsMenu', () => {
         expect(container).toMatchSnapshot()
     })
 
+    // The table injects "Add sub-card" as a child. Every other view renders this
+    // same menu without that child, and must keep doing so — the entry point is
+    // a table feature, not a card feature.
+    test('carries no sub-card item of its own', async () => {
+        let container: Element | undefined
+        await act(async () => {
+            const result = render(wrapIntl(
+                <ReduxProvider store={store}>
+                    <CardActionsMenu
+                        cardId='123'
+                        boardId='345'
+                        onClickDelete={jest.fn()}
+                    />
+                </ReduxProvider>,
+            ))
+            container = result.container
+        })
+
+        expect(container!.textContent).not.toContain('Add sub-card')
+        expect(container!.querySelector('#addSubCard')).toBeNull()
+    })
+
     test('should match snapshot w/ children prop', async () => {
         let container
         await act(async () => {

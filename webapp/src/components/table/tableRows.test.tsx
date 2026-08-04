@@ -73,6 +73,7 @@ describe('components/table/TableRows', () => {
                         cardIdToFocusOnRender=''
                         showCard={callback}
                         addCard={addCard}
+                    addSubCard={jest.fn()}
                         onCardClicked={jest.fn()}
                         onDrop={jest.fn()}
                     />
