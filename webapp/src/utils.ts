@@ -616,8 +616,17 @@ class Utils {
         const baseURL = Utils.getBaseURL()
 
         // Handle static assets (images, fonts, etc.) - these are served from /static/plugins/{plugin_id}/
-        // Webpack outputs paths like "static/copyLink.gif" which need to be converted to
-        // "/static/plugins/focalboard/copyLink.gif"
+        // Webpack's publicPath already emits that prefix, so leave those paths alone instead of
+        // prepending the base URL a second time.
+        if (path.startsWith('/static/')) {
+            if (absolute) {
+                return window.location.origin + path
+            }
+            return path
+        }
+
+        // Legacy form: webpack used to output paths like "static/copyLink.gif", which need to be
+        // converted to "/static/plugins/focalboard/copyLink.gif"
         if (path.startsWith('static/')) {
             const filename = path.substring('static/'.length)
             const staticPath = `/static/${baseURL}/${filename}`

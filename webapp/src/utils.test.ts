@@ -110,6 +110,15 @@ describe('utils', () => {
             expect(Utils.buildURL('test')).toBe('base/test')
             expect(Utils.buildURL('/test')).toBe('base/test')
         })
+
+        test('buildURL, webpack static asset paths pass through untouched', () => {
+            window.baseURL = '/plugins/focalboard'
+
+            expect(Utils.buildURL('/static/plugins/focalboard/compass-icons.woff2')).
+                toBe('/static/plugins/focalboard/compass-icons.woff2')
+            expect(Utils.buildURL('/static/plugins/focalboard/app-bar-icon.png', true)).
+                toBe('http://localhost/static/plugins/focalboard/app-bar-icon.png')
+        })
     })
 
     describe('display date', () => {
