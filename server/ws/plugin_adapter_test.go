@@ -554,3 +554,55 @@ func TestParallelSubscriptionsOnMultipleConnections(t *testing.T) {
 
 	wg.Wait()
 }
+
+// A websocket connection the adapter has no record of still belongs to an
+// authenticated user — the server hands us its ID with every message. Dropping
+// its commands silently strands the client: the webapp counts the subscription
+// as sent and never repeats it, so the user stops receiving board updates until
+// the page is reloaded.
+//
+// This happens whenever the plugin restarts under a live browser session, which
+// is every hot redeploy in development, and it is a race on a cold page load.
+func TestSubscribeFromUnregisteredWebConn(t *testing.T) {
+	th := SetupTestHelper(t)
+
+	teamID := mmModel.NewId()
+	boardID := mmModel.NewId()
+	userID := mmModel.NewId()
+	webConnID := mmModel.NewId()
+
+	// No OnWebSocketConnect for this webConn — exactly the state a plugin
+	// restart leaves every open browser tab in.
+	th.SubscribeWebConnToTeam(webConnID, userID, teamID)
+
+	th.store.EXPECT().
+		GetMembersForBoard(boardID).
+		Return([]*model.BoardMember{{UserID: userID}}, nil).
+		Times(1)
+	th.auth.EXPECT().
+		DoesUserHaveTeamAccess(userID, teamID).
+		Return(true).
+		AnyTimes()
+
+	userIDs := th.pa.getUserIDsForTeamAndBoard(teamID, boardID)
+
+	require.ElementsMatch(t, []string{userID}, userIDs,
+		"the subscription must take effect, otherwise board updates reach nobody")
+}
+
+func TestConnectAfterUnregisteredSubscribeKeepsOneListener(t *testing.T) {
+	th := SetupTestHelper(t)
+
+	teamID := mmModel.NewId()
+	userID := mmModel.NewId()
+	webConnID := mmModel.NewId()
+
+	th.SubscribeWebConnToTeam(webConnID, userID, teamID)
+
+	// The connect hook arriving late must reuse the record the message created,
+	// not add a second one for the same connection.
+	th.pa.OnWebSocketConnect(webConnID, userID)
+
+	require.Len(t, th.pa.GetListenersByTeam(teamID), 1)
+	require.Len(t, th.pa.GetListenersByUserID(userID), 1)
+}

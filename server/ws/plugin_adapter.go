@@ -299,6 +299,13 @@ func (pa *PluginAdapter) OnWebSocketConnect(webConnID, userID string) {
 		return
 	}
 
+	pa.registerListener(webConnID, userID)
+	pa.removeExpiredForUserID(userID)
+}
+
+// registerListener records a websocket connection so messages from it can be
+// acted on and broadcasts can reach it.
+func (pa *PluginAdapter) registerListener(webConnID, userID string) *PluginAdapterClient {
 	newPAC := &PluginAdapterClient{
 		inactiveAt: 0,
 		webConnID:  webConnID,
@@ -308,7 +315,7 @@ func (pa *PluginAdapter) OnWebSocketConnect(webConnID, userID string) {
 	}
 
 	pa.addListener(newPAC)
-	pa.removeExpiredForUserID(userID)
+	return newPAC
 }
 
 func (pa *PluginAdapter) OnWebSocketDisconnect(webConnID, userID string) {
@@ -347,12 +354,21 @@ func commandFromRequest(req *mmModel.WebSocketRequest) (*WebsocketCommand, error
 func (pa *PluginAdapter) WebSocketMessageHasBeenPosted(webConnID, userID string, req *mmModel.WebSocketRequest) {
 	pac, ok := pa.GetListenerByWebConnID(webConnID)
 	if !ok {
-		pa.logger.Debug("received a message for an unregistered webconn",
+		// A connection we have no record of, most often because the plugin
+		// restarted while the browser session stayed open. The message itself
+		// carries everything OnWebSocketConnect would have given us, and the
+		// server has already authenticated it, so the connection is adopted
+		// rather than ignored.
+		//
+		// Dropping it instead strands the client: the webapp counts its
+		// subscription as sent and never repeats it, so board updates stop
+		// arriving until the page is reloaded.
+		pa.logger.Debug("adopting a webconn seen for the first time in a message",
 			mlog.String("webConnID", webConnID),
 			mlog.String("userID", userID),
 			mlog.String("action", req.Action),
 		)
-		return
+		pac = pa.registerListener(webConnID, userID)
 	}
 
 	// only process messages using the plugin actions
