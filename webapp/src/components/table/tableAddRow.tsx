@@ -18,9 +18,17 @@ type Props = {
     depth?: number
 }
 
-// Rows indent by this much per nesting level, inside the title cell. The add
-// row copies the figure rather than inventing its own so the two stay aligned.
+// Geometry copied from the row so the two line up: rows indent by this much per
+// nesting level inside the title cell, and reserve this much for the expand
+// toggle even when they have no children.
+//
+// The sizes are set inline rather than left to the stylesheet because the rules
+// for these two classes live under `.TableRow`, which this row is not. Relying
+// on them gave a zero-width toggle gap and a label one toggle to the left of
+// the titles it belongs with — and nothing caught it, because the test renderer
+// applies no stylesheets.
 const indentPerLevel = 22
+const toggleWidth = 20
 
 // TableAddRow is the "+ New …" line that closes a list of table rows.
 //
@@ -44,13 +52,12 @@ const TableAddRow = (props: Props): React.JSX.Element => {
                         <>
                             <span
                                 className='sub-card-indent'
-                                style={{width: depth * indentPerLevel}}
+                                style={{width: depth * indentPerLevel, flexShrink: 0}}
                             />
-                            {/* Sub-card rows reserve the toggle's width even
-                              * when they have no children of their own; without
-                              * the same gap the label sits one toggle left of
-                              * the titles it belongs with. */}
-                            <span className='expand-toggle-placeholder'/>
+                            <span
+                                className='expand-toggle-placeholder'
+                                style={{width: toggleWidth, flexShrink: 0}}
+                            />
                         </>
                     )}
                     {props.label}

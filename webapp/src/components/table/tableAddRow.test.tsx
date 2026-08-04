@@ -104,11 +104,29 @@ describe('components/table/tableAddRow', () => {
 
     test('lines the label up with the titles of the rows above it', () => {
         // Sub-card rows reserve the expand toggle's width even when they have
-        // no children. Without the same placeholder the "+" sits one toggle to
-        // the left of the titles it belongs with.
+        // no children. Without the same gap the "+" sits one toggle to the left
+        // of the titles it belongs with.
         const {container} = renderRow({label: '+ 새 하위 카드', onClick: jest.fn(), depth: 1})
 
-        expect(container.querySelector('.expand-toggle-placeholder')).not.toBeNull()
+        const placeholder = container.querySelector('.expand-toggle-placeholder') as HTMLElement
+        expect(placeholder).not.toBeNull()
+        expect(placeholder.style.width).toBe('20px')
+    })
+
+    test('carries its own geometry rather than borrowing the row stylesheet', () => {
+        // The width rules for these two spans live under .TableRow, which this
+        // row is not. Relying on them silently produced a zero-width toggle gap
+        // and a misaligned label — and no test could see it, because the test
+        // renderer does not apply stylesheets. So the sizes are set here.
+        const {container} = renderRow({label: '+ 새 하위 카드', onClick: jest.fn(), depth: 2})
+
+        const indent = container.querySelector('.sub-card-indent') as HTMLElement
+        const placeholder = container.querySelector('.expand-toggle-placeholder') as HTMLElement
+
+        expect(indent.style.width).toBe('44px')
+        expect(indent.style.flexShrink).toBe('0')
+        expect(placeholder.style.width).toBe('20px')
+        expect(placeholder.style.flexShrink).toBe('0')
     })
 
     test('borrows the existing footer markup rather than inventing its own', () => {

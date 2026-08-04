@@ -23,7 +23,7 @@
 | 동작 | 규정 |
 |---|---|
 | 권한 | `BoardPermissionGate permissions={[Permission.ManageBoardCards]}`로 감싼다. 권한이 없으면 **아무것도 렌더하지 않는다** |
-| 스타일 | 기존 `.octo-table-footer` / `.octo-table-cell`을 쓴다. **새 클래스를 정의하지 않는다.** 들여쓰기는 행과 같은 `.sub-card-indent`(레벨당 22px) + `.expand-toggle-placeholder`로 만든다 — 고정 오프셋을 쓰면 모든 레벨의 추가 줄이 한 칸에 겹쳐 어느 부모의 것인지 알 수 없다 |
+| 스타일 | 기존 `.octo-table-footer` / `.octo-table-cell`을 쓴다. **새 클래스를 정의하지 않는다.** 들여쓰기는 행과 같은 `.sub-card-indent`(레벨당 22px) + `.expand-toggle-placeholder`(20px)로 만든다 — 고정 오프셋을 쓰면 모든 레벨의 추가 줄이 한 칸에 겹쳐 어느 부모의 것인지 알 수 없다. **두 span의 크기는 인라인으로 준다**: 해당 CSS 규칙이 `.TableRow` 아래에만 있어 이 줄에는 적용되지 않고, 테스트 렌더러는 스타일시트를 적용하지 않아 어긋나도 잡히지 않는다 |
 | 상태 | 갖지 않는다. 읽기 전용·깊이·하위 개수 판정은 전부 호출부의 몫 |
 | 접근성 | 클릭 가능한 요소로 키보드 접근이 된다 |
 
