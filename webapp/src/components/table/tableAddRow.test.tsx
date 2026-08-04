@@ -113,6 +113,33 @@ describe('components/table/tableAddRow', () => {
         expect(placeholder.style.width).toBe('20px')
     })
 
+    test('leaves room for the icon slot so the label starts where titles do', () => {
+        // A row's title sits after an icon slot that holds its width even when
+        // the card has no icon (20px + 4px gap). Skipping it puts the label a
+        // full icon to the left of every title it is supposed to line up with.
+        const {container} = renderRow({label: '+ 새 하위 카드', onClick: jest.fn(), depth: 1})
+
+        const iconSlot = container.querySelector('.octo-icon') as HTMLElement
+        expect(iconSlot).not.toBeNull()
+        expect(iconSlot.style.width).toBe('20px')
+        expect(iconSlot.style.marginRight).toBe('4px')
+
+        // The footer cell pads wider than a title cell by default; left alone it
+        // pushes the label 7px past every title.
+        const cell = container.querySelector('.octo-table-cell') as HTMLElement
+        expect(cell.style.paddingLeft).toBe('8px')
+    })
+
+    test('reserves the icon slot on a group add row too', () => {
+        const {container} = renderRow({label: '+ 새 카드', onClick: jest.fn()})
+
+        expect(container.querySelector('.octo-icon')).not.toBeNull()
+
+        // Nothing to indent past, and top-level leaf rows carry no toggle.
+        expect(container.querySelector('.sub-card-indent')).toBeNull()
+        expect(container.querySelector('.expand-toggle-placeholder')).toBeNull()
+    })
+
     test('carries its own geometry rather than borrowing the row stylesheet', () => {
         // The width rules for these two spans live under .TableRow, which this
         // row is not. Relying on them silently produced a zero-width toggle gap

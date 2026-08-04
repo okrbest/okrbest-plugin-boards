@@ -18,17 +18,25 @@ type Props = {
     depth?: number
 }
 
-// Geometry copied from the row so the two line up: rows indent by this much per
-// nesting level inside the title cell, and reserve this much for the expand
-// toggle even when they have no children.
+// Geometry copied from the row so the label starts exactly where a title of the
+// same depth starts. A row's title sits behind four things: the cell padding,
+// one indent per nesting level, the expand toggle (kept even when the card has
+// no children), and an icon slot that holds its width whether or not the card
+// has an icon.
 //
-// The sizes are set inline rather than left to the stylesheet because the rules
-// for these two classes live under `.TableRow`, which this row is not. Relying
-// on them gave a zero-width toggle gap and a label one toggle to the left of
-// the titles it belongs with — and nothing caught it, because the test renderer
+// The footer cell pads 15px where a title cell pads 8px, so the padding is set
+// here too — otherwise the label lands 7px off no matter what follows it.
+//
+// All of it is inline rather than left to the stylesheet because the rules for
+// these classes live under `.TableRow`, which this row is not. Relying on them
+// gave a zero-width toggle gap and a label a full icon to the left of the
+// titles it belongs with — and nothing caught it, because the test renderer
 // applies no stylesheets.
+const cellPadding = 8
 const indentPerLevel = 22
 const toggleWidth = 20
+const iconWidth = 20
+const iconGap = 4
 
 // TableAddRow is the "+ New …" line that closes a list of table rows.
 //
@@ -46,6 +54,7 @@ const TableAddRow = (props: Props): React.JSX.Element => {
             <div className='octo-table-footer'>
                 <div
                     className='octo-table-cell'
+                    style={{paddingLeft: cellPadding}}
                     onClick={props.onClick}
                 >
                     {depth > 0 && (
@@ -60,6 +69,10 @@ const TableAddRow = (props: Props): React.JSX.Element => {
                             />
                         </>
                     )}
+                    <span
+                        className='octo-icon'
+                        style={{width: iconWidth, marginRight: iconGap, flexShrink: 0}}
+                    />
                     {props.label}
                 </div>
             </div>

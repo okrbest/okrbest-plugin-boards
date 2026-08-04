@@ -23,7 +23,8 @@
 | 동작 | 규정 |
 |---|---|
 | 권한 | `BoardPermissionGate permissions={[Permission.ManageBoardCards]}`로 감싼다. 권한이 없으면 **아무것도 렌더하지 않는다** |
-| 스타일 | 기존 `.octo-table-footer` / `.octo-table-cell`을 쓴다. **새 클래스를 정의하지 않는다.** 들여쓰기는 행과 같은 `.sub-card-indent`(레벨당 22px) + `.expand-toggle-placeholder`(20px)로 만든다 — 고정 오프셋을 쓰면 모든 레벨의 추가 줄이 한 칸에 겹쳐 어느 부모의 것인지 알 수 없다. **두 span의 크기는 인라인으로 준다**: 해당 CSS 규칙이 `.TableRow` 아래에만 있어 이 줄에는 적용되지 않고, 테스트 렌더러는 스타일시트를 적용하지 않아 어긋나도 잡히지 않는다 |
+| 스타일 | 기존 `.octo-table-footer` / `.octo-table-cell`을 쓴다. **새 클래스를 정의하지 않는다.** 라벨 시작점은 같은 깊이 카드의 **제목 글자 시작점**과 일치해야 한다. 제목 앞에 놓인 것을 그대로 재현한다 — 셀 여백 8px · 레벨당 `.sub-card-indent` 22px · `.expand-toggle-placeholder` 20px · `.octo-icon` 슬롯 20px + 여백 4px. 아이콘 슬롯은 카드에 아이콘이 없어도 폭을 차지하므로 빼면 라벨이 아이콘 하나만큼 왼쪽에 선다. 푸터 셀의 기본 `padding-left`는 15px라 그대로 두면 7px 더 어긋난다 |
+| 인라인 지오메트리 | 위 크기는 **전부 인라인**으로 준다. 해당 CSS 규칙이 `.TableRow`·`.octo-icontitle` 아래에만 있어 이 줄에는 적용되지 않고, 테스트 렌더러는 스타일시트를 적용하지 않아 어긋나도 잡히지 않는다 |
 | 상태 | 갖지 않는다. 읽기 전용·깊이·하위 개수 판정은 전부 호출부의 몫 |
 | 접근성 | 클릭 가능한 요소로 키보드 접근이 된다 |
 
@@ -106,6 +107,7 @@ centerPanel ──▶ table ──▶ tableGroup ──▶ tableRows ──▶ t
 | T-02 | 클릭하면 `onClick`이 불린다 |
 | T-03 | `ManageBoardCards` 권한이 없으면 렌더되지 않는다 |
 | T-04 | `depth`에 비례해 들여쓴다 (레벨당 22px). 그룹 추가 줄은 들여쓰지 않는다 |
+| T-04a | 인라인 폭을 갖는다 — 들여쓰기 `depth*22px`, 토글 자리 20px, 아이콘 슬롯 20px + 여백 4px, 셀 `padding-left` 8px |
 
 ### 그룹 추가 줄 (US1)
 
