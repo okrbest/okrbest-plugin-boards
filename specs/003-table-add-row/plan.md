@@ -30,7 +30,7 @@
 
 **Constraints**: 새 시각 언어를 만들지 않는다 — 기존 표 푸터와 같아 보여야 한다 (constitution II). 신규 SCSS 파일을 만들지 않는다
 
-**Scale/Scope**: 신규 파일 1개(+테스트 3개), 기존 파일 수정 8개. 서버 0
+**Scale/Scope**: 신규 파일 4개(컴포넌트 1 + 테스트 3), 기존 파일 수정 12개(소스 7 · 테스트 3 · SCSS 1 · i18n 2). 서버 0
 
 ## Constitution Check
 
@@ -105,14 +105,16 @@ webapp/src/
 │       ├── tableSubCardRows.tsx       # 수정 — 하위 목록 끝에 추가 줄 배치
 │       ├── tableSubCardRows.test.tsx  # 신규
 │       ├── tableRow.tsx               # 수정 — ⋯ 메뉴에 항목 주입
-│       ├── tableRow.test.tsx          # 수정 — 메뉴 항목 케이스 추가
+│       ├── tableRow.test.tsx          # 수정 — 메뉴 항목·자동 펼침 케이스 추가
+│       ├── table.test.tsx             # 수정 — 기존 푸터·그룹 머리글 회귀 확인
 │       └── table.scss                 # 수정 — 들여쓰기 규칙만 추가
-└── ...
+└── cardActionsMenu/
+    └── cardActionsMenu.test.tsx       # 수정 — 다른 보기에 항목이 새지 않음을 확인
 
 webapp/i18n/{en,ko}.json               # 수정 — 신규 문자열 3개
 ```
 
-`CardActionsMenu`(`components/cardActionsMenu/cardActionsMenu.tsx`)는 **수정하지 않는다.** 이미 `children`을 받으므로 표 행에서 항목을 주입한다.
+`CardActionsMenu`(`components/cardActionsMenu/cardActionsMenu.tsx`) **본체는 수정하지 않는다.** 이미 `children`을 받으므로 표 행에서 항목을 주입한다. 테스트만 손대는 이유는 "다른 보기의 메뉴가 그대로다"라는 사실 자체를 고정하기 위해서다.
 
 **Structure Decision**: 기존 `components/table/` 디렉터리 안에서 해결한다. 신규 컴포넌트 하나를 더하고 나머지는 배치·배선 수정이다. 상태 관리는 기존 `store/cards.ts` 슬라이스와 `useSubCardInfo` 훅을 그대로 쓰며 새 슬라이스를 만들지 않는다.
 

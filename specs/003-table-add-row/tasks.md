@@ -35,7 +35,7 @@ description: "Task list for 표 보기 카드 추가 진입점"
 - [ ] T001 [P] 추가 줄 컴포넌트 계약 테스트 T-01~T-04를 `webapp/src/components/table/tableAddRow.test.tsx`에 먼저 작성 — 라벨 표시, 클릭 시 `onClick` 호출, `ManageBoardCards` 없으면 미렌더, `indented`가 클래스에 반영 (contracts §5)
 - [ ] T002 추가 줄 컴포넌트를 `webapp/src/components/table/tableAddRow.tsx`에 구현 — props는 `label`·`onClick`·`indented`. 기존 `.octo-table-footer` / `.octo-table-cell`을 쓰고 **새 클래스를 정의하지 않는다**. `BoardPermissionGate permissions={[Permission.ManageBoardCards]}`로 감싼다 (contracts §1)
 - [ ] T003 들여쓰기 규칙을 `webapp/src/components/table/table.scss`에 추가 — **신규 SCSS 파일을 만들지 않는다.** 색상·간격은 기존 값과 CSS 변수만 쓴다
-- [ ] T004 [P] 신규 문자열 3개를 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 — `TableComponent.plus-new-card`·`TableComponent.plus-new-subcard`·`CardActionsMenu.addSubCard` (data-model.md §3, constitution 원칙 V)
+- [ ] T004 [P] 신규 문자열 3개를 `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 동시 추가 — `TableComponent.plus-new-card`·`TableComponent.plus-new-subcard`·`CardActionsMenu.addSubCard` (FR-016, data-model.md §3, constitution 원칙 V)
 
 **Checkpoint**: 추가 줄 컴포넌트가 존재하고 문자열이 준비됐다. 아직 어디에도 배치되지 않았다
 
@@ -48,7 +48,7 @@ description: "Task list for 표 보기 카드 추가 진입점"
 **⚠️ 주의**: US2·US3는 이 단계가 끝나기 전에 시작할 수 없다
 
 - [ ] T005 `addSubCard` 배선 테스트 T-15·T-16을 `webapp/src/components/centerPanel.test.tsx`에 먼저 작성 — `mutator.createSubCard` 호출과 성공 시 포커스 대상 지정, 실패 시 flash message (contracts §2 C-02·C-03·C-04)
-- [ ] T006 `addSubCard(parentCard)` 콜백을 `webapp/src/components/centerPanel.tsx`에 구현 — 깊이 한도 확인(C-01), `mutator.createSubCard(board.id, parentCard.id, '', afterRedo)`, `afterRedo`에서 `dispatch(addSubCard(...))`와 `setCardIdToFocusOnRender(...)`, 실패 시 `sendFlashMessage`. **카드 상세를 열지 않는다**(C-07). 빈 `catch` 금지 (constitution 원칙 III)
+- [ ] T006 `addSubCard(parentCard)` 콜백을 `webapp/src/components/centerPanel.tsx`에 구현 — 깊이 한도 확인(C-01), `mutator.createSubCard(board.id, parentCard.id, '', afterRedo)`, `afterRedo`에서 `dispatch(addSubCard(...))`와 `setCardIdToFocusOnRender(...)`, 실패 시 `sendFlashMessage`(FR-014). **카드 상세를 열지 않는다**(C-07). **낙관적 행을 먼저 그리지 않는다** — 그래야 실패 시 되돌릴 상태가 없고 빈 행이 남지 않는다(C-05). 빈 `catch` 금지 (constitution 원칙 III)
 - [ ] T007 중복 클릭 차단을 `webapp/src/components/centerPanel.tsx`의 `addSubCard`에 추가 — 처리 중 두 번째 호출을 무시한다 (C-06, FR-015). `cardDetail/subCards.tsx`의 `isAdding`과 같은 방식
 - [ ] T008 `addSubCard`를 표 컴포넌트 계층으로 전달 — `webapp/src/components/table/table.tsx` → `tableGroup.tsx` → `tableRows.tsx` → `tableRowExpandable.tsx`. 기존 `addCard`와 같은 경로를 따르고 새 Context를 만들지 않는다 (contracts §2)
 
@@ -68,7 +68,7 @@ description: "Task list for 표 보기 카드 추가 진입점"
 
 ### 구현
 
-- [ ] T010 [US1] 그룹 끝에 추가 줄을 `webapp/src/components/table/tableGroup.tsx`에 배치 — `TableRows` 뒤에 `TableAddRow`. `group.cards.length > 0` 조건은 `TableRows`에만 남겨 **빈 그룹에도 추가 줄이 나오게** 한다 (FR-002). 접힘(`isCollapsed`)일 때는 둘 다 그리지 않는다 (FR-003)
+- [ ] T010 [US1] 그룹 끝에 추가 줄을 `webapp/src/components/table/tableGroup.tsx`에 배치 — `TableRows` 뒤에 `TableAddRow`. `group.cards.length > 0` 조건은 `TableRows`에만 남겨 **빈 그룹에도 추가 줄이 나오게** 한다 (FR-001, FR-002). 접힘(`isCollapsed`)일 때는 둘 다 그리지 않는다 (FR-003)
 - [ ] T011 [US1] 추가 줄 클릭을 `webapp/src/components/table/tableGroup.tsx`에서 `props.addCard(group.option.id)`에 연결 — 그룹 속성값 채움과 제목 인라인 포커스는 기존 `addCard`가 이미 한다 (FR-004, FR-012, research.md R1)
 - [ ] T012 [US1] 그룹 없는 보기의 기존 푸터와 그룹 머리글 `+`가 그대로인지 `webapp/src/components/table/table.test.tsx`에서 확인 — 이 기능은 그 둘을 바꾸지 않는다 (FR-005, FR-006)
 - [ ] T013 [US1] 표 스냅샷을 갱신한다 — 추가 줄이 생기므로 변화가 정당하다. 변경 의도를 확인한 뒤 갱신하고, 갱신 전후로 그 스위트의 실패 **개수**가 같은지 확인한다 (constitution 원칙 IV)
@@ -86,7 +86,7 @@ description: "Task list for 표 보기 카드 추가 진입점"
 ### Tests for User Story 2 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
 - [ ] T014 [P] [US2] 하위 추가 줄 계약 테스트 T-09~T-11을 `webapp/src/components/table/tableSubCardRows.test.tsx`에 작성 — 하위 목록 끝에 추가 줄, 부모 깊이가 한도에 닿으면 미표시, 클릭 시 `addSubCard(parentCard)` (contracts §5)
-- [ ] T015 [P] [US2] 하위 카드 포커스 전달 테스트 T-18을 `webapp/src/components/table/tableSubCardRows.test.tsx`에 추가 — `cardIdToFocusOnRender`가 하위 행까지 닿는다 (research.md R4)
+- [ ] T015 [US2] 하위 카드 포커스 전달 테스트 T-18을 `webapp/src/components/table/tableSubCardRows.test.tsx`에 추가 — `cardIdToFocusOnRender`가 하위 행까지 닿는다 (research.md R4)
 
 ### 구현
 
@@ -107,7 +107,7 @@ description: "Task list for 표 보기 카드 추가 진입점"
 ### Tests for User Story 3 ⚠️ 구현 전에 작성하고 실패를 확인한다
 
 - [ ] T019 [P] [US3] ⋯ 메뉴 항목 계약 테스트 T-12~T-14를 `webapp/src/components/table/tableRow.test.tsx`에 추가 — 하위 0개·깊이 여유면 항목 있음, 하위 ≥ 1이면 없음, 깊이 한도면 없음 (contracts §5)
-- [ ] T020 [P] [US3] 자동 펼침 테스트 T-17을 `webapp/src/components/table/tableRow.test.tsx`에 추가 — 하위 개수가 0 → 1이 되면 부모가 펼쳐진다 (FR-010, data-model.md §2.2)
+- [ ] T020 [US3] 자동 펼침 테스트 T-17을 `webapp/src/components/table/tableRow.test.tsx`에 추가 — 하위 개수가 0 → 1이 되면 부모가 펼쳐진다 (FR-010, data-model.md §2.2)
 
 ### 구현
 
@@ -126,7 +126,7 @@ description: "Task list for 표 보기 카드 추가 진입점"
 - [ ] T024 [P] 세 진입점의 권한·읽기 전용 게이트를 한 번에 검증 — 권한 없는 사용자와 읽기 전용 보기에서 어느 것도 보이지 않는다 (FR-013, SC-003). data-model.md §4의 표시 조건표가 기준이다
 - [ ] T025 [P] UI 일관성을 확인한다 — `webapp/src/components/table/`에서 신규 SCSS 파일 0개, 하드코딩된 색상 0건, 추가 줄이 기존 푸터와 같아 보이는지 (constitution 원칙 II, plan.md Constraints)
 - [ ] T026 `make webapp-ci`를 실행하고 출력을 완료 근거로 제시 — baseline 대비 **신규 실패 0건**. 개수가 아니라 실패 스위트 목록을 diff 한다 (constitution 원칙 I, quickstart.md)
-- [ ] T027 [quickstart.md](quickstart.md)의 수동 검증 시나리오 1~6과 회귀 확인표를 배포된 플러그인에서 검증
+- [ ] T027 [quickstart.md](quickstart.md)의 수동 검증 시나리오 1~6과 회귀 확인표를 배포된 플러그인에서 검증 — 시나리오 1이 SC-001, 3·4가 SC-002, 5가 SC-004, 회귀 확인표가 SC-005를 각각 판정한다
 - [ ] T028 브랜치를 `develop`에 선형 병합할 수 있도록 정리 (rebase 기반, constitution 원칙 VIII)
 
 ---
@@ -158,8 +158,8 @@ description: "Task list for 표 보기 카드 추가 진입점"
 - **Phase 1**: T001·T004 병렬. T002는 T001 후, T003은 T002와 같은 시각 자산이라 T002 후
 - **Phase 2**: T005 → T006 → T007 순차 (같은 파일). T008은 T006 후
 - **Phase 3 테스트**: T009 단독
-- **Phase 4 테스트**: T014·T015 병렬 (같은 파일이지만 서로 다른 케이스라 한 번에 작성 가능)
-- **Phase 5 테스트**: T019·T020 병렬
+- **Phase 4 테스트**: T014 → T015 순차 (같은 `tableSubCardRows.test.tsx`)
+- **Phase 5 테스트**: T019 → T020 순차 (같은 `tableRow.test.tsx`)
 - **US1과 US2·US3**: Setup만 끝나면 US1을 Foundational과 병렬로 진행할 수 있다
 - **Phase 6**: T024·T025 병렬. T026~T028은 순차
 
@@ -173,8 +173,8 @@ T001  tableAddRow.test.tsx        ∥  T004  i18n en/ko
 
 # T002(컴포넌트) 완료 후 두 갈래
 US1 갈래:          T009 → T010 → T011 → T012 → T013
-Foundational 갈래: T005 → T006 → T007 → T008 → (US2) T014 ∥ T015 → T016 → T017 → T018
-                                                → (US3) T019 ∥ T020 → T021 → T022 → T023
+Foundational 갈래: T005 → T006 → T007 → T008 → (US2) T014 → T015 → T016 → T017 → T018
+                                                → (US3) T019 → T020 → T021 → T022 → T023
 ```
 
 ---
