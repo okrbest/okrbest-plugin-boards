@@ -586,6 +586,16 @@ func (a *App) DeleteBlockAndNotify(blockID string, modifiedBy string, disableNot
 		return permErr
 	}
 
+	// Sub-cards are deleted along with their parent. Left behind, they keep a
+	// parentCardId pointing at a card that no longer exists, and the table view
+	// drops them entirely: they are neither top-level rows nor children of any
+	// rendered row.
+	if block.Type == model.TypeCard {
+		if err = a.deleteSubCards(blockID, modifiedBy); err != nil {
+			return err
+		}
+	}
+
 	err = a.store.DeleteBlock(blockID, modifiedBy)
 	if err != nil {
 		return err
@@ -605,6 +615,26 @@ func (a *App) DeleteBlockAndNotify(blockID string, modifiedBy string, disableNot
 		}
 		return nil
 	})
+
+	return nil
+}
+
+// deleteSubCards deletes every descendant card of cardID, deepest first, so the
+// tree never passes through a state where a surviving card points at a deleted
+// parent. Cycles cannot occur: LinkCardAsSubCard rejects them up front.
+func (a *App) deleteSubCards(cardID string, modifiedBy string) error {
+	subCards, err := a.GetSubCards(cardID, 0, -1)
+	if err != nil {
+		return err
+	}
+
+	for _, subCard := range subCards {
+		// disableNotify: one user-facing delete should not fan out into a
+		// notification per descendant. The websocket change is still broadcast.
+		if err := a.DeleteBlockAndNotify(subCard.ID, modifiedBy, true); err != nil {
+			return fmt.Errorf("failed to delete sub-card %s: %w", subCard.ID, err)
+		}
+	}
 
 	return nil
 }

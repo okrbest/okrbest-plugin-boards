@@ -148,6 +148,55 @@ func TestDeleteBlock(t *testing.T) {
 		err := th.App.DeleteBlock("block-id", "user-id-1")
 		require.Error(t, err, "error")
 	})
+
+	t.Run("deleting a card also deletes its descendant sub-cards", func(t *testing.T) {
+		boardID := testBoardID
+		board := &model.Board{ID: boardID}
+		parent := &model.Block{ID: "parent-card", BoardID: boardID, Type: model.TypeCard}
+		child := &model.Block{ID: "child-card", ParentID: "parent-card", BoardID: boardID, Type: model.TypeCard}
+		grandchild := &model.Block{ID: "grandchild-card", ParentID: "child-card", BoardID: boardID, Type: model.TypeCard}
+
+		subCardQuery := func(parentID string) model.QueryBlocksOptions {
+			return model.QueryBlocksOptions{ParentID: parentID, BlockType: model.TypeCard, PerPage: -1}
+		}
+
+		th.Store.EXPECT().GetBlock(gomock.Eq("parent-card")).Return(parent, nil)
+		th.Store.EXPECT().GetBlock(gomock.Eq("child-card")).Return(child, nil)
+		th.Store.EXPECT().GetBlock(gomock.Eq("grandchild-card")).Return(grandchild, nil)
+		th.Store.EXPECT().GetBoard(gomock.Eq(boardID)).Return(board, nil).AnyTimes()
+		th.Store.EXPECT().GetMembersForBoard(boardID).Return([]*model.BoardMember{}, nil).AnyTimes()
+
+		th.Store.EXPECT().GetBlocks(gomock.Eq(subCardQuery("parent-card"))).Return([]*model.Block{child}, nil)
+		th.Store.EXPECT().GetBlocks(gomock.Eq(subCardQuery("child-card"))).Return([]*model.Block{grandchild}, nil)
+		th.Store.EXPECT().GetBlocks(gomock.Eq(subCardQuery("grandchild-card"))).Return([]*model.Block{}, nil)
+
+		// 자손부터 지우고 마지막에 부모를 지운다 — 중간 상태에서도 고아가 생기지 않는다.
+		gomock.InOrder(
+			th.Store.EXPECT().DeleteBlock(gomock.Eq("grandchild-card"), gomock.Eq("user-id-1")).Return(nil),
+			th.Store.EXPECT().DeleteBlock(gomock.Eq("child-card"), gomock.Eq("user-id-1")).Return(nil),
+			th.Store.EXPECT().DeleteBlock(gomock.Eq("parent-card"), gomock.Eq("user-id-1")).Return(nil),
+		)
+		th.Store.EXPECT().DeleteBlockSuiteDocByCardID(gomock.Any()).Return(nil).Times(3)
+
+		err := th.App.DeleteBlock("parent-card", "user-id-1")
+		require.NoError(t, err)
+	})
+
+	t.Run("deleting a non-card block does not look for sub-cards", func(t *testing.T) {
+		boardID := testBoardID
+		board := &model.Board{ID: boardID}
+		block := &model.Block{ID: "text-block", BoardID: boardID, Type: model.TypeText}
+
+		th.Store.EXPECT().GetBlock(gomock.Eq("text-block")).Return(block, nil)
+		// AnyTimes: the sub-card subtest above already registered an open-ended
+		// GetBoard expectation on the shared controller, which absorbs this call.
+		th.Store.EXPECT().GetBoard(gomock.Eq(boardID)).Return(board, nil).AnyTimes()
+		th.Store.EXPECT().GetMembersForBoard(boardID).Return([]*model.BoardMember{}, nil).AnyTimes()
+		th.Store.EXPECT().DeleteBlock(gomock.Eq("text-block"), gomock.Eq("user-id-1")).Return(nil)
+
+		err := th.App.DeleteBlock("text-block", "user-id-1")
+		require.NoError(t, err)
+	})
 }
 
 func TestUndeleteBlock(t *testing.T) {

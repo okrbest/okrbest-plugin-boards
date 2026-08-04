@@ -259,7 +259,12 @@ export const getCurrentBoardParentCards = createSelector(
     (cards) => {
         // fields.parentCardId가 없는 카드만 최상위 카드
         // parentId !== boardId 체크는 사용하지 않음 (템플릿에서 복제된 카드의 parentId가 boardId와 다를 수 있음)
-        return cards.filter((c) => !c.fields.parentCardId)
+        //
+        // 부모를 찾을 수 없는 카드(고아)도 최상위로 본다. 부모가 삭제되면 자식은
+        // parentCardId가 남은 채로 살아남는데, 최상위에서 빼면 부모 행이 없어
+        // 하위 행으로도 못 그려져 표 뷰에서 통째로 사라진다.
+        const ids = new Set(cards.map((c) => c.id))
+        return cards.filter((c) => !c.fields.parentCardId || !ids.has(c.fields.parentCardId))
     },
 )
 

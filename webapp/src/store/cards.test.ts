@@ -86,6 +86,30 @@ describe('store/cards selectors', () => {
         expect(result.map((card) => card.id)).toEqual([parentCard.id])
     })
 
+    // 부모가 삭제되면 자식은 parentCardId가 남은 채 고아가 된다. 최상위에서도
+    // 빼고 부모 행 밑에도 못 그리면 표 뷰에서 완전히 사라지므로, 부모를 찾을 수
+    // 없는 카드는 최상위로 되돌린다.
+    test('parent-card selector treats orphans as top level', () => {
+        const {state, parentCard, subCard} = setupState()
+
+        const orphan = {
+            ...subCard,
+            id: 'orphan-card',
+            title: 'Orphan card',
+            fields: {...subCard.fields, parentCardId: 'deleted-card'},
+        }
+
+        const withOrphan = {
+            ...state,
+            cards: {cards: {...state.cards.cards, [orphan.id]: orphan}},
+        }
+
+        const result = getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit(withOrphan as unknown as RootState)
+
+        expect(result.map((card) => card.id).sort()).toEqual([orphan.id, parentCard.id].sort())
+        expect(result.map((card) => card.id)).not.toContain(subCard.id)
+    })
+
     test('kanban selector includes subcards and applies search text', () => {
         const {state, parentCard, subCard} = setupState()
 
