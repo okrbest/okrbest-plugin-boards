@@ -83,25 +83,25 @@ description: "Task list for 004-table-drag-reorder"
 
 ### 판정 모듈 (테스트 먼저)
 
-- [ ] T012 [P] [US1] `webapp/src/components/table/tableDropTarget.test.ts`를 만들어 경계 계산 케이스를 쓴다: 첫 행 위쪽 절반 → `boundaryIndex 0`, 마지막 행 아래쪽 절반 → 마지막 경계, 행 중앙 기준 앞/뒤 전환(FR-006), `rows` 비어 있으면 `null` ([contracts/drop-target.md](contracts/drop-target.md) 필수 케이스)
-- [ ] T013 [US1] `webapp/src/components/table/tableDropTarget.ts`에 `computeDropIntent`를 구현한다. 이 단계에서는 깊이를 항상 0으로 두고 경계만 계산한다 (T012 통과)
+- [X] T012 [P] [US1] `webapp/src/components/table/tableDropTarget.test.ts`를 만들어 경계 계산 케이스를 쓴다: 첫 행 위쪽 절반 → `boundaryIndex 0`, 마지막 행 아래쪽 절반 → 마지막 경계, 행 중앙 기준 앞/뒤 전환(FR-006), `rows` 비어 있으면 `null` ([contracts/drop-target.md](contracts/drop-target.md) 필수 케이스)
+- [X] T013 [US1] `webapp/src/components/table/tableDropTarget.ts`에 `computeDropIntent`를 구현한다. 이 단계에서는 깊이를 항상 0으로 두고 경계만 계산한다 (T012 통과)
 
 ### 표 단위 상태
 
-- [ ] T014 [P] [US1] `webapp/src/components/table/tableDragContext.test.tsx`를 만들어 쓴다: `registerRow`/`unregisterRow`가 메트릭을 순서대로 유지하고, 드래그 종료 시 `intent`가 `null`로 돌아가며, **접힌 그룹의 행(`display: none`)은 `rows`에 들어가지 않는다** (FR-024)
-- [ ] T015 [US1] `webapp/src/components/table/tableDragContext.tsx`를 구현한다. `reportCursor`는 ref에만 적고 판정·상태 갱신은 `requestAnimationFrame`에서 프레임당 1회 수행한다 (T014 통과, research R5). **접힌 행은 등록하지 않는다** — `display: none` 요소의 `getBoundingClientRect()`가 전부 0이라 등록하면 경계 계산이 무너진다 (research R3, [contracts/drop-target.md](contracts/drop-target.md) §2)
+- [X] T014 [P] [US1] `webapp/src/components/table/tableDragContext.test.tsx`를 만들어 쓴다: `registerRow`/`unregisterRow`가 메트릭을 순서대로 유지하고, 드래그 종료 시 `intent`가 `null`로 돌아가며, **접힌 그룹의 행(`display: none`)은 `rows`에 들어가지 않는다** (FR-024)
+- [X] T015 [US1] `webapp/src/components/table/tableDragContext.tsx`를 구현한다. `reportCursor`는 ref에만 적고 판정·상태 갱신은 `requestAnimationFrame`에서 프레임당 1회 수행한다 (T014 통과, research R5). **접힌 행은 등록하지 않는다** — `display: none` 요소의 `getBoundingClientRect()`가 전부 0이라 등록하면 경계 계산이 무너진다 (research R3, [contracts/drop-target.md](contracts/drop-target.md) §2)
 
 ### 인디케이터
 
-- [ ] T016 [P] [US1] `webapp/src/components/table/tableDropIndicator.test.tsx`를 만들어 쓴다: `intent`가 `null`이면 아무것도 렌더하지 않고, 있으면 `anchorTop`·`indentOffsetPx`가 스타일에 반영된다
-- [ ] T017 [US1] `webapp/src/components/table/tableDropIndicator.tsx`를 구현한다 (T016 통과, FR-005)
-- [ ] T018 [US1] `webapp/src/components/table/tableDropTarget.test.ts`에 **표시와 결과를 잇는 단언**을 추가한다: 어떤 커서 좌표에서든 `intent.indentOffsetPx === intent.depth × Constants.tableSubCardIndentPx`. 인디케이터 들여쓰기와 실제 배치 깊이가 같은 상수에서 파생됨을 못 박는다 (FR-007, SC-001). 이 단언이 없으면 둘이 어긋나도 T016·T032가 각각 통과한다
-- [ ] T019 [US1] `webapp/src/components/table/table.scss`에 인디케이터 블록을 추가한다. `.Table` 기준 `position: absolute`, 색상은 CSS 변수 사용, z-index는 T003 슬롯 (헌법 원칙 II — 신규 SCSS 파일을 만들지 않는다)
+- [X] T016 [P] [US1] `webapp/src/components/table/tableDropIndicator.test.tsx`를 만들어 쓴다: `intent`가 `null`이면 아무것도 렌더하지 않고, 있으면 `anchorTop`·`indentOffsetPx`가 스타일에 반영된다
+- [X] T017 [US1] `webapp/src/components/table/tableDropIndicator.tsx`를 구현한다 (T016 통과, FR-005)
+- [X] T018 [US1] `webapp/src/components/table/tableDropTarget.test.ts`에 **표시와 결과를 잇는 단언**을 추가한다: 어떤 커서 좌표에서든 `intent.indentOffsetPx === intent.depth × Constants.tableSubCardIndentPx`. 인디케이터 들여쓰기와 실제 배치 깊이가 같은 상수에서 파생됨을 못 박는다 (FR-007, SC-001). 이 단언이 없으면 둘이 어긋나도 T016·T032가 각각 통과한다
+- [X] T019 [US1] `webapp/src/components/table/table.scss`에 인디케이터 블록을 추가한다. `.Table` 기준 `position: absolute`, 색상은 CSS 변수 사용, z-index는 T003 슬롯 (헌법 원칙 II — 신규 SCSS 파일을 만들지 않는다)
 
 ### 행 배선
 
-- [ ] T020 [P] [US1] `webapp/src/hooks/useTableRowDrag.test.ts`를 만들어 쓴다: 드래그 소스 ref와 드롭 타깃 ref가 **서로 다른 요소**에 붙는다
-- [ ] T021 [US1] `webapp/src/hooks/useTableRowDrag.ts`를 구현한다. `drag(handleRef)`, `drop(rowRef)`로 분리하고 `hover`에서 좌표를 컨텍스트로 보고한다 (T020 통과). **`webapp/src/hooks/sortable.tsx`는 건드리지 않는다** — 칸반이 쓴다 (FR-030)
+- [X] T020 [P] [US1] `webapp/src/hooks/useTableRowDrag.test.ts`를 만들어 쓴다: 드래그 소스 ref와 드롭 타깃 ref가 **서로 다른 요소**에 붙는다
+- [X] T021 [US1] `webapp/src/hooks/useTableRowDrag.ts`를 구현한다. `drag(handleRef)`, `drop(rowRef)`로 분리하고 `hover`에서 좌표를 컨텍스트로 보고한다 (T020 통과). **`webapp/src/hooks/sortable.tsx`는 건드리지 않는다** — 칸반이 쓴다 (FR-030)
 - [ ] T022 [US1] `webapp/src/components/table/tableRow.test.tsx`를 고쳐 검증한다: 드래그 ref가 **핸들에만** 붙고, 편집 권한이 없으면 핸들이 렌더되지 않는다 (FR-002, FR-004)
 - [ ] T023 [US1] `webapp/src/components/table/tableRow.tsx`의 `useSortable`을 `useTableRowDrag`로 바꾸고, 좌측 ⠿ `IconButton`에 드래그 ref를 붙인다(FR-001). 행에 걸린 `.dragover` 클래스 부여를 제거한다 (T022 통과)
 
