@@ -34,7 +34,7 @@ description: "Task list for 004-table-drag-reorder"
 
 **Purpose**: 회귀 판정 기준선을 잡는다. 이 저장소는 깨끗한 상태에서도 실패하는 테스트가 있어 **실패 개수로는 회귀를 판정할 수 없다.**
 
-- [ ] T001 브랜치 분기점 `d62ec0d3`에서 worktree를 떼어 `npx jest --coverage=false --silent`를 돌리고 실패 스위트 목록을 `/tmp/fail-before.txt`에 저장한다 ([quickstart.md](quickstart.md)의 절차)
+- [X] T001 브랜치 분기점 `24e4ca46`에서 worktree를 떼어 `npx jest --coverage=false --silent`를 돌리고 실패 스위트 목록을 `/tmp/fail-before.txt`에 저장한다 ([quickstart.md](quickstart.md)의 절차)
 
 **Checkpoint**: 회귀 판정 기준선 확보
 
@@ -48,28 +48,28 @@ description: "Task list for 004-table-drag-reorder"
 
 ### 상수·슬롯
 
-- [ ] T002 [P] 들여쓰기 눈금 22를 `webapp/src/constants.ts`에 `tableSubCardIndentPx`로 올리고, `webapp/src/components/table/tableRow.tsx:183`의 하드코딩을 이 상수 참조로 바꾼다 (research R4 — 판정과 렌더가 같은 값을 봐야 선과 결과가 일치한다)
-- [ ] T003 [P] `webapp/src/styles/_z-index.scss`에 `table-drop-indicator` 슬롯을 `table-row-action-cell: 100`보다 위 값으로 추가한다 (research R6)
+- [X] T002 [P] 들여쓰기 눈금 22를 `webapp/src/constants.ts`에 `tableSubCardIndentPx`로 올리고, `webapp/src/components/table/tableRow.tsx:183`의 하드코딩을 이 상수 참조로 바꾼다 (research R4 — 판정과 렌더가 같은 값을 봐야 선과 결과가 일치한다)
+- [X] T003 [P] `webapp/src/styles/_z-index.scss`에 `table-drop-indicator` 슬롯을 `table-row-action-cell: 100`보다 위 값으로 추가한다 (research R6)
 
 ### B3 — 하위 카드가 저장 순서를 따르게 (FR-020, FR-021)
 
-- [ ] T004 `webapp/src/store/cards.test.ts`에 실패 테스트를 추가한다: `getCurrentBoardSubCardsByParent`가 각 부모의 자식을 `activeView.fields.cardOrder` 순서로 반환한다
-- [ ] T005 `webapp/src/store/cards.ts:266`의 `getCurrentBoardSubCardsByParent`가 자식 배열을 `cardOrder` 기준으로 정렬해 반환하도록 고친다 (T004 통과)
+- [X] T004 `webapp/src/store/cards.test.ts`에 실패 테스트를 추가한다: `getCurrentBoardSubCardsByParent`가 각 부모의 자식을 `activeView.fields.cardOrder` 순서로 반환한다
+- [X] T005 `webapp/src/store/cards.ts:266`의 `getCurrentBoardSubCardsByParent`가 자식 배열을 `cardOrder` 기준으로 정렬해 반환하도록 고친다 (T004 통과)
 
 ### B1 — cardOrder 시드에서 하위 카드가 빠지는 문제
 
-- [ ] T006 `webapp/src/components/table/table.test.tsx`에 실패 테스트를 추가한다: 하위 카드를 가진 보드에서 순서를 바꿀 때 `changeViewCardOrder`에 넘어가는 배열에 하위 카드 id가 포함된다
-- [ ] T007 `webapp/src/components/table/table.tsx:213`의 `cardOrder` 시드를 최상위 카드 목록이 아니라 **보드 전체 카드**로 채우도록 고친다 (T006 통과)
+- [X] T006 `webapp/src/components/table/table.test.tsx`에 실패 테스트를 추가한다: 하위 카드를 가진 보드에서 순서를 바꿀 때 `changeViewCardOrder`에 넘어가는 배열에 하위 카드 id가 포함된다
+- [X] T007 `webapp/src/components/table/table.tsx:213`의 `cardOrder` 시드를 최상위 카드 목록이 아니라 **보드 전체 카드**로 채우도록 고친다 (T006 통과)
 
 ### B2 — 되돌리기 그룹이 갈라지는 문제 (FR-028)
 
-- [ ] T008 `webapp/src/components/table/table.test.tsx`에 실패 테스트를 추가한다: 그룹과 순서가 함께 바뀌는 드롭에서 `performAsUndoGroup`이 **한 번만** 호출된다
-- [ ] T009 `webapp/src/components/table/table.tsx:148`·`:234`의 갈라진 `performAsUndoGroup` 두 개를 하나로 합친다. 안쪽 mutator 호출은 다시 감싸지 않는다 (research R1 — 중첩 그룹은 지원되지 않고, 하위 호출은 열린 그룹에 스스로 참여한다) (T008 통과)
+- [X] T008 `webapp/src/components/table/table.test.tsx`에 실패 테스트를 추가한다: 그룹과 순서가 함께 바뀌는 드롭에서 `performAsUndoGroup`이 **한 번만** 호출된다
+- [X] T009 `webapp/src/components/table/table.tsx:148`·`:234`의 갈라진 `performAsUndoGroup` 두 개를 하나로 합친다. 안쪽 mutator 호출은 다시 감싸지 않는다 (research R1 — 중첩 그룹은 지원되지 않고, 하위 호출은 열린 그룹에 스스로 참여한다) (T008 통과)
 
 ### 서브트리 수집
 
-- [ ] T010 [P] `webapp/src/components/table/subtree.test.ts`를 만들어 실패 테스트를 쓴다: 카드 맵에서 `subtreeIds`(부모 → 깊이우선 자손)와 `subtreeHeight`를 구한다. 자손 없음 / 1단 / 3단 / 형제 다수 케이스. **접힘 여부와 무관하게 자손이 포함된다**는 케이스를 포함한다 — 수집 함수는 펼침 상태를 모르므로 저비용이고, 이것이 FR-018의 자동 검증이다
-- [ ] T011 `webapp/src/components/table/subtree.ts`에 수집 함수를 구현한다 (T010 통과, research R7)
+- [X] T010 [P] `webapp/src/components/table/subtree.test.ts`를 만들어 실패 테스트를 쓴다: 카드 맵에서 `subtreeIds`(부모 → 깊이우선 자손)와 `subtreeHeight`를 구한다. 자손 없음 / 1단 / 3단 / 형제 다수 케이스. **접힘 여부와 무관하게 자손이 포함된다**는 케이스를 포함한다 — 수집 함수는 펼침 상태를 모르므로 저비용이고, 이것이 FR-018의 자동 검증이다
+- [X] T011 `webapp/src/components/table/subtree.ts`에 수집 함수를 구현한다 (T010 통과, research R7)
 
 **Checkpoint**: 저장 데이터가 어긋나지 않는 토대 완성. 이 시점에서 하위 카드 순서 이동이 새로고침 후에도 유지된다.
 

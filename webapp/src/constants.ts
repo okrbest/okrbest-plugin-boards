@@ -47,6 +47,10 @@ class Constants {
     // 하위 카드 최대 깊이 (0 = 최상위, 5 = 최대 depth 4까지 허용)
     static readonly maxCardDepth = 5
 
+    // 하위 카드 한 단계의 들여쓰기 폭. 표 행의 들여쓰기와 드롭 인디케이터가
+    // 같은 눈금을 봐야 "선이 멈춘 자리"와 "카드가 놓이는 자리"가 일치한다.
+    static readonly tableSubCardIndentPx = 22
+
     static readonly versionString = '9.2.1'
 
     static readonly archiveHelpPage = 'https://docs.okrbest.com/boards/migrate-to-boards.html'

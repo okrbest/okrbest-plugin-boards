@@ -180,7 +180,7 @@ const TableRow = (props: Props) => {
                 {(card.fields.depth || 0) > 0 && (
                     <span
                         className='sub-card-indent'
-                        style={{width: (card.fields.depth || 0) * 22}}
+                        style={{width: (card.fields.depth || 0) * Constants.tableSubCardIndentPx}}
                     />
                 )}
                 {/* 하위 카드가 있으면 확장 버튼 추가, 없으면 같은 크기의 placeholder */}

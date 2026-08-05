@@ -268,9 +268,20 @@ export const getCurrentBoardParentCards = createSelector(
     },
 )
 
+// 뷰 슬라이스가 없는 상태에서도 안전하게 카드 순서만 꺼낸다. 이 셀렉터는
+// 카드 목록만 필요한 화면(하위 카드 목록 등)에서도 쓰이고, 그런 곳의 스토어는
+// 뷰를 담지 않을 수 있다.
+const getCurrentViewCardOrder = (state: RootState): readonly string[] | undefined => {
+    if (!state.views) {
+        return undefined
+    }
+    return getCurrentView(state)?.fields.cardOrder
+}
+
 export const getCurrentBoardSubCardsByParent = createSelector(
     getCurrentBoardCards,
-    (cards) => {
+    getCurrentViewCardOrder,
+    (cards, cardOrder) => {
         const map: {[parentCardId: string]: Card[]} = {}
         for (const card of cards) {
             // fields.parentCardId가 있는 카드만 하위 카드로 판단
@@ -282,6 +293,19 @@ export const getCurrentBoardSubCardsByParent = createSelector(
                 map[parentCardId].push(card)
             }
         }
+
+        // 하위 카드도 뷰의 카드 순서를 따른다. 스토어에 담긴 순서로 그리면 순서를
+        // 바꿔도 저장된 순서와 어긋나 새로고침하면 되돌아간다 (FR-020, FR-021).
+        if (cardOrder?.length) {
+            const rank = new Map(cardOrder.map((id, index) => [id, index]))
+
+            // 순서 목록에 없는 카드는 뒤로 보내되 서로의 상대 순서는 유지한다.
+            const rankOf = (card: Card) => rank.get(card.id) ?? Number.MAX_SAFE_INTEGER
+            for (const siblings of Object.values(map)) {
+                siblings.sort((a, b) => rankOf(a) - rankOf(b))
+            }
+        }
+
         return map
     },
 )

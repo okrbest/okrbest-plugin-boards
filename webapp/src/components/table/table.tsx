@@ -11,8 +11,9 @@ import {Card} from '../../blocks/card'
 import {Constants, Permission} from '../../constants'
 import mutator from '../../mutator'
 import {Utils} from '../../utils'
-import {useAppDispatch} from '../../store/hooks'
+import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {updateView} from '../../store/views'
+import {getCurrentBoardCards} from '../../store/cards'
 import {useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
@@ -26,6 +27,7 @@ import TableRows from './tableRows'
 import TableGroup from './tableGroup'
 import CalculationRow from './calculation/calculationRow'
 import {ColumnResizeProvider} from './tableColumnResizeContext'
+import {moveInCardOrder} from './cardOrderMove'
 
 type Props = {
     selectedCardIds: string[]
@@ -53,6 +55,10 @@ const Table = (props: Props): React.JSX.Element => {
     const canEditCardsByCapability = useHasCapabilities(board.id, ['canEditCard'])
     const canManageBoardByCapability = useHasCapabilities(board.id, ['canManageBoard'])
     const dispatch = useAppDispatch()
+
+    // props.cards는 최상위 카드만 담는다. 순서 목록의 시드는 하위 카드까지
+    // 포함해야 삽입 위치가 어긋나지 않는다.
+    const allBoardCards = useAppSelector(getCurrentBoardCards)
 
     const columnMinWidths = useMemo(() => {
         const min: Record<string, number> = {[Constants.titleColumnId]: Constants.minColumnWidth}
@@ -138,14 +144,19 @@ const Table = (props: Props): React.JSX.Element => {
         const draggedCardIds = Array.from(new Set(selectedCardIds).add(srcCard.id))
         const description = draggedCardIds.length > 1 ? `drag ${draggedCardIds.length} cards` : 'drag card'
 
-        if (activeView.fields.groupById !== undefined) {
-            const cardsById: { [key: string]: Card } = cards.reduce((acc: { [key: string]: Card }, card: Card): { [key: string]: Card } => {
-                acc[card.id] = card
-                return acc
-            }, {})
-            const draggedCards: Card[] = draggedCardIds.map((o: string) => cardsById[o])
-
-            mutator.performAsUndoGroup(async () => {
+        // 그룹 변경과 순서 변경을 하나의 되돌리기 그룹으로 묶는다. 둘로 갈라
+        // 두면 Ctrl+Z 한 번에 절반만 돌아온다 (FR-028).
+        //
+        // 안쪽 mutator 호출을 다시 performAsUndoGroup으로 감싸지 않는다 —
+        // 되돌리기 그룹은 중첩할 수 없고, 하위 호출은 열려 있는 그룹에 스스로
+        // 참여한다.
+        mutator.performAsUndoGroup(async () => {
+            if (activeView.fields.groupById !== undefined) {
+                const cardsById: { [key: string]: Card } = cards.reduce((acc: { [key: string]: Card }, card: Card): { [key: string]: Card } => {
+                    acc[card.id] = card
+                    return acc
+                }, {})
+                const draggedCards: Card[] = draggedCardIds.map((o: string) => cardsById[o])
                 // Update properties of dragged cards
                 const awaits = []
                 const getGroupValue = (optionId?: string | string[]): string | string[] | undefined => {
@@ -205,37 +216,40 @@ const Table = (props: Props): React.JSX.Element => {
                     }
                 }
                 await Promise.all(awaits)
-            })
-        }
+            }
 
-        // Update dstCard order
-        if (isManualSort) {
-            let cardOrder = Array.from(new Set([...activeView.fields.cardOrder, ...cards.map((o) => o.id)]))
+            // Update dstCard order
+            if (!isManualSort) {
+                return
+            }
+
+            // 시드는 보드 전체 카드로 채운다. 최상위 카드만 넘기면 하위 카드
+            // id가 순서 목록에서 빠져 삽입 위치가 어긋난다.
+            const allCardIds = allBoardCards.map((card) => card.id)
+
+            let cardOrder: string[]
             if (dstCardID) {
-                const isDraggingDown = cardOrder.indexOf(srcCard.id) <= cardOrder.indexOf(dstCardID)
-                cardOrder = cardOrder.filter((id) => !draggedCardIds.includes(id))
-                let destIndex = cardOrder.indexOf(dstCardID)
-                if (isDraggingDown) {
-                    destIndex += 1
-                }
-                cardOrder.splice(destIndex, 0, ...draggedCardIds)
+                cardOrder = moveInCardOrder({
+                    cardOrder: activeView.fields.cardOrder,
+                    allCardIds,
+                    movingIds: draggedCardIds,
+                    destCardId: dstCardID,
+                })
             } else {
                 // Find index of first group item
                 const firstCard = cards.find((card) => card.fields.properties[activeView.fields.groupById!] === groupID)
-                if (firstCard) {
-                    const destIndex = cardOrder.indexOf(firstCard.id)
-                    cardOrder.splice(destIndex, 0, ...draggedCardIds)
-                } else {
+                if (!firstCard) {
                     // if not found, this is the only item in group.
                     return
                 }
+                cardOrder = Array.from(new Set([...activeView.fields.cardOrder, ...allCardIds]))
+                    .filter((id) => !draggedCardIds.includes(id))
+                cardOrder.splice(cardOrder.indexOf(firstCard.id), 0, ...draggedCardIds)
             }
 
-            mutator.performAsUndoGroup(async () => {
-                await mutator.changeViewCardOrder(board.id, activeView.id, activeView.fields.cardOrder, cardOrder, description)
-            })
-        }
-    }, [activeView, cards, props.selectedCardIds, groupByProperty])
+            await mutator.changeViewCardOrder(board.id, activeView.id, activeView.fields.cardOrder, cardOrder, description)
+        })
+    }, [activeView, cards, allBoardCards, props.selectedCardIds, groupByProperty, isManualSort, board.id])
 
     const propertyNameChanged = useCallback(async (option: IPropertyOption, text: string): Promise<void> => {
         await mutator.changePropertyOptionValue(board.id, board.cardProperties, groupByProperty!, option, text)

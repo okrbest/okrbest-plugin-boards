@@ -6,6 +6,7 @@ import {TestBlockFactory} from '../test/testBlockFactory'
 import {
     getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit,
     getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit,
+    getCurrentBoardSubCardsByParent,
 } from './cards'
 import {RootState} from './index'
 
@@ -108,6 +109,32 @@ describe('store/cards selectors', () => {
 
         expect(result.map((card) => card.id).sort()).toEqual([orphan.id, parentCard.id].sort())
         expect(result.map((card) => card.id)).not.toContain(subCard.id)
+    })
+
+    // FR-020, FR-021. 하위 카드는 뷰가 가진 카드 순서를 따라야 한다. 스토어에
+    // 담긴 순서로 그리면 순서를 바꿔도 새로고침하면 되돌아간다.
+    test('sub cards follow the view card order', () => {
+        const {state, parentCard} = setupState()
+
+        const first = {...state.cards.cards['sub-card'], id: 'sub-a', title: 'Sub A'}
+        const second = {...state.cards.cards['sub-card'], id: 'sub-b', title: 'Sub B'}
+
+        const view = state.views.views[state.views.current]
+        const orderedView = {
+            ...view,
+            fields: {...view.fields, cardOrder: [parentCard.id, 'sub-b', 'sub-a']},
+        }
+
+        // 스토어에는 a, b 순으로 담고 뷰 순서는 b, a 로 둔다.
+        const ordered = {
+            ...state,
+            cards: {cards: {[parentCard.id]: parentCard, 'sub-a': first, 'sub-b': second}},
+            views: {...state.views, views: {[orderedView.id]: orderedView}},
+        }
+
+        const byParent = getCurrentBoardSubCardsByParent(ordered as unknown as RootState)
+
+        expect(byParent[parentCard.id].map((card) => card.id)).toEqual(['sub-b', 'sub-a'])
     })
 
     test('kanban selector includes subcards and applies search text', () => {

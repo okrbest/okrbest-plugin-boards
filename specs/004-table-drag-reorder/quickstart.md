@@ -24,8 +24,8 @@ make webapp-ci      # npm run check + npm run test + npm run check-types
 
 ```bash
 # 변경 전 목록 (작업 브랜치를 건드리지 않도록 worktree 사용)
-# 기준 커밋 = 이 브랜치의 분기점 d62ec0d3
-git worktree add --detach /tmp/baseline-wt d62ec0d3
+# 기준 커밋 = 이 브랜치의 분기점 24e4ca46 (git merge-base 로 확인)
+git worktree add --detach /tmp/baseline-wt 24e4ca46
 ln -s "$PWD/webapp/node_modules" /tmp/baseline-wt/webapp/node_modules
 (cd /tmp/baseline-wt/webapp && npx jest --coverage=false --silent) 2>&1 | grep '^FAIL ' | sort > /tmp/fail-before.txt
 
