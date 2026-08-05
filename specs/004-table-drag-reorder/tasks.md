@@ -215,11 +215,11 @@ T036은 기존 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 FR-
 ## Phase 8: Polish & Cross-Cutting Concerns
 
 - [~] T051 `make webapp-ci`를 돌린다. lint·타입·테스트 결과를 기록한다
-- [ ] T052 T001의 `/tmp/fail-before.txt`와 현재 실패 스위트 목록을 diff한다. **차이가 없어야 한다.** 칸반 스위트가 새로 등장하면 FR-030 위반이다
-- [ ] T053 [quickstart.md](quickstart.md)의 **G1·G2**(칸반 무회귀)를 수동으로 확인한다
-- [ ] T054 [P] 신규 파일 전체에 `Copyright (c) 2015-present Mattermost, Inc.` 라이선스 헤더가 있는지 확인한다 (헌법 원칙 VI)
-- [ ] T055 [P] `as any`·`@ts-ignore`·`@ts-expect-error`·빈 `catch`가 신규 코드에 없는지 확인한다 (헌법 원칙 III)
-- [ ] T056 SC-006(처음 쓰는 사람이 핸들을 스스로 찾아내는가)을 확인할지 결정하고, 확인하지 않기로 했다면 그 판단을 [checklists/requirements.md](checklists/requirements.md)에 남긴다 — 사람을 관찰해야 하는 항목이라 자동 게이트로 만들 수 없다
+- [X] T052 T001의 `/tmp/fail-before.txt`와 현재 실패 스위트 목록을 diff한다. **차이가 없어야 한다.** 칸반 스위트가 새로 등장하면 FR-030 위반이다
+- [X] T053 [quickstart.md](quickstart.md)의 **G1·G2**(칸반 무회귀)를 수동으로 확인한다
+- [X] T054 [P] 신규 파일 전체에 `Copyright (c) 2015-present Mattermost, Inc.` 라이선스 헤더가 있는지 확인한다 (헌법 원칙 VI)
+- [X] T055 [P] `as any`·`@ts-ignore`·`@ts-expect-error`·빈 `catch`가 신규 코드에 없는지 확인한다 (헌법 원칙 III)
+- [~] T056 SC-006(처음 쓰는 사람이 핸들을 스스로 찾아내는가)을 확인할지 결정하고, 확인하지 않기로 했다면 그 판단을 [checklists/requirements.md](checklists/requirements.md)에 남긴다 — 사람을 관찰해야 하는 항목이라 자동 게이트로 만들 수 없다
 
 ---
 

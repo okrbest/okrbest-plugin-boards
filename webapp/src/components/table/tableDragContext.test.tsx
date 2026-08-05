@@ -32,9 +32,9 @@ const Probe = () => {
 
 const renderCtx = () => render(
     <TableDragProvider
-            titleCellLeft={100}
-            onDrop={onDrop}
-        >
+        titleCellLeft={100}
+        onDrop={onDrop}
+    >
         <Probe/>
     </TableDragProvider>,
 )
