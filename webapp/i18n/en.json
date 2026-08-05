@@ -108,6 +108,7 @@
   "CardActionsMenu.sendNotification": "Send notification to channel",
   "CardActionsMenu.notification-sent": "Notification sent!",
   "CardActionsMenu.notification-failed": "Failed to send notification",
+  "TableRow.drag-handle-hint": "Drag to move",
   "TableRow.move-failed": "Could not move the card.",
   "Table.switch-to-manual-sort-heading": "Switch to manual sorting?",
   "Table.switch-to-manual-sort-body": "This view is sorted by a property, so a manual order cannot be kept. Remove the sort and move the card?",

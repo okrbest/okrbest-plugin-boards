@@ -229,12 +229,17 @@ const TableRow = (props: Props) => {
 
             <div className='action-cell octo-table-cell-btn'>
                 {!isReadOnly && (
-                    <div
-                        ref={handleRef}
-                        className='drag-handle'
-                    >
-                        <IconButton icon={<CompassIcon icon='drag-vertical'/>}/>
-                    </div>
+                    <Tooltip title={intl.formatMessage({id: 'TableRow.drag-handle-hint', defaultMessage: '드래그해서 옮기기'})}>
+                        <div
+                            ref={handleRef}
+                            className='drag-handle'
+                        >
+                            {/* 격자 모양이 필요해 제품 아이콘을 전용한다. compass-icons에
+                                노션식 6점 격자가 없고, drag-vertical은 점이 작아 핸들로
+                                읽히지 않는다. products는 166×166 사각을 반복하는 격자다. */}
+                            <IconButton icon={<CompassIcon icon='products'/>}/>
+                        </div>
+                    </Tooltip>
                 )}
             </div>
 

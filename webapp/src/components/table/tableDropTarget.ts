@@ -77,13 +77,38 @@ export function computeDropIntent(input: DropTargetInput): DropIntent | null {
     // 1. 커서 y가 어느 행의 어느 절반에 있는지로 경계를 고른다.
     const boundaryIndex = findBoundary(rows, cursor.y)
 
-    // 2. 자기 자신·자손 사이에는 놓을 수 없다. 부모를 자기 자손 밑에 넣으면
-    //    순환이 된다.
+    // 2. 서브트리 안쪽 경계만 막는다. 자기 자손 밑으로 들어가면 순환이 된다.
+    //
+    //    자기 자신에 인접한 경계는 막지 않는다. 깊이만 바꾸는 조작 — 하위
+    //    카드를 최상위로 꺼내거나 상위 카드를 하위로 넣는 것 — 이 바로 그
+    //    자리에서 일어나기 때문이다. 여기를 막으면 계층 이동 자체가 불가능해진다.
     const moving = new Set(item.subtreeIds)
-    const above = rows[boundaryIndex - 1]
-    const below = rows[boundaryIndex]
-    if ((above && moving.has(above.cardId)) || (below && moving.has(below.cardId))) {
-        return null
+    const first = rows.findIndex((row) => moving.has(row.cardId))
+    if (first !== -1) {
+        let last = first
+        while (last + 1 < rows.length && moving.has(rows[last + 1].cardId)) {
+            last++
+        }
+        if (boundaryIndex > first && boundaryIndex <= last) {
+            return null
+        }
+    }
+
+    // 이웃은 함께 움직이는 행을 건너뛰고 찾는다. 끌고 있는 카드 자신을 이웃으로
+    // 삼으면 제자리 깊이 변경에서 기준이 자기 자신이 되어 버린다.
+    let above: RowMetric | undefined
+    for (let i = boundaryIndex - 1; i >= 0; i--) {
+        if (!moving.has(rows[i].cardId)) {
+            above = rows[i]
+            break
+        }
+    }
+    let below: RowMetric | undefined
+    for (let i = boundaryIndex; i < rows.length; i++) {
+        if (!moving.has(rows[i].cardId)) {
+            below = rows[i]
+            break
+        }
     }
 
     // 3. 커서 x를 깊이 후보로 환산한다. 오른쪽으로 갈수록 깊어진다 (FR-010).

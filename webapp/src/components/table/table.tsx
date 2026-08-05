@@ -63,9 +63,13 @@ const ConnectedDropIndicator = (): React.JSX.Element | null => {
         if (!table) {
             return undefined
         }
-        const noDrop = draggingSubtree.size > 0 && !intent
-        table.classList.toggle('dragging-no-drop', noDrop)
-        return () => table.classList.remove('dragging-no-drop')
+        const dragging = draggingSubtree.size > 0
+        table.classList.toggle('dragging', dragging)
+        table.classList.toggle('dragging-no-drop', dragging && !intent)
+        return () => {
+            table.classList.remove('dragging')
+            table.classList.remove('dragging-no-drop')
+        }
     }, [intent, draggingSubtree])
 
     return <TableDropIndicator intent={intent}/>

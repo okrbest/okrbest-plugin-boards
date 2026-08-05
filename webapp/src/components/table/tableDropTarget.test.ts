@@ -123,10 +123,32 @@ describe('computeDropIntent — 깊이 축', () => {
 })
 
 describe('computeDropIntent — 금지 규칙', () => {
-    test('자기 자신 바로 앞뒤 경계에는 놓을 수 없다', () => {
-        const rows = flatRows()
-        expect(compute(rows, TITLE_LEFT, 50, dragging('b'))).toBeNull()   // b 앞
-        expect(compute(rows, TITLE_LEFT, 80, dragging('b'))).toBeNull()   // b 뒤
+    // 자기 자신에 인접한 경계는 막지 않는다. 하위 카드를 최상위로 꺼내거나
+    // 상위 카드를 하위로 넣는 조작이 바로 그 자리에서 일어나기 때문이다.
+    test('자기 자리에서 깊이만 바꿀 수 있다', () => {
+        const rows = nestedRows()   // a(0), a1(1), b(0)
+
+        // a1을 자기 자리에서 왼쪽으로 당기면 최상위가 된다.
+        const out = compute(rows, TITLE_LEFT, 50, dragging('a1', {sourceParentId: 'a', sourceDepth: 1}))
+        expect(out).not.toBeNull()
+        expect(out?.depth).toBe(0)
+        expect(out?.parentCardId).toBe('')
+
+        // 오른쪽으로 밀면 a의 하위로 남는다.
+        const stay = compute(rows, TITLE_LEFT + 22, 50, dragging('a1', {sourceParentId: 'a', sourceDepth: 1}))
+        expect(stay?.depth).toBe(1)
+        expect(stay?.parentCardId).toBe('a')
+    })
+
+    test('이웃을 찾을 때 함께 움직이는 행은 건너뛴다', () => {
+        const rows = nestedRows()
+        const item = dragging('a', {subtreeIds: ['a', 'a1'], subtreeHeight: 1})
+
+        // 서브트리 바로 뒤 경계(=b 앞). 위 이웃은 a1이 아니라 a보다 위여야
+        // 하는데 위에 아무것도 없으므로 상한은 0이다.
+        const out = compute(rows, TITLE_LEFT + 500, 100, item)
+        expect(out).not.toBeNull()
+        expect(out?.depth).toBe(0)
     })
 
     test('자기 자손 사이에는 놓을 수 없다', () => {
