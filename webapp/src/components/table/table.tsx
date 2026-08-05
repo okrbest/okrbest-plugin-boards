@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useMemo} from 'react'
+import React, {useCallback, useEffect, useMemo, useState} from 'react'
 
 import {FormattedMessage, useIntl} from 'react-intl'
 
@@ -22,11 +22,14 @@ import './table.scss'
 
 import HiddenCardCount from '../../components/hiddenCardCount/hiddenCardCount'
 
+import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmationDialogBox'
+
 import TableHeaders from './tableHeaders'
 import TableRows from './tableRows'
 import TableGroup from './tableGroup'
 import CalculationRow from './calculation/calculationRow'
 import {ColumnResizeProvider} from './tableColumnResizeContext'
+
 import {moveInCardOrder} from './cardOrderMove'
 import {TableDragProvider, useTableDrag} from './tableDragContext'
 import TableDropIndicator from './tableDropIndicator'
@@ -274,7 +277,9 @@ const Table = (props: Props): React.JSX.Element => {
         })
     }, [activeView, cards, allBoardCards, props.selectedCardIds, groupByProperty, isManualSort, board.id])
 
-    const onTableDrop = useCallback((intent: DropIntent, item: DragItem, rows: readonly RowMetric[]) => {
+    const [pendingDrop, setPendingDrop] = useState<{intent: DropIntent, item: DragItem, rows: readonly RowMetric[]} | null>(null)
+
+    const runDrop = useCallback((intent: DropIntent, item: DragItem, rows: readonly RowMetric[]) => {
         applyTableDrop({
             intent,
             item,
@@ -291,6 +296,34 @@ const Table = (props: Props): React.JSX.Element => {
         })
     }, [board, activeView, allBoardCards, subCardsByParent, intl])
 
+    // 속성 정렬이 걸린 표에서는 순서 이동이 무의미하다 — 정렬이 즉시 덮어쓴다.
+    // 막다른 길로 두지 않고 수동 정렬 전환을 제안한다 (FR-025).
+    const onTableDrop = useCallback((intent: DropIntent, item: DragItem, rows: readonly RowMetric[]) => {
+        if (isManualSort) {
+            runDrop(intent, item, rows)
+            return
+        }
+        setPendingDrop({intent, item, rows})
+    }, [isManualSort, runDrop])
+
+    const sortSwitchDialog: ConfirmationDialogBoxProps = useMemo(() => ({
+        heading: intl.formatMessage({id: 'Table.switch-to-manual-sort-heading', defaultMessage: '수동 정렬로 바꿀까요?'}),
+        subText: intl.formatMessage({id: 'Table.switch-to-manual-sort-body', defaultMessage: '이 보기는 속성으로 정렬돼 있어 직접 정한 순서를 유지할 수 없습니다. 정렬을 해제하고 카드를 옮길까요?'}),
+        confirmButtonText: intl.formatMessage({id: 'Table.switch-to-manual-sort-confirm', defaultMessage: '정렬 해제하고 이동'}),
+        onConfirm: async () => {
+            const drop = pendingDrop
+            setPendingDrop(null)
+            if (!drop) {
+                return
+            }
+            await mutator.changeViewSortOptions(board.id, activeView.id, activeView.fields.sortOptions, [])
+            runDrop(drop.intent, drop.item, drop.rows)
+        },
+
+        // 거부하면 정렬·순서·계층 어느 것도 바뀌지 않는다 (FR-027).
+        onClose: () => setPendingDrop(null),
+    }), [intl, pendingDrop, board.id, activeView.id, activeView.fields.sortOptions, runDrop])
+
     const propertyNameChanged = useCallback(async (option: IPropertyOption, text: string): Promise<void> => {
         await mutator.changePropertyOptionValue(board.id, board.cardProperties, groupByProperty!, option, text)
     }, [board, groupByProperty])
@@ -302,23 +335,23 @@ const Table = (props: Props): React.JSX.Element => {
                 onDrop={onTableDrop}
             >
                 <ConnectedDropIndicator/>
-            <ColumnResizeProvider
-                columnWidths={activeView.fields.columnWidths}
-                columnMinWidths={columnMinWidths}
-                onResizeColumn={resizeColumn}
-            >
-                <div className='octo-table-body'>
-                    <TableHeaders
-                        board={board}
-                        cards={cards}
-                        activeView={activeView}
-                        views={views}
-                        readonly={props.readonly || !(canEditBoardProperties || canManageBoardByCapability)}
-                    />
+                <ColumnResizeProvider
+                    columnWidths={activeView.fields.columnWidths}
+                    columnMinWidths={columnMinWidths}
+                    onResizeColumn={resizeColumn}
+                >
+                    <div className='octo-table-body'>
+                        <TableHeaders
+                            board={board}
+                            cards={cards}
+                            activeView={activeView}
+                            views={views}
+                            readonly={props.readonly || !(canEditBoardProperties || canManageBoardByCapability)}
+                        />
 
-                    {/* Table rows */}
-                    <div className='table-row-container'>
-                        {activeView.fields.groupById &&
+                        {/* Table rows */}
+                        <div className='table-row-container'>
+                            {activeView.fields.groupById &&
                     visibleGroups.map((group) => {
                         return (
                             <TableGroup
@@ -332,7 +365,7 @@ const Table = (props: Props): React.JSX.Element => {
                                 cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                                 hideGroup={hideGroup}
                                 addCard={props.addCard}
-                addSubCard={props.addSubCard}
+                                addSubCard={props.addSubCard}
                                 showCard={props.showCard}
                                 propertyNameChanged={propertyNameChanged}
                                 onCardClicked={props.onCardClicked}
@@ -341,10 +374,10 @@ const Table = (props: Props): React.JSX.Element => {
                                 onDropToGroup={onDropToGroup}
                             />)
                     })
-                        }
+                            }
 
-                        {/* No Grouping, Rows, one per card */}
-                        {!activeView.fields.groupById &&
+                            {/* No Grouping, Rows, one per card */}
+                            {!activeView.fields.groupById &&
                         <TableRows
                             board={board}
                             activeView={activeView}
@@ -354,16 +387,16 @@ const Table = (props: Props): React.JSX.Element => {
                             cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                             showCard={props.showCard}
                             addCard={props.addCard}
-                addSubCard={props.addSubCard}
+                            addSubCard={props.addSubCard}
                             onCardClicked={props.onCardClicked}
                             onDrop={onDropToCard}
                         />
-                        }
-                    </div>
+                            }
+                        </div>
 
-                    {/* Add New row */}
-                    <div className='octo-table-footer'>
-                        {!props.readonly && !activeView.fields.groupById &&
+                        {/* Add New row */}
+                        <div className='octo-table-footer'>
+                            {!props.readonly && !activeView.fields.groupById &&
                         <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
                             <div
                                 className='octo-table-cell'
@@ -377,18 +410,20 @@ const Table = (props: Props): React.JSX.Element => {
                                 />
                             </div>
                         </BoardPermissionGate>
-                        }
-                    </div>
+                            }
+                        </div>
 
-                    <CalculationRow
-                        board={board}
-                        cards={cards}
-                        activeView={activeView}
-                        readonly={props.readonly || !(canEditBoardProperties || canManageBoardByCapability)}
-                    />
-                </div>
-            </ColumnResizeProvider>
+                        <CalculationRow
+                            board={board}
+                            cards={cards}
+                            activeView={activeView}
+                            readonly={props.readonly || !(canEditBoardProperties || canManageBoardByCapability)}
+                        />
+                    </div>
+                </ColumnResizeProvider>
             </TableDragProvider>
+
+            {pendingDrop && <ConfirmationDialogBox dialogBox={sortSwitchDialog}/>}
 
             {hiddenCardsCount > 0 &&
             <HiddenCardCount

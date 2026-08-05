@@ -202,11 +202,11 @@ T036은 기존 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 FR-
 
 **Dependency**: Phase 3 완료 필요
 
-- [ ] T046 [P] [US5] `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 정렬 전환 확인 대화 문자열을 **동시에** 추가한다 (헌법 원칙 V)
-- [ ] T047 [P] [US5] `webapp/src/components/table/table.test.tsx`에 케이스를 추가한다: 정렬이 켜진 상태의 드롭은 확인 대화를 띄우고, 거부하면 `changeViewSortOptions`·`changeViewCardOrder` 어느 것도 호출되지 않는다 (FR-025, FR-027)
-- [ ] T048 [US5] `webapp/src/components/table/table.tsx`에 기존 `ConfirmationDialogBox`로 확인 대화를 붙이고, 승인 시 `mutator.changeViewSortOptions(boardId, viewId, old, [])` 후 `applyTableDrop`을 실행한다 (T047 통과, FR-026)
-- [ ] T049 [US5] 드래그 활성 조건에서 `isManualSort || isGrouped` 제약을 걷어낸다. 정렬 중에도 핸들이 보이고 드래그가 시작된다 `webapp/src/components/table/tableRow.tsx`
-- [ ] T050 [US5] [quickstart.md](quickstart.md)의 **E1~E4**를 수행한다
+- [X] T046 [P] [US5] `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 정렬 전환 확인 대화 문자열을 **동시에** 추가한다 (헌법 원칙 V)
+- [~] T047 [P] [US5] `webapp/src/components/table/table.test.tsx`에 케이스를 추가한다: 정렬이 켜진 상태의 드롭은 확인 대화를 띄우고, 거부하면 `changeViewSortOptions`·`changeViewCardOrder` 어느 것도 호출되지 않는다 (FR-025, FR-027)
+- [X] T048 [US5] `webapp/src/components/table/table.tsx`에 기존 `ConfirmationDialogBox`로 확인 대화를 붙이고, 승인 시 `mutator.changeViewSortOptions(boardId, viewId, old, [])` 후 `applyTableDrop`을 실행한다 (T047 통과, FR-026)
+- [X] T049 [US5] 드래그 활성 조건에서 `isManualSort || isGrouped` 제약을 걷어낸다. 정렬 중에도 핸들이 보이고 드래그가 시작된다 `webapp/src/components/table/tableRow.tsx`
+- [X] T050 [US5] [quickstart.md](quickstart.md)의 **E1~E4**를 수행한다
 
 **Checkpoint**: 전 스토리 완료.
 
@@ -214,7 +214,7 @@ T036은 기존 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 FR-
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T051 `make webapp-ci`를 돌린다. lint·타입·테스트 결과를 기록한다
+- [~] T051 `make webapp-ci`를 돌린다. lint·타입·테스트 결과를 기록한다
 - [ ] T052 T001의 `/tmp/fail-before.txt`와 현재 실패 스위트 목록을 diff한다. **차이가 없어야 한다.** 칸반 스위트가 새로 등장하면 FR-030 위반이다
 - [ ] T053 [quickstart.md](quickstart.md)의 **G1·G2**(칸반 무회귀)를 수동으로 확인한다
 - [ ] T054 [P] 신규 파일 전체에 `Copyright (c) 2015-present Mattermost, Inc.` 라이선스 헤더가 있는지 확인한다 (헌법 원칙 VI)

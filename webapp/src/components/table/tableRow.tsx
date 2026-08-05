@@ -65,14 +65,17 @@ type Props = {
 
 const TableRow = (props: Props) => {
     const intl = useIntl()
-    const {board, card, isManualSort, groupById, visiblePropertyIds, collapsedOptionIds} = props
+    const {board, card, groupById, visiblePropertyIds, collapsedOptionIds} = props
 
     const titleRef = useRef<{ focus(selectAll?: boolean): void }>(null)
     const [title, setTitle] = useState(props.card.title || '')
     const isGrouped = Boolean(groupById)
     const canEditCard = useHasCapabilities(card.boardId, ['canEditCard'])
     const isReadOnly = props.readonly || !canEditCard
-    const canDrag = !isReadOnly && (isManualSort || isGrouped)
+    // 정렬이 걸려 있어도 드래그를 막지 않는다. 놓는 순간 수동 정렬로 전환할지
+    // 묻고, 거부하면 아무 일도 일어나지 않는다 (FR-025). 예전에는 여기서
+    // 막아 사용자가 이유를 모른 채 포기했다.
+    const canDrag = !isReadOnly
     const subCardsByParent = useAppSelector(getCurrentBoardSubCardsByParent)
     const {registerRow, unregisterRow, draggingSubtree} = useTableDrag()
 
