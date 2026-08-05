@@ -138,6 +138,24 @@ describe('TableDragContext', () => {
         expect(ctx.draggingSubtree.size).toBe(0)
     })
 
+    // FR-019. 부모만 흐려지면 하위 카드가 따라온다는 사실이 화면에 안 드러난다.
+    test('서브트리 전체가 반투명 대상에 담긴다', () => {
+        renderCtx()
+
+        act(() => {
+            ctx.registerRow(metric('p', 0))
+            ctx.startDrag({...item('p'), subtreeIds: ['p', 'p1', 'p2'], subtreeHeight: 1})
+        })
+
+        expect([...ctx.draggingSubtree].sort()).toEqual(['p', 'p1', 'p2'])
+
+        act(() => {
+            ctx.endDrag()
+        })
+
+        expect(ctx.draggingSubtree.size).toBe(0)
+    })
+
     test('드래그 중이 아니면 좌표를 보고해도 판정하지 않는다', () => {
         renderCtx()
 

@@ -168,11 +168,11 @@ T036은 기존 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 FR-
 
 **Dependency**: **T038·T039만 Phase 4에 의존한다**(깊이 클램프에 얹힌다). T040·T041(반투명 표시)는 Phase 3만 끝나면 병렬로 진행할 수 있다. 서브트리 수집(T010·T011)과 연속 배치(T026)는 Phase 2·3에서 이미 끝났다 — US1도 서브트리가 함께 움직여야 데이터가 어긋나지 않기 때문이다.
 
-- [ ] T038 [P] [US3] `webapp/src/components/table/tableDropTarget.test.ts`에 서브트리 높이 케이스를 추가한다: 높이 2면 상한이 `5 − 2 = 3`으로 잘린다, 아래 행 depth 4 + 높이 2 → 상한 3 < 하한 4 → `null` (FR-012, spec Edge Cases)
-- [ ] T039 [US3] `webapp/src/components/table/tableDropTarget.ts`의 상한 계산에 `maxDepth − item.subtreeHeight`를 반영한다 (T038 통과)
-- [ ] T040 [P] [US3] `webapp/src/components/table/tableDragContext.test.tsx`에 케이스를 추가한다: 드래그 중 `draggingSubtree`가 서브트리 전체를 담고, 종료 시 빈 집합으로 돌아간다
-- [ ] T041 [US3] `webapp/src/components/table/tableRow.tsx`와 `tableRow.scss`에서 `draggingSubtree`에 속한 행 전체를 반투명 처리한다. 지금은 `opacity: 0.5`가 드래그한 행 하나에만 걸린다 (FR-019, T040 통과)
-- [ ] T042 [US3] [quickstart.md](quickstart.md)의 **C1~C6**을 수행한다. **C6은 새로고침 후 확인**한다 — B3 회귀 확인 지점이다
+- [X] T038 [P] [US3] `webapp/src/components/table/tableDropTarget.test.ts`에 서브트리 높이 케이스를 추가한다: 높이 2면 상한이 `5 − 2 = 3`으로 잘린다, 아래 행 depth 4 + 높이 2 → 상한 3 < 하한 4 → `null` (FR-012, spec Edge Cases)
+- [X] T039 [US3] `webapp/src/components/table/tableDropTarget.ts`의 상한 계산에 `maxDepth − item.subtreeHeight`를 반영한다 (T038 통과)
+- [X] T040 [P] [US3] `webapp/src/components/table/tableDragContext.test.tsx`에 케이스를 추가한다: 드래그 중 `draggingSubtree`가 서브트리 전체를 담고, 종료 시 빈 집합으로 돌아간다
+- [X] T041 [US3] `webapp/src/components/table/tableRow.tsx`와 `tableRow.scss`에서 `draggingSubtree`에 속한 행 전체를 반투명 처리한다. 지금은 `opacity: 0.5`가 드래그한 행 하나에만 걸린다 (FR-019, T040 통과)
+- [~] T042 [US3] [quickstart.md](quickstart.md)의 **C1~C6**을 수행한다. **C6은 새로고침 후 확인**한다 — B3 회귀 확인 지점이다
 
 **Checkpoint**: 계층이 깨지지 않고 서브트리째 움직인다.
 
@@ -186,9 +186,9 @@ T036은 기존 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 FR-
 
 **Dependency**: Phase 3 완료 필요 (핸들이 실제 드래그 소스여야 의미가 있다)
 
-- [ ] T043 [P] [US4] `webapp/src/components/table/tableRow.scss`의 핸들 스타일을 고친다: hover 시 크기·대비를 키우고 `cursor: grab`, 호버 배경을 준다. 색상은 CSS 변수로 (FR-003, 헌법 원칙 II — 하드코딩 금지)
-- [ ] T044 [P] [US4] 드래그 중 `cursor: grabbing`, 놓을 수 없는 자리에서 `cursor: no-drop`이 되도록 `webapp/src/components/table/table.scss`에 상태별 커서를 정의한다 (FR-008)
-- [ ] T045 [US4] [quickstart.md](quickstart.md)의 **A1·A2**와 **F1**(권한 없는 계정에 핸들 미표시)을 수행한다
+- [X] T043 [P] [US4] `webapp/src/components/table/tableRow.scss`의 핸들 스타일을 고친다: hover 시 크기·대비를 키우고 `cursor: grab`, 호버 배경을 준다. 색상은 CSS 변수로 (FR-003, 헌법 원칙 II — 하드코딩 금지)
+- [X] T044 [P] [US4] 드래그 중 `cursor: grabbing`, 놓을 수 없는 자리에서 `cursor: no-drop`이 되도록 `webapp/src/components/table/table.scss`에 상태별 커서를 정의한다 (FR-008)
+- [~] T045 [US4] [quickstart.md](quickstart.md)의 **A1·A2**와 **F1**(권한 없는 계정에 핸들 미표시)을 수행한다
 
 **Checkpoint**: 기능이 발견 가능해진다.
 

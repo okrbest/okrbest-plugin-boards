@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useMemo} from 'react'
+import React, {useCallback, useEffect, useMemo} from 'react'
 
 import {FormattedMessage, useIntl} from 'react-intl'
 
@@ -52,7 +52,19 @@ type Props = {
 }
 
 const ConnectedDropIndicator = (): React.JSX.Element | null => {
-    const {intent} = useTableDrag()
+    const {intent, draggingSubtree} = useTableDrag()
+
+    // 드래그 중인데 판정이 없으면 놓을 수 없는 자리다. 표에 커서 상태를 건다.
+    useEffect(() => {
+        const table = document.querySelector('.Table')
+        if (!table) {
+            return undefined
+        }
+        const noDrop = draggingSubtree.size > 0 && !intent
+        table.classList.toggle('dragging-no-drop', noDrop)
+        return () => table.classList.remove('dragging-no-drop')
+    }, [intent, draggingSubtree])
+
     return <TableDropIndicator intent={intent}/>
 }
 
