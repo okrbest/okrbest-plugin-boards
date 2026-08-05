@@ -13,8 +13,13 @@ type MoveParams = {
     // 옮길 카드들. 서브트리라면 부모가 맨 앞, 이어서 깊이우선 자손.
     movingIds: readonly string[]
 
-    // 이 카드를 기준으로 앞이나 뒤에 놓는다.
+    // 이 카드를 기준으로 놓는다.
     destCardId: string
+
+    // 기준 카드의 앞인가 뒤인가. 생략하면 끄는 방향으로 추정한다 —
+    // 드롭 인디케이터가 없던 시절의 동작이라 그룹 헤더 드롭에만 남겨 둔다.
+    // 인디케이터가 있는 경로는 경계를 알고 있으므로 반드시 명시한다.
+    place?: 'before' | 'after'
 }
 
 /**
@@ -27,14 +32,16 @@ type MoveParams = {
  * 위치로 한다 — 빼낸 뒤에 재면 아래로 끄는 경우 인덱스가 한 칸 당겨져
  * 대상 앞에 놓이게 된다.
  */
-export function moveInCardOrder({cardOrder, allCardIds, movingIds, destCardId}: MoveParams): string[] {
+export function moveInCardOrder({cardOrder, allCardIds, movingIds, destCardId, place}: MoveParams): string[] {
     // 저장된 순서에 없는 카드를 뒤에 채운다. 하위 카드는 여기서 합류하는
     // 경우가 많다 — 이 시드가 최상위 카드만 담으면 하위 카드 id가 통째로
     // 빠져 splice 위치가 어긋난다.
     const seeded = Array.from(new Set([...cardOrder, ...allCardIds]))
 
     const moving = new Set(movingIds)
-    const draggingDown = seeded.indexOf(movingIds[0]) <= seeded.indexOf(destCardId)
+
+    // 경계를 아는 경로는 그대로 쓰고, 모르는 경로만 끄는 방향으로 추정한다.
+    const after = place ? place === 'after' : seeded.indexOf(movingIds[0]) <= seeded.indexOf(destCardId)
 
     const without = seeded.filter((id) => !moving.has(id))
 
@@ -43,7 +50,7 @@ export function moveInCardOrder({cardOrder, allCardIds, movingIds, destCardId}: 
         // 대상이 목록에 없으면 순서를 건드리지 않는다.
         return seeded
     }
-    if (draggingDown) {
+    if (after) {
         destIndex += 1
     }
 

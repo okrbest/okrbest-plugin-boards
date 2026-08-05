@@ -107,9 +107,9 @@ description: "Task list for 004-table-drag-reorder"
 
 ### 적용
 
-- [ ] T024 [P] [US1] `webapp/src/components/table/applyTableDrop.test.ts`를 만들어 순서 전용 케이스를 쓴다: 부모가 안 바뀌면 `linkCardAsSubCard`·`unlinkSubCard`를 호출하지 않고 `changeViewCardOrder`만 호출한다. `performAsUndoGroup` 호출은 1회 ([contracts/drop-target.md](contracts/drop-target.md))
-- [ ] T025 [US1] 같은 파일에 **다중 선택 회귀 케이스**를 쓴다: `selectedCardIds`가 여럿인 상태로 순서 이동하면 선택된 카드가 **각자의 서브트리와 함께** 전부 이동한다 (FR-031). 현행 `table.tsx:138`의 `selectedCardIds ∪ {srcCard.id}` 동작을 잃지 않는지 확인하는 것이 목적이다
-- [ ] T026 [US1] `webapp/src/components/table/applyTableDrop.ts`를 구현한다. 서브트리 id를 통째로 빼서 목표 경계에 끼워 넣는다(FR-017 — 자손이 순서·상대 계층을 유지한다). `DragItem.selectedCardIds`를 받아 순서 이동일 때 함께 옮긴다 (T024·T025 통과, [data-model.md](data-model.md) 다중 선택 절)
+- [X] T024 [P] [US1] `webapp/src/components/table/applyTableDrop.test.ts`를 만들어 순서 전용 케이스를 쓴다: 부모가 안 바뀌면 `linkCardAsSubCard`·`unlinkSubCard`를 호출하지 않고 `changeViewCardOrder`만 호출한다. `performAsUndoGroup` 호출은 1회 ([contracts/drop-target.md](contracts/drop-target.md))
+- [X] T025 [US1] 같은 파일에 **다중 선택 회귀 케이스**를 쓴다: `selectedCardIds`가 여럿인 상태로 순서 이동하면 선택된 카드가 **각자의 서브트리와 함께** 전부 이동한다 (FR-031). 현행 `table.tsx:138`의 `selectedCardIds ∪ {srcCard.id}` 동작을 잃지 않는지 확인하는 것이 목적이다
+- [X] T026 [US1] `webapp/src/components/table/applyTableDrop.ts`를 구현한다. 서브트리 id를 통째로 빼서 목표 경계에 끼워 넣는다(FR-017 — 자손이 순서·상대 계층을 유지한다). `DragItem.selectedCardIds`를 받아 순서 이동일 때 함께 옮긴다 (T024·T025 통과, [data-model.md](data-model.md) 다중 선택 절)
 - [ ] T027 [US1] `webapp/src/components/table/table.tsx`를 `TableDragContext`로 감싸고 `TableDropIndicator`를 렌더한다. 드롭 핸들러를 `applyTableDrop`으로 연결한다
 
 ### 수동 검증
