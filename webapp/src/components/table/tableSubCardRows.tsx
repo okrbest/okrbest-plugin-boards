@@ -65,6 +65,7 @@ const TableSubCardRows = (props: Props): React.JSX.Element => {
                 label={intl.formatMessage({id: 'TableComponent.plus-new-subcard', defaultMessage: '+ New sub-card'})}
                 onClick={onAddSubCard}
                 depth={(parentCard.fields.depth || 0) + 1}
+                parentCardId={parentCard.id}
             />}
         </>
     )

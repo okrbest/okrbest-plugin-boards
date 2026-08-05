@@ -1,11 +1,13 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react'
+import React, {useEffect, useRef} from 'react'
 
 import {Permission} from '../../constants'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
+
+import {useTableDrag} from './tableDragContext'
 
 import './table.scss'
 
@@ -16,6 +18,10 @@ type Props = {
     // Depth of the cards this row creates. 0 for a group's add row, N for the
     // row that closes the sub-card list of a parent at depth N-1.
     depth?: number
+
+    // 이 줄이 닫는 하위 목록의 부모. 드롭 판정이 "이 목록의 마지막 자리"를
+    // 알아보려면 필요하다. 그룹의 추가 줄에는 없다.
+    parentCardId?: string
 }
 
 // Geometry copied from the row so the label starts exactly where a title of the
@@ -48,10 +54,44 @@ const iconGap = 4
 // indistinguishable from the add row an ungrouped table already has.
 const TableAddRow = (props: Props): React.JSX.Element => {
     const depth = props.depth || 0
+    const {registerRow, unregisterRow} = useTableDrag()
+    const rowRef = useRef<HTMLDivElement>(null)
+
+    // 하위 목록의 끝을 드롭 판정에 알린다. 이 경계가 없으면 마지막 하위 카드
+    // 다음 자리가 그 아래 최상위 행을 보고 depth 0으로 판정돼, 하위 목록의
+    // 마지막 자리로는 카드를 옮길 수 없다.
+    const markerId = `add-row:${props.parentCardId || ''}:${depth}`
+
+    useEffect(() => {
+        const row = rowRef.current
+        const container = row?.closest('.Table')
+        if (!row || !container || depth === 0) {
+            return undefined
+        }
+
+        const rect = row.getBoundingClientRect()
+        const containerRect = container.getBoundingClientRect()
+
+        registerRow({
+            cardId: markerId,
+            depth,
+            parentCardId: props.parentCardId || '',
+            top: (rect.top - containerRect.top) + container.scrollTop,
+            height: rect.height,
+            isListEnd: true,
+        })
+
+        return undefined
+    })
+
+    useEffect(() => () => unregisterRow(markerId), [markerId, unregisterRow])
 
     return (
         <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
-            <div className='octo-table-footer'>
+            <div
+                className='octo-table-footer'
+                ref={rowRef}
+            >
                 <div
                     className='octo-table-cell'
                     style={{paddingLeft: cellPadding}}

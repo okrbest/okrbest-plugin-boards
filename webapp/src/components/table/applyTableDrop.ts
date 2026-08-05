@@ -165,16 +165,19 @@ function anchorFor(
 ): {row: RowMetric, place: 'before' | 'after'} | null {
     const moving = new Set(movingIds)
 
-    // 경계 바로 아래 행 앞에 놓는다. 그 행이 함께 움직이는 카드면 더 아래를 본다.
+    // 경계 바로 아래 행 앞에 놓는다. 함께 움직이는 카드와 "+ 새 하위 카드"
+    // 줄은 건너뛴다 — 후자는 경계를 표시할 뿐 순서 목록에 없는 행이다.
+    const usable = (row: RowMetric) => !moving.has(row.cardId) && !row.isListEnd
+
     for (let i = intent.boundaryIndex; i < rows.length; i++) {
-        if (!moving.has(rows[i].cardId)) {
+        if (usable(rows[i])) {
             return {row: rows[i], place: 'before'}
         }
     }
 
     // 아래에 남는 행이 없으면 위로 거슬러 올라가 그 행 뒤에 놓는다.
     for (let i = intent.boundaryIndex - 1; i >= 0; i--) {
-        if (!moving.has(rows[i].cardId)) {
+        if (usable(rows[i])) {
             return {row: rows[i], place: 'after'}
         }
     }
