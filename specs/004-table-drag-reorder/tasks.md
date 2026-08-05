@@ -142,13 +142,21 @@ description: "Task list for 004-table-drag-reorder"
 - [X] T033 [P] [US2] `webapp/src/components/table/applyTableDrop.test.ts`에 케이스를 추가한다: 최상위 → 하위면 `linkCardAsSubCard`, 하위 → 최상위면 `unlinkSubCard`, 다른 그룹의 하위면 **끄는 카드에만** `changePropertyValue`를 호출하고 자손에는 호출하지 않는다 (FR-014, FR-015, FR-022, FR-023)
 - [X] T034 [US2] 같은 파일에 실패 케이스를 추가한다: 서버가 거부하면 `sendFlashMessage`가 `severity: 'high'`로 호출된다 (FR-029)
 - [X] T035 [US2] `webapp/src/components/table/applyTableDrop.ts`에 계층·그룹 단계를 구현한다. **`try/catch`를 `performAsUndoGroup`에 넘기는 콜백 안쪽에 둔다** (T033·T034 통과, research R2 — 바깥에 두면 예외가 삼켜져 도달하지 않는다)
-- [ ] T036 [US2] FR-016(새 부모가 펼쳐진 상태로 보임)이 **기존 코드로 이미 충족되는지 먼저 확인한다.** `webapp/src/components/table/tableRowExpandable.tsx:38-40`의 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 첫 하위 카드를 얻을 때 자동으로 펼친다. quickstart B2로 확인해 충족되면 **이 태스크는 코드 변경 없이 닫는다.** 충족되지 않을 때만 보완한다
+- [X] T036 [US2] FR-016(새 부모가 펼쳐진 상태로 보임)이 **기존 코드로 이미 충족되는지 먼저 확인한다.** `webapp/src/components/table/tableRowExpandable.tsx:38-40`의 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 첫 하위 카드를 얻을 때 자동으로 펼친다. quickstart B2로 확인해 충족되면 **이 태스크는 코드 변경 없이 닫는다.** 충족되지 않을 때만 보완한다
 
 ### 수동 검증
 
-- [ ] T037 [US2] [quickstart.md](quickstart.md)의 **B1~B7**과 **D1~D3**(그룹)을 수행한다
+- [~] T037 [US2] [quickstart.md](quickstart.md)의 **B1~B7**과 **D1~D3**(그룹)을 수행한다
 
 **Checkpoint**: 순서와 계층을 한 제스처로 바꿀 수 있다.
+
+**Phase 4 실측 (2026-08-05)**: 판정·적용 로직은 단위 테스트 10건으로 덮었다.
+T036은 기존 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 FR-016을
+이미 충족해 코드 변경 없이 닫았다.
+
+**T037(B1~B7·D1~D3)은 미완료(`[~]`)** — Phase 3에서 확인한 합성 DragEvent의
+좌표 전달 문제가 그대로 걸린다. `clientY`를 고정한 채 `clientX`만 바꿨는데 선의
+`top`이 110에서 242로 움직였다. 진짜 마우스 조작이 필요하다.
 
 ---
 
