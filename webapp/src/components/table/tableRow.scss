@@ -165,6 +165,9 @@
         flex-shrink: 0;
         width: 20px;
         height: 20px;
+
+        // 토글과 같은 여백을 둔다. 이게 없으면 토글이 있는 행과 2px 어긋난다.
+        margin-right: 2px;
     }
 
     .URLProperty:hover .Button_Copy {

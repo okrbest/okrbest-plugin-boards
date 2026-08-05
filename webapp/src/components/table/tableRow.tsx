@@ -269,7 +269,10 @@ const TableRow = (props: Props) => {
                     >
                         <i className='CompassIcon icon-chevron-right'/>
                     </button>
-                ) : props.isSubCard && (
+                ) : (
+
+                    // 하위 카드가 없어도 토글 자리를 비워 둔다. 같은 레벨의
+                    // 카드들이 토글 유무와 무관하게 제목을 나란히 시작해야 한다.
                     <span className='expand-toggle-placeholder'/>
                 )}
                 <div className='octo-icontitle'>

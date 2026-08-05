@@ -591,6 +591,9 @@ exports[`components/table/Table extended should match snapshot with CreatedAt 1`
             id="mainBoardHeader"
             style="width: 100px;"
           >
+            <span
+              class="expand-toggle-placeholder"
+            />
             <div
               class="octo-icontitle"
             >
@@ -689,6 +692,9 @@ exports[`components/table/Table extended should match snapshot with CreatedAt 1`
             id="mainBoardHeader"
             style="width: 100px;"
           >
+            <span
+              class="expand-toggle-placeholder"
+            />
             <div
               class="octo-icontitle"
             >
@@ -2337,6 +2343,9 @@ exports[`components/table/Table limited card in table view 1`] = `
             id="mainBoardHeader"
             style="width: 100px;"
           >
+            <span
+              class="expand-toggle-placeholder"
+            />
             <div
               class="octo-icontitle"
             >
@@ -2417,6 +2426,9 @@ exports[`components/table/Table limited card in table view 1`] = `
             id="mainBoardHeader"
             style="width: 100px;"
           >
+            <span
+              class="expand-toggle-placeholder"
+            />
             <div
               class="octo-icontitle"
             >
@@ -2670,6 +2682,9 @@ exports[`components/table/Table should match snapshot 1`] = `
             id="mainBoardHeader"
             style="width: 100px;"
           >
+            <span
+              class="expand-toggle-placeholder"
+            />
             <div
               class="octo-icontitle"
             >
@@ -3097,6 +3112,9 @@ exports[`components/table/Table should match snapshot without permissions 1`] = 
             id="mainBoardHeader"
             style="width: 100px;"
           >
+            <span
+              class="expand-toggle-placeholder"
+            />
             <div
               class="octo-icontitle"
             >
@@ -3333,6 +3351,9 @@ exports[`components/table/Table should match snapshot, read-only 1`] = `
             id="mainBoardHeader"
             style="width: 100px;"
           >
+            <span
+              class="expand-toggle-placeholder"
+            />
             <div
               class="octo-icontitle"
             >

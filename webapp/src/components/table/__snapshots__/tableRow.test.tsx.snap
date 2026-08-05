@@ -364,6 +364,9 @@ exports[`components/table/TableRow should match snapshot, read-only 1`] = `
       id="mainBoardHeader"
       style="width: 100px;"
     >
+      <span
+        class="expand-toggle-placeholder"
+      />
       <div
         class="octo-icontitle"
       >
