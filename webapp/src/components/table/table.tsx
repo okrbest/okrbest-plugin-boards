@@ -271,6 +271,7 @@ const Table = (props: Props): React.JSX.Element => {
             allCards: allBoardCards,
             rows,
             subCardsByParent,
+            groupByPropertyId: activeView.fields.groupById,
             failureMessage: intl.formatMessage({
                 id: 'TableRow.move-failed',
                 defaultMessage: '카드를 옮기지 못했습니다.',

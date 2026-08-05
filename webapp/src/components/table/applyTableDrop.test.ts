@@ -133,6 +133,50 @@ describe('applyTableDrop', () => {
         expect(mockedMutator.changeViewCardOrder.mock.calls[0][3]).toEqual(['b', 'c', 'c1', 'a'])
     })
 
+    // FR-014. 최상위 → 하위
+    test('부모가 생기면 하위 카드로 연결한다', async () => {
+        await run({intent: intent({boundaryIndex: 2, parentCardId: 'b', depth: 1})})
+
+        expect(mockedMutator.linkCardAsSubCard).toBeCalledWith('a', 'b')
+        expect(mockedMutator.unlinkSubCard).not.toBeCalled()
+    })
+
+    // FR-015. 하위 → 최상위
+    test('부모가 없어지면 최상위로 분리한다', async () => {
+        await run({
+            item: item({sourceParentId: 'b'}),
+            intent: intent({parentCardId: ''}),
+        })
+
+        expect(mockedMutator.unlinkSubCard).toBeCalledWith('a', 'b')
+        expect(mockedMutator.linkCardAsSubCard).not.toBeCalled()
+    })
+
+    // FR-022, FR-023. 새 부모의 그룹 값을 따라가되 자손은 건드리지 않는다.
+    test('다른 그룹의 하위로 가면 끄는 카드만 그룹 값을 바꾼다', async () => {
+        await applyTableDrop({
+            intent: intent({boundaryIndex: 2, parentCardId: 'b', depth: 1}),
+            item: item({cardId: 'a', subtreeIds: ['a', 'a1']}),
+            board,
+            activeView: {id: 'view-1', fields: {cardOrder: ['a', 'a1', 'b', 'c'], groupById: 'gp'}} as unknown as BoardView,
+            allCards: [
+                {id: 'a', fields: {properties: {gp: 'old'}}} as unknown as Card,
+                {id: 'a1', fields: {properties: {gp: 'old'}}} as unknown as Card,
+                {id: 'b', fields: {properties: {gp: 'new'}}} as unknown as Card,
+                card('c'),
+            ],
+            rows,
+            subCardsByParent: {},
+            groupByPropertyId: 'gp',
+            failureMessage: '옮기지 못했습니다',
+        })
+
+        const calls = mockedMutator.changePropertyValue.mock.calls
+        expect(calls).toHaveLength(1)
+        expect((calls[0][1] as Card).id).toBe('a')
+        expect(calls[0][3]).toBe('new')
+    })
+
     // FR-029. performAsUndoGroup은 예외를 삼키므로 try/catch가 콜백 안쪽에
     // 있어야 한다. 바깥에 두면 이 테스트가 실패한다.
     test('서버가 거부하면 사용자에게 알린다', async () => {

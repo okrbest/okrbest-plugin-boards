@@ -132,16 +132,16 @@ description: "Task list for 004-table-drag-reorder"
 
 ### 판정 모듈에 깊이 축 (테스트 먼저)
 
-- [ ] T029 [P] [US2] `webapp/src/components/table/tableDropTarget.test.ts`에 깊이 케이스를 추가한다: 커서 x를 오른쪽으로 밀면 상한까지 오르고 멈춘다, 왼쪽으로 당기면 하한까지 내리고 멈춘다, 상한 = `위 행 depth + 1`, 하한 = `아래 행 depth` (FR-010, FR-011)
-- [ ] T030 [US2] 같은 파일에 금지 케이스를 추가한다: 자기 자신 앞/뒤 경계 → `null`, 자손 사이 경계 → `null` (FR-013)
-- [ ] T031 [US2] 같은 파일에 부모 판정 케이스를 추가한다: 클램프된 깊이에서 위로 거슬러 `depth === 목표 − 1`인 가장 가까운 행이 `parentCardId`가 되고, 깊이 0이면 `''`
-- [ ] T032 [US2] `webapp/src/components/table/tableDropTarget.ts`에 깊이 후보 계산·클램프·부모 판정을 구현한다 (T029~T031 통과, [contracts/drop-target.md](contracts/drop-target.md) 판정 순서 3~5)
+- [X] T029 [P] [US2] `webapp/src/components/table/tableDropTarget.test.ts`에 깊이 케이스를 추가한다: 커서 x를 오른쪽으로 밀면 상한까지 오르고 멈춘다, 왼쪽으로 당기면 하한까지 내리고 멈춘다, 상한 = `위 행 depth + 1`, 하한 = `아래 행 depth` (FR-010, FR-011)
+- [X] T030 [US2] 같은 파일에 금지 케이스를 추가한다: 자기 자신 앞/뒤 경계 → `null`, 자손 사이 경계 → `null` (FR-013)
+- [X] T031 [US2] 같은 파일에 부모 판정 케이스를 추가한다: 클램프된 깊이에서 위로 거슬러 `depth === 목표 − 1`인 가장 가까운 행이 `parentCardId`가 되고, 깊이 0이면 `''`
+- [X] T032 [US2] `webapp/src/components/table/tableDropTarget.ts`에 깊이 후보 계산·클램프·부모 판정을 구현한다 (T029~T031 통과, [contracts/drop-target.md](contracts/drop-target.md) 판정 순서 3~5)
 
 ### 적용에 계층·그룹
 
-- [ ] T033 [P] [US2] `webapp/src/components/table/applyTableDrop.test.ts`에 케이스를 추가한다: 최상위 → 하위면 `linkCardAsSubCard`, 하위 → 최상위면 `unlinkSubCard`, 다른 그룹의 하위면 **끄는 카드에만** `changePropertyValue`를 호출하고 자손에는 호출하지 않는다 (FR-014, FR-015, FR-022, FR-023)
-- [ ] T034 [US2] 같은 파일에 실패 케이스를 추가한다: 서버가 거부하면 `sendFlashMessage`가 `severity: 'high'`로 호출된다 (FR-029)
-- [ ] T035 [US2] `webapp/src/components/table/applyTableDrop.ts`에 계층·그룹 단계를 구현한다. **`try/catch`를 `performAsUndoGroup`에 넘기는 콜백 안쪽에 둔다** (T033·T034 통과, research R2 — 바깥에 두면 예외가 삼켜져 도달하지 않는다)
+- [X] T033 [P] [US2] `webapp/src/components/table/applyTableDrop.test.ts`에 케이스를 추가한다: 최상위 → 하위면 `linkCardAsSubCard`, 하위 → 최상위면 `unlinkSubCard`, 다른 그룹의 하위면 **끄는 카드에만** `changePropertyValue`를 호출하고 자손에는 호출하지 않는다 (FR-014, FR-015, FR-022, FR-023)
+- [X] T034 [US2] 같은 파일에 실패 케이스를 추가한다: 서버가 거부하면 `sendFlashMessage`가 `severity: 'high'`로 호출된다 (FR-029)
+- [X] T035 [US2] `webapp/src/components/table/applyTableDrop.ts`에 계층·그룹 단계를 구현한다. **`try/catch`를 `performAsUndoGroup`에 넘기는 콜백 안쪽에 둔다** (T033·T034 통과, research R2 — 바깥에 두면 예외가 삼켜져 도달하지 않는다)
 - [ ] T036 [US2] FR-016(새 부모가 펼쳐진 상태로 보임)이 **기존 코드로 이미 충족되는지 먼저 확인한다.** `webapp/src/components/table/tableRowExpandable.tsx:38-40`의 `useEffect(() => setExpanded(hasSubCards), [hasSubCards])`가 첫 하위 카드를 얻을 때 자동으로 펼친다. quickstart B2로 확인해 충족되면 **이 태스크는 코드 변경 없이 닫는다.** 충족되지 않을 때만 보완한다
 
 ### 수동 검증

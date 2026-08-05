@@ -25,6 +25,9 @@ export type ApplyTableDropParams = {
 
     subCardsByParent: {[parentCardId: string]: Card[]}
 
+    // 그룹이 걸려 있을 때의 속성 id. 없으면 그룹 값을 건드리지 않는다.
+    groupByPropertyId?: string
+
     // 서버가 거부했을 때 사용자에게 알리는 문구
     failureMessage: string
 }
@@ -37,7 +40,7 @@ export type ApplyTableDropParams = {
  * 그래야 Ctrl+Z 한 번에 전부 되돌아온다 (FR-028).
  */
 export async function applyTableDrop(params: ApplyTableDropParams): Promise<void> {
-    const {intent, item, board, activeView, allCards, rows, subCardsByParent, failureMessage} = params
+    const {intent, item, board, activeView, allCards, rows, subCardsByParent, groupByPropertyId, failureMessage} = params
 
     // 순서 이동이면 함께 선택돼 있던 카드도 각자의 서브트리와 함께 옮긴다
     // (FR-031). 계층 이동일 때는 끄는 카드의 서브트리만 옮긴다 — 여러 카드를
@@ -56,6 +59,31 @@ export async function applyTableDrop(params: ApplyTableDropParams): Promise<void
         // try/catch는 반드시 이 콜백 안쪽에 둔다. performAsUndoGroup은 예외를
         // 삼키고 다시 던지지 않으므로, 바깥에 두면 catch에 영원히 닿지 않는다.
         try {
+            // 1. 계층. 부모가 바뀔 때만 건드린다 — 순서만 바뀐 이동에 불필요한
+            //    왕복과 되돌리기 항목을 만들지 않는다.
+            if (!isReorder) {
+                if (intent.parentCardId) {
+                    await mutator.linkCardAsSubCard(item.cardId, intent.parentCardId)
+                } else if (item.sourceParentId) {
+                    await mutator.unlinkSubCard(item.cardId, item.sourceParentId)
+                }
+            }
+
+            // 2. 그룹. 새 부모의 값을 따라간다. 자손은 건드리지 않는다 —
+            //    부모 밑에 렌더되므로 자기 그룹 값이 화면에 드러나지 않고,
+            //    쓰기만 서브트리 크기만큼 늘어난다 (FR-023).
+            if (groupByPropertyId && intent.parentCardId) {
+                const dragged = allCards.find((c) => c.id === item.cardId)
+                const newParent = allCards.find((c) => c.id === intent.parentCardId)
+                const newValue = newParent?.fields.properties[groupByPropertyId]
+
+                if (dragged && newValue !== undefined &&
+                    dragged.fields.properties[groupByPropertyId] !== newValue) {
+                    await mutator.changePropertyValue(board.id, dragged, groupByPropertyId, newValue, description)
+                }
+            }
+
+            // 3. 순서.
             const cardOrder = moveInCardOrder({
                 cardOrder: activeView.fields.cardOrder,
                 allCardIds: allCards.map((card) => card.id),

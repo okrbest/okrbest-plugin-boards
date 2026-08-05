@@ -67,7 +67,7 @@ describe('computeDropIntent — 경계 계산', () => {
     // FR-007, SC-001. 인디케이터가 멈춘 자리와 카드가 놓이는 깊이가 같은
     // 상수에서 나와야 한다. 이 단언이 없으면 둘이 어긋나도 각각의 테스트는
     // 통과한다.
-    test('선의 들여쓰기는 언제나 목표 깊이에서 파생된다', () => {
+    test('선의 들여쓰기는 언제나 목표 깊이에서 파생된다 (자리표시)', () => {
         const rows = flatRows()
 
         for (const x of [TITLE_LEFT, TITLE_LEFT + 30, TITLE_LEFT + 200]) {
@@ -78,5 +78,84 @@ describe('computeDropIntent — 경계 계산', () => {
                 }
             }
         }
+    })
+})
+
+// 부모 a(depth 0) + 자식 a1(depth 1), 그리고 최상위 b.
+const nestedRows = (): RowMetric[] => [
+    {cardId: 'a', depth: 0, parentCardId: '', top: 0, height: ROW_HEIGHT},
+    {cardId: 'a1', depth: 1, parentCardId: 'a', top: 44, height: ROW_HEIGHT},
+    {cardId: 'b', depth: 0, parentCardId: '', top: 88, height: ROW_HEIGHT},
+]
+
+describe('computeDropIntent — 깊이 축', () => {
+    // 경계는 a1(depth 1)과 b(depth 0) 사이. 상한 = 윗행 depth+1 = 2,
+    // 하한 = 아랫행 depth = 0.
+    const atBoundary2 = (x: number) => compute(nestedRows(), x, 100, dragging('c'))
+
+    test('커서를 왼쪽 끝에 두면 하한 깊이', () => {
+        expect(atBoundary2(TITLE_LEFT)?.depth).toBe(0)
+    })
+
+    test('오른쪽으로 밀면 깊이가 오른다', () => {
+        expect(atBoundary2(TITLE_LEFT + 22)?.depth).toBe(1)
+        expect(atBoundary2(TITLE_LEFT + 44)?.depth).toBe(2)
+    })
+
+    test('상한을 넘겨 밀어도 상한에서 멈춘다', () => {
+        expect(atBoundary2(TITLE_LEFT + 500)?.depth).toBe(2)
+    })
+
+    test('왼쪽으로 더 당겨도 하한 아래로 내려가지 않는다', () => {
+        expect(atBoundary2(TITLE_LEFT - 500)?.depth).toBe(0)
+    })
+
+    test('목표 깊이에서 부모를 정한다', () => {
+        expect(atBoundary2(TITLE_LEFT)?.parentCardId).toBe('')
+        expect(atBoundary2(TITLE_LEFT + 22)?.parentCardId).toBe('a')
+        expect(atBoundary2(TITLE_LEFT + 44)?.parentCardId).toBe('a1')
+    })
+
+    test('선의 들여쓰기가 목표 깊이와 일치한다', () => {
+        const intent = atBoundary2(TITLE_LEFT + 22)
+        expect(intent?.indentOffsetPx).toBe(1 * Constants.tableSubCardIndentPx)
+    })
+})
+
+describe('computeDropIntent — 금지 규칙', () => {
+    test('자기 자신 바로 앞뒤 경계에는 놓을 수 없다', () => {
+        const rows = flatRows()
+        expect(compute(rows, TITLE_LEFT, 50, dragging('b'))).toBeNull()   // b 앞
+        expect(compute(rows, TITLE_LEFT, 80, dragging('b'))).toBeNull()   // b 뒤
+    })
+
+    test('자기 자손 사이에는 놓을 수 없다', () => {
+        const rows = nestedRows()
+        const item = dragging('a', {subtreeIds: ['a', 'a1'], subtreeHeight: 1})
+
+        // a와 a1 사이
+        expect(compute(rows, TITLE_LEFT, 50, item)).toBeNull()
+    })
+
+    // FR-012. 서브트리 높이만큼 상한이 줄어든다.
+    test('서브트리 높이가 상한을 깎는다', () => {
+        const rows = nestedRows()
+        const tall = dragging('c', {subtreeHeight: 3})
+
+        // 원래 상한 2인데 5 − 3 = 2 이므로 그대로 2
+        expect(compute(rows, TITLE_LEFT + 500, 100, tall)?.depth).toBe(2)
+
+        const taller = dragging('c', {subtreeHeight: 4})
+        expect(compute(rows, TITLE_LEFT + 500, 100, taller)?.depth).toBe(1)
+    })
+
+    test('상한이 하한보다 낮으면 놓을 수 없다', () => {
+        const rows: RowMetric[] = [
+            {cardId: 'p', depth: 3, parentCardId: '', top: 0, height: ROW_HEIGHT},
+            {cardId: 'q', depth: 4, parentCardId: 'p', top: 44, height: ROW_HEIGHT},
+        ]
+
+        // 경계 1: 상한 = min(3+1, 5−2) = 3, 하한 = 4 → 상한 < 하한
+        expect(compute(rows, TITLE_LEFT, 50, dragging('z', {subtreeHeight: 2}))).toBeNull()
     })
 })

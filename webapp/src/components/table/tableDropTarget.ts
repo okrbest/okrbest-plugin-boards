@@ -86,13 +86,32 @@ export function computeDropIntent(input: DropTargetInput): DropIntent | null {
         return null
     }
 
-    // 3~5. 깊이는 다음 단계에서 붙인다. 지금은 최상위로만 놓는다.
-    const depth = 0
+    // 3. 커서 x를 깊이 후보로 환산한다. 오른쪽으로 갈수록 깊어진다 (FR-010).
+    const candidate = Math.floor((cursor.x - input.titleCellLeft) / indentStepPx)
+
+    // 4. 허용 범위로 자른다 (FR-011, FR-012).
+    //
+    // 상한은 윗 행보다 한 단계 깊은 값이되, 끌고 있는 서브트리의 높이만큼
+    // 줄어든다 — 자손까지 최대 깊이 안에 들어와야 한다. 하한은 아랫 행의
+    // 깊이다. 그보다 얕게 놓으면 아랫 행이 부모를 잃는다.
+    const upper = Math.min(
+        above ? above.depth + 1 : 0,
+        input.maxDepth - item.subtreeHeight,
+    )
+    const lower = below ? below.depth : 0
+
+    // 어떤 깊이로도 놓을 수 없는 경계가 있다. 서버가 거부할 자리를 애초에
+    // 놓을 수 있어 보이게 하지 않는다.
+    if (upper < lower) {
+        return null
+    }
+
+    const depth = Math.min(Math.max(candidate, lower), upper)
 
     return {
         boundaryIndex,
         depth,
-        parentCardId: '',
+        parentCardId: findParent(rows, boundaryIndex, depth),
         anchorTop: boundaryIndex === 0 ? rows[0].top : rows[boundaryIndex - 1].top + rows[boundaryIndex - 1].height,
         indentOffsetPx: depth * indentStepPx,
     }
@@ -112,4 +131,24 @@ function findBoundary(rows: readonly RowMetric[], y: number): number {
         }
     }
     return rows.length
+}
+
+/**
+ * 목표 깊이에서의 새 부모.
+ *
+ * 경계에서 위로 거슬러 올라가 depth가 목표보다 한 단계 얕은 첫 행이 부모다.
+ * 목표가 최상위면 부모가 없다.
+ */
+function findParent(rows: readonly RowMetric[], boundaryIndex: number, depth: number): string {
+    if (depth === 0) {
+        return ''
+    }
+
+    for (let i = boundaryIndex - 1; i >= 0; i--) {
+        if (rows[i].depth === depth - 1) {
+            return rows[i].cardId
+        }
+    }
+
+    return ''
 }

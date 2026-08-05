@@ -54,8 +54,14 @@ export function useTableRowDrag(item: DragItem, enabled: boolean): Result {
             // 뷰포트 좌표를 .Table의 콘텐츠 좌표로 옮긴다. 절대 위치 인디케이터가
             // 이 좌표계를 쓰므로 스크롤 보정이 따로 필요 없다.
             const rect = container.getBoundingClientRect()
+
+            // x는 제목 셀이 시작하는 자리를 0으로 잡는다. 행 왼쪽의 핸들 칸까지
+            // 세면 깊이가 부풀려진다. 깊이 눈금은 제목의 들여쓰기와 같아야 한다.
+            const titleCell = rowRef.current?.querySelector('.title-cell')
+            const titleLeft = titleCell ? titleCell.getBoundingClientRect().left : rect.left
+
             reportCursor({
-                x: (offset.x - rect.left) + container.scrollLeft,
+                x: offset.x - titleLeft,
                 y: (offset.y - rect.top) + container.scrollTop,
             })
         },
