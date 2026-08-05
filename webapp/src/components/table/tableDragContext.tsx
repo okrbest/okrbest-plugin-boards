@@ -76,6 +76,18 @@ export const TableDragProvider = (props: Props): React.JSX.Element => {
             return
         }
 
+        // 값이 그대로면 아무것도 하지 않는다. 행은 매 렌더마다 자기 위치를
+        // 다시 등록하는데, 여기서 무조건 setState를 하면 렌더 → 등록 →
+        // 렌더가 끝없이 돈다.
+        const existing = rowsRef.current.find((row) => row.cardId === metric.cardId)
+        if (existing &&
+            existing.top === metric.top &&
+            existing.height === metric.height &&
+            existing.depth === metric.depth &&
+            existing.parentCardId === metric.parentCardId) {
+            return
+        }
+
         // ref가 원본이고 상태는 렌더용 미러다. 등록 직후 같은 프레임에 hover가
         // 들어올 수 있는데, 그때 렌더는 아직 돌지 않았다.
         const next = rowsRef.current.filter((row) => row.cardId !== metric.cardId)
@@ -86,6 +98,9 @@ export const TableDragProvider = (props: Props): React.JSX.Element => {
     }, [])
 
     const unregisterRow = useCallback((cardId: string) => {
+        if (!rowsRef.current.some((row) => row.cardId === cardId)) {
+            return
+        }
         rowsRef.current = rowsRef.current.filter((row) => row.cardId !== cardId)
         setRows(rowsRef.current)
     }, [])

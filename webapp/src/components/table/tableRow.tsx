@@ -131,8 +131,15 @@ const TableRow = (props: Props) => {
             groupValue: groupById ? card.fields.properties[groupById] : undefined,
         })
 
-        return () => unregisterRow(card.id)
+        return undefined
+
+        // 의존성 배열을 두지 않는다. 행 위치는 앞 행이 늘거나 줄면 바뀌는데
+        // 그건 이 컴포넌트의 props로 드러나지 않는다. 대신 컨텍스트가 값이
+        // 그대로면 상태를 갱신하지 않아 렌더 루프가 생기지 않는다.
     })
+
+    // 등록 해제는 언마운트 때 한 번만 한다.
+    useEffect(() => () => unregisterRow(card.id), [card.id, unregisterRow])
 
     const onClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         props.onClick && props.onClick(e, card)
