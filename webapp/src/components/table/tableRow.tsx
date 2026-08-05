@@ -228,8 +228,12 @@ const TableRow = (props: Props) => {
         >
 
             <div className='action-cell octo-table-cell-btn'>
+                {/* 툴팁 기본 위치(위)는 표 왼쪽 끝이라 좌측 메뉴바에 가린다. */}
                 {!isReadOnly && (
-                    <Tooltip title={intl.formatMessage({id: 'TableRow.drag-handle-hint', defaultMessage: '드래그해서 옮기기'})}>
+                    <Tooltip
+                        title={intl.formatMessage({id: 'TableRow.drag-handle-hint', defaultMessage: '드래그해서 옮기기'})}
+                        placement='right'
+                    >
                         <div
                             ref={handleRef}
                             className='drag-handle'

@@ -69,13 +69,18 @@ export async function applyTableDrop(params: ApplyTableDropParams): Promise<void
                 }
             }
 
-            // 2. 그룹. 새 부모의 값을 따라간다. 자손은 건드리지 않는다 —
-            //    부모 밑에 렌더되므로 자기 그룹 값이 화면에 드러나지 않고,
-            //    쓰기만 서브트리 크기만큼 늘어난다 (FR-023).
-            if (groupByPropertyId && intent.parentCardId) {
+            // 2. 그룹. 하위로 들어가면 새 부모의 값을, 같은 레벨에서 옮기면
+            //    놓이는 자리 이웃의 값을 따라간다. 그룹이 걸린 표에서 다른
+            //    그룹으로 끌면 그룹 값이 바뀌어야 한다 — 칸반이 그렇게 동작하고
+            //    표도 같아야 한다 (FR-022).
+            //
+            //    자손은 건드리지 않는다. 부모 밑에 렌더되므로 자기 그룹 값이
+            //    화면에 드러나지 않고, 쓰기만 서브트리 크기만큼 늘어난다 (FR-023).
+            if (groupByPropertyId) {
                 const dragged = allCards.find((c) => c.id === item.cardId)
-                const newParent = allCards.find((c) => c.id === intent.parentCardId)
-                const newValue = newParent?.fields.properties[groupByPropertyId]
+                const newValue = intent.parentCardId
+                    ? allCards.find((c) => c.id === intent.parentCardId)?.fields.properties[groupByPropertyId]
+                    : anchor.row.groupValue
 
                 if (dragged && newValue !== undefined &&
                     dragged.fields.properties[groupByPropertyId] !== newValue) {
@@ -88,7 +93,7 @@ export async function applyTableDrop(params: ApplyTableDropParams): Promise<void
                 cardOrder: activeView.fields.cardOrder,
                 allCardIds: allCards.map((card) => card.id),
                 movingIds,
-                destCardId: anchor.cardId,
+                destCardId: anchor.row.cardId,
                 place: anchor.place,
             })
 
@@ -149,20 +154,20 @@ function anchorFor(
     intent: DropIntent,
     rows: readonly RowMetric[],
     movingIds: readonly string[],
-): {cardId: string, place: 'before' | 'after'} | null {
+): {row: RowMetric, place: 'before' | 'after'} | null {
     const moving = new Set(movingIds)
 
     // 경계 바로 아래 행 앞에 놓는다. 그 행이 함께 움직이는 카드면 더 아래를 본다.
     for (let i = intent.boundaryIndex; i < rows.length; i++) {
         if (!moving.has(rows[i].cardId)) {
-            return {cardId: rows[i].cardId, place: 'before'}
+            return {row: rows[i], place: 'before'}
         }
     }
 
     // 아래에 남는 행이 없으면 위로 거슬러 올라가 그 행 뒤에 놓는다.
     for (let i = intent.boundaryIndex - 1; i >= 0; i--) {
         if (!moving.has(rows[i].cardId)) {
-            return {cardId: rows[i].cardId, place: 'after'}
+            return {row: rows[i], place: 'after'}
         }
     }
 

@@ -177,6 +177,36 @@ describe('applyTableDrop', () => {
         expect(calls[0][3]).toBe('new')
     })
 
+    // FR-022. 그룹이 걸린 표에서 다른 그룹으로 순서 이동하면 그룹 값이 따라와야
+    // 한다. 칸반이 그렇게 동작하고 표도 같아야 한다. 기존 onDropToGroup이 하던
+    // 일인데 새 경로가 물려받지 않아 회귀였다.
+    test('다른 그룹으로 순서 이동하면 그룹 값이 이웃을 따라간다', async () => {
+        await applyTableDrop({
+            intent: intent({boundaryIndex: 2, parentCardId: '', depth: 0}),
+            item: item({cardId: 'a'}),
+            board,
+            activeView: {id: 'view-1', fields: {cardOrder: ['a', 'b', 'c'], groupById: 'gp'}} as unknown as BoardView,
+            allCards: [
+                {id: 'a', fields: {properties: {gp: 'left'}}} as unknown as Card,
+                {id: 'b', fields: {properties: {gp: 'right'}}} as unknown as Card,
+                {id: 'c', fields: {properties: {gp: 'right'}}} as unknown as Card,
+            ],
+            rows: [
+                {cardId: 'a', depth: 0, parentCardId: '', top: 0, height: 44, groupValue: 'left'},
+                {cardId: 'b', depth: 0, parentCardId: '', top: 44, height: 44, groupValue: 'right'},
+                {cardId: 'c', depth: 0, parentCardId: '', top: 88, height: 44, groupValue: 'right'},
+            ],
+            subCardsByParent: {},
+            groupByPropertyId: 'gp',
+            failureMessage: '옮기지 못했습니다',
+        })
+
+        const calls = mockedMutator.changePropertyValue.mock.calls
+        expect(calls).toHaveLength(1)
+        expect((calls[0][1] as Card).id).toBe('a')
+        expect(calls[0][3]).toBe('right')
+    })
+
     // FR-029. performAsUndoGroup은 예외를 삼키므로 try/catch가 콜백 안쪽에
     // 있어야 한다. 바깥에 두면 이 테스트가 실패한다.
     test('서버가 거부하면 사용자에게 알린다', async () => {
