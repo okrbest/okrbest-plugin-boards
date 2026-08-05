@@ -177,6 +177,27 @@ describe('applyTableDrop', () => {
         expect(calls[0][3]).toBe('new')
     })
 
+    // 서버는 depth > 0 인 카드의 link 를 "card is already a sub-card"로 거부한다.
+    // 부모를 바꾸는 것은 갈아끼우기가 아니라 떼었다 붙이기다.
+    test('다른 부모로 옮길 때 먼저 떼어내고 붙인다', async () => {
+        const order: string[] = []
+        mockedMutator.unlinkSubCard.mockImplementation(async () => {
+            order.push('unlink')
+            return undefined
+        })
+        mockedMutator.linkCardAsSubCard.mockImplementation(async () => {
+            order.push('link')
+            return undefined
+        })
+
+        await run({
+            item: item({sourceParentId: 'old'}),
+            intent: intent({boundaryIndex: 2, parentCardId: 'b', depth: 1}),
+        })
+
+        expect(order).toEqual(['unlink', 'link'])
+    })
+
     // FR-022. 그룹이 걸린 표에서 다른 그룹으로 순서 이동하면 그룹 값이 따라와야
     // 한다. 칸반이 그렇게 동작하고 표도 같아야 한다. 기존 onDropToGroup이 하던
     // 일인데 새 경로가 물려받지 않아 회귀였다.

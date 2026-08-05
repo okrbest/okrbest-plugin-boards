@@ -59,20 +59,13 @@ export async function applyTableDrop(params: ApplyTableDropParams): Promise<void
         // try/catch는 반드시 이 콜백 안쪽에 둔다. performAsUndoGroup은 예외를
         // 삼키고 다시 던지지 않으므로, 바깥에 두면 catch에 영원히 닿지 않는다.
         try {
-            // 1. 계층. 부모가 바뀔 때만 건드린다 — 순서만 바뀐 이동에 불필요한
-            //    왕복과 되돌리기 항목을 만들지 않는다.
-            if (!isReorder) {
-                if (intent.parentCardId) {
-                    await mutator.linkCardAsSubCard(item.cardId, intent.parentCardId)
-                } else if (item.sourceParentId) {
-                    await mutator.unlinkSubCard(item.cardId, item.sourceParentId)
-                }
-            }
-
-            // 2. 그룹. 하위로 들어가면 새 부모의 값을, 같은 레벨에서 옮기면
+            // 1. 그룹. 하위로 들어가면 새 부모의 값을, 같은 레벨에서 옮기면
             //    놓이는 자리 이웃의 값을 따라간다. 그룹이 걸린 표에서 다른
             //    그룹으로 끌면 그룹 값이 바뀌어야 한다 — 칸반이 그렇게 동작하고
             //    표도 같아야 한다 (FR-022).
+            //
+            //    계층 변경보다 먼저 한다. link/unlink는 스토어를 바꾸므로 그 뒤에
+            //    allCards에서 꺼낸 카드 참조는 낡을 수 있다.
             //
             //    자손은 건드리지 않는다. 부모 밑에 렌더되므로 자기 그룹 값이
             //    화면에 드러나지 않고, 쓰기만 서브트리 크기만큼 늘어난다 (FR-023).
@@ -85,6 +78,21 @@ export async function applyTableDrop(params: ApplyTableDropParams): Promise<void
                 if (dragged && newValue !== undefined &&
                     dragged.fields.properties[groupByPropertyId] !== newValue) {
                     await mutator.changePropertyValue(board.id, dragged, groupByPropertyId, newValue, description)
+                }
+            }
+
+            // 2. 계층. 부모가 바뀔 때만 건드린다 — 순서만 바뀐 이동에 불필요한
+            //    왕복과 되돌리기 항목을 만들지 않는다.
+            if (!isReorder) {
+                // 이미 하위인 카드는 먼저 떼어낸다. 서버가 depth > 0인 카드의
+                // link를 "card is already a sub-card"로 거부하기 때문이다
+                // (server/app/cards.go의 LinkCardAsSubCard). 부모를 바꾸는 것은
+                // 갈아끼우기가 아니라 떼었다 붙이기다.
+                if (item.sourceParentId) {
+                    await mutator.unlinkSubCard(item.cardId, item.sourceParentId)
+                }
+                if (intent.parentCardId) {
+                    await mutator.linkCardAsSubCard(item.cardId, intent.parentCardId)
                 }
             }
 
