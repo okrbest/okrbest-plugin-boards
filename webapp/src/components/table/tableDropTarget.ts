@@ -111,32 +111,43 @@ export function computeDropIntent(input: DropTargetInput): DropIntent | null {
         }
     }
 
-    // 3. 커서 x를 깊이 후보로 환산한다. 오른쪽으로 갈수록 깊어진다 (FR-010).
-    const candidate = Math.floor((cursor.x - input.titleCellLeft) / indentStepPx)
-
-    // 4. 허용 범위로 자른다 (FR-011, FR-012).
+    // 3. 깊이는 "어느 목록에 놓이는가"로 정한다.
     //
-    // 상한은 윗 행보다 한 단계 깊은 값이되, 끌고 있는 서브트리의 높이만큼
-    // 줄어든다 — 자손까지 최대 깊이 안에 들어와야 한다. 하한은 아랫 행의
-    // 깊이다. 그보다 얕게 놓으면 아랫 행이 부모를 잃는다.
-    const upper = Math.min(
-        above ? above.depth + 1 : 0,
-        input.maxDepth - item.subtreeHeight,
-    )
-    const lower = below ? below.depth : 0
+    //    커서 x로 정하던 방식을 버렸다. 22px 눈금은 화면에 드러나지 않아
+    //    사용자가 어디까지 밀어야 한 단계 들어가는지 알 수 없었고, 제목 셀이
+    //    좁아 조작 폭도 부족했다.
+    //
+    //    대신 화면에 이미 보이는 경계를 그대로 쓴다. 경계 바로 아래 행이
+    //    속한 목록에 끼워 넣는다 — 하위 카드 앞에 놓으면 그 카드의 형제가
+    //    되고, 최상위 카드 앞에 놓으면 최상위가 된다. 하위 목록의 마지막
+    //    자리는 "+ 새 하위 카드" 줄이 경계를 잡아준다.
+    //
+    //    접힌 부모의 하위 목록은 화면에 없으므로 그 안으로는 놓을 수 없다.
+    //    노션과 같은 규칙이고, 여러 단계가 겹쳐도 눈에 보이는 대로 동작한다.
+    const target = below ?? above
+    let depth = below ? below.depth : 0
+    let parentCardId = below ? below.parentCardId : ''
 
-    // 어떤 깊이로도 놓을 수 없는 경계가 있다. 서버가 거부할 자리를 애초에
-    // 놓을 수 있어 보이게 하지 않는다.
-    if (upper < lower) {
+    // 목록 끝이면 마지막 행이 속한 목록에 이어 붙인다.
+    if (!below && above) {
+        depth = above.depth
+        parentCardId = above.parentCardId
+    }
+
+    // 4. 최대 깊이를 넘지 않도록 자른다. 자손까지 들어와야 한다 (FR-012).
+    const maxAllowed = input.maxDepth - item.subtreeHeight
+    if (depth > maxAllowed) {
         return null
     }
 
-    const depth = Math.min(Math.max(candidate, lower), upper)
+    if (!target) {
+        return null
+    }
 
     return {
         boundaryIndex,
         depth,
-        parentCardId: findParent(rows, boundaryIndex, depth),
+        parentCardId,
         anchorTop: boundaryIndex === 0 ? rows[0].top : rows[boundaryIndex - 1].top + rows[boundaryIndex - 1].height,
         indentOffsetPx: depth * indentStepPx,
     }
@@ -158,22 +169,3 @@ function findBoundary(rows: readonly RowMetric[], y: number): number {
     return rows.length
 }
 
-/**
- * 목표 깊이에서의 새 부모.
- *
- * 경계에서 위로 거슬러 올라가 depth가 목표보다 한 단계 얕은 첫 행이 부모다.
- * 목표가 최상위면 부모가 없다.
- */
-function findParent(rows: readonly RowMetric[], boundaryIndex: number, depth: number): string {
-    if (depth === 0) {
-        return ''
-    }
-
-    for (let i = boundaryIndex - 1; i >= 0; i--) {
-        if (rows[i].depth === depth - 1) {
-            return rows[i].cardId
-        }
-    }
-
-    return ''
-}
