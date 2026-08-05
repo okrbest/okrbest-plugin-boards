@@ -23,19 +23,25 @@ const item = (cardId: string): DragItem => ({
 // 컨텍스트를 훅 그대로 노출해 테스트에서 직접 호출한다.
 let ctx: ReturnType<typeof useTableDrag>
 
+const onDrop = jest.fn()
+
 const Probe = () => {
     ctx = useTableDrag()
     return null
 }
 
 const renderCtx = () => render(
-    <TableDragProvider titleCellLeft={100}>
+    <TableDragProvider
+            titleCellLeft={100}
+            onDrop={onDrop}
+        >
         <Probe/>
     </TableDragProvider>,
 )
 
 describe('TableDragContext', () => {
     beforeEach(() => {
+        onDrop.mockClear()
         jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
             cb(0)
             return 0
@@ -81,6 +87,34 @@ describe('TableDragContext', () => {
         })
 
         expect(ctx.rows.map((r) => r.cardId)).toEqual(['a'])
+    })
+
+    test('놓으면 지금 판정을 그대로 위로 넘긴다', () => {
+        renderCtx()
+
+        act(() => {
+            ctx.registerRow(metric('a', 0))
+            ctx.registerRow(metric('b', 44))
+            ctx.startDrag(item('b'))
+            ctx.reportCursor({x: 100, y: 5})
+            ctx.commitDrop()
+        })
+
+        expect(onDrop).toBeCalledTimes(1)
+        expect(onDrop.mock.calls[0][0].boundaryIndex).toBe(0)
+        expect(onDrop.mock.calls[0][1].cardId).toBe('b')
+    })
+
+    // 놓을 수 없는 자리에서는 아무 일도 일어나지 않는다.
+    test('판정이 없으면 드롭을 넘기지 않는다', () => {
+        renderCtx()
+
+        act(() => {
+            ctx.registerRow(metric('a', 0))
+            ctx.commitDrop()
+        })
+
+        expect(onDrop).not.toBeCalled()
     })
 
     test('드래그가 끝나면 판정과 서브트리 표시가 비워진다', () => {

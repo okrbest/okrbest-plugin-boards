@@ -354,7 +354,6 @@ exports[`components/table/TableRow should match snapshot, read-only 1`] = `
 <div>
   <div
     class="TableRow octo-table-row readonly"
-    draggable="true"
     style="opacity: 1;"
   >
     <div

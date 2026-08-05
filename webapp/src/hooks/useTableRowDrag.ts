@@ -11,10 +11,10 @@ type Result = {
 
     // 드래그 소스. 핸들에만 붙인다 — 행 본문을 끌어도 카드가 움직이지 않아야
     // 제목 셀에서 텍스트를 선택할 수 있다 (FR-002).
-    handleRef: React.RefObject<HTMLDivElement>
+    handleRef: React.RefObject<HTMLDivElement | null>
 
     // 드롭 타깃 겸 메트릭 측정 대상. 행 전체에 붙인다.
-    rowRef: React.RefObject<HTMLDivElement>
+    rowRef: React.RefObject<HTMLDivElement | null>
 
     isDragging: boolean
 }
@@ -29,7 +29,7 @@ type Result = {
 export function useTableRowDrag(item: DragItem, enabled: boolean): Result {
     const handleRef = useRef<HTMLDivElement>(null)
     const rowRef = useRef<HTMLDivElement>(null)
-    const {startDrag, reportCursor, endDrag} = useTableDrag()
+    const {startDrag, reportCursor, endDrag, commitDrop} = useTableDrag()
 
     const [{isDragging}, drag] = useDrag(() => ({
         type: 'card',
@@ -59,8 +59,9 @@ export function useTableRowDrag(item: DragItem, enabled: boolean): Result {
                 y: (offset.y - rect.top) + container.scrollTop,
             })
         },
+        drop: () => commitDrop(),
         canDrop: () => enabled,
-    }), [enabled, reportCursor])
+    }), [enabled, reportCursor, commitDrop])
 
     // 드래그 소스와 드롭 타깃을 서로 다른 요소에 붙인다.
     useEffect(() => {

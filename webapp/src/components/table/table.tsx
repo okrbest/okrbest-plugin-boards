@@ -3,7 +3,7 @@
 
 import React, {useCallback, useMemo} from 'react'
 
-import {FormattedMessage} from 'react-intl'
+import {FormattedMessage, useIntl} from 'react-intl'
 
 import {IPropertyOption, IPropertyTemplate, Board, BoardGroup} from '../../blocks/board'
 import {createBoardView, BoardView} from '../../blocks/boardView'
@@ -13,7 +13,7 @@ import mutator from '../../mutator'
 import {Utils} from '../../utils'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {updateView} from '../../store/views'
-import {getCurrentBoardCards} from '../../store/cards'
+import {getCurrentBoardCards, getCurrentBoardSubCardsByParent} from '../../store/cards'
 import {useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
@@ -28,6 +28,10 @@ import TableGroup from './tableGroup'
 import CalculationRow from './calculation/calculationRow'
 import {ColumnResizeProvider} from './tableColumnResizeContext'
 import {moveInCardOrder} from './cardOrderMove'
+import {TableDragProvider, useTableDrag} from './tableDragContext'
+import TableDropIndicator from './tableDropIndicator'
+import {applyTableDrop} from './applyTableDrop'
+import {DragItem, DropIntent, RowMetric} from './tableDropTarget'
 
 type Props = {
     selectedCardIds: string[]
@@ -47,6 +51,11 @@ type Props = {
     showHiddenCardCountNotification: (show: boolean) => void
 }
 
+const ConnectedDropIndicator = (): React.JSX.Element | null => {
+    const {intent} = useTableDrag()
+    return <TableDropIndicator intent={intent}/>
+}
+
 const Table = (props: Props): React.JSX.Element => {
     const {board, cards, activeView, visibleGroups, groupByProperty, views, hiddenCardsCount} = props
     const isManualSort = activeView.fields.sortOptions?.length === 0
@@ -59,6 +68,8 @@ const Table = (props: Props): React.JSX.Element => {
     // props.cards는 최상위 카드만 담는다. 순서 목록의 시드는 하위 카드까지
     // 포함해야 삽입 위치가 어긋나지 않는다.
     const allBoardCards = useAppSelector(getCurrentBoardCards)
+    const subCardsByParent = useAppSelector(getCurrentBoardSubCardsByParent)
+    const intl = useIntl()
 
     const columnMinWidths = useMemo(() => {
         const min: Record<string, number> = {[Constants.titleColumnId]: Constants.minColumnWidth}
@@ -251,12 +262,33 @@ const Table = (props: Props): React.JSX.Element => {
         })
     }, [activeView, cards, allBoardCards, props.selectedCardIds, groupByProperty, isManualSort, board.id])
 
+    const onTableDrop = useCallback((intent: DropIntent, item: DragItem, rows: readonly RowMetric[]) => {
+        applyTableDrop({
+            intent,
+            item,
+            board,
+            activeView,
+            allCards: allBoardCards,
+            rows,
+            subCardsByParent,
+            failureMessage: intl.formatMessage({
+                id: 'TableRow.move-failed',
+                defaultMessage: '카드를 옮기지 못했습니다.',
+            }),
+        })
+    }, [board, activeView, allBoardCards, subCardsByParent, intl])
+
     const propertyNameChanged = useCallback(async (option: IPropertyOption, text: string): Promise<void> => {
         await mutator.changePropertyOptionValue(board.id, board.cardProperties, groupByProperty!, option, text)
     }, [board, groupByProperty])
 
     return (
         <div className='Table'>
+            <TableDragProvider
+                titleCellLeft={0}
+                onDrop={onTableDrop}
+            >
+                <ConnectedDropIndicator/>
             <ColumnResizeProvider
                 columnWidths={activeView.fields.columnWidths}
                 columnMinWidths={columnMinWidths}
@@ -343,6 +375,7 @@ const Table = (props: Props): React.JSX.Element => {
                     />
                 </div>
             </ColumnResizeProvider>
+            </TableDragProvider>
 
             {hiddenCardsCount > 0 &&
             <HiddenCardCount

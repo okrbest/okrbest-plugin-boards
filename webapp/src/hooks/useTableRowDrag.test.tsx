@@ -37,7 +37,10 @@ const Row = ({enabled}: {enabled: boolean}) => {
 
 const renderRow = (enabled = true) => render(
     <DndProvider backend={HTML5Backend}>
-        <TableDragProvider titleCellLeft={0}>
+        <TableDragProvider
+            titleCellLeft={0}
+            onDrop={() => undefined}
+        >
             <Row enabled={enabled}/>
         </TableDragProvider>
     </DndProvider>,

@@ -246,8 +246,12 @@ export function getCard(cardId: string): (state: RootState) => Card|undefined {
     }
 }
 
+// boards 슬라이스가 없는 상태에서도 안전하게 읽는다. 카드 목록만 필요한 화면의
+// 테스트 스토어는 보드를 담지 않을 수 있다.
+const getCurrentBoardIdSafe = (state: RootState): string | undefined => state.boards?.current
+
 export const getCurrentBoardCards = createSelector(
-    (state: RootState) => state.boards.current,
+    getCurrentBoardIdSafe,
     getCards,
     (boardId, cards) => {
         return Object.values(cards).filter((c) => c.boardId === boardId) as Card[]

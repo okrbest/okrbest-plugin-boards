@@ -10,7 +10,9 @@ import {Constants} from '../../constants'
 import mutator from '../../mutator'
 import Button from '../../widgets/buttons/button'
 import Editable from '../../widgets/editable'
-import {useSortable} from '../../hooks/sortable'
+import {useTableRowDrag} from '../../hooks/useTableRowDrag'
+import {useAppSelector} from '../../store/hooks'
+import {getCurrentBoardSubCardsByParent} from '../../store/cards'
 
 import {Utils} from '../../utils'
 import {getGroupOptionIDForCard} from '../../boardUtils'
@@ -30,6 +32,8 @@ import EmojiIcon from '../emojiIcon'
 import {useHasCapabilities} from '../../hooks/permissions'
 
 import {useColumnResize} from './tableColumnResizeContext'
+import {useTableDrag} from './tableDragContext'
+import {collectSubtree} from './subtree'
 
 import './tableRow.scss'
 
@@ -42,6 +46,9 @@ type Props = {
     collapsedOptionIds: string[]
     card: Card
     isSelected: boolean
+
+    // 함께 선택된 카드들. 순서 이동일 때 같이 옮긴다 (FR-031).
+    selectedCardIds?: string[]
     focusOnMount: boolean
     isLastCard: boolean
     showCard: (cardId?: string) => void
@@ -65,7 +72,25 @@ const TableRow = (props: Props) => {
     const isGrouped = Boolean(groupById)
     const canEditCard = useHasCapabilities(card.boardId, ['canEditCard'])
     const isReadOnly = props.readonly || !canEditCard
-    const [isDragging, isOver, cardRef] = useSortable('card', card, !isReadOnly && (isManualSort || isGrouped), props.onDrop)
+    const canDrag = !isReadOnly && (isManualSort || isGrouped)
+    const subCardsByParent = useAppSelector(getCurrentBoardSubCardsByParent)
+    const {registerRow, unregisterRow, draggingSubtree} = useTableDrag()
+
+    // 드래그 단위는 카드가 아니라 서브트리다. 시작 시 한 번 굳혀 두고, 적용
+    // 단계가 이 값을 그대로 쓴다 (FR-017).
+    const dragItem = useMemo(() => {
+        const {subtreeIds, subtreeHeight} = collectSubtree(card.id, subCardsByParent)
+        return {
+            cardId: card.id,
+            subtreeIds,
+            subtreeHeight,
+            sourceParentId: card.fields.parentCardId || '',
+            sourceDepth: card.fields.depth || 0,
+            selectedCardIds: props.selectedCardIds ?? [],
+        }
+    }, [card.id, card.fields.parentCardId, card.fields.depth, subCardsByParent, props.selectedCardIds])
+
+    const {handleRef, rowRef, isDragging} = useTableRowDrag(dragItem, canDrag)
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = useState<boolean>(false)
     const columnResize = useColumnResize()
 
@@ -80,6 +105,34 @@ const TableRow = (props: Props) => {
             setTimeout(() => titleRef.current?.focus(), 10)
         }
     }, [])
+
+    // 판정 모듈이 쓸 행 위치를 컨텍스트에 등록한다. 좌표는 .Table의 콘텐츠
+    // 좌표계로 옮긴다 — 인디케이터가 같은 좌표계를 쓰므로 스크롤 보정이
+    // 필요 없다.
+    //
+    // 접힌 그룹의 행은 언마운트되지 않고 display:none으로 남아 높이가 0이다.
+    // 컨텍스트가 그런 행을 걸러내므로 접힌 그룹에는 경계가 생기지 않는다.
+    useEffect(() => {
+        const row = rowRef.current
+        const container = row?.closest('.Table')
+        if (!row || !container) {
+            return undefined
+        }
+
+        const rowRect = row.getBoundingClientRect()
+        const containerRect = container.getBoundingClientRect()
+
+        registerRow({
+            cardId: card.id,
+            depth: card.fields.depth || 0,
+            parentCardId: card.fields.parentCardId || '',
+            top: (rowRect.top - containerRect.top) + container.scrollTop,
+            height: rowRect.height,
+            groupValue: groupById ? card.fields.properties[groupById] : undefined,
+        })
+
+        return () => unregisterRow(card.id)
+    })
 
     const onClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         props.onClick && props.onClick(e, card)
@@ -109,9 +162,6 @@ const TableRow = (props: Props) => {
     ), [board.cardProperties, visiblePropertyIds])
 
     let className = props.isSelected ? 'TableRow octo-table-row selected' : 'TableRow octo-table-row'
-    if (isOver) {
-        className += ' dragover'
-    }
     if (isGrouped) {
         const groupTemplate = board.cardProperties.find((p) => p.id === groupById)
         const groupOptionID = getGroupOptionIDForCard(card, groupTemplate)
@@ -155,17 +205,26 @@ const TableRow = (props: Props) => {
         setShowConfirmationDialogBox(true)
     }, [card?.title, card?.fields.contentOrder, handleDeleteCard])
 
+    // 함께 움직일 서브트리 전체를 흐리게 한다. 드래그한 행 하나만 흐려지면
+    // 하위 카드가 따라온다는 사실이 화면에 드러나지 않는다 (FR-019).
+    const isMoving = isDragging || draggingSubtree.has(card.id)
+
     return (
         <div
             className={className}
             onClick={onClick}
-            ref={cardRef}
-            style={{opacity: isDragging ? 0.5 : 1}}
+            ref={rowRef}
+            style={{opacity: isMoving ? 0.5 : 1}}
         >
 
             <div className='action-cell octo-table-cell-btn'>
                 {!isReadOnly && (
-                    <IconButton icon={<CompassIcon icon='drag-vertical'/>}/>
+                    <div
+                        ref={handleRef}
+                        className='drag-handle'
+                    >
+                        <IconButton icon={<CompassIcon icon='drag-vertical'/>}/>
+                    </div>
                 )}
             </div>
 

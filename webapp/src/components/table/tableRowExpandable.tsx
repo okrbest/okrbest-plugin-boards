@@ -58,6 +58,7 @@ const TableRowExpandable = (props: Props): React.JSX.Element => {
                 addCard={props.addCard}
                 addSubCard={props.addSubCard}
                 isSelected={props.selectedCardIds.includes(card.id)}
+                selectedCardIds={props.selectedCardIds}
                 focusOnMount={props.cardIdToFocusOnRender === card.id}
                 isLastCard={props.isLastCard}
                 onClick={(e) => props.onCardClicked(e, card)}

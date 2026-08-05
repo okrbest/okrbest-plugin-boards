@@ -23,6 +23,10 @@ type TableDragValue = {
     startDrag: (item: DragItem) => void
     reportCursor: (point: {x: number, y: number}) => void
     endDrag: () => void
+
+    // 놓는 순간 호출한다. 지금 판정을 그대로 위로 넘긴다 — 행은 자기가 어디
+    // 놓이는지 모르고, 판정은 컨텍스트만 알고 있다.
+    commitDrop: () => void
 }
 
 const noop = () => undefined
@@ -36,12 +40,17 @@ const TableDragContext = createContext<TableDragValue>({
     startDrag: noop,
     reportCursor: noop,
     endDrag: noop,
+    commitDrop: noop,
 })
 
 export const useTableDrag = (): TableDragValue => useContext(TableDragContext)
 
 type Props = {
     titleCellLeft: number
+
+    // 판정과 끌던 것을 받아 실제 변경으로 옮긴다.
+    onDrop: (intent: DropIntent, item: DragItem, rows: readonly RowMetric[]) => void
+
     children: React.ReactNode
 }
 
@@ -56,6 +65,7 @@ export const TableDragProvider = (props: Props): React.JSX.Element => {
     const frameRef = useRef<number | null>(null)
     const rowsRef = useRef<RowMetric[]>([])
     const itemRef = useRef<DragItem | null>(null)
+    const intentRef = useRef<DropIntent | null>(null)
 
     const registerRow = useCallback((metric: RowMetric) => {
         // 접힌 그룹의 행은 언마운트되지 않고 display:none으로 남는다. 그 행의
@@ -94,6 +104,7 @@ export const TableDragProvider = (props: Props): React.JSX.Element => {
         }
         cursorRef.current = null
         itemRef.current = null
+        intentRef.current = null
         setDragItem(null)
         setIntent(null)
     }, [])
@@ -114,16 +125,28 @@ export const TableDragProvider = (props: Props): React.JSX.Element => {
                 return
             }
 
-            setIntent(computeDropIntent({
+            const next = computeDropIntent({
                 rows: rowsRef.current,
                 cursor,
                 item,
                 titleCellLeft: props.titleCellLeft,
                 indentStepPx: Constants.tableSubCardIndentPx,
                 maxDepth: Constants.maxCardDepth,
-            }))
+            })
+            intentRef.current = next
+            setIntent(next)
         })
     }, [props.titleCellLeft])
+
+    const commitDrop = useCallback(() => {
+        const currentIntent = intentRef.current
+        const currentItem = itemRef.current
+
+        // 놓을 수 없는 자리면 아무 일도 일어나지 않는다.
+        if (currentIntent && currentItem) {
+            props.onDrop(currentIntent, currentItem, rowsRef.current)
+        }
+    }, [props.onDrop])
 
     const draggingSubtree = useMemo(
         () => new Set(dragItem?.subtreeIds ?? []),
@@ -139,7 +162,8 @@ export const TableDragProvider = (props: Props): React.JSX.Element => {
         startDrag,
         reportCursor,
         endDrag,
-    }), [rows, intent, draggingSubtree, registerRow, unregisterRow, startDrag, reportCursor, endDrag])
+        commitDrop,
+    }), [rows, intent, draggingSubtree, registerRow, unregisterRow, startDrag, reportCursor, endDrag, commitDrop])
 
     return (
         <TableDragContext.Provider value={value}>

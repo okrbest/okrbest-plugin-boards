@@ -102,15 +102,15 @@ description: "Task list for 004-table-drag-reorder"
 
 - [X] T020 [P] [US1] `webapp/src/hooks/useTableRowDrag.test.ts`를 만들어 쓴다: 드래그 소스 ref와 드롭 타깃 ref가 **서로 다른 요소**에 붙는다
 - [X] T021 [US1] `webapp/src/hooks/useTableRowDrag.ts`를 구현한다. `drag(handleRef)`, `drop(rowRef)`로 분리하고 `hover`에서 좌표를 컨텍스트로 보고한다 (T020 통과). **`webapp/src/hooks/sortable.tsx`는 건드리지 않는다** — 칸반이 쓴다 (FR-030)
-- [ ] T022 [US1] `webapp/src/components/table/tableRow.test.tsx`를 고쳐 검증한다: 드래그 ref가 **핸들에만** 붙고, 편집 권한이 없으면 핸들이 렌더되지 않는다 (FR-002, FR-004)
-- [ ] T023 [US1] `webapp/src/components/table/tableRow.tsx`의 `useSortable`을 `useTableRowDrag`로 바꾸고, 좌측 ⠿ `IconButton`에 드래그 ref를 붙인다(FR-001). 행에 걸린 `.dragover` 클래스 부여를 제거한다 (T022 통과)
+- [X] T022 [US1] `webapp/src/components/table/tableRow.test.tsx`를 고쳐 검증한다: 드래그 ref가 **핸들에만** 붙고, 편집 권한이 없으면 핸들이 렌더되지 않는다 (FR-002, FR-004)
+- [X] T023 [US1] `webapp/src/components/table/tableRow.tsx`의 `useSortable`을 `useTableRowDrag`로 바꾸고, 좌측 ⠿ `IconButton`에 드래그 ref를 붙인다(FR-001). 행에 걸린 `.dragover` 클래스 부여를 제거한다 (T022 통과)
 
 ### 적용
 
 - [X] T024 [P] [US1] `webapp/src/components/table/applyTableDrop.test.ts`를 만들어 순서 전용 케이스를 쓴다: 부모가 안 바뀌면 `linkCardAsSubCard`·`unlinkSubCard`를 호출하지 않고 `changeViewCardOrder`만 호출한다. `performAsUndoGroup` 호출은 1회 ([contracts/drop-target.md](contracts/drop-target.md))
 - [X] T025 [US1] 같은 파일에 **다중 선택 회귀 케이스**를 쓴다: `selectedCardIds`가 여럿인 상태로 순서 이동하면 선택된 카드가 **각자의 서브트리와 함께** 전부 이동한다 (FR-031). 현행 `table.tsx:138`의 `selectedCardIds ∪ {srcCard.id}` 동작을 잃지 않는지 확인하는 것이 목적이다
 - [X] T026 [US1] `webapp/src/components/table/applyTableDrop.ts`를 구현한다. 서브트리 id를 통째로 빼서 목표 경계에 끼워 넣는다(FR-017 — 자손이 순서·상대 계층을 유지한다). `DragItem.selectedCardIds`를 받아 순서 이동일 때 함께 옮긴다 (T024·T025 통과, [data-model.md](data-model.md) 다중 선택 절)
-- [ ] T027 [US1] `webapp/src/components/table/table.tsx`를 `TableDragContext`로 감싸고 `TableDropIndicator`를 렌더한다. 드롭 핸들러를 `applyTableDrop`으로 연결한다
+- [X] T027 [US1] `webapp/src/components/table/table.tsx`를 `TableDragContext`로 감싸고 `TableDropIndicator`를 렌더한다. 드롭 핸들러를 `applyTableDrop`으로 연결한다
 
 ### 수동 검증
 
