@@ -24,7 +24,7 @@ import BlockIconSelector from '../blockIconSelector'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {setCurrent as setCurrentCard} from '../../store/cards'
 import {Constants, Permission} from '../../constants'
-import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useHasCurrentBoardCardPermissions} from '../../hooks/permissions'
 import BlockSuiteEditor from '../blockSuite/BlockSuiteEditor'
 
 import CardSkeleton from '../../svg/card-skeleton'
@@ -68,8 +68,10 @@ const CardDetail = (props: Props): React.JSX.Element|null => {
             mutator.changeBlockTitle(props.board.id, card.id, card.title, title)
         }
     }, [card.title, title])
-    const canEditBoardCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
-    const canCommentBoardCards = useHasCurrentBoardPermissions([Permission.CommentBoardCards])
+    // Judged per card, not per board: the access rules can leave a board
+    // editor with only commenting on this particular card.
+    const canEditBoardCards = useHasCurrentBoardCardPermissions(card.id, [Permission.ManageBoardCards])
+    const canCommentBoardCards = useHasCurrentBoardCardPermissions(card.id, [Permission.CommentBoardCards])
 
     const saveTitleRef = useRef<() => void>(saveTitle)
     saveTitleRef.current = saveTitle

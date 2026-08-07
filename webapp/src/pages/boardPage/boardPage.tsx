@@ -125,6 +125,15 @@ const BoardPage = (props: Props): React.JSX.Element => {
                 dispatch(updateComments(teamBlocks.filter((b: Block) => b.type === 'comment' || b.deleteAt !== 0) as CommentBlock[]))
                 dispatch(updateAttachments(teamBlocks.filter((b: Block) => b.type === 'attachment' || b.deleteAt !== 0) as AttachmentBlock[]))
             })
+
+            // Card level permissions are keyed on the values a card carries, so
+            // someone else changing a property can change what this member may
+            // do with it. Refreshed only when a card actually moved, and only on
+            // boards that have rules — the response omits the map otherwise.
+            const cardChanged = teamBlocks.some((b: Block) => b.type === 'card')
+            if (cardChanged && activeBoardId) {
+                dispatch(fetchBoardPermissionsMe(activeBoardId))
+            }
         }
 
         const incrementalBoardUpdate = (_: WSClient, boards: Board[]) => {

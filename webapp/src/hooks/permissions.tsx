@@ -79,6 +79,43 @@ export const useHasPermissions = (teamId: string, boardId: string, permissions: 
     return false
 }
 
+// useHasCardCapabilities is useHasPermissions narrowed to one card.
+//
+// Card access rules can grant less than the board role does — a member who is a
+// board editor may only be allowed to comment on a given card — and the screen
+// used to know nothing about it, so it offered edits the server then refused.
+//
+// A board with no active rules sends no card entries, and a card that carries no
+// entry falls back to the board wide answer. That fallback is what keeps every
+// board without rules behaving exactly as before.
+export const useHasCardPermissions = (teamId: string, boardId: string, cardId: string, permissions: Permission[]): boolean => {
+    const boardPermissionsSelector = useMemo(() => getBoardPermissions(boardId), [boardId])
+    const cardCapabilities = useAppSelector(boardPermissionsSelector)?.cardPermissions?.[cardId]
+    const boardAnswer = useHasPermissions(teamId, boardId, permissions)
+
+    if (!cardId || !cardCapabilities) {
+        return boardAnswer
+    }
+
+    // The rules never grant more than the board role allows, so both have to
+    // agree: the card entry narrows, it does not promote.
+    return boardAnswer && permissions.some((permission) => {
+        const capability = permissionToCapability[permission]
+        return Boolean(capability) && Boolean(cardCapabilities[capability])
+    })
+}
+
+export const useHasCurrentTeamCardPermissions = (boardId: string, cardId: string, permissions: Permission[]): boolean => {
+    const currentTeam = useAppSelector(getCurrentTeam)
+    return useHasCardPermissions(currentTeam?.id || '', boardId, cardId, permissions)
+}
+
+export const useHasCurrentBoardCardPermissions = (cardId: string, permissions: Permission[]): boolean => {
+    const currentBoardId = useAppSelector(getCurrentBoardId)
+
+    return useHasCurrentTeamCardPermissions(currentBoardId || '', cardId, permissions)
+}
+
 export const useHasCapabilities = (boardId: string, capabilities: BoardCapability[]): boolean => {
     const boardPermissionsSelector = useMemo(() => getBoardPermissions(boardId), [boardId])
     const boardCapabilities = useAppSelector(boardPermissionsSelector)?.capabilities

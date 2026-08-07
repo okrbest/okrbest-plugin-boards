@@ -88,6 +88,11 @@ type BoardPermissionsResponse = {
     effectivePermission: 'none' | 'view' | 'commenter' | 'edit' | 'manage'
     capabilities: BoardCapabilities
     derivedFrom: string
+
+    // What the card access rules allow on individual cards, keyed by card ID.
+    // Absent on boards with no active rules, and the board wide capabilities
+    // above apply to every card instead.
+    cardPermissions?: {[cardId: string]: BoardCapabilities}
 }
 
 
