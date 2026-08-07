@@ -49,6 +49,21 @@ func (mr *MockStoreMockRecorder) GetBlock(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockStore)(nil).GetBlock), arg0)
 }
 
+// GetBoard mocks base method.
+func (m *MockStore) GetBoard(arg0 string) (*model.Board, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBoard", arg0)
+	ret0, _ := ret[0].(*model.Board)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBoard indicates an expected call of GetBoard.
+func (mr *MockStoreMockRecorder) GetBoard(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoard", reflect.TypeOf((*MockStore)(nil).GetBoard), arg0)
+}
+
 // GetMembersForBoard mocks base method.
 func (m *MockStore) GetMembersForBoard(arg0 string) ([]*model.BoardMember, error) {
 	m.ctrl.T.Helper()

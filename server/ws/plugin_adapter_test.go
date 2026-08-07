@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
 
 	mmModel "github.com/mattermost/mattermost/server/public/model"
@@ -356,6 +358,12 @@ func TestGetUserIDsForTeamAndBoard(t *testing.T) {
 			GetMembersForBoard(boardID1).
 			Return(mockedMembers, nil).
 			Times(1)
+		// These cases are about the membership half of the fan-out, so the
+		// board is left as one that grants nothing to the team at large.
+		th.store.EXPECT().
+			GetBoard(gomock.Any()).
+			Return(&model.Board{Type: model.BoardTypePrivate}, nil).
+			AnyTimes()
 
 		th.auth.EXPECT().
 			DoesUserHaveTeamAccess(userID1, teamID1).
@@ -579,6 +587,12 @@ func TestSubscribeFromUnregisteredWebConn(t *testing.T) {
 		GetMembersForBoard(boardID).
 		Return([]*model.BoardMember{{UserID: userID}}, nil).
 		Times(1)
+	// These cases are about the membership half of the fan-out, so the
+	// board is left as one that grants nothing to the team at large.
+	th.store.EXPECT().
+		GetBoard(gomock.Any()).
+		Return(&model.Board{Type: model.BoardTypePrivate}, nil).
+		AnyTimes()
 	th.auth.EXPECT().
 		DoesUserHaveTeamAccess(userID, teamID).
 		Return(true).

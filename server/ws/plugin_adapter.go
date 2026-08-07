@@ -224,6 +224,20 @@ func (pa *PluginAdapter) getUserIDsForTeam(teamID string) []string {
 	return userIDs
 }
 
+// boardGrantsRoleToTeam reports whether the board hands a role to every team
+// participant on its own, which is what an open board's minimum role does.
+//
+// A board that cannot be read is treated as granting nothing: a lookup failure
+// must never be the reason an audience gets wider.
+func (pa *PluginAdapter) boardGrantsRoleToTeam(boardID string) bool {
+	board, err := pa.store.GetBoard(boardID)
+	if err != nil || board == nil {
+		return false
+	}
+
+	return board.Type == model.BoardTypeOpen && board.MinimumRole != model.BoardRoleNone
+}
+
 func (pa *PluginAdapter) getUserIDsForTeamAndBoard(teamID, boardID string, ensureUserIDs ...string) []string {
 	userMap := map[string]bool{}
 	for _, pac := range pa.GetListenersByTeam(teamID) {
@@ -249,6 +263,23 @@ func (pa *PluginAdapter) getUserIDsForTeamAndBoard(teamID, boardID string, ensur
 	for _, member := range members {
 		for userID := range userMap {
 			if userID == member.UserID && pa.auth.DoesUserHaveTeamAccess(userID, teamID) {
+				userIDs = append(userIDs, userID)
+			}
+		}
+	}
+
+	// An open board hands every team participant a role through its minimum
+	// role, without writing a membership row for any of them. Judging delivery
+	// by membership alone therefore contradicted the permission the board
+	// already grants: everyone could edit over REST, and only the few who
+	// happened to sit in the linked channel heard about it live.
+	//
+	// Widening here rather than narrowing elsewhere is deliberate. Card level
+	// access is applied downstream in filterBlockRecipients, which never ran
+	// while this list came back empty.
+	if pa.boardGrantsRoleToTeam(boardID) {
+		for userID := range userMap {
+			if pa.auth.DoesUserHaveTeamAccess(userID, teamID) {
 				userIDs = append(userIDs, userID)
 			}
 		}

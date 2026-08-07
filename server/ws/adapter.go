@@ -30,6 +30,9 @@ const (
 type Store interface {
 	GetBlock(blockID string) (*model.Block, error)
 	GetMembersForBoard(boardID string) ([]*model.BoardMember, error)
+	// GetBoard is read for the board's type and minimum role, which decide
+	// whether the fan-out reaches beyond the membership list.
+	GetBoard(boardID string) (*model.Board, error)
 }
 
 // BlockAccessFilter narrows a recipient list to the users allowed to hear about
