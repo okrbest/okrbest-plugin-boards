@@ -23,13 +23,11 @@ import {
     updateBoards,
     updateMembersEnsuringBoardsAndUsers,
     getCurrentBoardId,
-    getCurrentBoard,
     setCurrent as setCurrentBoard,
     fetchBoardMembers,
     addMyBoardMemberships,
 } from '../../store/boards'
 import {getCurrentViewId, setCurrent as setCurrentView, updateViews} from '../../store/views'
-import {getCurrentView} from '../../store/views'
 import ConfirmationDialog from '../../components/confirmationDialogBox'
 import {initialLoad, initialReadOnlyLoad, loadBoardData} from '../../store/initialLoad'
 import {useAppSelector, useAppDispatch} from '../../store/hooks'
@@ -41,13 +39,11 @@ import {fetchBoardPermissionsMe} from '../../store/boardPermissions'
 import {
     fetchUserBlockSubscriptions,
     getMe,
-    getMyOrgContext,
     followBlock,
     unfollowBlock,
 } from '../../store/users'
 import {setGlobalError} from '../../store/globalError'
 import {UserSettings} from '../../userSettings'
-import mutator from '../../mutator'
 
 import IconButton from '../../widgets/buttons/iconButton'
 import CloseIcon from '../../widgets/icons/close'
@@ -83,9 +79,6 @@ const BoardPage = (props: Props): React.JSX.Element => {
     const viewId = params.viewId
     const me = useAppSelector<IUser|null>(getMe)
     const hiddenBoardIDs = useAppSelector(getHiddenBoardIDs)
-    const currentBoard = useAppSelector(getCurrentBoard)
-    const currentView = useAppSelector(getCurrentView)
-    const orgContext = useAppSelector(getMyOrgContext)
     const categorySelector = useMemo(() => getCategoryOfBoard(activeBoardId), [activeBoardId])
     const category = useAppSelector(categorySelector)
     const [showJoinBoardDialog, setShowJoinBoardDialog] = useState<boolean>(false)
@@ -295,49 +288,20 @@ const BoardPage = (props: Props): React.JSX.Element => {
         }
     }, [me?.id, teamId, params.boardId, hiddenBoardIDs])
 
-    useEffect(() => {
-        if (props.readonly || !currentBoard || !currentView || !me) {
-            return
-        }
-        const appliedKey = `default_filter_applied_${currentBoard.id}_${currentView.id}`
-        if (localStorage.getItem(appliedKey)) {
-            return
-        }
-
-        if (orgContext.isCEO) {
-            localStorage.setItem(appliedKey, 'true')
-            return
-        }
-
-        const teamProperty = currentBoard.cardProperties.find((p) => p.name.toLowerCase() === 'team' || p.name.toLowerCase() === 'org')
-        const positionProperty = currentBoard.cardProperties.find((p) => p.name.toLowerCase() === 'position' || p.name.toLowerCase() === 'role')
-        const filters: Array<{propertyId: string, condition: 'includes', values: string[]}> = []
-
-        if (teamProperty && orgContext.orgUnitIds.length > 0) {
-            filters.push({
-                propertyId: teamProperty.id,
-                condition: 'includes',
-                values: orgContext.orgUnitIds,
-            })
-        }
-        if (positionProperty && orgContext.positionCodes.length > 0) {
-            filters.push({
-                propertyId: positionProperty.id,
-                condition: 'includes',
-                values: orgContext.positionCodes,
-            })
-        }
-
-        if (filters.length === 0) {
-            localStorage.setItem(appliedKey, 'true')
-            return
-        }
-
-        const oldFilter = currentView.fields.filter || {operation: 'and', filters: []}
-        const newFilter = {operation: 'and', filters}
-        mutator.changeViewFilter(currentBoard.id, currentView.id, oldFilter as any, newFilter as any)
-        localStorage.setItem(appliedKey, 'true')
-    }, [props.readonly, currentBoard?.id, currentView?.id, me?.id, orgContext.isCEO, orgContext.orgUnitIds.join(','), orgContext.positionCodes.join(',')])
+    // A "default filter" used to be written here on first open: the viewer's own
+    // org unit IDs were stamped onto the board's TEAM property filter.
+    //
+    // It was removed rather than repaired, for three reasons. The IDs never
+    // matched — org units are keyed in the organization master while a property
+    // filter takes the property's own option IDs, so the filter selected nothing
+    // and the board came up empty. The view it wrote to is shared, so one
+    // member's preference silently replaced the filter everyone else was using.
+    // And the guard was localStorage, per browser, so it fired again for every
+    // new member and every new browser.
+    //
+    // Card level access is what actually narrows a board per person, and it is
+    // enforced on the server. Restoring this as a per-user convenience would mean
+    // a client side view filter that is never written back.
 
     useEffect(() => {
         if (!props.readonly || !activeBoardId || !activeViewId) {
