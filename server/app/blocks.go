@@ -127,15 +127,29 @@ func (a *App) FilterCardsForUser(userID, boardID string, cards []*model.Card) ([
 
 // requireCardEditPermission refuses a change to a card the rules do not let this
 // user edit (FR-027).
+func (a *App) requireCardEditPermission(userID string, block *model.Block, board *model.Board) error {
+	return a.requireCardPermission(userID, block, board, model.EffectiveBoardPermissionEdit, nil)
+}
+
+// requireCardPermission refuses a write to a card the rules do not let this user
+// reach at the given level (FR-027).
 //
 // The judgement is made on the card the block belongs to, not on the block
-// itself: editing a comment or a description writes into the card's content, so
-// it answers to the card's permission rather than the board's.
+// itself: writing a comment or a description writes into the card's content, so
+// it answers to the card's permission rather than the board's. The level is what
+// separates the two — a comment needs commenting, everything else needs editing.
 //
-// Creation is deliberately not covered. A new card is allowed by the board
-// permission alone (FR-032) — the rules govern what happens to a card once it
-// carries the property value, not who may add one.
-func (a *App) requireCardEditPermission(userID string, block *model.Block, board *model.Board) error {
+// batch carries the blocks arriving in the same request. A card and its content
+// are inserted together, so the content's parent is not in the store yet, and
+// looking only there would classify it as living outside any card and skip the
+// check entirely.
+func (a *App) requireCardPermission(
+	userID string,
+	block *model.Block,
+	board *model.Board,
+	minimum model.EffectiveBoardPermission,
+	batch map[string]*model.Block,
+) error {
 	if block == nil || board == nil {
 		return nil
 	}
@@ -148,7 +162,7 @@ func (a *App) requireCardEditPermission(userID string, block *model.Block, board
 		return nil
 	}
 
-	card, err := a.cardForBlock(block)
+	card, err := a.cardForBlock(block, batch)
 	if err != nil {
 		// The card could not be read, so it cannot be judged. Refusing is the
 		// only safe answer: otherwise a lookup failure becomes a way to write
@@ -161,11 +175,169 @@ func (a *App) requireCardEditPermission(userID string, block *model.Block, board
 		return nil
 	}
 
-	if model.EffectivePermissionRank(evaluator.For(card)) < model.EffectivePermissionRank(model.EffectiveBoardPermissionEdit) {
+	if model.EffectivePermissionRank(evaluator.For(card)) < model.EffectivePermissionRank(minimum) {
 		return model.NewErrPermission("access denied to card")
 	}
 
 	return nil
+}
+
+// requireConditionWrite refuses to move a card into a state the rules would
+// never have let this user create it in.
+//
+// before is the card as stored, or nil when it is being created. The check only
+// fires when the change actually moves the card between rule conditions: judging
+// the resulting state alone would refuse a 팀장 renaming their own 전략 card,
+// since the value already on it is one they could not have set.
+//
+// It is deliberately blind to authorship. The creator floor lets an author work
+// on their own card, but an author who could satisfy this check by authorship
+// would be able to walk that card into any state by creating it blank first —
+// which is the escalation the check exists to stop (scenario 5).
+func (a *App) requireConditionWrite(userID string, before, after *model.Block, board *model.Board) error {
+	if after == nil || board == nil || after.Type != model.TypeCard {
+		return nil
+	}
+
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return err
+	}
+	if !evaluator.Enforces() {
+		return nil
+	}
+
+	if evaluator.SameConditions(before, after) {
+		return nil
+	}
+
+	// A card no rule condition mentions is governed by no rule, so moving one
+	// there — clearing a value, or creating the blank card every new row starts
+	// as — stays open.
+	if !evaluator.MatchesAnyCondition(after) {
+		return nil
+	}
+
+	if model.EffectivePermissionRank(evaluator.ForByRulesOnly(after)) <
+		model.EffectivePermissionRank(model.EffectiveBoardPermissionEdit) {
+		return model.NewErrPermission("access denied: no permission to give a card these property values")
+	}
+
+	return nil
+}
+
+// requireInsertPermission judges a batch of blocks before any of it is written.
+//
+// Insertion used to ask nothing at all, which left two holes: a comment on a
+// card the rules hide went straight through, and a card could be created
+// carrying any property value — after which its own author often could not edit
+// or delete it. Both are closed here rather than at each call site, because the
+// three callers (the blocks endpoint, CreateCard and CreateSubCard) would
+// otherwise have to agree with each other.
+//
+// The whole batch is judged before anything is stored, so a refusal leaves no
+// half written card behind.
+func (a *App) requireInsertPermission(blocks []*model.Block, userID string, board *model.Board) error {
+	if board == nil || len(blocks) == 0 {
+		return nil
+	}
+
+	batch := make(map[string]*model.Block, len(blocks))
+	for _, block := range blocks {
+		if block != nil {
+			batch[block.ID] = block
+		}
+	}
+
+	for _, block := range blocks {
+		if block == nil {
+			continue
+		}
+
+		if block.Type == model.TypeCard {
+			// A new card answers for the values it arrives carrying (FR-032 as
+			// revised). Its own content and comments are judged below like any
+			// other block.
+			if err := a.requireConditionWrite(userID, nil, block, board); err != nil {
+				return err
+			}
+			continue
+		}
+
+		minimum := model.EffectiveBoardPermissionEdit
+		if block.Type == model.TypeComment {
+			minimum = model.EffectiveBoardPermissionCommenter
+		}
+
+		if err := a.requireCardPermission(userID, block, board, minimum, batch); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// requireDuplicatePermission judges a copy request against both halves of the
+// rules.
+//
+// Duplicating used to ask the board and nothing else, which made it two things
+// at once: a way to read a card the rules hide, since the copy lands in the
+// requester's own view carrying the original's content, and a way around the
+// creation restriction, since the copy arrives already wearing a value the
+// requester could not have set.
+func (a *App) requireDuplicatePermission(userID, blockID string, board *model.Board) error {
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return err
+	}
+	if !evaluator.Enforces() {
+		return nil
+	}
+
+	source, err := a.store.GetBlock(blockID)
+	if model.IsErrNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return model.NewErrPermission("access denied to card")
+	}
+
+	card, err := a.cardForBlock(source, nil)
+	if err != nil {
+		return model.NewErrPermission("access denied to card")
+	}
+	if card == nil {
+		return nil
+	}
+
+	if evaluator.For(card) == model.EffectiveBoardPermissionNone {
+		return model.NewErrPermission("access denied to card")
+	}
+
+	// The copy is a new card, so it answers the creation question as well. before
+	// is nil: nothing existed to compare against.
+	return a.requireConditionWrite(userID, nil, card, board)
+}
+
+// projectPatch returns what the block will look like once the patch is applied,
+// without touching the block itself.
+//
+// BlockPatch.Patch writes into the block it is given and hands the same pointer
+// back, so judging the result means judging a copy. Fields is copied one level
+// deep, which is enough: a patch replaces or deletes whole top level keys and
+// never reaches into the nested property map.
+func projectPatch(block *model.Block, patch *model.BlockPatch) *model.Block {
+	if block == nil || patch == nil {
+		return block
+	}
+
+	projected := *block
+	projected.Fields = make(map[string]interface{}, len(block.Fields))
+	for key, value := range block.Fields {
+		projected.Fields[key] = value
+	}
+
+	return patch.Patch(&projected)
 }
 
 // deletedBlockMessage is the block a deletion is announced with.
@@ -184,7 +356,11 @@ func deletedBlockMessage(block *model.Block) *model.Block {
 
 // cardForBlock walks up from a block to the card that owns it, returning nil
 // when the block is not under a card at all.
-func (a *App) cardForBlock(block *model.Block) (*model.Block, error) {
+//
+// batch may hold blocks that are being written in the same request and are
+// therefore not in the store yet. It is consulted first; a nil batch reduces
+// this to a plain store walk.
+func (a *App) cardForBlock(block *model.Block, batch map[string]*model.Block) (*model.Block, error) {
 	iter := block
 	for depth := 0; depth < maxSearchDepth; depth++ {
 		if iter.Type == model.TypeCard {
@@ -192,6 +368,11 @@ func (a *App) cardForBlock(block *model.Block) (*model.Block, error) {
 		}
 		if iter.ParentID == "" || iter.ParentID == iter.BoardID {
 			return nil, nil
+		}
+
+		if parent, ok := batch[iter.ParentID]; ok && parent != nil {
+			iter = parent
+			continue
 		}
 
 		parent, err := a.store.GetBlock(iter.ParentID)
@@ -284,6 +465,10 @@ func (a *App) DuplicateBlock(boardID string, blockID string, userID string, asTe
 		return nil, fmt.Errorf("cannot fetch board %s for DuplicateBlock: %w", boardID, err)
 	}
 
+	if permErr := a.requireDuplicatePermission(userID, blockID, board); permErr != nil {
+		return nil, permErr
+	}
+
 	blocks, err := a.store.DuplicateBlock(boardID, blockID, userID, asTemplate)
 	if err != nil {
 		return nil, err
@@ -327,6 +512,12 @@ func (a *App) PatchBlockAndNotify(blockID string, blockPatch *model.BlockPatch, 
 	}
 
 	if permErr := a.requireCardEditPermission(modifiedByID, oldBlock, board); permErr != nil {
+		return nil, permErr
+	}
+
+	// Judged on the value being written, not the one already stored: otherwise
+	// a card could be created blank and then walked into any state.
+	if permErr := a.requireConditionWrite(modifiedByID, oldBlock, projectPatch(oldBlock, blockPatch), board); permErr != nil {
 		return nil, permErr
 	}
 
@@ -377,6 +568,15 @@ func (a *App) PatchBlocksAndNotify(teamID string, blockPatches *model.BlockPatch
 	//
 	// Boards are read once each: a batch is normally one board's worth of
 	// blocks, and asking per block would multiply the query by the batch size.
+	// GetBlocksByIDs does not promise the order the IDs were asked in, so the
+	// patch that belongs to a block is looked up by ID rather than by position.
+	patchByID := make(map[string]*model.BlockPatch, len(blockPatches.BlockIDs))
+	for i, blockID := range blockPatches.BlockIDs {
+		if i < len(blockPatches.BlockPatches) {
+			patchByID[blockID] = &blockPatches.BlockPatches[i]
+		}
+	}
+
 	boards := map[string]*model.Board{}
 	for _, oldBlock := range oldBlocks {
 		if oldBlock == nil || oldBlock.BoardID == "" {
@@ -394,6 +594,10 @@ func (a *App) PatchBlocksAndNotify(teamID string, blockPatches *model.BlockPatch
 		}
 
 		if permErr := a.requireCardEditPermission(modifiedByID, oldBlock, board); permErr != nil {
+			return permErr
+		}
+
+		if permErr := a.requireConditionWrite(modifiedByID, oldBlock, projectPatch(oldBlock, patchByID[oldBlock.ID]), board); permErr != nil {
 			return permErr
 		}
 	}
@@ -476,6 +680,10 @@ func (a *App) InsertBlocksAndNotify(blocks []*model.Block, modifiedByID string, 
 	board, err := a.store.GetBoard(boardID)
 	if err != nil {
 		return nil, err
+	}
+
+	if permErr := a.requireInsertPermission(blocks, modifiedByID, board); permErr != nil {
+		return nil, permErr
 	}
 
 	needsNotify := make([]*model.Block, 0, len(blocks))

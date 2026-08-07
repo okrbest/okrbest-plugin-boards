@@ -20,6 +20,16 @@ func (a *API) handleGetBoardPermissionsMe(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Merged here rather than inside the permissions service: that service is
+	// what the app asks for board permissions, so having it ask the app back for
+	// card permissions would close a loop between the two.
+	cardPermissions, err := a.app.GetCardPermissionsForUser(userID, boardID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+	response.CardPermissions = cardPermissions
+
 	data, err := json.Marshal(response)
 	if err != nil {
 		a.errorResponse(w, r, err)

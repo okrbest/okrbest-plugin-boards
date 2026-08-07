@@ -40,6 +40,16 @@ type BoardPermissionsResponse struct {
 	EffectivePermission EffectiveBoardPermission    `json:"effectivePermission"`
 	Capabilities        BoardPermissionCapabilities `json:"capabilities"`
 	DerivedFrom         string                      `json:"derivedFrom"`
+
+	// CardPermissions holds what the card access rules allow on individual
+	// cards, keyed by card ID. It is omitted on the boards that have no rules,
+	// which is nearly all of them, and the client then falls back to the board
+	// wide capabilities above.
+	//
+	// It exists so the screen can stop offering edits the server will refuse:
+	// the rules were enforced but invisible, so a member could type into a card
+	// they had no permission to change and only find out when nothing saved.
+	CardPermissions map[string]BoardPermissionCapabilities `json:"cardPermissions,omitempty"`
 }
 
 func RequiredPermissionLevel(permission *mmModel.Permission) EffectiveBoardPermission {

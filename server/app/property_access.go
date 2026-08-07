@@ -15,7 +15,20 @@ import (
 //
 // The decision model is documented in specs/002-card-property-access/research.md
 // R6. In one line: organization is a gate, duty is additive, full visibility is
-// a floor.
+// a floor, authorship is a floor inside the gate.
+//
+// An active rule set takes precedence over the board's sharing role. A card no
+// rule mentions is therefore readable rather than editable: the board editor
+// role no longer carries through (FR-015). Only the admin bypass and the creator
+// floor lift it.
+//
+// The two floors sit on opposite sides of the organization gate, and that
+// placement is the whole design:
+//
+//   - full visibility is outside — it is the one thing meant to reach across
+//     organization boundaries (FR-022)
+//   - authorship is inside — otherwise creating a card and labeling it with
+//     another division would be a way through the gate
 //
 // Everything expensive happens once, when the evaluator is built. For(card) is
 // a map lookup so the websocket fan-out can afford one evaluator per recipient.
@@ -23,6 +36,11 @@ import (
 // EvaluatorInput is everything the evaluator needs about one (user, board)
 // pair. Collecting it is the caller's job; the evaluator performs no I/O.
 type EvaluatorInput struct {
+	// UserID identifies whose access is being judged. It is compared against a
+	// card's CreatedBy to apply the creator floor, so an empty value must never
+	// match an equally empty CreatedBy.
+	UserID string
+
 	// Settings is the board's rule set. A nil value means the board has no
 	// rules, which behaves exactly like a disabled switch.
 	Settings *model.PropertyAccessSettings
@@ -55,7 +73,7 @@ type EvaluatorInput struct {
 // someone opens the share dialog — costs nothing beyond reading a map key that
 // is not there.
 func (a *App) newPropertyAccessEvaluator(userID string, board *model.Board) (*PropertyAccessEvaluator, error) {
-	input := EvaluatorInput{}
+	input := EvaluatorInput{UserID: userID}
 	if board == nil {
 		return NewPropertyAccessEvaluator(input), nil
 	}
@@ -135,7 +153,7 @@ func (a *App) FilterBlockRecipients(userIDs []string, block *model.Block) []stri
 
 	// A block outside any card — a view, the board description — is never
 	// governed by a rule, so the fan-out is left alone.
-	card, err := a.cardForBlock(block)
+	card, err := a.cardForBlock(block, nil)
 	if err != nil {
 		return nil
 	}
@@ -167,6 +185,7 @@ func (a *App) FilterBlockRecipients(userIDs []string, block *model.Block) []stri
 
 		boardPermission := model.NormalizeEffectivePermission(resolved.EffectivePermission)
 		evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID:          userID,
 			Settings:        settings,
 			OrgUnits:        orgUnits,
 			Duties:          duties,
@@ -243,6 +262,9 @@ type PropertyAccessEvaluator struct {
 	enabled         bool
 	boardPermission model.EffectiveBoardPermission
 
+	// userID is compared against a card's CreatedBy for the creator floor.
+	userID string
+
 	// floor is the minimum granted by a full visibility duty (FR-022).
 	floor model.EffectiveBoardPermission
 
@@ -258,6 +280,7 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	evaluator := &PropertyAccessEvaluator{
 		isAdmin:         input.IsAdmin,
 		boardPermission: input.BoardPermission,
+		userID:          input.UserID,
 		floor:           model.EffectiveBoardPermissionNone,
 		gates:           map[cardCondition]orgGate{},
 		grants:          map[cardCondition]model.EffectiveBoardPermission{},
@@ -354,10 +377,24 @@ func (e *PropertyAccessEvaluator) Enforces() bool {
 }
 
 // For returns the permission the user has on one card.
-//
-// The card's property values are looked up against the precomputed maps. A card
-// no rule mentions keeps the board permission untouched (FR-015).
 func (e *PropertyAccessEvaluator) For(card *model.Block) model.EffectiveBoardPermission {
+	return e.evaluate(card, e.ownerFloor(card))
+}
+
+// ForByRulesOnly answers "what would the rules alone allow", ignoring the fact
+// that the user may have authored the card.
+//
+// The condition-property write check is built on this rather than on For: an
+// author who could satisfy the check by authorship would be able to walk their
+// own card into any state simply by creating it blank first, which is exactly
+// the escalation the check exists to stop.
+func (e *PropertyAccessEvaluator) ForByRulesOnly(card *model.Block) model.EffectiveBoardPermission {
+	return e.evaluate(card, model.EffectiveBoardPermissionNone)
+}
+
+// evaluate is For with the creator floor supplied by the caller, so the two
+// public entry points cannot drift apart.
+func (e *PropertyAccessEvaluator) evaluate(card *model.Block, ownerFloor model.EffectiveBoardPermission) model.EffectiveBoardPermission {
 	if e.isAdmin {
 		return model.EffectiveBoardPermissionManage
 	}
@@ -387,16 +424,83 @@ func (e *PropertyAccessEvaluator) For(card *model.Block) model.EffectiveBoardPer
 	})
 
 	if !matched {
-		return higherPermission(e.boardPermission, e.floor)
+		// An active rule set outranks the board's sharing role, so a card no
+		// rule mentions is readable rather than editable (FR-015 as revised).
+		// The author of the card is the exception.
+		return higherPermission(model.EffectiveBoardPermissionView, ownerFloor)
 	}
 
 	if gated && !gatePassed {
 		// The gate closed. The full visibility floor still applies — it is the
 		// one thing that reaches across organization boundaries (FR-022).
+		// Authorship deliberately does not: see the type comment.
 		return e.floor
 	}
 
-	return higherPermission(rulePermission, e.floor)
+	return higherPermission(higherPermission(rulePermission, e.floor), ownerFloor)
+}
+
+// ownerFloor reports the minimum the card's author is guaranteed on it.
+//
+// Whoever created a card can always work on it, which is what stops a card from
+// stranding: setting a value you are not entitled to used to leave a card its
+// own author could neither edit nor delete, and only a system admin could clear.
+func (e *PropertyAccessEvaluator) ownerFloor(card *model.Block) model.EffectiveBoardPermission {
+	if e.userID == "" || card == nil || card.CreatedBy != e.userID {
+		return model.EffectiveBoardPermissionNone
+	}
+	return model.EffectiveBoardPermissionEdit
+}
+
+// MatchesAnyCondition reports whether any rule's card side mentions a value this
+// card carries.
+//
+// The condition-property write check uses it as an escape hatch: a card no rule
+// condition mentions is not governed by any rule, so creating one — the blank
+// card every new row starts as — is always allowed.
+func (e *PropertyAccessEvaluator) MatchesAnyCondition(card *model.Block) bool {
+	return len(e.conditionsOf(card)) > 0
+}
+
+// SameConditions reports whether two versions of a card sit under exactly the
+// same rule conditions.
+//
+// The write check keys on this rather than on the card's final state. Judging
+// the state alone would refuse a 팀장 renaming their own 전략 card, because the
+// value the card already carries is one they could not have set — the check is
+// about the change, not about where the card already stood.
+func (e *PropertyAccessEvaluator) SameConditions(before, after *model.Block) bool {
+	from := e.conditionsOf(before)
+	to := e.conditionsOf(after)
+
+	if len(from) != len(to) {
+		return false
+	}
+	for condition := range from {
+		if !to[condition] {
+			return false
+		}
+	}
+	return true
+}
+
+// conditionsOf collects the rule conditions a card satisfies.
+func (e *PropertyAccessEvaluator) conditionsOf(card *model.Block) map[cardCondition]bool {
+	if !e.enabled {
+		return nil
+	}
+
+	var matched map[cardCondition]bool
+	eachCardCondition(card, func(condition cardCondition) {
+		if _, ok := e.gates[condition]; !ok {
+			return
+		}
+		if matched == nil {
+			matched = map[cardCondition]bool{}
+		}
+		matched[condition] = true
+	})
+	return matched
 }
 
 // eachCardCondition visits every (property, value) pair the card carries. A
@@ -452,4 +556,50 @@ func higherPermission(a, b model.EffectiveBoardPermission) model.EffectiveBoardP
 		return a
 	}
 	return b
+}
+
+// GetCardPermissionsForUser reports what the rules allow this user on each of a
+// board's cards, keyed by card ID.
+//
+// It answers the screen's question rather than the API's: the rules were being
+// enforced but were invisible, so a member could type into a card they had no
+// permission to change and only discover it when the save was refused.
+//
+// A board without an active rule set returns nil, and the client falls back to
+// the board wide capabilities. That is the overwhelming majority of boards, and
+// it costs a map lookup rather than a pass over every card.
+func (a *App) GetCardPermissionsForUser(userID, boardID string) (map[string]model.BoardPermissionCapabilities, error) {
+	board, err := a.GetBoard(boardID)
+	if err != nil || board == nil {
+		return nil, err
+	}
+
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return nil, err
+	}
+	if !evaluator.Enforces() {
+		return nil, nil
+	}
+
+	blocks, err := a.GetBlocksForBoard(boardID)
+	if err != nil {
+		return nil, err
+	}
+
+	permissions := map[string]model.BoardPermissionCapabilities{}
+	for _, block := range blocks {
+		if block == nil || block.Type != model.TypeCard {
+			continue
+		}
+		granted := evaluator.For(block)
+		if granted == model.EffectiveBoardPermissionNone {
+			// The card is filtered out of the response anyway, so naming it here
+			// would leak the fact that it exists.
+			continue
+		}
+		permissions[block.ID] = model.BuildCapabilities(granted)
+	}
+
+	return permissions, nil
 }

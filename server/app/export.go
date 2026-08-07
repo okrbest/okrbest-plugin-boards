@@ -47,18 +47,28 @@ func (a *App) ExportArchive(w io.Writer, opt model.ExportArchiveOptions) (errs e
 	// wrap the writer in a zip.
 	zw := zip.NewWriter(w)
 	defer func() {
-		merr.Append(zw.Close())
+		// Appended only when it actually failed: merror keeps whatever it is
+		// handed, so passing a nil through left every successful export
+		// returning a non-nil error holding one nil entry. Callers saw a failure
+		// that never happened, and formatting it panicked on the nil's Error().
+		if closeErr := zw.Close(); closeErr != nil {
+			merr.Append(closeErr)
+		}
 	}()
 
+	// The returns below are written out rather than naked. What actually reaches
+	// the caller is set by the defer above in every case, so the value named
+	// here is only ever a placeholder — spelling it out keeps that from reading
+	// like the function returns two different things.
 	if err := a.writeArchiveVersion(zw); err != nil {
 		merr.Append(err)
-		return
+		return merr.ErrorOrNil()
 	}
 
 	for _, board := range boards {
 		if err := a.writeArchiveBoard(zw, board, opt); err != nil {
 			merr.Append(fmt.Errorf("cannot export board %s: %w", board.ID, err))
-			return
+			return merr.ErrorOrNil()
 		}
 	}
 	return nil
@@ -99,7 +109,12 @@ func (a *App) writeArchiveBoard(zw *zip.Writer, board model.Board, opt model.Exp
 	var files []string
 	// write the board's blocks
 	// TODO: paginate this
-	blocks, err := a.GetBlocksForBoard(board.ID)
+	//
+	// A request made on a member's behalf carries their ID, and the archive is
+	// narrowed to what the card rules let them read (FR-030). Without it the
+	// export was the widest way around those rules: the cards hidden on screen
+	// arrived in the archive with their bodies intact.
+	blocks, err := a.blocksForArchive(board.ID, opt.UserID)
 	if err != nil {
 		return err
 	}
@@ -399,6 +414,19 @@ func (a *App) writeArchiveFile(zw *zip.Writer, filename string, boardID string, 
 }
 
 // getBoardsForArchive fetches all the specified boards.
+// blocksForArchive reads a board's blocks for the archive, applying card level
+// access when the export belongs to a user.
+//
+// An empty userID means the caller acts on the board's own behalf — backup and
+// duplication — and gets everything, which is the behavior every internal
+// caller relied on before card rules existed.
+func (a *App) blocksForArchive(boardID, userID string) ([]*model.Block, error) {
+	if userID == "" {
+		return a.GetBlocksForBoard(boardID)
+	}
+	return a.GetBlocksForBoardForUser(userID, boardID)
+}
+
 func (a *App) getBoardsForArchive(boardIDs []string) ([]model.Board, error) {
 	boards := make([]model.Board, 0, len(boardIDs))
 

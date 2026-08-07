@@ -83,6 +83,9 @@ func (a *API) handleArchiveExportBoard(w http.ResponseWriter, r *http.Request) {
 	opts := model.ExportArchiveOptions{
 		TeamID:   board.TeamID,
 		BoardIDs: []string{board.ID},
+		// The archive is built for this member, so it holds only the cards the
+		// rules let them read (FR-030).
+		UserID: userID,
 	}
 
 	filename := fmt.Sprintf("archive-%s%s", time.Now().Format("2006-01-02"), archiveExtension)

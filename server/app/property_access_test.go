@@ -80,6 +80,13 @@ func card(propertyID, valueID string) *model.Block {
 	return &model.Block{ID: "card-1", Type: model.TypeCard, Fields: fields}
 }
 
+// ownedCard is card() with an author, which is what the creator floor keys on.
+func ownedCard(propertyID, valueID, createdBy string) *model.Block {
+	block := card(propertyID, valueID)
+	block.CreatedBy = createdBy
+	return block
+}
+
 // multiSelectCard builds a card whose property holds several value IDs, which
 // is how a multiSelect property is stored.
 func multiSelectCard(propertyID string, valueIDs ...string) *model.Block {
@@ -97,12 +104,19 @@ func multiSelectCard(propertyID string, valueIDs ...string) *model.Block {
 // evaluatorFor builds an evaluator for a user sitting in one org unit with one
 // duty, against the two rule decision table of research.md R6.
 func evaluatorFor(orgUnitID, dutyID string, boardPermission model.EffectiveBoardPermission) *PropertyAccessEvaluator {
+	return evaluatorForUser("someone-else", orgUnitID, dutyID, boardPermission)
+}
+
+// evaluatorForUser is evaluatorFor with the identity spelled out, for the tests
+// that care whether the user authored the card.
+func evaluatorForUser(userID, orgUnitID, dutyID string, boardPermission model.EffectiveBoardPermission) *PropertyAccessEvaluator {
 	var profile *model.UserOrgProfile
 	if orgUnitID != "" || dutyID != "" {
 		profile = &model.UserOrgProfile{PrimaryOrgUnitID: orgUnitID, PrimaryDutyID: dutyID}
 	}
 
 	return NewPropertyAccessEvaluator(EvaluatorInput{
+		UserID:          userID,
 		Settings:        testSettings(),
 		OrgUnits:        testOrgUnits(),
 		Duties:          testDuties(),
@@ -144,6 +158,13 @@ func TestEvaluatorDisabled(t *testing.T) {
 		"with the switch off every card follows the board permission")
 }
 
+// TestEvaluatorCardOutsideAnyRule covers the revised FR-015. An active rule set
+// takes precedence over the board's sharing role, so a card no rule mentions is
+// readable rather than editable — the board editor role no longer carries
+// through. Only the admin bypass and the creator floor lift it.
+//
+// This expectation was Edit until the precedence rule was adopted. The change is
+// a requirement change, not a regression.
 func TestEvaluatorCardOutsideAnyRule(t *testing.T) {
 	input := EvaluatorInput{
 		Settings:        testSettings(),
@@ -155,16 +176,16 @@ func TestEvaluatorCardOutsideAnyRule(t *testing.T) {
 
 	evaluator := NewPropertyAccessEvaluator(input)
 
-	t.Run("a value no rule mentions falls through to the board permission", func(t *testing.T) {
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(card(propCLevel, valueProduction)))
+	t.Run("a value no rule mentions is readable, not editable", func(t *testing.T) {
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(card(propCLevel, valueProduction)))
 	})
 
-	t.Run("a card with no properties at all falls through", func(t *testing.T) {
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(card("", "")))
+	t.Run("a card with no properties at all is readable", func(t *testing.T) {
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(card("", "")))
 	})
 
-	t.Run("a nil card falls through", func(t *testing.T) {
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(nil))
+	t.Run("a nil card is readable", func(t *testing.T) {
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(nil))
 	})
 }
 
@@ -279,9 +300,9 @@ func TestEvaluatorMultiSelectCard(t *testing.T) {
 		blocked.For(multiSelectCard(propCLevel, valueProduction, valueStrategy)),
 		"one matching value is enough to bring the card under the rule")
 
-	require.Equal(t, model.EffectiveBoardPermissionEdit,
+	require.Equal(t, model.EffectiveBoardPermissionView,
 		blocked.For(multiSelectCard(propCLevel, valueProduction)),
-		"no matching value leaves the card outside every rule")
+		"no matching value leaves the card outside every rule, which is read only")
 }
 
 // The websocket fan-out asks one question per broadcast, not one per recipient.
@@ -532,8 +553,8 @@ func TestEvaluatorBrokenReferences(t *testing.T) {
 			DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
 		})
 
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard),
-			"the card falls outside every rule and keeps the board permission")
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(strategyCard),
+			"the card falls outside every rule, which under an active rule set is read only")
 	})
 
 	t.Run("a value that no longer exists matches no card", func(t *testing.T) {
@@ -542,7 +563,7 @@ func TestEvaluatorBrokenReferences(t *testing.T) {
 			DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
 		})
 
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard))
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(strategyCard))
 	})
 
 	t.Run("a division that no longer exists closes the gate on everyone", func(t *testing.T) {
@@ -611,4 +632,150 @@ func BenchmarkEvaluatorNoRules(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		evaluator.For(target)
 	}
+}
+
+// The tests below cover the precedence rule adopted after the FY27 KKV OKR
+// verification: once a rule set is active it outranks the board's sharing role.
+// The decision table they encode is in specs/002-card-property-access/research.md R6.
+
+// TestEvaluatorOwnerFloor covers the creator floor. Whoever authored a card can
+// always work on it, which is what keeps a card from stranding: before this,
+// setting a value you were not entitled to left a card its own author could
+// neither edit nor delete.
+func TestEvaluatorOwnerFloor(t *testing.T) {
+	const author = "author-1"
+
+	t.Run("the author edits a card whose rule only grants reading", func(t *testing.T) {
+		// 팀장 of the matching division takes 행1, which is viewer.
+		evaluator := evaluatorForUser(author, depPlanning, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionView,
+			evaluator.For(ownedCard(propCLevel, valueStrategy, "somebody-else")))
+		require.Equal(t, model.EffectiveBoardPermissionEdit,
+			evaluator.For(ownedCard(propCLevel, valueStrategy, author)),
+			"the author keeps hold of their own card")
+	})
+
+	t.Run("the author edits a card outside every rule", func(t *testing.T) {
+		evaluator := evaluatorForUser(author, depFactory, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit,
+			evaluator.For(ownedCard("", "", author)),
+			"an empty card belongs to whoever just created it")
+	})
+
+	t.Run("an anonymous card grants nothing extra", func(t *testing.T) {
+		evaluator := evaluatorForUser("", depPlanning, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionView,
+			evaluator.For(ownedCard(propCLevel, valueStrategy, "")),
+			"an empty user ID must never match an empty CreatedBy")
+	})
+}
+
+// TestEvaluatorOwnerFloorDoesNotCrossOrgGate is the counterpart to the full
+// visibility floor: authorship raises what you may do inside an organization the
+// rules already admit you to, and never opens one they keep shut. Otherwise
+// creating a card and labeling it with another division would hand the author a
+// way through the gate.
+func TestEvaluatorOwnerFloorDoesNotCrossOrgGate(t *testing.T) {
+	const author = "author-1"
+
+	t.Run("a 팀장 of another division stays out even of their own card", func(t *testing.T) {
+		evaluator := evaluatorForUser(author, depFactory, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone,
+			evaluator.For(ownedCard(propCLevel, valueStrategy, author)))
+	})
+
+	t.Run("full visibility still reaches across, authorship does not raise it", func(t *testing.T) {
+		evaluator := evaluatorForUser(author, depFactory, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionView,
+			evaluator.For(ownedCard(propCLevel, valueStrategy, author)),
+			"the gate is closed, so only the full visibility floor survives")
+	})
+}
+
+// TestEvaluatorForByRulesOnly covers the evaluation the condition-property write
+// check runs on. It answers "would the rules alone let me edit this card", which
+// is deliberately blind to authorship: otherwise an author could walk their own
+// card into any state by creating it empty first.
+func TestEvaluatorForByRulesOnly(t *testing.T) {
+	const author = "author-1"
+
+	strategyCard := ownedCard(propCLevel, valueStrategy, author)
+
+	t.Run("authorship is ignored", func(t *testing.T) {
+		evaluator := evaluatorForUser(author, depPlanning, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard))
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.ForByRulesOnly(strategyCard),
+			"the write check must not be satisfied by the card being yours")
+	})
+
+	t.Run("a rule granting editor still reads as editor", func(t *testing.T) {
+		evaluator := evaluatorForUser(author, depPlanning, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForByRulesOnly(strategyCard))
+	})
+
+	t.Run("full visibility is kept, since it cannot reach editor anyway", func(t *testing.T) {
+		evaluator := evaluatorForUser(author, depFactory, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.ForByRulesOnly(strategyCard))
+	})
+}
+
+// TestEvaluatorMatchesAnyCondition covers the escape hatch that keeps blank card
+// creation working: a card no rule condition mentions is not subject to the
+// write check at all.
+func TestEvaluatorMatchesAnyCondition(t *testing.T) {
+	evaluator := evaluatorForUser("author-1", depPlanning, dutyLead, model.EffectiveBoardPermissionEdit)
+
+	require.True(t, evaluator.MatchesAnyCondition(card(propCLevel, valueStrategy)))
+	require.False(t, evaluator.MatchesAnyCondition(card(propCLevel, valueProduction)),
+		"a value no rule mentions is not a condition")
+	require.False(t, evaluator.MatchesAnyCondition(card("", "")),
+		"a blank card carries no condition, so it may always be created")
+	require.False(t, evaluator.MatchesAnyCondition(nil))
+}
+
+// TestEvaluatorSuperiorWithoutRuleHasNoEdit pins scenario 7 down: rank does not
+// leak edit rights. A 본부장 holds no rule for the value a 팀장 owns, so the
+// 본부장 may read and comment but not edit. This is the intended design, and the
+// test exists so a later "surely the boss should be able to" change has to argue
+// with a failing test first.
+func TestEvaluatorSuperiorWithoutRuleHasNoEdit(t *testing.T) {
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{
+			{
+				ID: "org", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+				DivisionID: divStrategy, Permission: model.PropertyAccessCommenter,
+			},
+			{
+				ID: "lead-only", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+				DutyID: dutyLead, Permission: model.PropertyAccessEditor,
+			},
+		},
+	}
+
+	build := func(dutyID string) *PropertyAccessEvaluator {
+		return NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID:          "user-1",
+			Settings:        settings,
+			OrgUnits:        testOrgUnits(),
+			Duties:          testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyID},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+	}
+
+	strategyCard := card(propCLevel, valueStrategy)
+
+	require.Equal(t, model.EffectiveBoardPermissionEdit, build(dutyLead).For(strategyCard),
+		"the 팀장 holds the rule, so the 팀장 edits")
+	require.Equal(t, model.EffectiveBoardPermissionCommenter, build(dutyHead).For(strategyCard),
+		"the 본부장 outranks the 팀장 but holds no rule for this value, so commenting is the ceiling")
 }

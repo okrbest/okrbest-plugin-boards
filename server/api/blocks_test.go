@@ -286,38 +286,52 @@ func TestWriteEnforcementPropertyAccess(t *testing.T) {
 			"editing the comment of a hidden card would write into content the rule hides")
 	})
 
-	t.Run("E-06 creating a card is allowed by the board permission alone", func(t *testing.T) {
-		th, tearDown := setupAPITestHelper(t)
-		defer tearDown()
-		th.Permissions.allowBoard("outsider", ruleBoardID)
-		th.Permissions.setBoardPermission("outsider", ruleBoardID, model.EffectiveBoardPermissionEdit)
+	// E-06 was the reverse of this until the precedence rule was adopted:
+	// creation answered to the board role alone, so anyone who could open the
+	// board could stamp any value on a new card — and then found the rules would
+	// not let them edit or delete what they had just made. FR-032 now judges the
+	// values the card arrives carrying.
+	t.Run("E-06 creating a card is judged on the values it carries", func(t *testing.T) {
+		expectCreate := func(t *testing.T, properties map[string]interface{}) int {
+			t.Helper()
+			th, tearDown := setupAPITestHelper(t)
+			defer tearDown()
+			th.Permissions.allowBoard("outsider", ruleBoardID)
+			th.Permissions.setBoardPermission("outsider", ruleBoardID, model.EffectiveBoardPermissionEdit)
+			expectOrgMaster(th, "outsider", "dep-factory")
 
-		th.Store.EXPECT().GetBoard(ruleBoardID).Return(accessBoard(t, true, model.PropertyAccessViewer), nil).AnyTimes()
-		th.Store.EXPECT().InsertBlock(gomock.Any(), "outsider").Return(nil).AnyTimes()
-		th.Store.EXPECT().InsertBlocks(gomock.Any(), "outsider").Return(nil).AnyTimes()
-		th.Store.EXPECT().GetBlock(gomock.Any()).DoAndReturn(func(id string) (*model.Block, error) {
-			return accessCard(id, accessValueHidden), nil
-		}).AnyTimes()
-		th.Store.EXPECT().GetBlocksByIDs(gomock.Any()).DoAndReturn(func(ids []string) ([]*model.Block, error) {
-			return []*model.Block{accessCard(ids[0], accessValueHidden)}, nil
-		}).AnyTimes()
-		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).AnyTimes()
-		th.Store.EXPECT().GetSubscribersForBlock(gomock.Any()).Return(nil, nil).AnyTimes()
+			th.Store.EXPECT().GetBoard(ruleBoardID).Return(accessBoard(t, true, model.PropertyAccessViewer), nil).AnyTimes()
+			th.Store.EXPECT().InsertBlock(gomock.Any(), "outsider").Return(nil).AnyTimes()
+			th.Store.EXPECT().InsertBlocks(gomock.Any(), "outsider").Return(nil).AnyTimes()
+			th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+			th.Store.EXPECT().GetBlocksByIDs(gomock.Any()).Return([]*model.Block{}, nil).AnyTimes()
+			th.Store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).AnyTimes()
+			th.Store.EXPECT().GetSubscribersForBlock(gomock.Any()).Return(nil, nil).AnyTimes()
 
-		now := utils.GetMillis()
-		body, err := json.Marshal([]*model.Block{{
-			ID: utils.NewID(utils.IDTypeBlock), BoardID: ruleBoardID, ParentID: ruleBoardID, Type: model.TypeCard,
-			CreateAt: now, UpdateAt: now,
-			Fields: map[string]interface{}{"properties": map[string]interface{}{accessPropertyID: accessValueHidden}},
-		}})
-		require.NoError(t, err)
+			now := utils.GetMillis()
+			body, err := json.Marshal([]*model.Block{{
+				ID: utils.NewID(utils.IDTypeBlock), BoardID: ruleBoardID, ParentID: ruleBoardID, Type: model.TypeCard,
+				CreateAt: now, UpdateAt: now,
+				Fields: map[string]interface{}{"properties": properties},
+			}})
+			require.NoError(t, err)
 
-		rec := th.callHandlerWithBody(th.API.handlePostBlocks, http.MethodPost,
-			"/boards/"+ruleBoardID+"/blocks", "outsider",
-			map[string]string{"boardID": ruleBoardID}, body)
+			return th.callHandlerWithBody(th.API.handlePostBlocks, http.MethodPost,
+				"/boards/"+ruleBoardID+"/blocks", "outsider",
+				map[string]string{"boardID": ruleBoardID}, body).Code
+		}
 
-		require.Equal(t, http.StatusOK, rec.Code,
-			"FR-032 — rules never bar creation, only what happens to a card afterwards")
+		require.Equal(t, http.StatusForbidden,
+			expectCreate(t, map[string]interface{}{accessPropertyID: accessValueHidden}),
+			"the rule gives this user no edit on 전략 cards, so they may not create one either")
+
+		require.Equal(t, http.StatusOK,
+			expectCreate(t, map[string]interface{}{accessPropertyID: accessValueOpen}),
+			"a value no rule mentions leaves the card outside every rule")
+
+		require.Equal(t, http.StatusOK,
+			expectCreate(t, map[string]interface{}{}),
+			"the blank card every new row starts as is always allowed")
 	})
 }
 

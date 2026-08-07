@@ -41,6 +41,15 @@ type ExportArchiveOptions struct {
 	// BoardIDs is the list of boards to include in the archive.
 	// Empty slice means export all boards from workspace/team.
 	BoardIDs []string
+
+	// UserID is who the archive is being built for. When set, card level access
+	// rules are applied and the archive holds only what that user may read
+	// (FR-030).
+	//
+	// An empty value means the export acts on the board's own behalf — backup
+	// and duplication — and keeps every card. Requests arriving from a user must
+	// always set it.
+	UserID string
 }
 
 // ImportArchiveOptions provides options when importing an archive.
