@@ -156,6 +156,10 @@ func (a *App) CreateSubCard(card *model.Card, parentCardID string, boardID strin
 		return nil, model.NewErrBadRequest(fmt.Sprintf("maximum card depth (%d) exceeded", model.MaxCardDepth))
 	}
 
+	if permErr := a.requireSubCardParentAccess(userID, parentCardID, boardID); permErr != nil {
+		return nil, permErr
+	}
+
 	now := utils.GetMillis()
 
 	card.ID = utils.NewID(utils.IDTypeCard)
@@ -531,6 +535,50 @@ func (a *App) fillDefaultConditionValues(card *model.Card, boardID, userID strin
 	}
 	for propertyID, valueID := range defaults {
 		card.Properties[propertyID] = valueID
+	}
+
+	return nil
+}
+
+// requireSubCardParentAccess refuses to hang a new card off a parent the author
+// has no part in.
+//
+// The card itself is not the problem — it is born with the author's own values
+// and is perfectly legal on its own. The parent is. A 본부장 reads every card
+// through the full visibility floor, so without this check they could attach
+// their division's card inside another division's tree, while creating the very
+// same card at the top level was refused.
+//
+// Commenting is the line, because it is what the organization gate grants once
+// it admits you. The full visibility floor stops at reading and deliberately
+// does not admit anyone across the boundary (FR-022).
+//
+// Sitting below edit is deliberate too: a 팀장 may only comment on the Object
+// card their Key Results belongs under, and demanding edit would break the OKR
+// ladder this fill was written to make possible.
+func (a *App) requireSubCardParentAccess(userID, parentCardID, boardID string) error {
+	board, err := a.GetBoard(boardID)
+	if err != nil || board == nil {
+		return err
+	}
+
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return err
+	}
+	if !evaluator.Enforces() {
+		return nil
+	}
+
+	parent, err := a.store.GetBlock(parentCardID)
+	if err != nil || parent == nil {
+		// Judging is impossible, so refusing is the only safe answer.
+		return model.NewErrPermission("access denied to parent card")
+	}
+
+	if model.EffectivePermissionRank(evaluator.For(parent)) <
+		model.EffectivePermissionRank(model.EffectiveBoardPermissionCommenter) {
+		return model.NewErrPermission("access denied: no permission to add a sub-card to this card")
 	}
 
 	return nil

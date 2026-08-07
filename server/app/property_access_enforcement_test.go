@@ -38,6 +38,9 @@ const (
 	userHead    = "user-head"    // 전략 본부장 → editor on 전략 cards
 	userLead    = "user-lead"    // 전략 팀장   → commenter on 전략 cards
 	userOutside = "user-outside" // 생산 팀장   → nothing on 전략 cards
+	// 생산 본부장 — full visibility lets them read 전략 cards, the
+	// organization gate still keeps them out.
+	userOutsideHead = "user-outside-head"
 )
 
 func enforcementSettings() *model.PropertyAccessSettings {
@@ -87,9 +90,10 @@ func setupRuleBoard(t *testing.T) (*TestHelper, func()) {
 	th.Store.EXPECT().GetUserOrgProfiles(ruleTeamID, gomock.Any()).
 		DoAndReturn(func(_ string, userIDs []string) ([]*model.UserOrgProfile, error) {
 			all := map[string]*model.UserOrgProfile{
-				userHead:    {TeamID: ruleTeamID, UserID: userHead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyHead},
-				userLead:    {TeamID: ruleTeamID, UserID: userLead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
-				userOutside: {TeamID: ruleTeamID, UserID: userOutside, PrimaryOrgUnitID: depFactory, PrimaryDutyID: dutyLead},
+				userHead:        {TeamID: ruleTeamID, UserID: userHead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyHead},
+				userLead:        {TeamID: ruleTeamID, UserID: userLead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+				userOutside:     {TeamID: ruleTeamID, UserID: userOutside, PrimaryOrgUnitID: depFactory, PrimaryDutyID: dutyLead},
+				userOutsideHead: {TeamID: ruleTeamID, UserID: userOutsideHead, PrimaryOrgUnitID: depFactory, PrimaryDutyID: dutyHead},
 			}
 			out := make([]*model.UserOrgProfile, 0, len(userIDs))
 			for _, id := range userIDs {
@@ -573,4 +577,136 @@ func TestCreateSubCardUsesDefaultsOverInheritance(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, valueStrategy, card.Properties[propCLevel],
 		"the value comes from the rules that admit the creator, not from the parent")
+}
+
+// TestCreateSubCardRequiresParentAccess closes the way around the organization
+// gate that filling defaults opened.
+//
+// A 본부장 sees every card through the full visibility floor, and a sub-card is
+// born with their own division's values rather than the parent's — so attaching
+// one to another division's card was accepted, and the card landed inside a tree
+// its author has no business in. Creating the same card at the top level was
+// refused, which is the inconsistency that gave it away.
+//
+// Commenting is the line. It means the organization gate admitted you. The full
+// visibility floor deliberately does not: it grants reading across the boundary
+// and nothing more (FR-022).
+// TestCreateSubCardRequiresParentAccess closes the way around the organization
+// gate that filling defaults opened.
+//
+// A 본부장 sees every card through the full visibility floor, and a sub-card is
+// born with their own division's values rather than the parent's. So attaching
+// one to another division's card was accepted — the new card was perfectly legal
+// on its own — and it landed inside a tree its author has no part in. Creating
+// the same card at the top level was refused, and that inconsistency is what
+// gave it away.
+//
+// Commenting is the line. It means the organization gate admitted you. The full
+// visibility floor deliberately does not: it grants reading across the boundary
+// and nothing more (FR-022).
+func TestCreateSubCardRequiresParentAccess(t *testing.T) {
+	// A board shaped like the real one: one property carries the organization
+	// gate, another the duty ladder. A 본부장 of either division can build a
+	// legal card of their own, which is what makes the parent the only thing
+	// standing between them and another division's tree.
+	const (
+		ladderType   = "prop-type"
+		ladderObject = "opt-object"
+		valueFactory = "opt-production-clevel"
+	)
+
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{
+			{ID: "org-a", PropertyID: propCLevel, PropertyValueID: valueStrategy, DivisionID: divStrategy, Permission: model.PropertyAccessCommenter},
+			{ID: "org-b", PropertyID: propCLevel, PropertyValueID: valueFactory, DivisionID: divProduction, Permission: model.PropertyAccessCommenter},
+			{ID: "duty", PropertyID: ladderType, PropertyValueID: ladderObject, DutyID: dutyHead, Permission: model.PropertyAccessEditor},
+		},
+	}
+
+	setup := func(t *testing.T) (*TestHelper, func()) {
+		t.Helper()
+		th, tearDown := SetupTestHelper(t)
+
+		value, err := settings.AsProperty()
+		require.NoError(t, err)
+		board := &model.Board{ID: ruleBoardID, TeamID: ruleTeamID, Properties: map[string]interface{}{model.PropertyAccessKey: value}}
+
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetBoard(ruleBoardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetMemberForBoard(ruleBoardID, gomock.Any()).
+			Return(&model.BoardMember{BoardID: ruleBoardID, SchemeEditor: true}, nil).AnyTimes()
+		th.API.EXPECT().HasPermissionToTeam(gomock.Any(), ruleTeamID, gomock.Any()).
+			DoAndReturn(func(_, _ string, permission *mmModel.Permission) bool {
+				return permission == model.PermissionViewTeam
+			}).AnyTimes()
+		th.Store.EXPECT().GetOrgUnitsForTeam(ruleTeamID).Return(testOrgUnits(), nil).AnyTimes()
+		th.Store.EXPECT().GetDutiesForTeam(ruleTeamID).Return(testDuties(), nil).AnyTimes()
+		th.Store.EXPECT().GetUserOrgProfiles(ruleTeamID, gomock.Any()).
+			DoAndReturn(func(_ string, userIDs []string) ([]*model.UserOrgProfile, error) {
+				all := map[string]*model.UserOrgProfile{
+					userHead:        {TeamID: ruleTeamID, UserID: userHead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyHead},
+					userOutsideHead: {TeamID: ruleTeamID, UserID: userOutsideHead, PrimaryOrgUnitID: depFactory, PrimaryDutyID: dutyHead},
+					userOutside:     {TeamID: ruleTeamID, UserID: userOutside, PrimaryOrgUnitID: depFactory, PrimaryDutyID: dutyLead},
+				}
+				out := make([]*model.UserOrgProfile, 0, len(userIDs))
+				for _, id := range userIDs {
+					if p, ok := all[id]; ok {
+						out = append(out, p)
+					}
+				}
+				return out, nil
+			}).AnyTimes()
+
+		return th, tearDown
+	}
+
+	// A 전략 card carrying both axes, so it is fully governed.
+	parent := &model.Block{
+		ID: "card-strategy", BoardID: ruleBoardID, ParentID: ruleBoardID, Type: model.TypeCard,
+		Fields: map[string]interface{}{"properties": map[string]interface{}{
+			propCLevel: valueStrategy, ladderType: ladderObject,
+		}},
+	}
+
+	expectParentReads := func(th *TestHelper) {
+		th.Store.EXPECT().GetBlock(parent.ID).Return(parent, nil).AnyTimes()
+		th.Store.EXPECT().GetBlock(gomock.Not(gomock.Eq(parent.ID))).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).AnyTimes()
+	}
+
+	t.Run("the division's own 본부장 may add one", func(t *testing.T) {
+		th, tearDown := setup(t)
+		defer tearDown()
+		expectParentReads(th)
+		th.Store.EXPECT().InsertBlock(gomock.Any(), userHead).Return(nil).Times(1)
+
+		card, err := th.App.CreateSubCard(&model.Card{BoardID: ruleBoardID}, parent.ID, ruleBoardID, userHead, true)
+
+		require.NoError(t, err)
+		require.Equal(t, valueStrategy, card.Properties[propCLevel])
+	})
+
+	t.Run("another division's 본부장 may not, though full visibility shows them the card", func(t *testing.T) {
+		th, tearDown := setup(t)
+		defer tearDown()
+		expectParentReads(th)
+		th.Store.EXPECT().InsertBlock(gomock.Any(), gomock.Any()).Times(0)
+
+		_, err := th.App.CreateSubCard(&model.Card{BoardID: ruleBoardID}, parent.ID, ruleBoardID, userOutsideHead, true)
+
+		require.True(t, model.IsErrForbidden(err),
+			"the card it would create is legal on its own — the parent is what they have no part in")
+	})
+
+	t.Run("a card they cannot see at all is refused too", func(t *testing.T) {
+		th, tearDown := setup(t)
+		defer tearDown()
+		expectParentReads(th)
+		th.Store.EXPECT().InsertBlock(gomock.Any(), gomock.Any()).Times(0)
+
+		_, err := th.App.CreateSubCard(&model.Card{BoardID: ruleBoardID}, parent.ID, ruleBoardID, userOutside, true)
+
+		require.True(t, model.IsErrForbidden(err), "expected a permission error, got %v", err)
+	})
 }

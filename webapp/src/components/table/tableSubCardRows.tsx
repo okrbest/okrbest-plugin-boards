@@ -9,6 +9,8 @@ import {Constants} from '../../constants'
 import {Board} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
 
+import {useHasCardCapabilities} from '../../hooks/permissions'
+
 import TableAddRow from './tableAddRow'
 import TableRowExpandable from './tableRowExpandable'
 
@@ -35,11 +37,15 @@ const TableSubCardRows = (props: Props): React.JSX.Element => {
     // offered rather than offered and refused (spec FR-011).
     const canAddSubCard = (parentCard.fields.depth || 0) < Constants.maxCardDepth
 
-    // Not gated on the parent's edit permission, and that is deliberate. A
-    // sub-card no longer copies its parent's property values — it is born with
-    // the ones the rules admit its author to — so a 팀장 may add a Key Results
-    // card under an Object card they can only read. Asking about the parent
-    // would hide the row exactly where the OKR ladder needs it.
+    // Commenting, not editing. A sub-card is born with the values the rules
+    // admit its author to rather than a copy of its parent's, so a 팀장 may add
+    // a Key Results card under an Object card they can only comment on — asking
+    // for edit would hide the row exactly where the OKR ladder needs it. But
+    // reading alone is not enough: a 본부장 sees other divisions' cards through
+    // the full visibility floor, and hanging their own card there would put it
+    // in a tree they have no part in.
+    const canAddUnderParent = useHasCardCapabilities(board.id, parentCard.id, ['canCommentCard'])
+
     const onAddSubCard = useCallback(() => {
         props.addSubCard(parentCard)
     }, [props.addSubCard, parentCard])
@@ -65,7 +71,7 @@ const TableSubCardRows = (props: Props): React.JSX.Element => {
                 />
             ))}
 
-            {canAddSubCard && !props.readonly &&
+            {canAddSubCard && !props.readonly && canAddUnderParent &&
             <TableAddRow
                 label={intl.formatMessage({id: 'TableComponent.plus-new-subcard', defaultMessage: '+ New sub-card'})}
                 onClick={onAddSubCard}
