@@ -339,7 +339,9 @@ func TestCreateSubCard(t *testing.T) {
 
 	t.Run("success scenario", func(t *testing.T) {
 		th.Store.EXPECT().GetBlock(parentCard.ID).Return(parentBlock, nil)
-		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil)
+		// Read twice now: once to decide the values a new card is born with, and
+		// once by the insert path itself.
+		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil).AnyTimes()
 		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block"))
 		th.Store.EXPECT().InsertBlock(gomock.Any(), userID).Return(nil)
 		th.Store.EXPECT().GetMembersForBoard(board.ID).Return([]*model.BoardMember{}, nil)

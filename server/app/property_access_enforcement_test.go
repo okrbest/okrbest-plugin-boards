@@ -501,3 +501,76 @@ func TestExportArchiveFiltersCards(t *testing.T) {
 			"backup and duplication act on the board's behalf, not a member's")
 	})
 }
+
+// TestCreateCardFillsDefaults covers the OKR ladder. A 팀장 has to be able to
+// put a Key Results card under an Object card and a 팀원 a Tasks card under a
+// Key Results card, and neither could: a sub-card copied its parent's values, so
+// every rung came out as a copy of the rung above and the rules refused it.
+//
+// The values a new card is born with are read out of the rules instead.
+func TestCreateCardFillsDefaults(t *testing.T) {
+	t.Run("a card created with no values gets the ones the rules admit", func(t *testing.T) {
+		th, tearDown := setupRuleBoard(t)
+		defer tearDown()
+
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+		th.Store.EXPECT().InsertBlock(gomock.Any(), userHead).Return(nil).Times(1)
+		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).AnyTimes()
+
+		card, err := th.App.CreateCard(&model.Card{BoardID: ruleBoardID}, ruleBoardID, userHead, true)
+
+		require.NoError(t, err)
+		require.Equal(t, valueStrategy, card.Properties[propCLevel],
+			"the 본부장 row admits this value, so the card is filed under it")
+	})
+
+	t.Run("values the caller sends are left alone", func(t *testing.T) {
+		th, tearDown := setupRuleBoard(t)
+		defer tearDown()
+
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+		th.Store.EXPECT().InsertBlock(gomock.Any(), userHead).Return(nil).Times(1)
+		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).AnyTimes()
+
+		asked := &model.Card{BoardID: ruleBoardID, Properties: map[string]interface{}{propCLevel: valueStrategy}}
+		card, err := th.App.CreateCard(asked, ruleBoardID, userHead, true)
+
+		require.NoError(t, err)
+		require.Equal(t, valueStrategy, card.Properties[propCLevel])
+	})
+
+	t.Run("a user the rules do not admit still gets a blank card", func(t *testing.T) {
+		th, tearDown := setupRuleBoard(t)
+		defer tearDown()
+
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+		th.Store.EXPECT().InsertBlock(gomock.Any(), userOutside).Return(nil).Times(1)
+		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).AnyTimes()
+
+		card, err := th.App.CreateCard(&model.Card{BoardID: ruleBoardID}, ruleBoardID, userOutside, true)
+
+		require.NoError(t, err)
+		require.Empty(t, card.Properties,
+			"nothing admits them, so filling a value would hand them a card they cannot finish")
+	})
+}
+
+// TestCreateSubCardUsesDefaultsOverInheritance is the heart of the report: the
+// sub-card must be the creator's rung of the ladder, not a copy of its parent's.
+func TestCreateSubCardUsesDefaultsOverInheritance(t *testing.T) {
+	th, tearDown := setupRuleBoard(t)
+	defer tearDown()
+
+	parent := strategyCardBlock("someone-else")
+
+	th.Store.EXPECT().GetBlock(parent.ID).Return(parent, nil).AnyTimes()
+	th.Store.EXPECT().GetBlock(gomock.Not(gomock.Eq(parent.ID))).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+	th.Store.EXPECT().InsertBlock(gomock.Any(), userHead).Return(nil).Times(1)
+	th.Store.EXPECT().GetMembersForBoard(gomock.Any()).AnyTimes()
+
+	card, err := th.App.CreateSubCard(&model.Card{BoardID: ruleBoardID}, parent.ID, ruleBoardID, userHead, true)
+
+	require.NoError(t, err)
+	require.Equal(t, valueStrategy, card.Properties[propCLevel],
+		"the value comes from the rules that admit the creator, not from the parent")
+}

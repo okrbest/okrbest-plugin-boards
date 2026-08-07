@@ -9,8 +9,6 @@ import {Constants} from '../../constants'
 import {Board} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
 
-import {useHasCardCapabilities} from '../../hooks/permissions'
-
 import TableAddRow from './tableAddRow'
 import TableRowExpandable from './tableRowExpandable'
 
@@ -37,12 +35,11 @@ const TableSubCardRows = (props: Props): React.JSX.Element => {
     // offered rather than offered and refused (spec FR-011).
     const canAddSubCard = (parentCard.fields.depth || 0) < Constants.maxCardDepth
 
-    // A sub-card is born with its parent's property values, so whether it may be
-    // created is the same question as whether the parent may be edited. Asking
-    // the board instead left the row offered under every parent and refused
-    // under the ones the rules keep shut.
-    const canEditParent = useHasCardCapabilities(board.id, parentCard.id, ['canEditCard'])
-
+    // Not gated on the parent's edit permission, and that is deliberate. A
+    // sub-card no longer copies its parent's property values — it is born with
+    // the ones the rules admit its author to — so a 팀장 may add a Key Results
+    // card under an Object card they can only read. Asking about the parent
+    // would hide the row exactly where the OKR ladder needs it.
     const onAddSubCard = useCallback(() => {
         props.addSubCard(parentCard)
     }, [props.addSubCard, parentCard])
@@ -68,7 +65,7 @@ const TableSubCardRows = (props: Props): React.JSX.Element => {
                 />
             ))}
 
-            {canAddSubCard && !props.readonly && canEditParent &&
+            {canAddSubCard && !props.readonly &&
             <TableAddRow
                 label={intl.formatMessage({id: 'TableComponent.plus-new-subcard', defaultMessage: '+ New sub-card'})}
                 onClick={onAddSubCard}

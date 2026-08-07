@@ -779,3 +779,126 @@ func TestEvaluatorSuperiorWithoutRuleHasNoEdit(t *testing.T) {
 	require.Equal(t, model.EffectiveBoardPermissionCommenter, build(dutyHead).For(strategyCard),
 		"the 본부장 outranks the 팀장 but holds no rule for this value, so commenting is the ceiling")
 }
+
+// TestEvaluatorDefaultConditionValues covers the values a new card is born
+// with.
+//
+// A sub-card used to copy its parent's, which meant a 팀장 adding one under an
+// Object card produced an Object card — a shape the rules never let them create,
+// so the OKR ladder (Object → Key Results → Tasks) had no way to be built at
+// all. The values are read out of the rules instead: whichever value's rule
+// admits this user is the one they get.
+func TestEvaluatorDefaultConditionValues(t *testing.T) {
+	// 행1 places 전략 division on the C-Level value, 행2 places 본부장 on it.
+	// Only 행2 grants editing, so a 팀장 has no default here and a 본부장 does.
+	t.Run("a 본부장 of the matching division gets the value both rows admit", func(t *testing.T) {
+		evaluator := evaluatorForUser("user-1", depPlanning, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, map[string]string{propCLevel: valueStrategy}, evaluator.DefaultConditionValues())
+	})
+
+	t.Run("a user the rules do not admit gets nothing", func(t *testing.T) {
+		evaluator := evaluatorForUser("user-1", depFactory, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.Empty(t, evaluator.DefaultConditionValues(),
+			"filling a value they cannot edit would hand them a card they cannot finish")
+	})
+
+	t.Run("nothing is offered when the rules are switched off", func(t *testing.T) {
+		settings := testSettings()
+		settings.Enabled = false
+		evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID: "user-1", Settings: settings, OrgUnits: testOrgUnits(), Duties: testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyHead},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+
+		require.Empty(t, evaluator.DefaultConditionValues())
+	})
+}
+
+// TestEvaluatorDefaultsSpanProperties is the case the OKR board actually has:
+// one property carries the organization gate and another carries the duty
+// ladder, and a usable card needs a value from each. Neither value alone reaches
+// editing — the C-Level row only grants commenting — so the defaults have to be
+// offered together or not at all.
+func TestEvaluatorDefaultsSpanProperties(t *testing.T) {
+	const propType = "prop-type"
+	const valueKR = "opt-kr"
+
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{
+			{
+				ID: "org", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+				DivisionID: divStrategy, Permission: model.PropertyAccessCommenter,
+			},
+			{
+				ID: "duty", PropertyID: propType, PropertyValueID: valueKR,
+				DutyID: dutyLead, Permission: model.PropertyAccessEditor,
+			},
+		},
+	}
+
+	build := func(orgUnitID, dutyID string) *PropertyAccessEvaluator {
+		return NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID: "user-1", Settings: settings, OrgUnits: testOrgUnits(), Duties: testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: orgUnitID, PrimaryDutyID: dutyID},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+	}
+
+	t.Run("a 팀장 of the division gets both halves", func(t *testing.T) {
+		defaults := build(depPlanning, dutyLead).DefaultConditionValues()
+
+		require.Equal(t, map[string]string{propCLevel: valueStrategy, propType: valueKR}, defaults)
+	})
+
+	t.Run("the pair is editable, which is the point of offering it", func(t *testing.T) {
+		evaluator := build(depPlanning, dutyLead)
+		defaults := evaluator.DefaultConditionValues()
+
+		properties := map[string]interface{}{}
+		for propertyID, valueID := range defaults {
+			properties[propertyID] = valueID
+		}
+		card := &model.Block{ID: "card-new", Type: model.TypeCard, Fields: map[string]interface{}{"properties": properties}}
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForByRulesOnly(card))
+	})
+
+	t.Run("a 팀장 of another division gets only the half that admits them", func(t *testing.T) {
+		defaults := build(depFactory, dutyLead).DefaultConditionValues()
+
+		require.Equal(t, map[string]string{propType: valueKR}, defaults,
+			"the organization row does not admit them, so no C-Level is offered")
+	})
+}
+
+// TestEvaluatorDefaultsSkipAmbiguity covers a user two rows on the same property
+// admit. Picking one for them would be a guess, and the wrong guess puts the
+// card somewhere they did not ask for.
+func TestEvaluatorDefaultsSkipAmbiguity(t *testing.T) {
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{
+			{
+				ID: "a", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+				DivisionID: divStrategy, Permission: model.PropertyAccessEditor,
+			},
+			{
+				ID: "b", PropertyID: propCLevel, PropertyValueID: valueProduction,
+				DutyID: dutyHead, Permission: model.PropertyAccessEditor,
+			},
+		},
+	}
+
+	evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+		UserID: "user-1", Settings: settings, OrgUnits: testOrgUnits(), Duties: testDuties(),
+		Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyHead},
+		BoardPermission: model.EffectiveBoardPermissionEdit,
+	})
+
+	require.Empty(t, evaluator.DefaultConditionValues(),
+		"both rows admit this user, so the property is left for them to choose")
+}

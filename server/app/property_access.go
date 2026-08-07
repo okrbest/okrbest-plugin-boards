@@ -272,6 +272,11 @@ type PropertyAccessEvaluator struct {
 	// lookup per property value rather than a scan over every rule (R3).
 	gates  map[cardCondition]orgGate
 	grants map[cardCondition]model.EffectiveBoardPermission
+
+	// admitted records, per property, the values whose rules admit this user.
+	// A new card is filled from it, so the card starts life in the one place
+	// the rules let its author work.
+	admitted map[string]map[string]bool
 }
 
 // NewPropertyAccessEvaluator precomputes everything that does not depend on the
@@ -333,6 +338,18 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 		}
 		granted := rule.Permission.AsEffectivePermission()
 		evaluator.grants[condition] = higherPermission(evaluator.grants[condition], granted)
+
+		// The row admits this user, so its value is a place they are meant to
+		// work. Collected whatever permission it grants: on the OKR board the
+		// organization row only grants commenting, yet its value is still the
+		// one a new card belongs under.
+		if evaluator.admitted == nil {
+			evaluator.admitted = map[string]map[string]bool{}
+		}
+		if evaluator.admitted[rule.PropertyID] == nil {
+			evaluator.admitted[rule.PropertyID] = map[string]bool{}
+		}
+		evaluator.admitted[rule.PropertyID][rule.PropertyValueID] = true
 	}
 
 	return evaluator
@@ -602,4 +619,39 @@ func (a *App) GetCardPermissionsForUser(userID, boardID string) (map[string]mode
 	}
 
 	return permissions, nil
+}
+
+// DefaultConditionValues reports the rule condition values a new card should be
+// born with, keyed by property ID.
+//
+// A sub-card used to copy its parent's values, which meant a 팀장 adding one
+// under an Object card produced another Object card — a shape the rules never
+// let them create. The OKR ladder (Object → Key Results → Tasks) therefore had
+// no way to be built: every rung came out as a copy of the rung above.
+//
+// The values are read out of the rules instead. Whichever value's row admits
+// this user is the one they get, so the card starts life in the one place they
+// are meant to work. Nothing about OKR is encoded here; the rows carry it.
+//
+// A property two rows admit is left empty. Choosing for the user would be a
+// guess, and the wrong guess files the card somewhere they did not ask for.
+func (e *PropertyAccessEvaluator) DefaultConditionValues() map[string]string {
+	if !e.enabled || len(e.admitted) == 0 {
+		return nil
+	}
+
+	defaults := map[string]string{}
+	for propertyID, values := range e.admitted {
+		if len(values) != 1 {
+			continue
+		}
+		for valueID := range values {
+			defaults[propertyID] = valueID
+		}
+	}
+
+	if len(defaults) == 0 {
+		return nil
+	}
+	return defaults
 }

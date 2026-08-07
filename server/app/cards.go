@@ -29,6 +29,12 @@ func (a *App) CreateCard(card *model.Card, boardID string, userID string, disabl
 	card.UpdateAt = now
 	card.DeleteAt = 0
 
+	if len(card.Properties) == 0 {
+		if fillErr := a.fillDefaultConditionValues(card, boardID, userID); fillErr != nil {
+			return nil, fillErr
+		}
+	}
+
 	block := model.Card2Block(card)
 
 	newBlocks, err := a.InsertBlocksAndNotify([]*model.Block{block}, userID, disableNotify)
@@ -162,8 +168,21 @@ func (a *App) CreateSubCard(card *model.Card, parentCardID string, boardID strin
 	card.UpdateAt = now
 	card.DeleteAt = 0
 
-	if len(card.Properties) == 0 {
+	// Asked before the parent's values are copied in, because what the caller
+	// chose has to outrank both the parent and the rules.
+	callerChoseProperties := len(card.Properties) > 0
+
+	if !callerChoseProperties {
+		// Inheriting the parent wholesale is what broke the OKR ladder: a 팀장
+		// adding a card under an Object card got another Object card, a shape
+		// the rules never let them create. The parent's values are kept as the
+		// base — a board with no rules still wants them — and the rules then
+		// overwrite the ones that decide where the author may work.
 		card.Properties = deepCopyProperties(parentCard.Properties)
+
+		if fillErr := a.fillDefaultConditionValues(card, boardID, userID); fillErr != nil {
+			return nil, fillErr
+		}
 	}
 
 	block := model.Card2Block(card)
@@ -478,4 +497,41 @@ func deepCopyProperties(props map[string]any) map[string]any {
 		}
 	}
 	return copied
+}
+
+// fillDefaultConditionValues writes the rule condition values a new card should
+// be born with, so it lands where its author is allowed to work.
+//
+// It is only reached when the caller named no values of its own. What the caller
+// chose always wins — the fill is a default, not a correction.
+//
+// The values come out of the rules that admit this user, which is what lets the
+// OKR ladder be built: a 팀장 gets Key Results and a 팀원 gets Tasks without
+// either the server or the screen knowing anything about OKR. A property whose
+// rows are ambiguous, or a user no row admits, is left alone; a blank card is
+// always creatable, so nothing is lost by declining to guess.
+func (a *App) fillDefaultConditionValues(card *model.Card, boardID, userID string) error {
+	board, err := a.GetBoard(boardID)
+	if err != nil || board == nil {
+		return err
+	}
+
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return err
+	}
+
+	defaults := evaluator.DefaultConditionValues()
+	if len(defaults) == 0 {
+		return nil
+	}
+
+	if card.Properties == nil {
+		card.Properties = map[string]interface{}{}
+	}
+	for propertyID, valueID := range defaults {
+		card.Properties[propertyID] = valueID
+	}
+
+	return nil
 }
