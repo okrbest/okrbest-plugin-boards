@@ -126,6 +126,28 @@ export const useHasCapabilities = (boardId: string, capabilities: BoardCapabilit
     return capabilities.some((capability) => Boolean(boardCapabilities[capability]))
 }
 
+// useHasCardCapabilities is useHasCapabilities narrowed to one card.
+//
+// Every screen that offers an edit has to ask this rather than the board wide
+// version. A board editor may hold only commenting on a given card, and asking
+// the board gets the answer "yes" for a field the server will refuse to save.
+//
+// A card with no entry — no rules on the board, or a card the map does not
+// mention — falls back to the board wide answer, which is what keeps boards
+// without rules behaving exactly as before.
+export const useHasCardCapabilities = (boardId: string, cardId: string, capabilities: BoardCapability[]): boolean => {
+    const boardPermissionsSelector = useMemo(() => getBoardPermissions(boardId), [boardId])
+    const permissions = useAppSelector(boardPermissionsSelector)
+    const cardCapabilities = cardId ? permissions?.cardPermissions?.[cardId] : undefined
+    const source = cardCapabilities || permissions?.capabilities
+
+    if (!boardId || capabilities.length === 0 || !source) {
+        return false
+    }
+
+    return capabilities.some((capability) => Boolean(source[capability]))
+}
+
 export const useHasCurrentTeamPermissions = (boardId: string, permissions: Permission[]): boolean => {
     const currentTeam = useAppSelector(getCurrentTeam)
     return useHasPermissions(currentTeam?.id || '', boardId, permissions)

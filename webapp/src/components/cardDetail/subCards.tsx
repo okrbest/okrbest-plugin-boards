@@ -10,7 +10,7 @@ import mutator from '../../mutator'
 import {useAppDispatch} from '../../store/hooks'
 import {setSubCards, addSubCard, setSubCardCount, removeSubCard} from '../../store/cards'
 import CompassIcon from '../../widgets/icons/compassIcon'
-import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useHasCurrentBoardCardPermissions} from '../../hooks/permissions'
 import {Constants, Permission} from '../../constants'
 import {sendFlashMessage} from '../flashMessages'
 
@@ -34,7 +34,10 @@ const SubCards = (props: Props): React.JSX.Element => {
     const [showLinkSelector, setShowLinkSelector] = useState(false)
     const [subCards, setLocalSubCards] = useState<Card[]>([])
     const dispatch = useAppDispatch()
-    const canEditBoardCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
+    // Card aware, but still routed through the permission hook so a board
+    // whose capabilities have not arrived yet falls back to the membership
+    // answer instead of rendering everything read only.
+    const canEditBoardCards = useHasCurrentBoardCardPermissions(card.id, [Permission.ManageBoardCards])
     const intl = useIntl()
 
     const currentDepth = card.fields.depth || 0

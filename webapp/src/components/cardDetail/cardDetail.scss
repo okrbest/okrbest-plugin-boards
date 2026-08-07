@@ -254,3 +254,24 @@
         overflow: visible !important;
     }
 }
+
+// Shown when the card access rules leave this member unable to edit the card.
+// Without it the read-only fields read as a broken screen rather than a
+// permission boundary.
+.CardDetail__readonly-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.06);
+    color: rgba(var(--center-channel-color-rgb), 0.75);
+    font-size: 13px;
+    line-height: 18px;
+
+    .CompassIcon {
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+}

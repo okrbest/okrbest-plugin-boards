@@ -29,7 +29,7 @@ import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import Menu from '../../widgets/menu'
 import AddIcon from '../../widgets/icons/add'
 import EmojiIcon from '../emojiIcon'
-import {useHasCapabilities} from '../../hooks/permissions'
+import {useHasCardCapabilities} from '../../hooks/permissions'
 
 import {useColumnResize} from './tableColumnResizeContext'
 import {useTableDrag} from './tableDragContext'
@@ -70,7 +70,9 @@ const TableRow = (props: Props) => {
     const titleRef = useRef<{ focus(selectAll?: boolean): void }>(null)
     const [title, setTitle] = useState(props.card.title || '')
     const isGrouped = Boolean(groupById)
-    const canEditCard = useHasCapabilities(card.boardId, ['canEditCard'])
+    // Asked per card: a board editor may hold only commenting on this one,
+    // and the board wide answer would offer an edit the server refuses.
+    const canEditCard = useHasCardCapabilities(card.boardId, card.id, ['canEditCard'])
     const isReadOnly = props.readonly || !canEditCard
     // 정렬이 걸려 있어도 드래그를 막지 않는다. 놓는 순간 수동 정렬로 전환할지
     // 묻고, 거부하면 아무 일도 일어나지 않는다 (FR-025). 예전에는 여기서

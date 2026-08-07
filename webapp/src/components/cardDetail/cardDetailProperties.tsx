@@ -22,7 +22,7 @@ import Menu from '../../widgets/menu'
 import {IDType, Utils} from '../../utils'
 import AddPropertiesTourStep from '../onboardingTour/addProperties/add_properties'
 import {Permission} from '../../constants'
-import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useHasCurrentBoardPermissions, useHasCurrentBoardCardPermissions} from '../../hooks/permissions'
 import propRegistry from '../../properties'
 import {PropertyType} from '../../properties/types'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
@@ -87,7 +87,10 @@ const CardDetailProperties = (props: Props) => {
     const dispatch = useAppDispatch()
     const [newTemplateId, setNewTemplateId] = useState('')
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
-    const canEditBoardCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
+    // Card aware, but still routed through the permission hook so a board
+    // whose capabilities have not arrived yet falls back to the membership
+    // answer instead of rendering everything read only.
+    const canEditBoardCards = useHasCurrentBoardCardPermissions(card.id, [Permission.ManageBoardCards])
     const intl = useIntl()
     
     // 현재 보드의 모든 카드 (필터링되지 않은)

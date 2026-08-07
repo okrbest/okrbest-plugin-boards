@@ -23,7 +23,7 @@ import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import EmojiIcon from '../emojiIcon'
 import KanbanSubCardChips from './kanbanSubCardChips'
-import {useHasCapabilities} from '../../hooks/permissions'
+import {useHasCardCapabilities} from '../../hooks/permissions'
 
 export const OnboardingCardClassName = 'onboardingCard'
 
@@ -43,7 +43,9 @@ type Props = {
 const KanbanCard = (props: Props) => {
     const {card, board} = props
     const intl = useIntl()
-    const canEditCard = useHasCapabilities(card.boardId, ['canEditCard'])
+    // Asked per card: a board editor may hold only commenting on this one,
+    // and the board wide answer would offer an edit the server refuses.
+    const canEditCard = useHasCardCapabilities(card.boardId, card.id, ['canEditCard'])
     const isReadOnly = props.readonly || !canEditCard
     const [isDragging, isOver, cardRef] = useSortable('card', card, !isReadOnly, props.onDrop)
     const visiblePropertyTemplates = props.visiblePropertyTemplates || []

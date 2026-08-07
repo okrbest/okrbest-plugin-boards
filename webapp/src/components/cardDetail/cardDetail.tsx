@@ -114,6 +114,27 @@ const CardDetail = (props: Props): React.JSX.Element|null => {
     return (
         <>
             <div className={`CardDetail ${limited ? ' CardDetail--is-limited' : ''}`}>
+                {/* Said out loud rather than left to be discovered. Fields the
+                    card rules keep shut are rendered read only, which on its own
+                    reads as the screen being broken. */}
+                {!props.readonly && !canEditBoardCards && !limited &&
+                    <div className='CardDetail__readonly-notice'>
+                        <CompassIcon icon='information-outline'/>
+                        <span>
+                            {canCommentBoardCards ? (
+                                <FormattedMessage
+                                    id='CardDetail.readonly-can-comment'
+                                    defaultMessage='이 카드를 편집할 권한이 없습니다. 댓글은 남길 수 있습니다.'
+                                />
+                            ) : (
+                                <FormattedMessage
+                                    id='CardDetail.readonly'
+                                    defaultMessage='이 카드를 편집할 권한이 없습니다.'
+                                />
+                            )}
+                        </span>
+                    </div>}
+
                 <BlockIconSelector
                     block={card}
                     size='l'

@@ -15,6 +15,7 @@ import {CommentBlock} from './blocks/commentBlock'
 import {AttachmentBlock} from './blocks/attachmentBlock'
 import {FilterGroup} from './blocks/filterGroup'
 import octoClient from './octoClient'
+import {sendFlashMessage} from './components/flashMessages'
 import undoManager from './undomanager'
 import {Utils, IDType} from './utils'
 import {UserSettings} from './userSettings'
@@ -57,6 +58,26 @@ function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
 // The Mutator is used to make all changes to server state
 // It also ensures that the Undo-manager is called for each action
 //
+// The server has the final say on card level access, and it used to say no in
+// silence: the field snapped back to its old value with nothing to explain why.
+//
+// This is the net under the screens, not the first line of defence — the edit
+// affordances are gated per card so a refused write should be rare. It catches
+// the paths that are hard to gate, such as the card body editor and drag
+// reordering, and any that get added later.
+async function warnIfRefused(response: Response): Promise<Response> {
+    // Guarded rather than assumed: several callers hand back whatever the
+    // transport gave them, and a missing response must not turn a save into a
+    // crash on the way to reporting it.
+    if (response?.status === 403) {
+        sendFlashMessage({
+            content: '이 카드를 편집할 권한이 없습니다.',
+            severity: 'high',
+        })
+    }
+    return response
+}
+
 class Mutator {
     private undoGroupId?: string
     private undoDisplayId?: string
@@ -94,7 +115,7 @@ class Mutator {
         const [updatePatch, undoPatch] = createPatchesFromBlocks(newBlock, oldBlock)
         await undoManager.perform(
             async () => {
-                await octoClient.patchBlock(boardId, newBlock.id, updatePatch)
+                await warnIfRefused(await octoClient.patchBlock(boardId, newBlock.id, updatePatch))
             },
             async () => {
                 await octoClient.patchBlock(boardId, oldBlock.id, undoPatch)
@@ -121,7 +142,7 @@ class Mutator {
         return undoManager.perform(
             async () => {
                 await Promise.all(
-                    updatePatches.map((patch, i) => octoClient.patchBlock(boardId, newBlocks[i].id, patch)),
+                    updatePatches.map((patch, i) => octoClient.patchBlock(boardId, newBlocks[i].id, patch).then(warnIfRefused)),
                 )
             },
             async () => {
@@ -138,7 +159,7 @@ class Mutator {
     async insertBlock(boardId: string, block: Block, description = 'add', afterRedo?: (block: Block) => Promise<void>, beforeUndo?: (block: Block) => Promise<void>): Promise<Block> {
         return undoManager.perform(
             async () => {
-                const res = await octoClient.insertBlock(boardId, block)
+                const res = await warnIfRefused(await octoClient.insertBlock(boardId, block))
                 const jsonres = await res.json()
                 const newBlock = jsonres[0] as Block
                 if (newBlock.type === 'comment') {
@@ -163,7 +184,7 @@ class Mutator {
     async insertBlocks(boardId: string, blocks: Block[], description = 'add', afterRedo?: (blocks: Block[]) => Promise<void>, beforeUndo?: () => Promise<void>, sourceBoardID?: string) {
         return undoManager.perform(
             async () => {
-                const res = await octoClient.insertBlocks(boardId, blocks, sourceBoardID)
+                const res = await warnIfRefused(await octoClient.insertBlocks(boardId, blocks, sourceBoardID))
                 const newBlocks = (await res.json()) as Block[]
                 updateAllBoardsAndBlocks([], newBlocks)
                 await afterRedo?.(newBlocks)
@@ -188,7 +209,7 @@ class Mutator {
         await undoManager.perform(
             async () => {
                 await beforeRedo?.()
-                await octoClient.deleteBlock(block.boardId, block.id)
+                await warnIfRefused(await octoClient.deleteBlock(block.boardId, block.id))
                 if (block.parentId) {
                     store.dispatch(markCardModified(block.parentId))
                 }
@@ -259,7 +280,7 @@ class Mutator {
         }
         await undoManager.perform(
             async () => {
-                await octoClient.patchBlock(boardId, blockId, {title: newTitle})
+                await warnIfRefused(await octoClient.patchBlock(boardId, blockId, {title: newTitle}))
                 store.dispatch(markCardModified(blockId))
             },
             async () => {
