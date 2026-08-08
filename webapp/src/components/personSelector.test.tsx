@@ -381,6 +381,41 @@ describe('properties/person', () => {
             expect(container.textContent).not.toContain('username-3')
         })
 
+        test('reloads its options when the narrowing changes', async () => {
+            // AsyncSelect resolves defaultOptions once at mount and does not
+            // reload when loadOptions changes identity. Found on the live board:
+            // opening the picker, setting 부서 on the card and opening it again
+            // still listed the 15 people of the 본부 instead of the 7 of the 부서.
+            const renderWith = (allowed: Set<string> | null) => (
+                <ReduxProvider store={mockStore(state)}>
+                    <PersonSelector
+                        readOnly={false}
+                        userIDs={[]}
+                        allowAddUsers={false}
+                        property={new PersonProperty()}
+                        emptyDisplayValue={'Empty'}
+                        isMulti={true}
+                        closeMenuOnSelect={false}
+                        allowedUserIds={allowed}
+                        onChange={() => {}}
+                    />
+                </ReduxProvider>
+            )
+
+            const {container, rerender} = render(wrapIntl(renderWith(new Set(['user-id-1', 'user-id-2']))))
+            await act(async () => {
+                await userEvent.click(container.querySelector('input')!)
+            })
+            expect(container.textContent).toContain('username-2')
+
+            rerender(wrapIntl(renderWith(new Set(['user-id-1']))))
+            await act(async () => {
+                await userEvent.click(container.querySelector('input')!)
+            })
+            expect(container.textContent).toContain('username-1')
+            expect(container.textContent).not.toContain('username-2')
+        })
+
         test('an empty set really does offer nobody', async () => {
             // Distinct from null. If a card names an organisation that nobody
             // belongs to, the honest answer is an empty list, not everyone.

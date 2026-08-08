@@ -85,7 +85,12 @@ const PersonSelector = (props: Props): React.JSX.Element => {
 
     const boardUsersById = useAppSelector<{[key: string]: IUser}>(getBoardUsers)
     const boardUsers = useAppSelector<IUser[]>(getBoardUsersList)
-    const boardUsersKey = Object.keys(boardUsersById) ? Utils.hashCode(JSON.stringify(Object.keys(boardUsersById))) : 0
+    // AsyncSelect resolves defaultOptions once when it mounts and does not
+    // reload when loadOptions changes identity, so the narrowing has to be part
+    // of the remount key. Without it, opening the picker, changing the card's
+    // organisation and opening it again shows the stale candidate list.
+    const allowedUserIdsKey = allowedUserIds === null ? 'all' : [...allowedUserIds].sort().join(',')
+    const boardUsersKey = Utils.hashCode(JSON.stringify([Object.keys(boardUsersById), allowedUserIdsKey]))
     const me = useAppSelector<IUser|null>(getMe)
 
     const formatOptionLabel = (user: any): React.JSX.Element => {
