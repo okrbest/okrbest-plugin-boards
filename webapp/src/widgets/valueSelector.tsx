@@ -50,11 +50,16 @@ type Props = {
     options: IPropertyOption[]
     value?: IPropertyOption | IPropertyOption[]
     emptyValue: string
-    onCreate: (value: string) => void
     onChange: (value: string | string[]) => void
-    onChangeColor: (option: IPropertyOption, color: string) => void
-    onDeleteOption: (option: IPropertyOption) => void
+    // Option management is only meaningful when the board owns the options.
+    // Types whose choices come from elsewhere (the organisation master) pass
+    // fixedOptions instead and leave these out.
+    onCreate?: (value: string) => void
+    onChangeColor?: (option: IPropertyOption, color: string) => void
+    onDeleteOption?: (option: IPropertyOption) => void
     onStartRename?: (option: IPropertyOption) => void
+    // Options come from outside the board: no create, rename, delete or recolour.
+    fixedOptions?: boolean
     onReorderOption?: (option: IPropertyOption, destIndex: number) => void
     isMulti?: boolean
     onDeleteValue?: (value: IPropertyOption) => void
@@ -64,16 +69,17 @@ type Props = {
 type LabelProps = {
     option: IPropertyOption
     meta: FormatOptionLabelMeta<IPropertyOption>
-    onChangeColor: (option: IPropertyOption, color: string) => void
-    onDeleteOption: (option: IPropertyOption) => void
+    onChangeColor?: (option: IPropertyOption, color: string) => void
+    onDeleteOption?: (option: IPropertyOption) => void
     onStartRename?: (option: IPropertyOption) => void
     onDeleteValue?: (value: IPropertyOption) => void
     isMulti?: boolean
     showDragHandle?: boolean
+    fixedOptions?: boolean
 }
 
 const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
-    const { option, onDeleteValue, meta, isMulti, showDragHandle } = props
+    const { option, onDeleteValue, meta, isMulti, showDragHandle, fixedOptions } = props
     const intl = useIntl()
     if (meta.context === 'value') {
         let className = onDeleteValue
@@ -96,6 +102,16 @@ const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
             </Label>
         )
     }
+    if (fixedOptions) {
+        return (
+            <div className="value-menu-option" role="menuitem">
+                <div className="label-container">
+                    <Label color={option.color}>{option.value}</Label>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="value-menu-option" role="menuitem">
             {showDragHandle && (
@@ -133,7 +149,7 @@ const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
                             id: 'BoardComponent.delete',
                             defaultMessage: 'Delete',
                         })}
-                        onClick={() => props.onDeleteOption(option)}
+                        onClick={() => props.onDeleteOption?.(option)}
                     />
                     <Menu.Separator />
                     {Object.entries(Constants.menuColors).map(
@@ -142,7 +158,7 @@ const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
                                 key={key}
                                 id={key}
                                 name={color}
-                                onClick={() => props.onChangeColor(option, key)}
+                                onClick={() => props.onChangeColor?.(option, key)}
                             />
                         )
                     )}
@@ -324,11 +340,16 @@ function ValueSelector(props: Props): React.JSX.Element {
     const selectComponent = (
         <CreatableSelect
             noOptionsMessage={() =>
-                intl.formatMessage({
-                    id: 'ValueSelector.noOptions',
-                    defaultMessage:
-                        'No options. Start typing to add the first one!',
-                })
+                (props.fixedOptions
+                    ? intl.formatMessage({
+                        id: 'ValueSelector.noFixedOptions',
+                        defaultMessage: 'No options available',
+                    })
+                    : intl.formatMessage({
+                        id: 'ValueSelector.noOptions',
+                        defaultMessage:
+                            'No options. Start typing to add the first one!',
+                    }))
             }
             aria-label={intl.formatMessage({
                 id: 'ValueSelector.valueSelector',
@@ -351,6 +372,7 @@ function ValueSelector(props: Props): React.JSX.Element {
                     option={option}
                     meta={meta}
                     isMulti={props.isMulti}
+                    fixedOptions={props.fixedOptions}
                     onChangeColor={props.onChangeColor}
                     onDeleteOption={props.onDeleteOption}
                     onStartRename={props.onStartRename}
@@ -395,6 +417,9 @@ function ValueSelector(props: Props): React.JSX.Element {
             }}
             onBlur={props.onBlur}
             onCreateOption={props.onCreate}
+            isValidNewOption={
+                props.fixedOptions ? () => false : undefined
+            }
             autoFocus={true}
             value={props.value || null}
             closeMenuOnSelect={!props.isMulti}

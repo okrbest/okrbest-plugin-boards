@@ -42,6 +42,21 @@ type Duty struct {
 	FullVisibility bool   `json:"fullVisibility"`
 }
 
+// UserOrgMembership is one row of the team-scoped membership list the card
+// property editors use to narrow their person choices.
+//
+// It carries only the two fields the screens need. Duty and effective window are
+// deliberately left out: the narrowing is an input convenience, and the fewer
+// organization details cross the wire the smaller the exposure.
+//
+// A user with no assignment is omitted from the list rather than sent with an
+// empty OrgUnitID, so "no organization" and "empty organization" never have to
+// be told apart on the client.
+type UserOrgMembership struct {
+	UserID    string `json:"userId"`
+	OrgUnitID string `json:"orgUnitId"`
+}
+
 // UserOrgProfile is a user's organization binding, read from the main server's
 // UserOrgProfiles table. This plugin only reads it.
 //

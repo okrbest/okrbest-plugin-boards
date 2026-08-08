@@ -769,6 +769,56 @@ exports[`components/cardDetail/CardDetailProperties should show property types m
                   />
                 </div>
                 <div
+                  aria-label="Division"
+                  class="MenuOption TextOption menu-option"
+                  role="button"
+                >
+                  <div
+                    class="d-flex"
+                  >
+                    <div
+                      class="noicon"
+                    />
+                  </div>
+                  <div
+                    class="menu-option__content"
+                  >
+                    <div
+                      class="menu-name"
+                    >
+                      Division
+                    </div>
+                  </div>
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
+                  aria-label="Department"
+                  class="MenuOption TextOption menu-option"
+                  role="button"
+                >
+                  <div
+                    class="d-flex"
+                  >
+                    <div
+                      class="noicon"
+                    />
+                  </div>
+                  <div
+                    class="menu-option__content"
+                  >
+                    <div
+                      class="menu-name"
+                    >
+                      Department
+                    </div>
+                  </div>
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
                   aria-label="Created time"
                   class="MenuOption TextOption menu-option"
                   role="button"
