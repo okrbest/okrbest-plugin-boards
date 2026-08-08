@@ -4,7 +4,7 @@
 import {IntlShape} from 'react-intl'
 
 import {BoardView} from './blocks/boardView'
-import {Board, IPropertyTemplate} from './blocks/board'
+import {Board, IPropertyTemplate, OrgUnit} from './blocks/board'
 import {Card} from './blocks/card'
 import {Utils} from './utils'
 import {IAppWindow} from './types'
@@ -13,12 +13,15 @@ import propsRegistry from './properties'
 import store from './store'
 import {getBoardUsers} from './store/users'
 import {getClientConfig} from './store/clientConfig'
+import {getOrgUnits} from './store/orgMaster'
 
 declare let window: IAppWindow
 const hashSignToken = '___hash_sign___'
 const cleanupFallbackDelayMs = 60000
 
 class CsvExporter {
+    private static readonly orgPropertyTypes = new Set(['orgDivision', 'orgDepartment'])
+
     static exportTableCsv(board: Board, activeView: BoardView, cards: Card[], intl: IntlShape, view?: BoardView): void {
         const viewToExport = view ?? activeView
         
@@ -87,6 +90,7 @@ class CsvExporter {
         const state = store.getState()
         const boardUsers = getBoardUsers(state)
         const clientConfig = getClientConfig(state)
+        const orgUnits = getOrgUnits(board.teamId)(state)
 
         if (viewToExport.fields.viewType === 'calendar' &&
             viewToExport.fields.dateDisplayPropertyId &&
@@ -123,6 +127,8 @@ class CsvExporter {
                     row.push(`"${this.encodeText(rawValue)}"`)
                 } else if (property.isPersonLike) {
                     row.push(CsvExporter.exportPersonValue(propertyValue, boardUsers, clientConfig.teammateNameDisplay))
+                } else if (CsvExporter.orgPropertyTypes.has(property.type)) {
+                    row.push(CsvExporter.exportOrgValue(propertyValue, orgUnits))
                 } else {
                     row.push(property.exportValue(propertyValue, card, template, intl))
                 } 
@@ -131,6 +137,19 @@ class CsvExporter {
         })
 
         return rows
+    }
+
+    // PropertyType.exportValue is a pure function with no way to reach the
+    // organisation master, so organisation values are resolved here — the same
+    // exception person properties already use.
+    private static exportOrgValue(propertyValue: string | string[] | undefined, orgUnits: OrgUnit[]): string {
+        const unitIds = Array.isArray(propertyValue) ? propertyValue : [propertyValue]
+        const byID = new Map(orgUnits.map((unit) => [unit.id, unit]))
+
+        // An ID the master no longer carries is written out as the ID rather
+        // than dropped, matching what the card shows on screen.
+        const names = unitIds.filter((id): id is string => Boolean(id)).map((id) => byID.get(id)?.name || id)
+        return `"${this.encodeText(names.join('|'))}"`
     }
 
     private static exportPersonValue(propertyValue: string | string[] | undefined, boardUsers: {[key: string]: IUser}, teammateNameDisplay: string): string {

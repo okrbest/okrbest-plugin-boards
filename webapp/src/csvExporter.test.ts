@@ -5,10 +5,12 @@ import {createIntl} from 'react-intl'
 
 import {CsvExporter} from './csvExporter'
 import {TestBlockFactory} from './test/testBlockFactory'
+import {IPropertyTemplate} from './blocks/board'
 import {IAppWindow} from './types'
 import store from './store'
 import {setBoardUsers} from './store/users'
 import {setClientConfig} from './store/clientConfig'
+import {fetchOrgMaster} from './store/orgMaster'
 import {ShowUsername} from './utils'
 
 declare let window: IAppWindow
@@ -204,5 +206,47 @@ describe('csvExporter', () => {
         expect(exportedCsv).toContain('"alpha"')
         expect(exportedCsv).toContain('"alpha|beta|missing-user"')
         expect(exportedCsv).toContain('"beta"')
+    })
+
+    test('exports organisation values as names joined by a pipe', () => {
+        const intl = createIntl({locale: 'en-us'})
+        const board = TestBlockFactory.createBoard()
+        board.teamId = 'team-1'
+        const activeView = TestBlockFactory.createBoardView(board)
+        const card = TestBlockFactory.createCard(board)
+
+        store.dispatch(fetchOrgMaster.fulfilled(
+            {
+                teamId: 'team-1',
+                orgUnits: [
+                    {id: 'div-production', name: '생산본부', type: 'division', parentId: ''},
+                    {id: 'div-admin', name: '관리본부', type: 'division', parentId: ''},
+                    {id: 'dep-production', name: '생산팀', type: 'department', parentId: 'div-production'},
+                ],
+                duties: [],
+                orgProfiles: [],
+            },
+            'test-request',
+            'team-1',
+        ))
+
+        const divisionProperty = {id: 'p-div', name: '본부', type: 'orgDivision', options: []} as IPropertyTemplate
+        const departmentProperty = {id: 'p-dep', name: '부서', type: 'orgDepartment', options: []} as IPropertyTemplate
+        board.cardProperties.push(divisionProperty, departmentProperty)
+        activeView.fields.visiblePropertyIds = [divisionProperty.id, departmentProperty.id]
+
+        // The last ID is not in the master. It is written out as the ID rather
+        // than dropped, matching what the card shows on screen.
+        card.fields.properties[divisionProperty.id] = ['div-production', 'div-admin', 'div-retired']
+        card.fields.properties[departmentProperty.id] = ['dep-production']
+
+        const openInNewBrowser = jest.fn()
+        window.openInNewBrowser = openInNewBrowser
+
+        CsvExporter.exportTableCsv(board, activeView, [card], intl)
+
+        const exportedCsv = decodeCsvFromDataUri(openInNewBrowser.mock.calls[0][0])
+        expect(exportedCsv).toContain('"생산본부|관리본부|div-retired"')
+        expect(exportedCsv).toContain('"생산팀"')
     })
 })
