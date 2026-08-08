@@ -53,6 +53,7 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 import {Constants} from '../../constants'
 
 import {getCategoryOfBoard, getHiddenBoardIDs, removeBoardsFromAllCategories} from '../../store/sidebar'
+import {fetchOrgMaster, isOrgMasterLoaded} from '../../store/orgMaster'
 
 import SetWindowTitleAndIcon from './setWindowTitleAndIcon'
 import TeamToBoardAndViewRedirect from './teamToBoardAndViewRedirect'
@@ -61,7 +62,6 @@ import BackwardCompatibilityQueryParamsRedirect from './backwardCompatibilityQue
 import WebsocketConnection from './websocketConnection'
 
 import './boardPage.scss'
-import {fetchOrgMaster, isOrgMasterLoaded} from '../../store/orgMaster'
 
 type Props = {
     readonly?: boolean
