@@ -24,6 +24,7 @@ import (
 func (a *API) registerOrgRoutes(r *mux.Router) {
 	r.HandleFunc("/teams/{teamID}/org-units", a.sessionRequired(a.handleGetOrgUnits)).Methods("GET")
 	r.HandleFunc("/teams/{teamID}/duties", a.sessionRequired(a.handleGetDuties)).Methods("GET")
+	r.HandleFunc("/teams/{teamID}/org-profiles", a.sessionRequired(a.handleGetOrgProfiles)).Methods("GET")
 }
 
 func (a *API) handleGetOrgUnits(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +75,104 @@ func (a *API) handleGetOrgUnits(w http.ResponseWriter, r *http.Request) {
 	)
 
 	data, err := json.Marshal(units)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+}
+
+func (a *API) handleGetOrgProfiles(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /teams/{teamID}/org-profiles getOrgProfiles
+	//
+	// Returns which organization unit each user of a team belongs to
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: teamID
+	//   in: path
+	//   description: Team ID
+	//   required: true
+	//   type: string
+	// security:
+	// - BearerAuth: []
+	// responses:
+	//   '200':
+	//     description: success
+	//     schema:
+	//       type: array
+	//       items:
+	//         "$ref": "#/definitions/UserOrgMembership"
+	//   default:
+	//     description: internal error
+	//     schema:
+	//       "$ref": "#/definitions/ErrorResponse"
+
+	teamID := mux.Vars(r)["teamID"]
+	userID := getUserID(r)
+
+	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
+		return
+	}
+
+	// The candidate pool is resolved exactly the way the person selector
+	// resolves it — same call, same guest handling, same bot exclusion. Anything
+	// narrower would leave users that a team wide search can surface without a
+	// known organization, and the narrowing would silently drop them.
+	isGuest, err := a.userIsGuest(userID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+	asGuestUser := ""
+	if isGuest {
+		asGuestUser = userID
+	}
+
+	users, err := a.app.SearchTeamUsers(teamID, "", asGuestUser, true)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	userIDs := make([]string, 0, len(users))
+	for _, user := range users {
+		if user != nil {
+			userIDs = append(userIDs, user.ID)
+		}
+	}
+
+	profiles, err := a.app.GetUserOrgProfiles(teamID, userIDs)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	// Built by walking users rather than the profile map so the order is stable
+	// across requests. Users bound to nothing are left out entirely.
+	memberships := make([]model.UserOrgMembership, 0, len(profiles))
+	for _, id := range userIDs {
+		profile, ok := profiles[id]
+		if !ok || profile == nil || profile.PrimaryOrgUnitID == "" {
+			continue
+		}
+		memberships = append(memberships, model.UserOrgMembership{
+			UserID:    id,
+			OrgUnitID: profile.PrimaryOrgUnitID,
+		})
+	}
+
+	a.logger.Debug("GetOrgProfiles",
+		mlog.String("teamID", teamID),
+		mlog.Int("users", len(userIDs)),
+		mlog.Int("assigned", len(memberships)),
+	)
+
+	data, err := json.Marshal(memberships)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return

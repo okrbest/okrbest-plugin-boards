@@ -61,6 +61,7 @@ import BackwardCompatibilityQueryParamsRedirect from './backwardCompatibilityQue
 import WebsocketConnection from './websocketConnection'
 
 import './boardPage.scss'
+import {fetchOrgMaster, isOrgMasterLoaded} from '../../store/orgMaster'
 
 type Props = {
     readonly?: boolean
@@ -76,6 +77,7 @@ const BoardPage = (props: Props): React.JSX.Element => {
     const navigate = useNavigate()
     const [mobileWarningClosed, setMobileWarningClosed] = useState(UserSettings.mobileWarningClosed)
     const teamId = params.teamId || UserSettings.lastTeamId || Constants.globalTeamId
+    const orgMasterLoaded = useAppSelector(isOrgMasterLoaded(teamId))
     const viewId = params.viewId
     const me = useAppSelector<IUser|null>(getMe)
     const hiddenBoardIDs = useAppSelector(getHiddenBoardIDs)
@@ -107,6 +109,20 @@ const BoardPage = (props: Props): React.JSX.Element => {
         dispatch(setTeam(teamId))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [teamId])
+
+    // The organisation master backs the 본부/부서 property editors and the
+    // narrowing of person choices, so it has to be in the store before a card
+    // is opened rather than only after the share dialog has been visited.
+    //
+    // Fetched once per team and kept: the master changes on reorganisations,
+    // not during a session. Boards with no organisation properties pay one
+    // request each way and nothing else.
+    useEffect(() => {
+        if (teamId && !orgMasterLoaded) {
+            dispatch(fetchOrgMaster(teamId))
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [teamId, orgMasterLoaded])
 
     const loadAction = useMemo(() => {
         if (props.readonly) {

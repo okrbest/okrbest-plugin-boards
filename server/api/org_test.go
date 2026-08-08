@@ -127,6 +127,140 @@ func TestHandleGetDuties(t *testing.T) {
 	})
 }
 
+// Contract tests for specs/005-org-scoped-properties/contracts/org-profiles-api.md.
+//
+// The candidate pool is the team, not the board: personSelector.tsx searches
+// team wide whenever the board is open, so a board scoped membership list would
+// not cover the users that search turns up.
+func TestHandleGetOrgProfiles(t *testing.T) {
+	const teamID = "team-1"
+
+	t.Run("rejects a caller without team access", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+
+		rec := th.callHandler(th.API.handleGetOrgProfiles, "/teams/"+teamID+"/org-profiles", "outsider",
+			map[string]string{"teamID": teamID})
+
+		require.Equal(t, http.StatusForbidden, rec.Code)
+	})
+
+	t.Run("returns the memberships of the team's users", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowTeam("member", teamID)
+		th.Store.EXPECT().GetUserByID("member").Return(&model.User{ID: "member"}, nil)
+		th.Store.EXPECT().
+			SearchUsersByTeam(teamID, "", "", true, false, false).
+			Return([]*model.User{{ID: "u-head"}, {ID: "u-lead"}}, nil)
+		th.Store.EXPECT().
+			GetUserOrgProfiles(teamID, []string{"u-head", "u-lead"}).
+			Return([]*model.UserOrgProfile{
+				{TeamID: teamID, UserID: "u-head", PrimaryOrgUnitID: "div-production"},
+				{TeamID: teamID, UserID: "u-lead", PrimaryOrgUnitID: "dep-production"},
+			}, nil)
+
+		rec := th.callHandler(th.API.handleGetOrgProfiles, "/teams/"+teamID+"/org-profiles", "member",
+			map[string]string{"teamID": teamID})
+
+		require.Equal(t, http.StatusOK, rec.Code)
+
+		var memberships []model.UserOrgMembership
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &memberships))
+		require.Len(t, memberships, 2)
+		byUser := map[string]string{}
+		for _, m := range memberships {
+			byUser[m.UserID] = m.OrgUnitID
+		}
+		require.Equal(t, "div-production", byUser["u-head"])
+		require.Equal(t, "dep-production", byUser["u-lead"])
+	})
+
+	t.Run("omits users who have no assignment rather than sending a blank one", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowTeam("member", teamID)
+		th.Store.EXPECT().GetUserByID("member").Return(&model.User{ID: "member"}, nil)
+		th.Store.EXPECT().
+			SearchUsersByTeam(teamID, "", "", true, false, false).
+			Return([]*model.User{{ID: "u-head"}, {ID: "u-unassigned"}}, nil)
+		th.Store.EXPECT().
+			GetUserOrgProfiles(teamID, []string{"u-head", "u-unassigned"}).
+			Return([]*model.UserOrgProfile{
+				{TeamID: teamID, UserID: "u-head", PrimaryOrgUnitID: "div-production"},
+				// Present in the table but bound to nothing.
+				{TeamID: teamID, UserID: "u-unassigned", PrimaryOrgUnitID: ""},
+			}, nil)
+
+		rec := th.callHandler(th.API.handleGetOrgProfiles, "/teams/"+teamID+"/org-profiles", "member",
+			map[string]string{"teamID": teamID})
+
+		require.Equal(t, http.StatusOK, rec.Code)
+
+		var memberships []model.UserOrgMembership
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &memberships))
+		require.Len(t, memberships, 1)
+		require.Equal(t, "u-head", memberships[0].UserID)
+	})
+
+	t.Run("excludes bots, matching the person selector's own search", func(t *testing.T) {
+		// exclude_bots is passed as true, so a bot never reaches the profile
+		// lookup and can never appear in the narrowed candidate list.
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowTeam("member", teamID)
+		th.Store.EXPECT().GetUserByID("member").Return(&model.User{ID: "member"}, nil)
+		th.Store.EXPECT().
+			SearchUsersByTeam(teamID, "", "", true, false, false).
+			Return([]*model.User{{ID: "u-head"}}, nil)
+		th.Store.EXPECT().
+			GetUserOrgProfiles(teamID, []string{"u-head"}).
+			Return([]*model.UserOrgProfile{
+				{TeamID: teamID, UserID: "u-head", PrimaryOrgUnitID: "div-production"},
+			}, nil)
+
+		rec := th.callHandler(th.API.handleGetOrgProfiles, "/teams/"+teamID+"/org-profiles", "member",
+			map[string]string{"teamID": teamID})
+
+		require.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("returns an empty array, not an error, when nobody is assigned", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowTeam("member", teamID)
+		th.Store.EXPECT().GetUserByID("member").Return(&model.User{ID: "member"}, nil)
+		th.Store.EXPECT().
+			SearchUsersByTeam(teamID, "", "", true, false, false).
+			Return([]*model.User{{ID: "u-head"}}, nil)
+		th.Store.EXPECT().
+			GetUserOrgProfiles(teamID, []string{"u-head"}).
+			Return(nil, nil)
+
+		rec := th.callHandler(th.API.handleGetOrgProfiles, "/teams/"+teamID+"/org-profiles", "member",
+			map[string]string{"teamID": teamID})
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.JSONEq(t, "[]", rec.Body.String())
+	})
+
+	t.Run("returns an empty array when the team has no users", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowTeam("member", teamID)
+		th.Store.EXPECT().GetUserByID("member").Return(&model.User{ID: "member"}, nil)
+		th.Store.EXPECT().
+			SearchUsersByTeam(teamID, "", "", true, false, false).
+			Return([]*model.User{}, nil)
+
+		rec := th.callHandler(th.API.handleGetOrgProfiles, "/teams/"+teamID+"/org-profiles", "member",
+			map[string]string{"teamID": teamID})
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.JSONEq(t, "[]", rec.Body.String())
+	})
+}
+
 // C-03, C-04 and C-05 (the active and kind='duty' filters) live in the SQL of
 // server/services/store/sqlstore/org_master.go. They cannot be asserted against
 // a mocked store; quickstart.md covers them against a real database.

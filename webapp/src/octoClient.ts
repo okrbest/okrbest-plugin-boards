@@ -4,7 +4,7 @@
 import { Client4 } from "mattermost-redux/client"
 
 import {Block, BlockPatch, FileInfo} from './blocks/block'
-import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse, OrgUnit, Duty} from './blocks/board'
+import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse, OrgUnit, UserOrgMembership, Duty} from './blocks/board'
 import {ISharing} from './blocks/sharing'
 import {OctoUtils} from './octoUtils'
 import {IUser, UserConfigPatch, UserPreference} from './user'
@@ -915,6 +915,17 @@ class OctoClient {
             return []
         }
         return (await this.getJson(response, [])) as OrgUnit[]
+    }
+
+    // The organisation membership of everyone the person selector can offer.
+    // Team scoped because the selector searches the whole team on open boards.
+    async getOrgProfiles(teamId?: string): Promise<UserOrgMembership[]> {
+        const path = this.teamPath(teamId) + '/org-profiles'
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as UserOrgMembership[]
     }
 
     async getDuties(teamId?: string): Promise<Duty[]> {

@@ -127,6 +127,13 @@ type OrgUnit = {
     parentId: string
 }
 
+// Which organisation unit a user belongs to. Users with no assignment are
+// absent from the list rather than present with an empty orgUnitId.
+type UserOrgMembership = {
+    userId: string
+    orgUnitId: string
+}
+
 type Duty = {
     id: string
     code: string
@@ -147,7 +154,7 @@ type BoardsAndBlocksPatch = {
     blockPatches: BlockPatch[]
 }
 
-type PropertyTypeEnum = 'text' | 'number' | 'select' | 'multiSelect' | 'date' | 'person' | 'multiPerson' | 'file' | 'checkbox' | 'url' | 'email' | 'phone' | 'createdTime' | 'createdBy' | 'updatedTime' | 'updatedBy' | 'card' | 'unknown'
+type PropertyTypeEnum = 'text' | 'number' | 'select' | 'multiSelect' | 'date' | 'person' | 'multiPerson' | 'file' | 'checkbox' | 'url' | 'email' | 'phone' | 'createdTime' | 'createdBy' | 'updatedTime' | 'updatedBy' | 'card' | 'orgDivision' | 'orgDepartment' | 'unknown'
 
 interface IPropertyOption {
     id: string
@@ -421,6 +428,7 @@ export {
     PropertyAccessRule,
     PropertyAccessSettings,
     OrgUnit,
+    UserOrgMembership,
     Duty,
     BoardsAndBlocks,
     BoardsAndBlocksPatch,
