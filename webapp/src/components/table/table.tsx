@@ -24,6 +24,8 @@ import HiddenCardCount from '../../components/hiddenCardCount/hiddenCardCount'
 
 import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmationDialogBox'
 
+import propsRegistry from '../../properties'
+
 import TableHeaders from './tableHeaders'
 import TableRows from './tableRows'
 import TableGroup from './tableGroup'
@@ -94,7 +96,7 @@ const Table = (props: Props): React.JSX.Element => {
         const min: Record<string, number> = {[Constants.titleColumnId]: Constants.minColumnWidth}
         for (const propId of activeView.fields.visiblePropertyIds) {
             const t = board.cardProperties.find((p) => p.id === propId)?.type
-            min[propId] = (t === 'person' || t === 'multiPerson')
+            min[propId] = (t !== undefined && propsRegistry.get(t).isPersonLike)
                 ? Constants.minPersonColumnWidth
                 : t === 'card'
                     ? Constants.minCardColumnWidth
@@ -198,13 +200,13 @@ const Table = (props: Props): React.JSX.Element => {
                         if (optionId.length === 0) {
                             return undefined
                         }
-                        if (groupByProperty.type === 'multiSelect' || groupByProperty.type === 'multiPerson') {
+                        if (propsRegistry.get(groupByProperty.type).isMultiValue) {
                             return [...optionId].sort()
                         }
                         return optionId[0]
                     }
 
-                    if (groupByProperty.type === 'multiSelect' || groupByProperty.type === 'multiPerson') {
+                    if (propsRegistry.get(groupByProperty.type).isMultiValue) {
                         const ids = optionId.split(',').map((id) => id.trim()).filter((id) => id)
                         if (ids.length === 0) {
                             return undefined

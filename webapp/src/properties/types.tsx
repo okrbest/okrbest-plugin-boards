@@ -11,7 +11,7 @@ import {Utils} from '../utils'
 
 const hashSignToken = '___hash_sign___'
 function encodeText(text: string): string {
-    return text.replace(/"/g, '""').replace(/#/g, hashSignToken);
+    return text.replace(/"/g, '""').replace(/#/g, hashSignToken)
 }
 
 export type PropertyTypeEnum = BoardPropertyTypeEnum
@@ -38,6 +38,16 @@ export abstract class PropertyType {
     canFilter = false
     filterValueType: FilterValueType = 'none'
     isReadOnly = false
+
+    // Values are stored as an array rather than a single string. Callers use
+    // this instead of comparing type names so new multi-value types are picked
+    // up automatically.
+    isMultiValue = false
+
+    // Values are user IDs, so display names have to be resolved from the user
+    // list rather than from the property template's options.
+    isPersonLike = false
+
     calculationOptions = [Options.none, Options.count, Options.countEmpty,
         Options.countNotEmpty, Options.percentEmpty, Options.percentNotEmpty,
         Options.countValue, Options.countUniqueValue]

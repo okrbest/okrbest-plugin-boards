@@ -15,6 +15,7 @@ export default class MultiSelectProperty extends PropertyType {
     Editor = MultiSelect
     name = 'MultiSelect'
     type = 'multiSelect' as PropertyTypeEnum
+    isMultiValue = true
     canFilter = true
     canGroup = true
     filterValueType = 'options' as FilterValueType

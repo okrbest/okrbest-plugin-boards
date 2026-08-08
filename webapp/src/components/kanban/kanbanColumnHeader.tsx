@@ -23,6 +23,8 @@ import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
+import propsRegistry from '../../properties'
+
 import {KanbanCalculation} from './calculation/calculation'
 
 type Props = {
@@ -52,7 +54,7 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
     const [groupTitle, setGroupTitle] = useState(group.option.value)
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
     const canEditOption = groupByProperty?.type === 'select' && group.option.id
-    const isPersonGroup = groupByProperty?.type === 'person' || groupByProperty?.type === 'multiPerson' || groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy'
+    const isPersonGroup = Boolean(groupByProperty && propsRegistry.get(groupByProperty.type).isPersonLike)
 
     const headerRef = useRef<HTMLDivElement>(null)
 

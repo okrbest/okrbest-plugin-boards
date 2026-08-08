@@ -3,6 +3,7 @@
 
 import {Card} from './blocks/card'
 import {IPropertyTemplate, IPropertyOption, BoardGroup} from './blocks/board'
+import propsRegistry from './properties'
 
 export function getGroupOptionIDForCard(card: Card, groupByProperty?: IPropertyTemplate): string {
     if (!groupByProperty) {
@@ -22,7 +23,7 @@ export function getGroupOptionIDForCard(card: Card, groupByProperty?: IPropertyT
         return typeof propertyValue === 'string' ? propertyValue : ''
     }
 
-    if (groupByProperty.type === 'multiPerson' || groupByProperty.type === 'multiSelect') {
+    if (propsRegistry.get(groupByProperty.type).isMultiValue) {
         let valueIDs: string[] = []
         if (Array.isArray(propertyValue)) {
             valueIDs = propertyValue.filter((id): id is string => typeof id === 'string' && id !== '')
@@ -99,19 +100,24 @@ function getOptionGroups(cards: Card[], visibleOptionIds: string[], hiddenOption
     return {visible: visibleGroups, hidden: hiddenGroups}
 }
 export function getVisibleAndHiddenGroups(cards: Card[], visibleOptionIds: string[], hiddenOptionIds: string[], groupByProperty?: IPropertyTemplate): {visible: BoardGroup[], hidden: BoardGroup[]} {
-    if (groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy' || groupByProperty?.type === 'person') {
-        return getPersonGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
-    }
+    const propertyType = groupByProperty ? propsRegistry.get(groupByProperty.type) : undefined
 
-    if (groupByProperty?.type === 'multiPerson') {
-        return getMultiPersonGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
+    // Single-valued person types (person, createdBy, updatedBy) group by one ID;
+    // multiPerson groups by the sorted set of IDs, so the two are split on
+    // isMultiValue rather than on the type name.
+    if (groupByProperty && propertyType?.isPersonLike) {
+        return propertyType.isMultiValue
+            ? getMultiPersonGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
+            : getPersonGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
     if (groupByProperty?.type === 'card') {
         return getCardGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 
-    if (groupByProperty?.type === 'multiSelect') {
+    // multiSelect and the organisation types both group by the sorted set of
+    // value IDs. Their group labels differ, and that is resolved by the callers.
+    if (groupByProperty && propertyType?.isMultiValue) {
         return getMultiSelectGroups(cards, groupByProperty, hiddenOptionIds, visibleOptionIds)
     }
 

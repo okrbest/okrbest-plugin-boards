@@ -11,6 +11,7 @@ export default class UpdatedByProperty extends PropertyType {
     Editor = UpdatedBy
     name = 'Last Modified By'
     type = 'updatedBy' as PropertyTypeEnum
+    isPersonLike = true
     isReadOnly = true
     displayName = (intl: IntlShape) => intl.formatMessage({id: 'PropertyType.UpdatedBy', defaultMessage: 'Last updated by'})
     canFilter = true

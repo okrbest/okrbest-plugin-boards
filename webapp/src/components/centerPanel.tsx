@@ -42,6 +42,8 @@ import {UserConfigPatch} from '../user'
 import octoClient from '../octoClient'
 import {Constants} from '../constants'
 
+import propsRegistry from '../properties'
+
 import {sendFlashMessage} from './flashMessages'
 
 import ShareBoardButton from './shareBoard/shareBoardButton'
@@ -190,13 +192,13 @@ const CenterPanel = (props: Props) => {
             if (optionId.length === 0) {
                 return undefined
             }
-            if (template.type === 'multiSelect' || template.type === 'multiPerson') {
+            if (propsRegistry.get(template.type).isMultiValue) {
                 return [...optionId].sort()
             }
             return optionId[0]
         }
 
-        if (template.type === 'multiSelect' || template.type === 'multiPerson') {
+        if (propsRegistry.get(template.type).isMultiValue) {
             const ids = optionId.split(',').map((id) => id.trim()).filter((id) => id)
             if (ids.length === 0) {
                 return undefined
@@ -543,24 +545,15 @@ const CenterPanel = (props: Props) => {
 
     const {visible: visibleGroups, hidden: hiddenGroups} = useMemo(() => {
         const {visible: vg, hidden: hg} = getVisibleAndHiddenGroups(cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty)
-        if (groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy' || groupByProperty?.type === 'person') {
-            if (boardUsers) {
-                vg.forEach((value) => {
-                    value.option.value = getUserDisplayName(value)
-                })
-                hg.forEach((value) => {
-                    value.option.value = getUserDisplayName(value)
-                })
-            }
-        } else if (groupByProperty?.type === 'multiPerson') {
-            if (boardUsers) {
-                vg.forEach((value) => {
-                    value.option.value = getMultiPersonDisplayName(value)
-                })
-                hg.forEach((value) => {
-                    value.option.value = getMultiPersonDisplayName(value)
-                })
-            }
+        const groupPropertyType = groupByProperty ? propsRegistry.get(groupByProperty.type) : undefined
+        if (groupPropertyType?.isPersonLike && boardUsers) {
+            const resolve = groupPropertyType.isMultiValue ? getMultiPersonDisplayName : getUserDisplayName
+            vg.forEach((value) => {
+                value.option.value = resolve(value)
+            })
+            hg.forEach((value) => {
+                value.option.value = resolve(value)
+            })
         }
         return {visible: vg, hidden: hg}
     }, [cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty, boardUsers])

@@ -11,6 +11,7 @@ export default class CreatedByProperty extends PropertyType {
     Editor = CreatedBy
     name = 'Created By'
     type = 'createdBy' as PropertyTypeEnum
+    isPersonLike = true
     isReadOnly = true
     displayName = (intl: IntlShape) => intl.formatMessage({id: 'PropertyType.CreatedBy', defaultMessage: 'Created by'})
     canFilter = true
