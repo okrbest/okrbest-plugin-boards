@@ -1,4 +1,4 @@
-# 계약: 보드 사용자 소속 조회 API
+# 계약: 팀원 소속 조회 API
 
 **Feature**: `005-org-scoped-properties`
 
@@ -14,19 +14,23 @@
 ## 엔드포인트
 
 ```
-GET /plugins/focalboard/api/v2/boards/{boardID}/org-profiles
+GET /plugins/focalboard/api/v2/teams/{teamID}/org-profiles
 ```
 
 `server/api/org.go`에 등록한다. 조직 관련 읽기 전용 경로가 모인 자리다.
 
 ### 문턱
 
-보드 열람 권한(`PermissionViewBoard`). 팀 단위가 아니라 보드 단위인 이유는
-아래 "범위"에 있다.
+팀 열람 권한(`PermissionViewTeam`). 같은 파일의 `org-units`·`duties`와 같다.
 
 ### 요청
 
 파라미터 없음.
+
+### 대상
+
+그 팀의 활성 멤버 중 **봇을 제외한 전원**. `TeamMembers`에서 얻으며 요청자 자신도
+포함한다.
 
 ### 응답 200
 
@@ -47,7 +51,7 @@ GET /plugins/focalboard/api/v2/boards/{boardID}/org-profiles
 
 ### 응답 403
 
-보드를 열람할 수 없을 때.
+팀을 열람할 수 없을 때.
 
 ### 응답 200 (빈 배열)
 
@@ -56,17 +60,20 @@ GET /plugins/focalboard/api/v2/boards/{boardID}/org-profiles
 
 ---
 
-## 범위 — 왜 보드 단위인가
+## 범위 — 왜 팀 단위인가
 
-응답에 담는 사용자는 **그 보드가 사람 선택기에 이미 보여주는 사용자**로 한정한다.
+사람 선택기는 보드 사용자만 보여주지 않는다. `webapp/src/components/personSelector.tsx`의
+`loadOptions`는 `allowAddUsers`가 참이면 `client.searchTeamUsers()`로 **팀 전체를
+서버 검색**하고, 결과를 "보드 멤버"와 "보드 멤버 아님"으로 나눠 보여준다.
+`allowAddUsers`는 공개 보드(`type=O`)이거나 멤버 관리 권한이 있으면 참이므로,
+검증 대상인 FY27 KKV OKR 보드가 정확히 그 경우다.
 
-팀 단위(`/teams/{teamID}/org-profiles`)로 만들 수도 있고 구현은 더 짧다. 그렇게
-하지 않는 이유는 노출 범위다. 비공개 보드의 멤버 셋이 팀 전체 65명의 소속을 받을
-이유가 없다. 사람 선택기의 원본이 보드 단위(`getBoardUsers`)이므로 보드 단위가
-필요한 만큼과 정확히 일치한다.
+보드 단위로 소속을 내려보내면 **검색으로 새로 나타나는 사용자의 소속을 알 수 없어**
+좁힘이 성립하지 않는다. 후보 풀이 팀 전체이므로 소속 데이터도 같은 범위여야 한다.
 
-공개 보드에서는 두 범위가 사실상 같아진다. 그래도 계약을 좁은 쪽으로 정의해 두면
-나중에 보드 성격이 바뀌어도 노출이 따라 넓어지지 않는다.
+노출은 이미 있는 조직 조회와 같은 수준이다. `org-units`·`duties`가 팀 열람 문턱으로
+조직 이름을 내려보내고 있고, 메인 서버의 `org-profile-summary`가 팀원에게 소속을
+보여준다(`server/api/org.go` 주석). 이 계약은 그 경계를 넓히지 않는다.
 
 ---
 
@@ -87,8 +94,8 @@ server/services/store/   UserOrgProfiles 조회                  ← 이미 있�
 
 ## 캐시
 
-화면은 보드를 열 때 한 번 받아 `store/orgMaster`에 보관한다. 조직 마스터와 같은
-수명이다.
+화면은 팀에 진입할 때 한 번 받아 `store/orgMaster`에 보관한다. 이미 org-units·
+duties를 팀 단위로 받는 `fetchOrgMaster`에 얹으면 요청 시점이 늘지 않는다.
 
 소속이 바뀌면 다음에 보드를 열 때 반영된다. 실시간 갱신은 하지 않는다 — 조직
 개편은 드물고, 이 데이터가 낡아도 잘못된 선택지가 잠시 보일 뿐 저장은 막히지
