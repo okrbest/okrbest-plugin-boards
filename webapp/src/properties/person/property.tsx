@@ -11,6 +11,7 @@ export default class PersonProperty extends PropertyType {
     Editor = Person
     name = 'Person'
     type = 'person' as PropertyTypeEnum
+    isPersonLike = true
     displayName = (intl: IntlShape) => intl.formatMessage({id: 'PropertyType.Person', defaultMessage: 'Person'})
     canFilter = true
     filterValueType = 'person' as FilterValueType

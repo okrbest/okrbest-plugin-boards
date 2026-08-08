@@ -19,8 +19,6 @@ const hashSignToken = '___hash_sign___'
 const cleanupFallbackDelayMs = 60000
 
 class CsvExporter {
-    private static readonly personPropertyTypes = new Set(['person', 'multiPerson', 'createdBy', 'updatedBy'])
-
     static exportTableCsv(board: Board, activeView: BoardView, cards: Card[], intl: IntlShape, view?: BoardView): void {
         const viewToExport = view ?? activeView
         
@@ -123,7 +121,7 @@ class CsvExporter {
                 if (property.type === 'number') {
                     const rawValue = property.exportValue(propertyValue, card, template, intl)
                     row.push(`"${this.encodeText(rawValue)}"`)
-                } else if (CsvExporter.personPropertyTypes.has(property.type)) {
+                } else if (property.isPersonLike) {
                     row.push(CsvExporter.exportPersonValue(propertyValue, boardUsers, clientConfig.teammateNameDisplay))
                 } else {
                     row.push(property.exportValue(propertyValue, card, template, intl))

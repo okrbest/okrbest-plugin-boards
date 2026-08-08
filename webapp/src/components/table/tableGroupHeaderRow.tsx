@@ -21,6 +21,8 @@ import MenuWrapper from '../../widgets/menuWrapper'
 import Editable from '../../widgets/editable'
 import Label from '../../widgets/label'
 
+import propsRegistry from '../../properties'
+
 import {useColumnResize} from './tableColumnResizeContext'
 
 type Props = {
@@ -55,7 +57,7 @@ const TableGroupHeaderRow = (props: Props): React.JSX.Element => {
     }
 
     const canEditOption = groupByProperty?.type === 'select' && group.option.id
-    const isPersonGroup = groupByProperty?.type === 'person' || groupByProperty?.type === 'multiPerson' || groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy'
+    const isPersonGroup = Boolean(groupByProperty && propsRegistry.get(groupByProperty.type).isPersonLike)
 
     return (
         <div

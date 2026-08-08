@@ -812,6 +812,11 @@ class Mutator {
         const newBlockIDs: string[] = []
 
         if (propertyTemplate.type !== newType) {
+            // These stay explicit type names rather than propsRegistry lookups.
+            // card/card.tsx imports this module, so importing the registry here
+            // closes a cycle (registry -> card property -> card -> mutator) and
+            // the registry reads as undefined at module init. Conversion never
+            // reaches these branches for types outside the lists anyway.
             const isNewTypeSelectOrMulti = newType === 'select' || newType === 'multiSelect'
             const isNewTypePersonOrMulti = newType === 'person' || newType === 'multiPerson'
 
