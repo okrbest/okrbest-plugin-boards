@@ -329,4 +329,65 @@ describe('properties/person', () => {
         }
         expect(container).toMatchSnapshot()
     })
+
+    // The narrowing has to be invisible to every caller that does not ask for
+    // it, otherwise adding an organisation property to one board would change
+    // how person pickers behave everywhere.
+    describe('allowedUserIds', () => {
+        const openMenu = async (allowedUserIds?: Set<string> | null) => {
+            const {container} = render(wrapIntl(
+                <ReduxProvider store={mockStore(state)}>
+                    <PersonSelector
+                        readOnly={false}
+                        userIDs={[]}
+                        allowAddUsers={false}
+                        property={new PersonProperty()}
+                        emptyDisplayValue={'Empty'}
+                        isMulti={true}
+                        closeMenuOnSelect={false}
+                        allowedUserIds={allowedUserIds}
+                        onChange={() => {}}
+                    />
+                </ReduxProvider>,
+            ))
+
+            const input = container.querySelector('input')
+            await act(async () => {
+                await userEvent.click(input!)
+            })
+            return container
+        }
+
+        test('offers everyone when the prop is absent', async () => {
+            const container = await openMenu(undefined)
+
+            expect(container.textContent).toContain('username-1')
+            expect(container.textContent).toContain('username-2')
+            expect(container.textContent).toContain('username-3')
+        })
+
+        test('offers everyone when the prop is null', async () => {
+            const container = await openMenu(null)
+
+            expect(container.textContent).toContain('username-2')
+            expect(container.textContent).toContain('username-3')
+        })
+
+        test('offers only the users in the set', async () => {
+            const container = await openMenu(new Set(['user-id-2']))
+
+            expect(container.textContent).toContain('username-2')
+            expect(container.textContent).not.toContain('username-1')
+            expect(container.textContent).not.toContain('username-3')
+        })
+
+        test('an empty set really does offer nobody', async () => {
+            // Distinct from null. If a card names an organisation that nobody
+            // belongs to, the honest answer is an empty list, not everyone.
+            const container = await openMenu(new Set<string>())
+
+            expect(container.textContent).not.toContain('username-1')
+            expect(container.textContent).not.toContain('username-2')
+        })
+    })
 })

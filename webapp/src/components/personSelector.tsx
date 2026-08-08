@@ -35,6 +35,12 @@ type Props = {
     isMulti: boolean
     closeMenuOnSelect?: boolean
     showMe?: boolean
+
+    // Narrows the offered users to this set. Absent means no narrowing, which
+    // is what every caller outside the organisation properties passes — their
+    // behaviour is unchanged. An empty set is a real answer ("nobody in scope")
+    // and is honoured as such.
+    allowedUserIds?: Set<string> | null
     onChange: (items: any, action: ActionMeta<IUser>) => void
 }
 
@@ -72,7 +78,7 @@ const selectStyles = {
 }
 
 const PersonSelector = (props: Props): React.JSX.Element => {
-    const {readOnly, userIDs, allowAddUsers, isMulti, closeMenuOnSelect = true, emptyDisplayValue, showMe = false, onChange} = props
+    const {readOnly, userIDs, allowAddUsers, isMulti, closeMenuOnSelect = true, emptyDisplayValue, showMe = false, allowedUserIds = null, onChange} = props
 
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
     const intl = useIntl()
@@ -115,6 +121,11 @@ const PersonSelector = (props: Props): React.JSX.Element => {
     }
 
     const loadOptions = useCallback(async (value: string) => {
+        // Applied to whichever branch runs below, so a board that lists its own
+        // members and a board that searches the whole team narrow the same way.
+        const narrow = (candidates: IUser[]): IUser[] =>
+            (allowedUserIds === null ? candidates : candidates.filter((u) => allowedUserIds.has(u.id)))
+
         if (!allowAddUsers) {
             const returnUsers: IUser[] = []
             if (showMe && me) {
@@ -137,17 +148,17 @@ const PersonSelector = (props: Props): React.JSX.Element => {
                 returnUsers.push(...boardUsers)
             }
             if (value) {
-                return returnUsers.filter((u) => {
+                return narrow(returnUsers.filter((u) => {
                     return u.username.toLowerCase().includes(value.toLowerCase()) ||
                         u.lastname.toLowerCase().includes(value.toLowerCase()) ||
                         u.firstname.toLowerCase().includes(value.toLowerCase()) ||
                         u.nickname.toLowerCase().includes(value.toLowerCase())
-                })
+                }))
             }
-            return returnUsers
+            return narrow(returnUsers)
         }
         const excludeBots = true
-        const allUsers = await client.searchTeamUsers(value, excludeBots)
+        const allUsers = narrow(await client.searchTeamUsers(value, excludeBots))
         const usersInsideBoard: IUser[] = []
         const usersOutsideBoard: IUser[] = []
         for (const u of allUsers) {
@@ -161,7 +172,7 @@ const PersonSelector = (props: Props): React.JSX.Element => {
             {label: intl.formatMessage({id: 'PersonProperty.board-members', defaultMessage: 'Board members'}), options: usersInsideBoard},
             {label: intl.formatMessage({id: 'PersonProperty.non-board-members', defaultMessage: 'Not board members'}), options: usersOutsideBoard},
         ]
-    }, [boardUsers, allowAddUsers, boardUsersById, me])
+    }, [boardUsers, allowAddUsers, boardUsersById, me, allowedUserIds])
 
     let primaryClass = 'Person'
     if (isMulti) {
