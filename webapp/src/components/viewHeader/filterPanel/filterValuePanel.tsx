@@ -13,6 +13,7 @@ import {Card} from '../../../blocks/card'
 import mutator from '../../../mutator'
 import propsRegistry from '../../../properties'
 import {getBoardUsersList} from '../../../store/users'
+import {getDivisions, getDepartments} from '../../../store/orgMaster'
 import {getCards} from '../../../store/cards'
 import octoClient from '../../../octoClient'
 import Label from '../../../widgets/label'
@@ -88,6 +89,14 @@ const FilterValuePanel = (props: Props): React.JSX.Element => {
     case 'date':
         return (
             <DateFilterPanel
+                board={board}
+                activeView={activeView}
+                propertyTemplate={propertyTemplate}
+            />
+        )
+    case 'orgUnit':
+        return (
+            <OrgUnitFilterPanel
                 board={board}
                 activeView={activeView}
                 propertyTemplate={propertyTemplate}
@@ -298,6 +307,100 @@ const PersonFilterPanel = (props: PersonFilterPanelProps): React.JSX.Element => 
                         {intl.formatMessage({
                             id: 'FilterPanel.no-matching-users',
                             defaultMessage: 'No matching users',
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ---- Organisation Filter (orgDivision / orgDepartment) ----
+
+type OrgUnitFilterPanelProps = {
+    board: Board
+    activeView: BoardView
+    propertyTemplate: IPropertyTemplate
+}
+
+// Same shape as the person panel: search box, checkbox list, "no matches".
+//
+// It cannot reuse the options panel, because that reads propertyTemplate.options
+// and an organisation property's options array is always empty — the choices
+// live in the organisation master, not on the board.
+//
+// Unlike the card editor, the filter is not narrowed by what a card names. A
+// filter is a question about the whole board, so every active unit of the right
+// kind is offered.
+const OrgUnitFilterPanel = (props: OrgUnitFilterPanelProps): React.JSX.Element => {
+    const {board, activeView, propertyTemplate} = props
+    const isDivision = propertyTemplate.type === 'orgDivision'
+    const divisions = useAppSelector(getDivisions(board.teamId))
+    const departments = useAppSelector(getDepartments(board.teamId, ''))
+    const units = isDivision ? divisions : departments
+    const intl = useIntl()
+    const [searchText, setSearchText] = useState('')
+
+    const existingClause = useMemo(() => {
+        return findClauseForProperty(activeView, propertyTemplate.id)
+    }, [activeView, propertyTemplate.id])
+
+    const selectedValues = useMemo(() => {
+        return existingClause?.values || []
+    }, [existingClause])
+
+    const filteredUnits = useMemo(() => {
+        if (!searchText) {
+            return units
+        }
+        const lower = searchText.toLowerCase()
+        return units.filter((unit) => unit.name.toLowerCase().includes(lower))
+    }, [units, searchText])
+
+    const handleToggleUnit = useCallback((unitId: string) => {
+        toggleFilterValue(board.id, activeView, propertyTemplate.id, unitId, selectedValues, 'includes')
+    }, [board.id, activeView, propertyTemplate.id, selectedValues])
+
+    return (
+        <div className='FilterValuePanel'>
+            <div className='FilterValuePanel__search'>
+                <input
+                    type='text'
+                    placeholder={intl.formatMessage({
+                        id: 'FilterPanel.search-org-units',
+                        defaultMessage: 'Search organisation...',
+                    })}
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                />
+            </div>
+            <div className='FilterValuePanel__list'>
+                {filteredUnits.map((unit) => (
+                    <div
+                        key={unit.id}
+                        className='FilterValuePanel__option'
+                        onClick={() => handleToggleUnit(unit.id)}
+                        role='checkbox'
+                        aria-checked={selectedValues.includes(unit.id)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleToggleUnit(unit.id)
+                            }
+                        }}
+                    >
+                        <div className={`FilterValuePanel__checkbox${selectedValues.includes(unit.id) ? ' FilterValuePanel__checkbox--checked' : ''}`}/>
+                        <span className='FilterValuePanel__option-label'>
+                            {unit.name}
+                        </span>
+                    </div>
+                ))}
+                {filteredUnits.length === 0 && (
+                    <div className='FilterValuePanel__empty'>
+                        {intl.formatMessage({
+                            id: 'FilterPanel.no-matching-org-units',
+                            defaultMessage: 'No matching organisation units',
                         })}
                     </div>
                 )}

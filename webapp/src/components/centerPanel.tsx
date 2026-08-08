@@ -43,6 +43,7 @@ import octoClient from '../octoClient'
 import {Constants} from '../constants'
 
 import propsRegistry from '../properties'
+import {getOrgUnits} from '../store/orgMaster'
 
 import {sendFlashMessage} from './flashMessages'
 
@@ -543,20 +544,48 @@ const CenterPanel = (props: Props) => {
         return names.join(', ')
     }
 
+    const orgUnits = useAppSelector(getOrgUnits(props.board.teamId))
+    const orgUnitsById = useMemo(() => new Map(orgUnits.map((unit) => [unit.id, unit])), [orgUnits])
+
+    // Organisation group labels come from the master, not from the property
+    // template: an organisation property's options array is always empty, so
+    // the generic multi-value grouping would print raw OrgUnit IDs.
+    const getOrgUnitDisplayName = (boardGroup: BoardGroup) => {
+        const unitIds = boardGroup.option.id.split(',').filter((id) => id)
+        if (unitIds.length === 0) {
+            return intl.formatMessage({
+                id: 'centerPanel.undefined',
+                defaultMessage: 'No {propertyName}',
+            }, {propertyName: groupByProperty?.name})
+        }
+
+        // A retired unit keeps its ID on screen rather than becoming "unknown",
+        // which is what the card editor and the CSV export also do.
+        return unitIds.map((unitId) => orgUnitsById.get(unitId)?.name || unitId).join(', ')
+    }
+
     const {visible: visibleGroups, hidden: hiddenGroups} = useMemo(() => {
         const {visible: vg, hidden: hg} = getVisibleAndHiddenGroups(cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty)
         const groupPropertyType = groupByProperty ? propsRegistry.get(groupByProperty.type) : undefined
+
+        let resolve: ((group: BoardGroup) => string) | undefined
         if (groupPropertyType?.isPersonLike && boardUsers) {
-            const resolve = groupPropertyType.isMultiValue ? getMultiPersonDisplayName : getUserDisplayName
+            resolve = groupPropertyType.isMultiValue ? getMultiPersonDisplayName : getUserDisplayName
+        } else if (groupByProperty?.type === 'orgDivision' || groupByProperty?.type === 'orgDepartment') {
+            resolve = getOrgUnitDisplayName
+        }
+
+        if (resolve) {
             vg.forEach((value) => {
-                value.option.value = resolve(value)
+                value.option.value = resolve!(value)
             })
             hg.forEach((value) => {
-                value.option.value = resolve(value)
+                value.option.value = resolve!(value)
             })
         }
         return {visible: vg, hidden: hg}
-    }, [cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty, boardUsers])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty, boardUsers, orgUnitsById])
 
     return (
         <div
