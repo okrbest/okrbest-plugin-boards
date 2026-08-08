@@ -118,12 +118,20 @@ GET /teams/{teamID}/duties      →  handleGetDuties
 요구하는데 보드 관리자는 대개 팀 관리자가 아니라서, 팀 열람 문턱으로 낮춘 읽기
 전용 경로를 따로 둔 것이다.
 
-**결정**: 같은 파일에 `GET /boards/{boardID}/org-profiles`를 더한다. 문턱은 보드
-열람 권한이고, 내부적으로 `App.GetUserOrgProfiles(teamID, userIDs)`를 쓴다.
+**결정**: 같은 파일에 `GET /teams/{teamID}/org-profiles`를 더한다. 문턱은 팀 열람
+권한이고, 대상은 그 팀의 멤버(봇 제외), 내부적으로 `App.GetUserOrgProfiles(teamID,
+userIDs)`를 쓴다.
 
 **근거**: constitution 원칙 II(API → App → Store)를 지키며, 이미 있는 App 메서드를
 그대로 쓴다. 조직 이름은 팀원이 이미 볼 수 있다는 판단이 `org.go` 주석에 있고,
 소속 정보도 같은 성격이다.
+
+**왜 보드 단위가 아닌가**: 사람 선택기는 보드 사용자만 보여주지 않는다.
+`personSelector.tsx`의 `loadOptions`가 `allowAddUsers`일 때 `searchTeamUsers()`로
+팀 전체를 서버 검색하고, `allowAddUsers`는 공개 보드면 참이다. 보드 단위로
+내려보내면 검색으로 새로 나타나는 사용자의 소속을 몰라 좁힘이 성립하지 않는다.
+후보 풀이 팀 전체이므로 소속 데이터도 같은 범위여야 한다
+([contracts/org-profiles-api.md](./contracts/org-profiles-api.md)).
 
 ---
 

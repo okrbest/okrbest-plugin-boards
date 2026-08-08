@@ -34,15 +34,19 @@ Library (colocated `*.test.tsx`)
 
 **Project Type**: 단일 저장소 플러그인 — `server/`(Go) + `webapp/`(React)
 
-**Performance Goals**: 조직 데이터는 보드를 열 때 한 번 받는다. 좁히기는 순수 함수
+**Performance Goals**: 조직 데이터는 팀에 진입할 때 한 번 받는다. 좁히기는 순수 함수
 계산이라 선택지를 열 때마다 서버 왕복이 없다
 
 **Constraints**: 좁히기는 입력 편의이지 접근 통제가 아니다 — 서버는 저장 시 값을
 검증하지 않는다(spec Assumptions). 조직 마스터는 읽기만 하며 이 플러그인이 정리를
 결정하지 않는다
 
+**후보 풀**: 사람 선택기는 공개 보드에서 `searchTeamUsers()`로 **팀 전체를 서버
+검색**한다(`personSelector.tsx`의 `allowAddUsers` 분기). 좁힘 대상이 팀 전체이므로
+소속 데이터도 팀 단위로 받는다
+
 **Scale/Scope**: 새 속성 타입 2개, 새 엔드포인트 1개, 선행 정리 20군데,
-필터 패널 1개. 검증 기준 조직은 본부 7개·부서 18개·사용자 65명
+필터 패널 1개. 검증 기준 조직은 본부 7개·부서 18개·팀원 69명(전원 소속 등록)
 
 ## Constitution Check
 
@@ -78,7 +82,7 @@ specs/005-org-scoped-properties/
 │   └── property-types.md          # 속성 타입이 주변 코드와 맺는 계약
 ├── checklists/
 │   └── requirements.md            # 명세 품질 검증
-└── tasks.md                       # Phase 2 — /speckit-tasks 산출물 (아직 없음)
+└── tasks.md                       # Phase 2 — /speckit-tasks 산출물
 ```
 
 ### Source Code (repository root)
@@ -86,7 +90,7 @@ specs/005-org-scoped-properties/
 ```text
 server/
 ├── api/
-│   └── org.go                     # [수정] GET /boards/{boardID}/org-profiles 추가
+│   └── org.go                     # [수정] GET /teams/{teamID}/org-profiles 추가
 └── app/
     └── org_master.go              # [변경 없음] GetUserOrgProfiles 재사용
 

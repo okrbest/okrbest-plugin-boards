@@ -61,24 +61,24 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 ### 데이터 경로
 
-- [ ] T010 [P] [US1] `server/api/org.go`에 `GET /boards/{boardID}/org-profiles` 핸들러를 추가한다. 문턱은 `PermissionViewBoard`, 대상은 그 보드의 사용자, 내부는 기존 `App.GetUserOrgProfiles`를 쓴다 ([contracts/org-profiles-api.md](./contracts/org-profiles-api.md))
-- [ ] T011 [P] [US1] `server/api/org_test.go`에 실패 테스트를 먼저 쓴다 — 열람 권한 없으면 403, 보드가 보여주지 않는 사용자의 소속은 응답에 없음, 소속 없는 사용자는 행 자체가 생략됨
-- [ ] T012 [US1] `webapp/src/octoClient.ts`에 `getOrgProfiles(boardId)`를 추가한다. 기존 `getOrgUnits`와 같은 모양을 따른다
-- [ ] T013 [US1] `webapp/src/store/orgMaster.ts`에 `orgProfilesByBoardId`를 더하고, 보드를 열 때 받아 오도록 `fetchOrgMaster` 계열에 배선한다
+- [ ] T010 [P] [US1] `server/api/org.go`에 `GET /teams/{teamID}/org-profiles` 핸들러를 추가한다. 문턱은 `PermissionViewTeam`, 대상은 **그 팀의 활성 멤버 중 봇을 제외한 전원**(`TeamMembers`에서 얻는다), 내부는 기존 `App.GetUserOrgProfiles`를 쓴다. 사람 선택기가 공개 보드에서 팀 전체를 검색하므로 보드 단위로는 좁힘이 성립하지 않는다 ([contracts/org-profiles-api.md](./contracts/org-profiles-api.md))
+- [ ] T011 [P] [US1] `server/api/org_test.go`에 실패 테스트를 먼저 쓴다 — 팀 열람 권한 없으면 403, 봇은 응답에 없음, 소속 없는 사용자는 행 자체가 생략됨
+- [ ] T012 [US1] `webapp/src/octoClient.ts`에 `getOrgProfiles(teamId)`를 추가한다. 기존 `getOrgUnits(teamId)`와 같은 모양을 따른다
+- [ ] T013 [US1] `webapp/src/store/orgMaster.ts`에 `orgProfilesByTeamId`를 더하고, 기존 `fetchOrgMaster` thunk에 함께 묶는다. 이미 팀 단위 스토어라 새 fetch 시점이 늘지 않는다
 
 ### 속성 타입
 
 - [ ] T014 [US1] `webapp/src/blocks/board.ts:150`의 `PropertyTypeEnum`에 `'orgDivision'`과 `'orgDepartment'`를 추가한다
-- [ ] T015 [P] [US1] `webapp/src/properties/orgDivision/property.tsx`를 만든다 — `isMultiValue = true`, `canFilter`·`canGroup = true`, `filterValueType = 'orgUnit'` ([contracts/property-types.md](./contracts/property-types.md) 2절)
-- [ ] T016 [P] [US1] `webapp/src/properties/orgDepartment/property.tsx`를 같은 방식으로 만든다
+- [ ] T015 [P] [US1] `webapp/src/properties/orgDivision/property.tsx`를 만든다(FR-001, FR-002) — `isMultiValue = true`, `canFilter`·`canGroup = true`, `filterValueType = 'orgUnit'` ([contracts/property-types.md](./contracts/property-types.md) 2절)
+- [ ] T016 [P] [US1] `webapp/src/properties/orgDepartment/property.tsx`를 같은 방식으로 만든다(FR-001, FR-002)
 - [ ] T017 [US1] `webapp/src/properties/types.tsx`의 `FilterValueType`에 `'orgUnit'`을 추가한다
-- [ ] T018 [US1] `webapp/src/properties/index.tsx`에 두 타입을 등록한다
+- [ ] T018 [US1] `webapp/src/properties/index.tsx`에 두 타입을 등록한다(FR-001)
 
 ### 에디터와 표시
 
 - [ ] T019 [P] [US1] `webapp/src/properties/orgDivision/orgDivision.test.tsx`에 실패 테스트를 쓴다 — 활성 본부만 선택지에 나옴, 값이 ID가 아니라 이름으로 표시됨, 조직 마스터에 없는 ID는 문제 있는 값으로 표시됨(FR-006)
-- [ ] T020 [US1] `webapp/src/properties/orgDivision/orgDivision.tsx` 에디터를 만든다. `webapp/src/properties/multiselect/multiselect.tsx`를 본뜨되 선택지 원본만 조직 마스터로 바꾼다. 새 SCSS 파일을 만들지 않는다 (constitution II)
-- [ ] T021 [US1] `webapp/src/properties/orgDepartment/orgDepartment.tsx` 에디터를 만든다. 이 단계에서는 전체 활성 부서를 보여준다 — 좁히기는 US2에서 얹는다
+- [ ] T020 [US1] `webapp/src/properties/orgDivision/orgDivision.tsx` 에디터를 만든다. `webapp/src/properties/multiselect/multiselect.tsx`를 본뜨되 선택지 원본만 조직 마스터로 바꾼다(FR-003, FR-004, FR-005). 새 SCSS 파일을 만들지 않는다 (constitution II)
+- [ ] T021 [US1] `webapp/src/properties/orgDepartment/orgDepartment.tsx` 에디터를 만든다(FR-003, FR-004). 이 단계에서는 전체 활성 부서를 보여준다 — 좁히기는 US2에서 얹는다
 - [ ] T022 [P] [US1] `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 `PropertyType.OrgDivision`·`PropertyType.OrgDepartment`·`OrgProperty.empty`를 같은 변경으로 추가한다 (constitution V)
 
 **Checkpoint**: 카드에 조직을 적을 수 있다. 좁히기는 아직 없다.
@@ -101,12 +101,12 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 ### 부서 에디터 연결
 
-- [ ] T025 [US2] `webapp/src/properties/orgDepartment/orgDepartment.tsx`가 전체 부서 대신 `허용_부서(선택된_본부)`를 쓰도록 바꾼다. 결과에 `표시_목록`을 적용해 카드에 이미 있는 값을 더한다
-- [ ] T026 [P] [US2] `webapp/src/properties/orgDepartment/orgDepartment.test.tsx`에 좁히기 케이스를 더한다 — 본부 하나, 본부 여럿, 본부 속성 여럿, 본부 비어 있음
+- [ ] T025 [US2] `webapp/src/properties/orgDepartment/orgDepartment.tsx`가 전체 부서 대신 `허용_부서(선택된_본부)`를 쓰도록 바꾼다(FR-007). 결과에 `표시_목록`을 적용해 카드에 이미 있는 값을 더한다
+- [ ] T026 [P] [US2] `webapp/src/properties/orgDepartment/orgDepartment.test.tsx`에 좁히기 케이스를 더한다(SC-001) — 본부 하나, 본부 여럿, 본부 속성 여럿, 본부 비어 있음
 
 ### 본부 변경 시 정리
 
-- [ ] T027 [P] [US2] `webapp/src/mutator.test.ts`에 실패 테스트를 쓴다 — 본부를 바꾸면 범위 밖 부서가 비워지고(FR-016), 그 변경이 **하나의 패치**로 나가며(FR-017), 사람 값은 건드리지 않는다(FR-018)
+- [ ] T027 [P] [US2] `webapp/src/mutator.test.ts`에 실패 테스트를 쓴다(SC-004) — 본부를 바꾸면 범위 밖 부서가 비워지고(FR-016), 그 변경이 **하나의 패치**로 나가며(FR-017), 사람 값은 건드리지 않는다(FR-018)
 - [ ] T028 [US2] `webapp/src/mutator.ts`의 `changePropertyValue`에서 본부 속성이 바뀌면 같은 카드의 부서 속성을 훑어 범위 밖 값을 제거하고, 본부 변경과 **함께 하나의 패치로** 보낸다. 나눠 보내면 중간 상태가 저장되고 되돌리기가 두 단계가 된다
 
 **Checkpoint**: 본부 → 부서 좁히기가 동작한다.
@@ -120,7 +120,7 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 **Independent Test**: 본부·부서가 적힌 카드에서 담당자 선택지에 그 소속만 나오고,
 조직 값을 비우면 전체가 나오는지 확인한다 ([quickstart.md](./quickstart.md) 3절).
 
-- [ ] T029 [P] [US3] `webapp/src/store/orgScope.test.ts`에 `허용_사용자` 케이스를 더한다 — 부서 우선(FR-011), 본부만 있으면 하위 부서 포함(FR-012), 둘 다 없으면 `null`(FR-013), 소속 없는 사용자 제외(FR-014). **`null`과 빈 집합을 구별**하는 케이스를 반드시 넣는다
+- [ ] T029 [P] [US3] `webapp/src/store/orgScope.test.ts`에 `허용_사용자` 케이스를 더한다(SC-002) — 부서 우선(FR-011), 본부만 있으면 하위 부서 포함(FR-012), 둘 다 없으면 `null`(FR-013), 소속 없는 사용자 제외(FR-014). **`null`과 빈 집합을 구별**하는 케이스를 반드시 넣는다
 - [ ] T030 [US3] `webapp/src/store/orgScope.ts`에 `허용_사용자`를 구현한다 ([data-model.md](./data-model.md) 3.3)
 - [ ] T031 [P] [US3] `webapp/src/components/personSelector.test.tsx`에 실패 테스트를 쓴다 — `allowedUserIds`가 없으면 기존과 같이 전체가 나오고, 주어지면 그 안에서만 나온다
 - [ ] T032 [US3] `webapp/src/components/personSelector.tsx`에 선택적 `allowedUserIds?: Set<string>` prop을 더하고 `loadOptions`(117행) 안에서 거른다. prop이 없으면 기존 동작 그대로여야 다른 호출부가 안 바뀐다
@@ -142,10 +142,10 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 앞 단계들은 이것 없이도 완결된다 ([research.md](./research.md) R3).
 
 - [ ] T035 [P] [US4] `webapp/src/components/viewHeader/filterPanel/filterValuePanel.test.tsx`에 실패 테스트를 쓴다 — 조직 속성의 필터 선택지가 조직 마스터에서 오고, 보드 옵션이 비어 있어도 목록이 뜬다
-- [ ] T036 [US4] `webapp/src/components/viewHeader/filterPanel/filterValuePanel.tsx`에 `case 'orgUnit'` 갈래를 더한다. 219행부터의 `PersonFilterPanel`을 본떠 `OrgUnitFilterPanel`을 만들고, 본부·부서를 속성 타입으로 갈라 목록만 바꾼다
+- [ ] T036 [US4] `webapp/src/components/viewHeader/filterPanel/filterValuePanel.tsx`에 `case 'orgUnit'` 갈래를 더한다. 219행부터의 `PersonFilterPanel`을 본떠 `OrgUnitFilterPanel`을 만들고, 본부·부서를 속성 타입으로 갈라 목록만 바꾼다(FR-019)
 - [ ] T037 [P] [US4] `webapp/i18n/en.json`·`ko.json`에 필터 패널 문구(`FilterPanel.orgUnit-*`)를 추가한다
 - [ ] T038 [P] [US4] `webapp/src/csvExporter.test.ts`에 실패 테스트를 쓴다 — 조직 값이 ID가 아니라 이름으로, `|`로 이어져 나온다
-- [ ] T039 [US4] `webapp/src/csvExporter.ts`에 `orgPropertyTypes` 분기와 `exportOrgValue(value, orgUnits)`를 더한다. `exportValue`가 순수 함수라 조직 마스터에 닿지 못하므로, 사람 속성이 이미 쓰는 예외 경로를 따른다 ([research.md](./research.md) R4)
+- [ ] T039 [US4] `webapp/src/csvExporter.ts`에 `orgPropertyTypes` 분기와 `exportOrgValue(value, orgUnits)`를 더한다. `exportValue`가 순수 함수라 조직 마스터에 닿지 못하므로, 사람 속성이 이미 쓰는 예외 경로를 따른다(FR-021, [research.md](./research.md) R4)
 - [ ] T040 [US4] 그룹화 확인 — `webapp/src/boardUtils.ts`, `webapp/src/components/table/table.tsx`, `webapp/src/components/kanban/kanban.tsx`가 Phase 2의 `isMultiValue`를 거치므로 추가 코드 없이 동작해야 한다. 본부로 Group by 했을 때 묶이는지, 값이 여러 개인 카드가 해당 그룹마다 나타나는지 확인한다(FR-020)
 
 **Checkpoint**: 명세의 모든 요구사항이 구현됐다.
@@ -154,9 +154,10 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T041 무효 참조 확인 — DB에서 부서 하나를 `active = false`로 바꾼 뒤 그 값을 가진 카드를 열어 값이 사라지지 않고 문제 있는 값으로 표시되는지 확인한다. 확인 후 되돌린다 ([quickstart.md](./quickstart.md) 1절, FR-006)
-- [ ] T042 하위 호환 확인 — 본부·부서 속성이 없는 보드에서 `webapp/src/properties/person/confirmPerson.tsx`가 `allowedUserIds`를 넘기지 않아 `webapp/src/components/personSelector.tsx`가 기존 경로를 타는지 확인한다. 카드 조회·편집 동작도 이전과 같아야 한다(FR-023)
+- [ ] T041 무효 참조 확인 — DB에서 부서 하나를 `active = false`로 바꾼 뒤 그 값을 가진 카드를 열어 값이 사라지지 않고 문제 있는 값으로 표시되는지 확인한다. 확인 후 되돌린다 ([quickstart.md](./quickstart.md) 1절, FR-006, SC-005)
+- [ ] T042 하위 호환 확인 — 본부·부서 속성이 없는 보드에서 `webapp/src/properties/person/confirmPerson.tsx`가 `allowedUserIds`를 넘기지 않아 `webapp/src/components/personSelector.tsx`가 기존 경로를 타는지 확인한다. 카드 조회·편집 동작도 이전과 같아야 한다(FR-023, SC-006)
 - [ ] T043 품질 게이트 — `make webapp-ci`, `make server-lint`, `make server-test`를 돌리고 실패 스위트 목록이 T001 기준선과 같은지 확인한다. 인터페이스 변경으로 mock이 바뀌었으면 `make generate`를 같은 변경에 포함한다 (constitution I)
+- [ ] T045 [US3] 후보 수 감소 확인 — 담당자 선택지를 세 상태에서 열어 후보 수를 센다. 조직 미지정 69명 → 본부=생산 15명 → 부서=생산팀 7명. 명세 SC-003의 기준선이며, 실제 조직 데이터가 바뀌면 이 수치도 함께 갱신한다
 - [ ] T044 종단 검증 — 플러그인을 빌드·배포하고 [quickstart.md](./quickstart.md) 1~5절을 실제 계정(`minsu.kwon`·`kiyoon.kwon`·`youhong.jun`)으로 훑는다. 소스만 고쳐서는 반영되지 않는다
 
 ---
@@ -221,7 +222,7 @@ Phase 7 (마무리)
 ### MVP First
 
 명세는 US1을 P1로 두지만, **실질 MVP는 Phase 5까지**다. US1만으로는 "조직을 적을
-수 있다"에 그치고, 이 기능이 해결하려는 문제(65명에서 담당자 찾기)는 US3에서야
+수 있다"에 그치고, 이 기능이 해결하려는 문제(69명에서 담당자 찾기)는 US3에서야
 풀린다.
 
 다만 US1은 그 자체로 배포 가능하고 되돌리기 쉽다. 조직 데이터가 실제 화면에서
