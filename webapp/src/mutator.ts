@@ -31,6 +31,8 @@ import {updateCards, markCardModified} from './store/cards'
 import {updateAttachments} from './store/attachments'
 import {updateComments} from './store/comments'
 import {addBoardUsers, removeBoardUsersById} from './store/users'
+import {getOrgUnits} from './store/orgMaster'
+import {selectedUnitIds, allowedDepartments} from './store/orgScope'
 
 // A member with every scheme flag cleared is treated as a removal by the
 // board members reducer.
@@ -764,6 +766,58 @@ class Mutator {
         await this.updateBoardCardProperties(boardId, oldCardProperties, newCardProperties, 'rename option')
     }
 
+    // When 본부 changes, the 부서 values it no longer contains stop making sense.
+    //
+    // Done on the card being written rather than as a follow-up write, so the
+    // whole move is one patch: two writes would briefly persist a card naming a
+    // 부서 outside its 본부, and would make undo a two step affair (FR-017).
+    //
+    // Only 부서 is touched. The assignee is a separate decision and a
+    // reorganisation does not mean someone stopped doing the work (FR-018).
+    private dropOutOfRangeDepartments(boardId: string, newCard: Card, changedPropertyId: string) {
+        const board = store.getState().boards.boards[boardId]
+        if (!board) {
+            return
+        }
+
+        const changed = board.cardProperties?.find((template) => template.id === changedPropertyId)
+        if (changed?.type !== 'orgDivision') {
+            return
+        }
+
+        const divisionIds = selectedUnitIds(newCard, board, 'orgDivision')
+
+        // No 본부 at all means "not narrowed", so nothing is out of range.
+        if (divisionIds.size === 0) {
+            return
+        }
+
+        const units = getOrgUnits(board.teamId)(store.getState())
+
+        // Without the master this cannot tell an out of range value from one it
+        // simply cannot see, and guessing would delete the user's data. Leaving
+        // the values alone is the recoverable choice.
+        if (units.length === 0) {
+            return
+        }
+
+        const allowed = new Set(allowedDepartments(divisionIds, units).map((unit) => unit.id))
+
+        board.cardProperties.forEach((template) => {
+            if (template.type !== 'orgDepartment') {
+                return
+            }
+            const current = newCard.fields.properties[template.id]
+            if (!Array.isArray(current)) {
+                return
+            }
+            const kept = current.filter((id) => allowed.has(id))
+            if (kept.length !== current.length) {
+                newCard.fields.properties[template.id] = kept
+            }
+        })
+    }
+
     async changePropertyValue(boardId: string, card: Card, propertyId: string, value?: string | string[], description = 'change property') {
         const oldValue = card.fields.properties[propertyId]
 
@@ -778,6 +832,8 @@ class Mutator {
         } else {
             delete newCard.fields.properties[propertyId]
         }
+
+        this.dropOutOfRangeDepartments(boardId, newCard, propertyId)
 
         await this.updateBlock(boardId, newCard, card, description)
 
