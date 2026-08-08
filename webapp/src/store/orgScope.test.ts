@@ -4,7 +4,7 @@
 import {Board, IPropertyTemplate, OrgUnit} from '../blocks/board'
 import {Card} from '../blocks/card'
 
-import {selectedUnitIds, allowedDepartments, displayedIds} from './orgScope'
+import {selectedUnitIds, allowedDepartments, displayedIds, allowedUserIds} from './orgScope'
 
 // The four derived sets of specs/005-org-scoped-properties/data-model.md §3.
 describe('store/orgScope', () => {
@@ -122,6 +122,75 @@ describe('store/orgScope', () => {
             // apply". Collapsing them would silently empty every list.
             expect(displayedIds(null, ['dep-finance'])).toBeNull()
             expect(displayedIds(new Set<string>(), ['dep-finance'])).toEqual(new Set(['dep-finance']))
+        })
+    })
+
+    describe('allowedUserIds', () => {
+        const profiles = [
+            {userId: 'u-prod-head', orgUnitId: 'div-production'},
+            {userId: 'u-prod-lead', orgUnitId: 'dep-production'},
+            {userId: 'u-quality', orgUnitId: 'dep-quality'},
+            {userId: 'u-sales', orgUnitId: 'dep-sales'},
+            {userId: 'u-admin-head', orgUnitId: 'div-admin'},
+        ]
+
+        test('department wins when both are named — it is the narrower scope (FR-011)', () => {
+            const allowed = allowedUserIds(
+                new Set(['div-production']),
+                new Set(['dep-production']),
+                units,
+                profiles,
+            )
+
+            expect(allowed).toEqual(new Set(['u-prod-lead']))
+        })
+
+        test('a division alone also covers the people under its departments (FR-012)', () => {
+            // 본부장 sit on the division, 팀장 and 팀원 on a department. Asking for
+            // a division and getting only the 본부장 would be useless.
+            const allowed = allowedUserIds(new Set(['div-production']), new Set(), units, profiles)
+
+            expect(allowed).toEqual(new Set(['u-prod-head', 'u-prod-lead', 'u-quality']))
+        })
+
+        test('neither named means do not narrow, signalled by null (FR-013)', () => {
+            expect(allowedUserIds(new Set(), new Set(), units, profiles)).toBeNull()
+        })
+
+        test('null and an empty set are different answers', () => {
+            // "do not narrow" versus "narrowed, and nobody qualifies".
+            const nobody = allowedUserIds(new Set(), new Set(['dep-empty']), units, profiles)
+
+            expect(nobody).not.toBeNull()
+            expect(nobody?.size).toBe(0)
+        })
+
+        test('users with no organisation are left out (FR-014)', () => {
+            const allowed = allowedUserIds(new Set(['div-production']), new Set(), units, profiles)
+
+            expect(allowed?.has('u-no-org')).toBe(false)
+        })
+
+        test('unions several departments', () => {
+            const allowed = allowedUserIds(
+                new Set(),
+                new Set(['dep-production', 'dep-sales']),
+                units,
+                profiles,
+            )
+
+            expect(allowed).toEqual(new Set(['u-prod-lead', 'u-sales']))
+        })
+
+        test('unions several divisions with their departments', () => {
+            const allowed = allowedUserIds(
+                new Set(['div-production', 'div-admin']),
+                new Set(),
+                units,
+                profiles,
+            )
+
+            expect(allowed).toEqual(new Set(['u-prod-head', 'u-prod-lead', 'u-quality', 'u-admin-head']))
         })
     })
 })

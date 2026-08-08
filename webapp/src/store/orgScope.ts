@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Board, OrgUnit, PropertyTypeEnum} from '../blocks/board'
+import {Board, OrgUnit, PropertyTypeEnum, UserOrgMembership} from '../blocks/board'
 import {Card} from '../blocks/card'
 
 // Narrowing the organisation choices on a card, as pure functions.
@@ -51,6 +51,45 @@ export function allowedDepartments(divisionIds: Set<string>, units: OrgUnit[]): 
         }
         return divisionIds.size === 0 || divisionIds.has(unit.parentId)
     })
+}
+
+// Users the card may assign, given the organisation it names.
+//
+// 부서 wins when both are named because it is the narrower of the two (FR-011).
+// A 본부 on its own reaches the people sitting on its 부서 as well (FR-012) —
+// the org chart puts 본부장 on the division and 팀장·팀원 on a department, so a
+// division that returned only its 본부장 would answer nobody's question.
+//
+// null means "not narrowed" (FR-013). Users with no assignment are absent from
+// the profile list to begin with, so they fall out on their own (FR-014).
+export function allowedUserIds(
+    divisionIds: Set<string>,
+    departmentIds: Set<string>,
+    units: OrgUnit[],
+    profiles: UserOrgMembership[],
+): Set<string> | null {
+    if (departmentIds.size === 0 && divisionIds.size === 0) {
+        return null
+    }
+
+    const scope = new Set<string>(departmentIds.size > 0 ? departmentIds : divisionIds)
+
+    // Only a division scope reaches downward. A department is already a leaf.
+    if (departmentIds.size === 0) {
+        units.forEach((unit) => {
+            if (unit.type === 'department' && divisionIds.has(unit.parentId)) {
+                scope.add(unit.id)
+            }
+        })
+    }
+
+    const allowed = new Set<string>()
+    profiles.forEach((profile) => {
+        if (scope.has(profile.orgUnitId)) {
+            allowed.add(profile.userId)
+        }
+    })
+    return allowed
 }
 
 // What a list actually shows: the allowed set widened by whatever the card

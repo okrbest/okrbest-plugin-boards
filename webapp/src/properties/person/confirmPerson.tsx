@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 
-import React, {useCallback, useState} from 'react'
+import React, {useCallback, useMemo, useState} from 'react'
 import {useIntl} from 'react-intl'
 
 import {ActionMeta, SingleValue, MultiValue} from 'react-select'
@@ -12,6 +12,9 @@ import mutator from '../../mutator'
 import {useAppSelector} from '../../store/hooks'
 import {getBoardUsers, getMe} from '../../store/users'
 import {BoardMember, BoardTypeOpen, MemberRole} from '../../blocks/board'
+
+import {getOrgUnits, getOrgProfiles} from '../../store/orgMaster'
+import {selectedUnitIds, allowedUserIds as computeAllowedUserIds, displayedIds} from '../../store/orgScope'
 
 import {PropertyProps} from '../types'
 import {useHasPermissions} from '../../hooks/permissions'
@@ -39,6 +42,33 @@ const ConfirmPerson = (props: PropertyProps): React.JSX.Element => {
     } else if (Array.isArray(propertyValue) && propertyValue.length > 0) {
         userIDs = propertyValue
     }
+
+    // Narrowed by whatever organisation the card names. This component backs
+    // both person and multiPerson, and PropertyValueElement routes the card
+    // dialog, the table cell and the board card through it, so wiring it here
+    // covers every screen that edits an assignee (FR-022).
+    //
+    // Anyone already on the card stays offered even when out of scope, which
+    // covers the three ways that happens at once — no organisation on record,
+    // a reassignment, and a retired unit (FR-015).
+    const orgUnits = useAppSelector(getOrgUnits(board.teamId))
+    const orgProfiles = useAppSelector(getOrgProfiles(board.teamId))
+    const allowedUserIds = useMemo(
+        () => displayedIds(
+            computeAllowedUserIds(
+                selectedUnitIds(card, board, 'orgDivision'),
+                selectedUnitIds(card, board, 'orgDepartment'),
+                orgUnits,
+                orgProfiles,
+            ),
+            userIDs,
+        ),
+        // Keyed on the joined IDs rather than the array: userIDs is rebuilt on
+        // every render, and an unstable Set here would rebuild loadOptions and
+        // make the async selector refetch on each keystroke.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [card, board, orgUnits, orgProfiles, userIDs.join(',')],
+    )
 
     const onChange = (items: SingleValue<IUser> | MultiValue<IUser>, action: ActionMeta<IUser>) => {
         if (Array.isArray(items)) {
@@ -110,6 +140,7 @@ const ConfirmPerson = (props: PropertyProps): React.JSX.Element => {
                 readOnly={readOnly}
                 emptyDisplayValue={emptyDisplayValue}
                 property={property}
+                allowedUserIds={allowedUserIds}
                 onChange={onChange}
             />
         </>
