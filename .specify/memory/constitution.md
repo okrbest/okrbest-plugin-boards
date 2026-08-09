@@ -1,33 +1,23 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.0 → 1.2.0 (MINOR — 기존 원칙의 실질 확장)
-- Modified principles:
-  - I. 패키지별 품질 게이트: 종단 검증 요건 추가 (빌드·배포 후 quickstart.md를
-    실제 계정으로 훑고 결과 제시), 회귀 판정을 실패 목록 diff로 명시
-  - IV. 동작 변경 시 테스트 동반: 실패 출력 증거 요건 추가 (첫 실행에서 통과한
-    테스트는 되돌려 실패를 확인하거나 미검증 표시)
-  - VIII. 집중 브랜치 + PR: 브랜치 생성 시점(작업 시작 전), 마감 4단계,
-    rebase 병합 고정 명시
-  - IX. Spec 주도 개발 워크플로: "superpowers가 런타임에 집행한다"는 서술을
-    사실에 맞게 정정 — 개별 스킬은 명시적 호출이 필요하다
-- Added sections: 없음
+- Version change: 1.2.0 → 1.3.0 (MINOR — 새 절 추가)
+- Modified principles: 없음 (원칙 본문 변경 없음)
+- Added sections: 개발 워크플로 > 한국어 문체
+    번역투·명사화·영어 은유 직역·소제목 관형절을 금지한다. `specs/` 산출물과
+    에이전트 응답 양쪽에 적용한다.
 - Removed sections: 없음
 - Templates requiring updates:
-  - ✅ .specify/templates/tasks-template.md (Polish 단계에 게이트·종단·SC 검증
-       과제 3건 고정)
-  - ✅ .claude/skills/speckit-implement/SKILL.md (3-bis 규율 호출 단계, TDD 증거
-       의무, 종단 검증, 세션 마감 절 추가)
-  - ✅ CLAUDE.md (핸드오프 절에 브랜치 생성 시점 추가)
-  - ✅ SPEC_KIT_GUIDE.md (superpowers 자동 작동 서술 정정, 흐름도에 종단 검증·PR 추가)
-  - ✅ .specify/templates/plan-template.md (Constitution Check가 동적 참조 — 변경 불필요)
-  - ✅ .specify/templates/spec-template.md (변경 불필요)
+  - ✅ CLAUDE.md · AGENTS.md · GEMINI.md · .cursor/rules/boards-workflow.mdc
+       (압축본 + 이 절 참조를 실었다. 전문을 네 곳에 복사하면 갈라지므로 정본은
+        constitution 하나다)
+  - ✅ .specify/templates/* (변경 불필요 — 문체는 산출물 구조와 무관)
 - Follow-up TODOs: 없음
-- 개정 계기: specs/005-org-scoped-properties 구현 후 감사에서 규율 적용 실태를
-  측정. 게이트 검증(원칙 I)은 증거를 요구해 지켜졌으나 TDD는 9쌍 중 4쌍만
-  적용됐고, PR 조항은 74커밋 0 PR로 한 번도 지켜지지 않았다. 증거를 요구하는
-  규칙만 작동한다는 관찰에 따라 원칙 IV·VIII을 증거·절차 기반으로 바꾸고,
-  결함이 실제로 발견되는 종단 검증을 원칙 I에 들였다. GitHub 브랜치 보호와
-  rebase 전용 머지 설정으로 VIII을 기계적으로 강제한다.
+- 개정 계기: 응답에서 "speckit 문서를 규율로 변환하는 다리" 같은 명사구 과적재가
+  나왔다. 개인 전역 설정의 번역투 목록은 어미·조사 패턴만 잡아 명사화와 은유가
+  빠져나갔다. 더 큰 문제는 위치였다 — "한국어로 쓴다"는 에이전트 파일 4종에
+  커밋돼 팀·도구 전체에 걸려 있었으나, "어떻게 쓰는가"는 개인 홈에만 있어 다른
+  사람이나 다른 도구가 `specs/`를 작성하면 적용되지 않았다. 규칙은 쓰이는 지점에
+  있어야 작동한다.
 -->
 
 # OKR.BEST Boards Plugin (okrbest-plugin-boards) Constitution
@@ -235,6 +225,42 @@ brainstorming 임시 작업 폴더이며 신규 산출물은 추적하지 않는
 에이전트 응답과 명세 문서는 한국어로 작성한다. 코드 식별자·파일 경로·셸 명령·
 FR/SC 식별자·BDD 키워드(Given/When/Then)는 원형을 유지한다.
 
+### 한국어 문체
+
+한국어 개발 블로그·기술 문서 문체로 쓴다. 짧은 문장, 능동태, 단정적 서술.
+`specs/` 산출물과 에이전트 응답 양쪽에 적용한다.
+
+**영어 번역투를 쓰지 않는다.**
+
+| 쓰지 않음 | 대신 |
+|---|---|
+| ~하는 것을 확실히 하세요 | ~하세요 / ~한다 |
+| ~에 직면하다 | ~가 생긴다, ~를 만난다 |
+| ~를 가지다/가지고 있다 | ~가 있다, ~다 |
+| ~에 대해 ~를 수행하다 | ~를 한다 |
+| ~되어질 수 있다 (이중 피동) | 능동으로 |
+| ~적인, ~에 있어서, ~를 통해, ~와 관련하여 | 대개 뺀다 |
+
+**명사화하지 않는다.** 동사로 쓸 수 있으면 동사로 쓴다.
+
+- "문서를 규율로 변환하는 다리" → "문서로 규율을 작동시킨다"
+- "반대 신호 제거" → "반대로 작동하는 문장을 지운다"
+- "증거 요구 없음" → "증거를 요구하지 않는다"
+
+**영어 기술문서의 은유를 직역하지 않는다.** bridge·lever·hub·surface·axis 계열은
+한국어에서 굳지 않아 물리적 뜻으로 먼저 읽힌다. 동사로 푼다 — "다리를 놓는다"가
+아니라 "잇는다", "레버가 크다"가 아니라 "효과가 크다".
+
+**소제목에 관형절("~하는 X")을 넣지 않는다.** 수식어가 앞에 붙는 한국어에서는
+핵심어가 맨 뒤로 밀려 훑기 어렵다. 서술문이나 의문문으로 쓴다 — "설계 — 문서를
+규율로 변환하는 다리"가 아니라 "설계 — 문서를 규율로 바꾼다" 또는 "왜 지금까지
+안 지켜졌나".
+
+주어를 남발하지 않는다. "그것은", "이것은"은 한국어에서 대부분 뺀다. 응답은 과한
+존댓말·사과·양해 문구 없이 본론부터 쓴다.
+
+소리 내어 읽어 한 번에 안 끝나면 고친다. 걸리는 자리가 대개 과적재된 관형절이다.
+
 ## Governance
 
 이 constitution은 다른 관례·문서보다 우선한다. 개정은 PR로 제안하고 버전을 시맨틱
@@ -243,4 +269,4 @@ FR/SC 식별자·BDD 키워드(Given/When/Then)는 원형을 유지한다.
 plan의 Complexity Tracking에 문서화한다. `/speckit-plan`·`/speckit-analyze`가
 Constitution Check 게이트로 자동 참조한다.
 
-**Version**: 1.2.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-08-10
+**Version**: 1.3.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-08-10

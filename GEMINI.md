@@ -74,7 +74,18 @@ Detailed project rules and context have been migrated to the `.gemini/instructio
     산출물(`specs/<NNN-feature>/`)을 읽어 따른다.
 
 ## Contribution Guidelines
-*   **Language**: All code comments and documentation responses should be in **Korean** (as per `project.md`).
+*   **Language**: 코드 주석·문서·응답은 **한국어**로 쓴다.
+
+    한국어 개발 블로그·기술 문서 문체. 짧은 문장, 능동태, 단정적 서술.
+    *   **번역투 금지** — "~하는 것을 확실히", "~에 직면하다", "~를 가지다",
+        "~되어질 수 있다", 불필요한 "~적인·~를 통해"
+    *   **명사화 금지** — "증거 요구 없음" → "증거를 요구하지 않는다"
+    *   **영어 은유 직역 금지** — bridge·lever·hub 계열은 동사로 푼다
+    *   **소제목에 관형절("~하는 X") 금지** — 서술문이나 의문문으로
+    *   주어 남발 금지. 응답은 과한 존댓말·사과 없이 본론부터
+
+    전문은 `.specify/memory/constitution.md`의 "개발 워크플로 > 한국어 문체".
+    코드 식별자·파일 경로·셸 명령·FR/SC 식별자는 원형 유지.
 *   **Code Style**: Follow the patterns in existing code. Avoid over-engineering.
 *   **TDD (Test-Driven Development)**: 
     *   새로운 기능 구현 시 테스트 코드를 먼저 작성하는 TDD 방식을 강력히 권장합니다.

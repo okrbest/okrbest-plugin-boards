@@ -338,9 +338,13 @@ git branch upstream-main upstream/main
 `.sisyphus/`·`docs/plans/`(과거 계획 도구 산출물)는 **보존하되 신규 작성은 하지
 않습니다**. 신규 기능 명세는 항상 `specs/`에 만듭니다.
 
-**명세 문서 언어:** `specs/` 문서는 **한국어**로 작성합니다. 코드 식별자,
+**명세 문서 언어와 문체:** `specs/` 문서는 **한국어**로 작성합니다. 코드 식별자,
 파일 경로, FR/SC 식별자, BDD 키워드(Given/When/Then)는 원형 유지.
-(상세: [CLAUDE.md](CLAUDE.md))
+
+문체도 규칙입니다 — 번역투·명사화·영어 은유 직역·소제목의 관형절을 쓰지 않습니다.
+정본은 [constitution](.specify/memory/constitution.md)의 "개발 워크플로 > 한국어 문체"이며,
+네 에이전트 파일(`CLAUDE.md`·`AGENTS.md`·`GEMINI.md`·`.cursor/rules/`)이 압축본을
+싣고 있어 어느 도구로 작업해도 걸립니다.
 
 **프로젝트 규칙 (Constitution 요약):** ① 패키지별 품질 게이트 ② 레이어 경계·기존 UI 패턴 차용
 (`API → App → Store`) ③ 타입·오류 처리 엄격성(`as any`·`@ts-ignore`·빈 catch 금지)
