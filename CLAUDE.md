@@ -25,6 +25,17 @@ Upstream(mattermost/mattermost-plugin-boards) 커밋 선별 반영은 `/speckit-
 
 기능 작업은 **복잡도로 분기**한다.
 
+**어느 쪽이든 작업 브랜치를 먼저 만든다** (constitution 원칙 VIII). `main`은
+브랜치 보호로 직접 push가 막혀 있고, `main`에서 설계를 시작하면 되돌릴 지점이 없다.
+
+```bash
+git switch main && git pull --ff-only
+git switch -c <NNN>-<기능-슬러그>    # NNN은 specs/ 의 다음 순번
+```
+
+`/speckit-specify`는 현재 브랜치가 `main`이 아니면 그 브랜치를 그대로 쓴다 —
+새 브랜치를 만들지 않는다. 마감은 PR → `gh pr merge --rebase` → `git pull --ff-only`.
+
 - **단순/명확**: 브레인스토밍 없이 바로 `/speckit-specify`.
 - **복잡**: superpowers `brainstorming`으로 의도·요구사항·설계를 정리한 뒤 `/speckit-specify`로 넘긴다.
 

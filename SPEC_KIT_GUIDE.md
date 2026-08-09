@@ -14,7 +14,7 @@
 ## 1. 두 도구를 왜 함께 쓰나
 
 - **[Spec Kit](https://github.com/github/spec-kit)** — *무엇을·왜* 만들지 정하는 **명세 파이프라인**. 바로 코딩하지 않고 `명세 → 계획 → 작업 → 구현` 순서로 진행. 산출물 `specs/<NNN>/`이 공식 기준 문서(source of truth).
-- **[Superpowers](https://github.com/obra/superpowers)** — *어떻게* 만들지 통제하는 **구현 규율**(TDD·검증·디버깅·리뷰). 코드를 짜는 순간 자동으로 작동.
+- **[Superpowers](https://github.com/obra/superpowers)** — *어떻게* 만들지 통제하는 **구현 규율**(TDD·검증·근본 원인 디버깅). SessionStart 훅이 자동 주입하는 것은 `using-superpowers`(호출하라는 지시)뿐이며, 개별 스킬은 `/speckit-implement`의 3-bis 단계에서 명시적으로 호출한다.
 
 > **핵심 개념:** Spec Kit이 **설계도**를 그리고, Superpowers가 **시공 규칙**을 강제합니다. 둘은 겹치지 않고 보완합니다.
 
@@ -22,7 +22,7 @@
 |---|---|---|
 | 담당 | 무엇을·왜 (명세/계획) | 어떻게 (구현 규율) |
 | 형태 | 저장소에 커밋된 스킬 (clone하면 있음) | 사용자 전역 플러그인 (각자 설치) |
-| 호출 | 수동 `/speckit-*` | 자동 (SessionStart 훅) |
+| 호출 | 수동 `/speckit-*` | 디스패처만 자동 주입, 개별 스킬은 implement에서 호출 |
 
 ---
 
@@ -88,8 +88,18 @@ clone만 하면 아래가 따라옵니다 — 개인 환경 설정 없이 팀 �
 전체 흐름 한 줄:
 
 ```
-아이디어 → (0.brainstorming) → 1.specify → 2.clarify → 3.plan → 4.tasks → 5.analyze → 6.implement
-              복잡할 때만                    권장                              권장      ← 여기서 Superpowers 작동
+브랜치 생성 → (0.brainstorming) → 1.specify → 2.clarify → 3.plan → 4.tasks → 5.analyze
+   필수          복잡할 때만                     권장                            권장
+   → 6.implement → 7.종단 검증 → 8.PR · rebase 머지
+      ↑ Superpowers 규율 호출      ↑ 결함이 실제로 발견되는 자리   ↑ main은 직접 push 차단
+```
+
+**브랜치를 먼저 만듭니다.** `main`은 브랜치 보호로 직접 push가 막혀 있습니다
+(constitution 원칙 VIII).
+
+```bash
+git switch main && git pull --ff-only
+git switch -c <NNN>-<기능-슬러그>
 ```
 
 **시작 분기 — 아이디어가 얼마나 명확한가?**
@@ -165,19 +175,29 @@ clone만 하면 아래가 따라옵니다 — 개인 환경 설정 없이 팀 �
 
 ## 4. 구현 중 자동으로 지켜지는 규율
 
-`/speckit-implement` 동안 별도 호출 없이 아래 규율이 적용됩니다. 모두
-[Constitution](.specify/memory/constitution.md)의 규칙을 구현 중에 실제로 강제하는 장치입니다.
+`/speckit-implement`가 3-bis 단계에서 아래를 **명시적으로 호출**합니다. 자동으로
+적용되지 않습니다 — 2026-08 감사에서 호출 없이는 TDD가 9쌍 중 4쌍만 지켜진 것을
+확인했습니다.
 
-| Superpowers 스킬 | 하는 일 |
-|---|---|
-| `test-driven-development` | 실패하는 테스트를 **먼저** 작성 |
-| `verification-before-completion` | 검증 명령 **증거**를 보인 후에만 "완료" 선언 |
-| `systematic-debugging` | 땜질 수정 전에 **근본 원인** 조사 |
-| `using-git-worktrees` | 작업당 격리 브랜치/워크스페이스 |
-| `requesting`/`receiving-code-review` | 머지 전 리뷰, 리뷰 의견 맹목 수용 금지 |
+| Superpowers 스킬 | 하는 일 | 증거 |
+|---|---|---|
+| `test-driven-development` | 실패하는 테스트를 **먼저** 작성 | 구현 전 실패 출력 |
+| `verification-before-completion` | **증거**를 보인 후에만 "완료" 선언 | 게이트 출력 + 기준선 diff |
+| `systematic-debugging` | 땜질 전에 **근본 원인** 조사 | 원인 지목 + 되돌려 재현 |
 
-에이전트가 이 규율을 건너뛰는 것처럼 보이면 그냥 지적하세요
-("테스트 먼저 작성해줘", "검증 증거 보여줘").
+**증거가 없으면 그 과제는 완료가 아닙니다.** 규율을 건너뛰는 것처럼 보이면 지적하세요
+("실패 출력 보여줘", "기준선 대비 diff 보여줘").
+
+**종단 검증은 선택이 아닙니다.** 게이트를 통과해도 결함이 남습니다 — 001~004 모두
+게이트 통과 뒤 수정이 이어졌고, 005는 게이트 5종을 전부 통과한 상태에서 종단 검증이
+결함을 잡았습니다.
+
+```bash
+make server-linux
+cd webapp && npx webpack --mode=development && cd ..
+make deploy-from-watch
+# 그 뒤 quickstart.md를 실제 계정으로 훑는다
+```
 
 **품질 게이트 (constitution 원칙 I — 변경된 패키지만):**
 
