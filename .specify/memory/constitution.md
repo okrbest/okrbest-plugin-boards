@@ -1,23 +1,33 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0 (MINOR — 기존 원칙의 실질 확장)
+- Version change: 1.1.0 → 1.2.0 (MINOR — 기존 원칙의 실질 확장)
 - Modified principles:
-  - II. 레이어 경계 준수 → II. 레이어 경계·기존 패턴 준수
-    (UI 일관성 규칙 추가: 기존 패턴 우선 차용, 신규 SCSS 파일·색상 하드코딩·
-     중복 컴포넌트 신설 금지, 예외 시 Complexity Tracking 기록)
-- Added sections: 없음 (원칙 II 내부 확장)
+  - I. 패키지별 품질 게이트: 종단 검증 요건 추가 (빌드·배포 후 quickstart.md를
+    실제 계정으로 훑고 결과 제시), 회귀 판정을 실패 목록 diff로 명시
+  - IV. 동작 변경 시 테스트 동반: 실패 출력 증거 요건 추가 (첫 실행에서 통과한
+    테스트는 되돌려 실패를 확인하거나 미검증 표시)
+  - VIII. 집중 브랜치 + PR: 브랜치 생성 시점(작업 시작 전), 마감 4단계,
+    rebase 병합 고정 명시
+  - IX. Spec 주도 개발 워크플로: "superpowers가 런타임에 집행한다"는 서술을
+    사실에 맞게 정정 — 개별 스킬은 명시적 호출이 필요하다
+- Added sections: 없음
 - Removed sections: 없음
 - Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md (Constitution Check가 constitution을
-       동적 참조 — 구조 변경 불필요)
-  - ✅ .specify/templates/spec-template.md (수정 불필요 — 명세는 구현 방식을 다루지 않음)
-  - ✅ .specify/templates/tasks-template.md (수정 불필요 — 과제 분류 체계 변화 없음)
-  - ✅ CLAUDE.md (SPECKIT 블록은 plan 참조만 — 수정 불필요)
+  - ✅ .specify/templates/tasks-template.md (Polish 단계에 게이트·종단·SC 검증
+       과제 3건 고정)
+  - ✅ .claude/skills/speckit-implement/SKILL.md (3-bis 규율 호출 단계, TDD 증거
+       의무, 종단 검증, 세션 마감 절 추가)
+  - ✅ CLAUDE.md (핸드오프 절에 브랜치 생성 시점 추가)
+  - ✅ SPEC_KIT_GUIDE.md (superpowers 자동 작동 서술 정정, 흐름도에 종단 검증·PR 추가)
+  - ✅ .specify/templates/plan-template.md (Constitution Check가 동적 참조 — 변경 불필요)
+  - ✅ .specify/templates/spec-template.md (변경 불필요)
 - Follow-up TODOs: 없음
-- 개정 계기: specs/002-card-property-access의 /speckit-analyze에서 신규 UI 계획이
-  기존 shareBoard 패턴(MenuWrapper+Menu.Text, .tabs-content, .user-item 계열,
-  CSS 변수) 재사용 지시 없이 작성된 것을 CRITICAL로 검출. plan·tasks 수정만으로는
-  다음 기능에서 재발하므로 원칙에 반영.
+- 개정 계기: specs/005-org-scoped-properties 구현 후 감사에서 규율 적용 실태를
+  측정. 게이트 검증(원칙 I)은 증거를 요구해 지켜졌으나 TDD는 9쌍 중 4쌍만
+  적용됐고, PR 조항은 74커밋 0 PR로 한 번도 지켜지지 않았다. 증거를 요구하는
+  규칙만 작동한다는 관찰에 따라 원칙 IV·VIII을 증거·절차 기반으로 바꾸고,
+  결함이 실제로 발견되는 종단 검증을 원칙 I에 들였다. GitHub 브랜치 보호와
+  rebase 전용 머지 설정으로 VIII을 기계적으로 강제한다.
 -->
 
 # OKR.BEST Boards Plugin (okrbest-plugin-boards) Constitution
@@ -44,6 +54,14 @@ Sync Impact Report
   포함한다.
 
 게이트를 통과하지 못한 변경은 준비되지 않은 것이다. 게이트를 우회하는 커밋·머지 금지.
+
+**화면 동작이 바뀌는 변경은 게이트만으로 부족하다.** 빌드·배포한 뒤 실제 계정으로
+`quickstart.md`를 훑고 그 결과를 완료 근거로 제시한다. 001~004에서 게이트를 통과한
+뒤 매번 수정이 이어졌다 — 이 저장소의 결함은 화면을 조작해야 드러난다.
+
+회귀 판정은 실패 개수가 아니라 **실패 목록 diff**로 한다. 깨끗한 상태에서도 실패가
+있다(server 8건, webapp 57스위트, tsc 40건, eslint 2477줄). `make webapp-ci`는
+기준선에서도 exit=2이므로 세 단계를 따로 돌려 대조한다.
 
 ### II. 레이어 경계·기존 패턴 준수 (NON-NEGOTIABLE)
 
@@ -97,7 +115,11 @@ webapp은 상태를 Redux Toolkit 슬라이스(`webapp/src/store/`)로 관리하
 - webapp: Jest + React Testing Library, 대상 옆에 colocated `*.test.tsx` / `*.test.ts`.
 
 버그 수정은 회귀 테스트를 포함한다. 통과를 위해 테스트를 약화·스킵·삭제하는 것을
-금지한다. 스냅샷은 변경 의도를 확인한 뒤에만 `npm run updatesnapshot`으로 갱신한다.
+금지한다.
+
+**테스트 과제는 실패 출력을 남긴 뒤에만 완료로 표시한다.** 첫 실행에서 통과한
+테스트는 아무것도 증명하지 않는다 — 구현을 되돌려 실패를 확인하거나 `미검증`으로
+표시한다. 스냅샷은 변경 의도를 확인한 뒤에만 `npm run updatesnapshot`으로 갱신한다.
 
 예외: upstream 선별 반영(`/speckit-sync`)에서 원본 그대로 cherry-pick하는 커밋
 (`Upstream:` 참조 포함)은 테스트 동반 요건의 예외다. 대신 반영 직후 접촉 패키지
@@ -135,7 +157,22 @@ webapp은 상태를 Redux Toolkit 슬라이스(`webapp/src/store/`)로 관리하
 ### VIII. 집중 브랜치 + Conventional Commits + PR
 
 `main` 직접 커밋 금지 (`main`은 Makefile의 `PROTECTED_BRANCH`이며 태깅 기준 브랜치다).
-작업당 브랜치 1개, PR 경유 머지. 커밋 메시지는 Conventional Commits 접두사
+작업당 브랜치 1개, PR 경유 머지. GitHub 브랜치 보호가 `main` 직접 push를 차단하므로
+PR이 유일한 경로다.
+
+**브랜치는 작업을 시작하기 전에 만든다** — brainstorming을 하는 기능이면 그 대화
+전에, 바로 `/speckit-specify`로 가는 기능이면 그 직전에. `main`에서 설계를 시작하면
+되돌릴 지점이 없다.
+
+마감은 넷을 지킨다.
+
+1. 품질 게이트 + 종단 검증 증거 제시 (원칙 I)
+2. `git push -u origin <브랜치>` → `gh pr create --base main`
+3. 사용자 확인 후 `gh pr merge --rebase --delete-branch`
+4. `git switch main && git pull --ff-only`
+
+병합은 **rebase 고정**. 저장소 설정이 squash·merge commit을 막아 선형 이력을
+구조적으로 보장한다. 커밋 메시지는 Conventional Commits 접두사
 (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)를 사용하며 본문은 한국어를 허용한다
 (기존 관례). PR은 집중적·최소 범위로 유지한다.
 
@@ -159,10 +196,13 @@ webapp은 상태를 Redux Toolkit 슬라이스(`webapp/src/store/`)로 관리하
 `.sisyphus/`(과거 계획 도구 산출물), `docs/plans/`. `docs/superpowers/`는
 brainstorming 임시 작업 폴더이며 신규 산출물은 추적하지 않는다(.gitignore).
 
-구현 규율은 superpowers 플러그인이 런타임에 집행한다: 실패 테스트 우선
-(test-driven-development), 증거 기반 완료 선언(verification-before-completion),
-근본 원인 우선 디버깅(systematic-debugging). superpowers는 원칙 I·IV를 운영화하고,
-spec-kit은 spec/plan 산출물을 소유한다.
+구현 규율은 superpowers 스킬로 집행한다. **자동 적용되지 않는다** — SessionStart
+훅이 주입하는 것은 `using-superpowers`(호출하라는 지시)이지 개별 스킬이 아니다.
+`/speckit-implement` 시작 시 `test-driven-development`와
+`verification-before-completion`을 명시적으로 호출하고, 예상 밖 실패를 만나면
+`systematic-debugging`을 호출한다. 호출 지점은 `.claude/skills/speckit-implement/`의
+3-bis 단계다. superpowers는 원칙 I·IV를 운영화하고, spec-kit은 spec/plan 산출물을
+소유한다.
 
 예외: upstream 선별 반영(`/speckit-sync`)의 cherry-pick/adapt 커밋은 커밋별 의도
 분석·대화형 승인을 거치므로 spec 파이프라인 요건의 예외다. 대규모·큰 영향 upstream
@@ -203,4 +243,4 @@ FR/SC 식별자·BDD 키워드(Given/When/Then)는 원형을 유지한다.
 plan의 Complexity Tracking에 문서화한다. `/speckit-plan`·`/speckit-analyze`가
 Constitution Check 게이트로 자동 참조한다.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-08-03
+**Version**: 1.2.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-08-10

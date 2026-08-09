@@ -98,6 +98,33 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **IF EXISTS**: Read .specify/memory/constitution.md for governance constraints
    - **IF EXISTS**: Read quickstart.md for integration scenarios
 
+3-bis. **구현 규율 로드** (필수 — 4단계로 넘어가기 전):
+
+   아래를 `Skill` 도구로 호출한다. **자동 적용되지 않는다** — SessionStart 훅이
+   주입하는 것은 `using-superpowers`(호출하라는 지시)이지 개별 스킬이 아니다.
+
+   - `superpowers:test-driven-development`
+   - `superpowers:verification-before-completion`
+
+   예상 밖 실패를 만나면 그 자리에서 `superpowers:systematic-debugging`을 부른다.
+
+   방금 읽은 문서를 규율로 바꾼다. 각 행의 **증거가 없으면 그 과제는 완료가 아니다.**
+
+   | 문서 | 뽑는 것 | 증거 |
+   |---|---|---|
+   | tasks.md 테스트 과제 | TDD 대상 | 구현 전 **실패 출력** |
+   | tasks.md 구현 과제 | 위 실패가 통과로 바뀔 대상 | 같은 테스트의 통과 출력 |
+   | plan.md Constitution Check | 단계별 게이트 | 게이트 출력 + 기준선 diff |
+   | spec.md SC-### | 종단 판정 기준 | 실측값 (추정 금지) |
+   | quickstart.md | 종단 검증 절차 | 절별 통과/실패 기록 |
+   | contracts/ | 계약 테스트 대상 | 응답·문턱마다 대응하는 테스트 |
+
+   **기준선을 먼저 측정한다.** `git stash -u`로 미추적 파일까지 치운 뒤 게이트를
+   돌려 실패 목록을 저장한다. 이 저장소는 깨끗한 상태에서도 실패가 있으므로
+   (server 8건, webapp 57스위트, tsc 40건, eslint 2477줄) 회귀 판정은 개수가
+   아니라 **목록 diff**로 한다. `make webapp-ci`는 기준선에서도 exit=2다 —
+   세 단계를 따로 돌려 대조한다.
+
 4. **Project Setup Verification**:
    - **REQUIRED**: Create/verify ignore files based on actual project setup:
 
@@ -151,13 +178,16 @@ You **MUST** consider the user input before proceeding (if not empty).
 6. Execute implementation following the task plan:
    - **Phase-by-phase execution**: Complete each phase before moving to the next
    - **Respect dependencies**: Run sequential tasks in order, parallel tasks [P] can run together  
-   - **Follow TDD approach**: Execute test tasks before their corresponding implementation tasks
+   - **TDD (증거 기반)**: 테스트 과제는 **실패 출력을 남긴 뒤에만** [X]로 표시한다.
+     첫 실행에서 통과한 테스트는 아무것도 증명하지 않는다 — 구현을 되돌려 실패를
+     확인하거나 해당 과제를 `미검증`으로 적는다
    - **File-based coordination**: Tasks affecting the same files must run sequentially
    - **Validation checkpoints**: Verify each phase completion before proceeding
 
 7. Implementation execution rules:
    - **Setup first**: Initialize project structure, dependencies, configuration
-   - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
+   - **Tests before code**: tasks.md가 테스트 과제를 지정한 **모든 쌍**에 적용한다.
+     "필요하면"이 아니다. 건너뛰려면 그 사유를 해당 과제 옆에 적는다
    - **Core development**: Implement models, services, CLI commands, endpoints
    - **Integration work**: Database connections, middleware, logging, external services
    - **Polish and validation**: Unit tests, performance optimization, documentation
@@ -171,10 +201,19 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file.
 
 9. Completion validation:
-   - Verify all required tasks are completed
-   - Check that implemented features match the original specification
-   - Validate that tests pass and coverage meets requirements
-   - Confirm the implementation follows the technical plan
+   - 모든 과제가 [X]인가 (미검증·건너뜀은 사유가 적혀 있는가)
+   - **품질 게이트** — 변경된 패키지만. 실패 목록이 3-bis의 기준선과 같은지
+     diff로 보인다. 개수 비교는 근거가 되지 않는다
+   - **종단 검증** — 빌드·배포한 뒤 quickstart.md를 실제 계정으로 훑는다.
+     소스만 고치면 화면에 반영되지 않는다
+     ```bash
+     make server-linux
+     cd webapp && npx webpack --mode=development && cd ..
+     make deploy-from-watch
+     ```
+   - **SC 검증** — spec.md의 각 SC-###를 실측값으로 확인한다. 명세의 수치가
+     추정이었으면 실측값으로 명세를 갱신한다
+   - 게이트·종단·SC 결과를 tasks.md 하단에 표로 기록한다 (다음 사람이 재현할 수 있게)
 
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit-tasks` first to regenerate the task list.
 
@@ -212,6 +251,25 @@ Check if `.specify/extensions.yml` exists in the project root.
     To execute: `/{command}`
     ```
 
+## 세션 마감 (tasks.md가 전부 [X]가 된 뒤에만)
+
+과제가 남았으면 마감하지 않는다 — implement는 여러 세션으로 나뉠 수 있다.
+게이트·종단 검증을 통과하지 못한 상태로 PR을 열지 않는다.
+
+`main`은 브랜치 보호로 직접 push가 막혀 있다. PR이 유일한 경로다.
+
+```bash
+git push -u origin "$(git branch --show-current)"
+gh pr create --base main --title "<타입>: <기능 요약> (NNN)" \
+  --body "$(git log main..HEAD --reverse --pretty='- %s')"
+# 사용자 확인 후
+gh pr merge --rebase --delete-branch
+git switch main && git pull --ff-only
+```
+
+병합은 **rebase 고정**. 저장소 설정이 squash·merge commit을 막으므로 선형 이력이
+구조적으로 보장된다. 이 절차는 `speckit-sync`의 세션 마감과 같은 모양이다.
+
 ## Completion Report
 
 Report final status with summary of completed work.
@@ -220,5 +278,8 @@ Report final status with summary of completed work.
 
 - [ ] All tasks in tasks.md completed and marked `[X]`
 - [ ] Implementation validated against specification, plan, and test coverage
+- [ ] 3-bis의 규율 스킬을 호출했고, 테스트 과제마다 실패 출력 증거가 있다
+- [ ] 품질 게이트 실패 목록이 기준선과 같고, 종단 검증·SC 검증 결과를 tasks.md에 기록했다
+- [ ] PR을 열어 `gh pr merge --rebase`로 병합하고 `main`을 pull했다
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with summary of completed work
