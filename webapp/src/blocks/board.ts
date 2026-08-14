@@ -162,6 +162,10 @@ type DutyTier = {
 type DutyTiersResponse = {
     tiers: DutyTier[]
     canEdit: boolean
+
+    // How many boards this viewer can see point at each group. Deleting one
+    // stops every such rule from matching, so the number is shown first.
+    boardCounts?: {[tierId: string]: number}
 }
 
 // The relations a rule can pick, in the order the selector offers them.

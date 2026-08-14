@@ -63,6 +63,7 @@ const buildState = (board: Board, schemeAdmin: boolean) => ({
     dutyTiers: {
         tiersByTeamId: {'team-id': [] as DutyTier[]},
         canEditByTeamId: {'team-id': true},
+        boardCountsByTeamId: {'team-id': {} as {[tierId: string]: number}},
         loadedTeamIds: ['team-id'],
     },
     clientConfig: {
@@ -260,6 +261,10 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
                     {id: 'opt-task', value: 'Tasks', color: 'propColorGray'},
                 ],
             },
+            // 관계가 견줄 값이 있어야 표가 쓸 만한 규칙을 만든다. 없으면 서버가
+            // orgPropertyId 없는 규칙을 거절한다.
+            {id: 'prop-division', name: '본부', type: 'orgDivision', options: []},
+            {id: 'prop-assignee', name: '담당자', type: 'person', options: []},
         ]
         return board
     }
@@ -344,5 +349,15 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         const container = await renderWith(board, withTiers(board))
 
         expect(container.querySelector('.PropertyAccessSection__outside')).not.toBeNull()
+    })
+
+    test('본부 속성이 없으면 표준 버튼 대신 안내를 띄운다', async () => {
+        // 서버가 orgPropertyId 없는 관계 규칙을 거절하므로, 화면이 먼저 막는다.
+        const board = okrBoard()
+        board.cardProperties = board.cardProperties.filter((property) => property.type !== 'orgDivision')
+        const container = await renderWith(board, withTiers(board))
+
+        expect(container.querySelector('.PropertyAccessSection__preset')).toBeNull()
+        expect(container.querySelector('.PropertyAccessSection__needTiers')).not.toBeNull()
     })
 })

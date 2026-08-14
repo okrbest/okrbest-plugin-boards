@@ -58,6 +58,50 @@ func (a *App) GetDutyTiers(teamID string) ([]model.DutyTier, error) {
 	return tiers, nil
 }
 
+// CountBoardsUsingTiers reports how many of the boards this user can see point
+// at each tier, keyed by tier ID.
+//
+// Deleting a tier is the one edit here that cannot be undone by re-typing it:
+// every rule pointing at it stops matching, on every board in the team at once.
+// The count is what turns that from a surprise into a decision.
+//
+// Scoped to the boards the caller can see rather than the whole team. A number
+// that included boards they have no part in would leak how many exist.
+func (a *App) CountBoardsUsingTiers(userID, teamID string) (map[string]int, error) {
+	boards, err := a.GetBoardsForUserAndTeam(userID, teamID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	counts := map[string]int{}
+	for _, board := range boards {
+		if board == nil {
+			continue
+		}
+
+		settings, settingsErr := model.PropertyAccessSettingsFromProperties(board.Properties)
+		if settingsErr != nil || settings == nil {
+			// A board whose rule set will not parse cannot be said to use any
+			// tier. Refusing the whole count over one bad board would leave the
+			// screen unable to warn about the others.
+			continue
+		}
+
+		seen := map[string]bool{}
+		for _, rule := range settings.Rules {
+			for _, tierID := range rule.TierIDs {
+				if tierID == "" || seen[tierID] {
+					continue
+				}
+				seen[tierID] = true
+				counts[tierID]++
+			}
+		}
+	}
+
+	return counts, nil
+}
+
 // SetDutyTiers replaces the team's tiers.
 //
 // The permission check comes first so a caller with no business here never

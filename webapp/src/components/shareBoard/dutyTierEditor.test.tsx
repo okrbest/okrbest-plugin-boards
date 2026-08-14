@@ -38,6 +38,7 @@ const buildState = (canEdit: boolean, tiers = [
     dutyTiers: {
         tiersByTeamId: {[teamId]: tiers},
         canEditByTeamId: {[teamId]: canEdit},
+        boardCountsByTeamId: {[teamId]: {t2: 3}},
         loadedTeamIds: [teamId],
     },
 })
@@ -119,5 +120,51 @@ describe('src/components/shareBoard/dutyTierEditor', () => {
 
         const saved = store.getActions().some((action: {type: string}) => action.type.startsWith('dutyTiers/save'))
         expect(saved).toBe(true)
+    })
+
+    test('묶음을 새로 만든다', async () => {
+        const {container, store} = await renderEditor(true)
+
+        const input = container.querySelector('.DutyTierEditor__newName') as HTMLInputElement
+        expect(input).not.toBeNull()
+        await userEvent.type(input, '본부장')
+        await userEvent.click(container.querySelector('.DutyTierEditor__addTier')!)
+
+        const saved = store.getActions().some((action: {type: string}) => action.type.startsWith('dutyTiers/save'))
+        expect(saved).toBe(true)
+    })
+
+    test('이름이 비면 만들 수 없다', async () => {
+        const {container} = await renderEditor(true)
+
+        expect((container.querySelector('.DutyTierEditor__addTier') as HTMLButtonElement).disabled).toBe(true)
+    })
+
+    test('잠긴 상태에서는 묶음을 못 만든다', async () => {
+        const {container} = await renderEditor(false)
+
+        expect(container.querySelector('.DutyTierEditor__newName')).toBeNull()
+    })
+
+    test('묶음을 지우기 전에 쓰는 보드 수를 알린다', async () => {
+        const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false)
+        const {container} = await renderEditor(true)
+
+        // t2(C-Level)를 보드 3개가 쓰고 있다.
+        const removeButtons = container.querySelectorAll('.DutyTierEditor__removeTier')
+        await userEvent.click(removeButtons[1])
+
+        expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('3'))
+        confirmSpy.mockRestore()
+    })
+
+    test('확인을 거절하면 안 지운다', async () => {
+        const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false)
+        const {container, store} = await renderEditor(true)
+
+        await userEvent.click(container.querySelectorAll('.DutyTierEditor__removeTier')[0])
+
+        expect(store.getActions().some((a: {type: string}) => a.type.startsWith('dutyTiers/save'))).toBe(false)
+        confirmSpy.mockRestore()
     })
 })

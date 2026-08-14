@@ -43,6 +43,11 @@ func (a *API) registerOrgRoutes(r *mux.Router) {
 type dutyTiersResponse struct {
 	Tiers   []model.DutyTier `json:"tiers"`
 	CanEdit bool             `json:"canEdit"`
+
+	// BoardCounts says how many boards this viewer can see point at each tier.
+	// Deleting one stops every such rule from matching, so the screen shows the
+	// number before it lets that happen.
+	BoardCounts map[string]int `json:"boardCounts"`
 }
 
 func (a *API) handleGetDutyTiers(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +66,17 @@ func (a *API) handleGetDutyTiers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.Marshal(dutyTiersResponse{Tiers: tiers, CanEdit: a.app.CanEditDutyTiers(userID, teamID)})
+	counts, err := a.app.CountBoardsUsingTiers(userID, teamID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	data, err := json.Marshal(dutyTiersResponse{
+		Tiers:       tiers,
+		CanEdit:     a.app.CanEditDutyTiers(userID, teamID),
+		BoardCounts: counts,
+	})
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return
