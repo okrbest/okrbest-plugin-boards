@@ -7,7 +7,7 @@ import store from './store'
 import {removeBoardUsersById} from './store/users'
 import {updateBoards} from './store/boards'
 import {fetchOrgMaster} from './store/orgMaster'
-import {Board, BoardMember, IPropertyTemplate, OrgUnit} from './blocks/board'
+import {Board, BoardMember, IPropertyOption, IPropertyTemplate, OrgUnit} from './blocks/board'
 import {IUser} from './user'
 import {TestBlockFactory} from './test/testBlockFactory'
 import 'isomorphic-fetch'
@@ -296,5 +296,165 @@ describe('Mutator organisation colours', () => {
         await mutator.changeOrgUnitColor(board, 'div-production', 'propColorBlue')
 
         expect(boardPatch().deletedProperties ?? []).not.toContain('propertyAccess')
+    })
+})
+
+// Turning a board into an OKR board prepares one select property and remembers
+// which option means which rung. It is one board write: splitting it would make
+// undo a five step affair and could persist a board with the property but no
+// settings (008 research R2).
+describe('Mutator OKR board mode', () => {
+    const TYPE_NAME = '유형'
+
+    const boardPatch = () => {
+        const calls = (FetchMock.fn.mock.calls as unknown as Array<[string, RequestInit]>).
+            map(([, init]) => init).
+            filter((init) => init?.method === 'PATCH')
+        if (calls.length === 0) {
+            throw new Error('no PATCH request was made')
+        }
+        return {body: JSON.parse(calls[0].body as string), count: calls.length}
+    }
+
+    // The board is frozen once the store holds it, so the test sets everything
+    // before dispatching.
+    const setupBoard = (cardProperties: IPropertyTemplate[] = [], properties: Board['properties'] = {}) => {
+        FetchMock.fn.mockReturnValue(Promise.resolve(new Response('{}', {status: 200})))
+
+        const board = TestBlockFactory.createBoard()
+        board.cardProperties = cardProperties
+        board.properties = properties
+        store.dispatch(updateBoards([board]))
+        return board
+    }
+
+    test('creates the property and its three values when the board has none', async () => {
+        const board = setupBoard([])
+
+        await mutator.enableOkrBoard(board)
+
+        const {body, count} = boardPatch()
+        expect(count).toBe(1)
+
+        const created = body.updatedCardProperties.find((p: IPropertyTemplate) => p.name === TYPE_NAME)
+        expect(created.type).toBe('select')
+        expect(created.options.map((o: IPropertyOption) => o.value)).toEqual(['Objective', 'Key Results', 'Tasks'])
+        expect(body.updatedProperties.okrBoard.propertyId).toBe(created.id)
+        expect(body.updatedProperties.okrBoard.levels).toEqual(created.options.map((o: IPropertyOption) => o.id))
+    })
+
+    test('reuses a 유형 select the board already has', async () => {
+        const existing = {
+            id: 'p-type',
+            name: TYPE_NAME,
+            type: 'select',
+            options: [{id: 'opt-object', value: 'Object', color: 'propColorRed'}],
+        } as IPropertyTemplate
+        const board = setupBoard([existing])
+
+        await mutator.enableOkrBoard(board)
+
+        const {body} = boardPatch()
+        const types = body.updatedCardProperties.filter((p: IPropertyTemplate) => p.name === TYPE_NAME)
+        expect(types).toHaveLength(1)
+        expect(body.updatedProperties.okrBoard.propertyId).toBe('p-type')
+    })
+
+    test('renames a differently named value instead of replacing it', async () => {
+        // Cards store the option ID. Dropping the option and adding a new one
+        // would empty every card that used it (SC-002).
+        const existing = {
+            id: 'p-type',
+            name: TYPE_NAME,
+            type: 'select',
+            options: [{id: 'opt-object', value: 'Object', color: 'propColorRed'}],
+        } as IPropertyTemplate
+        const board = setupBoard([existing])
+
+        await mutator.enableOkrBoard(board)
+
+        const {body} = boardPatch()
+        const type = body.updatedCardProperties.find((p: IPropertyTemplate) => p.id === 'p-type')
+        expect(type.options[0].id).toBe('opt-object')
+        expect(type.options[0].value).toBe('Objective')
+        expect(type.options[0].color).toBe('propColorRed')
+        expect(body.updatedProperties.okrBoard.levels[0]).toBe('opt-object')
+    })
+
+    test('fills only the rungs that are missing', async () => {
+        const existing = {
+            id: 'p-type',
+            name: TYPE_NAME,
+            type: 'select',
+            options: [
+                {id: 'opt-a', value: 'Object', color: ''},
+                {id: 'opt-b', value: 'Key Results', color: ''},
+            ],
+        } as IPropertyTemplate
+        const board = setupBoard([existing])
+
+        await mutator.enableOkrBoard(board)
+
+        const {body} = boardPatch()
+        const type = body.updatedCardProperties.find((p: IPropertyTemplate) => p.id === 'p-type')
+        expect(type.options).toHaveLength(3)
+        expect(type.options[2].value).toBe('Tasks')
+        expect(body.updatedProperties.okrBoard.levels).toEqual(['opt-a', 'opt-b', type.options[2].id])
+    })
+
+    test('ignores a 유형 property that is not a select', async () => {
+        // A rung cannot be stored in a text or date property.
+        const existing = {id: 'p-text', name: TYPE_NAME, type: 'text', options: []} as IPropertyTemplate
+        const board = setupBoard([existing])
+
+        await mutator.enableOkrBoard(board)
+
+        const {body} = boardPatch()
+        expect(body.updatedProperties.okrBoard.propertyId).not.toBe('p-text')
+        expect(body.updatedCardProperties.find((p: IPropertyTemplate) => p.id === 'p-text').type).toBe('text')
+    })
+
+    test('turning it off drops the settings and leaves the property', async () => {
+        const existing = {
+            id: 'p-type',
+            name: TYPE_NAME,
+            type: 'select',
+            options: [{id: 'opt-a', value: 'Objective', color: ''}],
+        } as IPropertyTemplate
+        const board = setupBoard([existing], {okrBoard: {propertyId: 'p-type', levels: ['opt-a']}})
+
+        await mutator.disableOkrBoard(board)
+
+        const {body} = boardPatch()
+        expect(body.deletedProperties ?? []).toContain('okrBoard')
+        expect(body.updatedCardProperties ?? []).toEqual([])
+    })
+
+    test('switching it off and on again reuses the same property and options', async () => {
+        const existing = {
+            id: 'p-type',
+            name: TYPE_NAME,
+            type: 'select',
+            options: [
+                {id: 'opt-a', value: 'Objective', color: ''},
+                {id: 'opt-b', value: 'Key Results', color: ''},
+                {id: 'opt-c', value: 'Tasks', color: ''},
+            ],
+        } as IPropertyTemplate
+        const board = setupBoard([existing])
+
+        await mutator.enableOkrBoard(board)
+
+        const {body} = boardPatch()
+        expect(body.updatedProperties.okrBoard.levels).toEqual(['opt-a', 'opt-b', 'opt-c'])
+        expect(body.updatedCardProperties ?? []).toEqual([])
+    })
+
+    test('leaves keys other features own alone', async () => {
+        const board = setupBoard([], {propertyAccess: {enabled: true, updatedBy: '', updatedAt: 0, rules: []}})
+
+        await mutator.enableOkrBoard(board)
+
+        expect(boardPatch().body.deletedProperties ?? []).not.toContain('propertyAccess')
     })
 })

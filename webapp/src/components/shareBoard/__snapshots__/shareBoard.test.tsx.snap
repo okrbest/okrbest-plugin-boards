@@ -182,6 +182,37 @@ exports[`src/components/shareBoard/shareBoard confirm unlinking linked channel 1
           </div>
         </div>
         <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
           class="tabs-content PropertyAccessSection"
         >
           <div>
@@ -431,6 +462,37 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Copy l
                     class="CompassIcon icon-chevron-down CompassIcon"
                   />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
               </div>
             </div>
           </div>
@@ -1176,6 +1238,37 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
           </div>
         </div>
         <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
           class="tabs-content PropertyAccessSection"
         >
           <div>
@@ -1452,6 +1545,37 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
                     class="CompassIcon icon-chevron-down CompassIcon"
                   />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
               </div>
             </div>
           </div>
@@ -1738,6 +1862,37 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
           </div>
         </div>
         <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
           class="tabs-content PropertyAccessSection"
         >
           <div>
@@ -2014,6 +2169,37 @@ exports[`src/components/shareBoard/shareBoard return shareBoard and click Select
                     class="CompassIcon icon-chevron-down CompassIcon"
                   />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
               </div>
             </div>
           </div>
@@ -2300,6 +2486,37 @@ exports[`src/components/shareBoard/shareBoard return shareBoard template and cli
           </div>
         </div>
         <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
           class="tabs-content PropertyAccessSection"
         >
           <div>
@@ -2525,6 +2742,37 @@ exports[`src/components/shareBoard/shareBoard return shareBoard template and cli
                     class="CompassIcon icon-chevron-down CompassIcon"
                   />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
               </div>
             </div>
           </div>
@@ -3187,6 +3435,37 @@ exports[`src/components/shareBoard/shareBoard should match snapshot 1`] = `
           </div>
         </div>
         <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
           class="tabs-content PropertyAccessSection"
         >
           <div>
@@ -3436,6 +3715,37 @@ exports[`src/components/shareBoard/shareBoard should match snapshot with sharing
                     class="CompassIcon icon-chevron-down CompassIcon"
                   />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
               </div>
             </div>
           </div>
@@ -3695,6 +4005,37 @@ exports[`src/components/shareBoard/shareBoard should match snapshot with sharing
           </div>
         </div>
         <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
           class="tabs-content PropertyAccessSection"
         >
           <div>
@@ -3944,6 +4285,37 @@ exports[`src/components/shareBoard/shareBoard should match snapshot with sharing
                     class="CompassIcon icon-chevron-down CompassIcon"
                   />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
               </div>
             </div>
           </div>
@@ -4239,6 +4611,37 @@ exports[`src/components/shareBoard/shareBoard should match snapshot, with templa
                     class="CompassIcon icon-chevron-down CompassIcon"
                   />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="tabs-content"
+        >
+          <div
+            class="d-flex justify-content-between"
+          >
+            <div
+              class="d-flex flex-column"
+            >
+              <div
+                class="text-heading2"
+              >
+                Use as OKR Board
+              </div>
+              <div
+                class="text-light"
+              >
+                New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.
+              </div>
+            </div>
+            <div>
+              <div
+                class="Switch override-main size--medium"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
               </div>
             </div>
           </div>
