@@ -7,7 +7,7 @@ import store from './store'
 import {removeBoardUsersById} from './store/users'
 import {updateBoards} from './store/boards'
 import {fetchOrgMaster} from './store/orgMaster'
-import {BoardMember, IPropertyTemplate, OrgUnit} from './blocks/board'
+import {Board, BoardMember, IPropertyTemplate, OrgUnit} from './blocks/board'
 import {IUser} from './user'
 import {TestBlockFactory} from './test/testBlockFactory'
 import 'isomorphic-fetch'
@@ -216,5 +216,85 @@ describe('Mutator organisation narrowing', () => {
         const properties = patchBody().updatedFields.properties
         expect(properties['p-div']).toEqual(['div-admin'])
         expect(properties['p-person']).toEqual(['user-finance'])
+    })
+})
+
+// Colours picked for organisation values go into board.properties beside the
+// access rules — never into the property's options array, which is what keeps
+// organisation properties out of the card access rules (007 research R1).
+describe('Mutator organisation colours', () => {
+    const boardPatch = () => {
+        const calls = (FetchMock.fn.mock.calls as unknown as Array<[string, RequestInit]>).
+            map(([, init]) => init).
+            filter((init) => init?.method === 'PATCH')
+        if (calls.length === 0) {
+            throw new Error('no PATCH request was made')
+        }
+        return JSON.parse(calls[0].body as string)
+    }
+
+    // The board is frozen once the store holds it, so anything the test needs on
+    // it has to be set before the dispatch.
+    const setupBoard = (properties: Board['properties'] = {}) => {
+        // updateBoard reads the response status, so the patch needs one.
+        FetchMock.fn.mockReturnValue(Promise.resolve(new Response('{}', {status: 200})))
+
+        const board = TestBlockFactory.createBoard()
+        board.cardProperties = [
+            {id: 'p-div', name: '본부', type: 'orgDivision', options: []},
+        ] as IPropertyTemplate[]
+        board.properties = properties
+        store.dispatch(updateBoards([board]))
+        return board
+    }
+
+    test('stores a picked colour under the board', async () => {
+        const board = setupBoard()
+
+        await mutator.changeOrgUnitColor(board, 'div-production', 'propColorBlue')
+
+        expect(boardPatch().updatedProperties.orgColors).toEqual({'div-production': 'propColorBlue'})
+    })
+
+    test('keeps colours other units already had', async () => {
+        const board = setupBoard({orgColors: {'div-admin': 'propColorGreen'}})
+
+        await mutator.changeOrgUnitColor(board, 'div-production', 'propColorBlue')
+
+        expect(boardPatch().updatedProperties.orgColors).toEqual({
+            'div-admin': 'propColorGreen',
+            'div-production': 'propColorBlue',
+        })
+    })
+
+    test('clearing drops the key so the automatic colour comes back', async () => {
+        const board = setupBoard({orgColors: {'div-admin': 'propColorGreen', 'div-production': 'propColorBlue'}})
+
+        await mutator.clearOrgUnitColor(board, 'div-production')
+
+        expect(boardPatch().updatedProperties.orgColors).toEqual({'div-admin': 'propColorGreen'})
+    })
+
+    test('leaves the property options empty — the access rules depend on it', async () => {
+        // An organisation property is kept out of the card access rules by its
+        // options array being empty. Storing colours there would put 본부, 부서
+        // and 직책 into the rule editor and break 006 FR-011.
+        const board = setupBoard()
+
+        await mutator.changeOrgUnitColor(board, 'div-production', 'propColorBlue')
+
+        const patch = boardPatch()
+        expect(patch.updatedCardProperties ?? []).toEqual([])
+        expect(board.cardProperties[0].options).toEqual([])
+    })
+
+    test('leaves keys other features own alone', async () => {
+        // The patch carries only what changed, so the access rules must simply
+        // not be among the keys it deletes.
+        const board = setupBoard({propertyAccess: {enabled: true, updatedBy: '', updatedAt: 0, rules: []}})
+
+        await mutator.changeOrgUnitColor(board, 'div-production', 'propColorBlue')
+
+        expect(boardPatch().deletedProperties ?? []).not.toContain('propertyAccess')
     })
 })

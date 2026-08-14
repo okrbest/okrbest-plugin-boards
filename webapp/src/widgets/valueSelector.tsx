@@ -58,8 +58,11 @@ type Props = {
     onChangeColor?: (option: IPropertyOption, color: string) => void
     onDeleteOption?: (option: IPropertyOption) => void
     onStartRename?: (option: IPropertyOption) => void
-    // Options come from outside the board: no create, rename, delete or recolour.
+    // Options come from outside the board: no create, rename or delete. Colour
+    // is still the board's to choose, so onChangeColor works alongside this.
     fixedOptions?: boolean
+    // Drops a picked colour so the value goes back to its automatic one.
+    onClearColor?: (option: IPropertyOption) => void
     onReorderOption?: (option: IPropertyOption, destIndex: number) => void
     isMulti?: boolean
     onDeleteValue?: (value: IPropertyOption) => void
@@ -76,6 +79,7 @@ type LabelProps = {
     isMulti?: boolean
     showDragHandle?: boolean
     fixedOptions?: boolean
+    onClearColor?: (option: IPropertyOption) => void
 }
 
 const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
@@ -102,12 +106,52 @@ const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
             </Label>
         )
     }
+    // Options the board does not own. Renaming, deleting and adding stay out —
+    // the organisation master belongs to the main server. Colour is different:
+    // it is how this board draws the value, not a fact about the organisation,
+    // so it is offered when the caller passes a handler (007 contract 4절).
     if (fixedOptions) {
         return (
             <div className="value-menu-option" role="menuitem">
                 <div className="label-container">
                     <Label color={option.color}>{option.value}</Label>
                 </div>
+                {props.onChangeColor && (
+                    <MenuWrapper stopPropagationOnToggle={true}>
+                        <IconButton
+                            title={intl.formatMessage({
+                                id: 'ValueSelectorLabel.openMenu',
+                                defaultMessage: 'Open menu',
+                            })}
+                            icon={<OptionsIcon />}
+                        />
+                        <Menu position="left">
+                            {props.onClearColor && (
+                                <>
+                                    <Menu.Text
+                                        id="clearColor"
+                                        name={intl.formatMessage({
+                                            id: 'ValueSelector.clearColor',
+                                            defaultMessage: 'Automatic colour',
+                                        })}
+                                        onClick={() => props.onClearColor?.(option)}
+                                    />
+                                    <Menu.Separator />
+                                </>
+                            )}
+                            {Object.entries(Constants.menuColors).map(
+                                ([key, color]: [string, string]) => (
+                                    <Menu.Color
+                                        key={key}
+                                        id={key}
+                                        name={color}
+                                        onClick={() => props.onChangeColor?.(option, key)}
+                                    />
+                                )
+                            )}
+                        </Menu>
+                    </MenuWrapper>
+                )}
             </div>
         )
     }
@@ -374,6 +418,7 @@ function ValueSelector(props: Props): React.JSX.Element {
                     isMulti={props.isMulti}
                     fixedOptions={props.fixedOptions}
                     onChangeColor={props.onChangeColor}
+                    onClearColor={props.onClearColor}
                     onDeleteOption={props.onDeleteOption}
                     onStartRename={props.onStartRename}
                     onDeleteValue={props.onDeleteValue}

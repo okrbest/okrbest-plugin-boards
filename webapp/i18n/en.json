@@ -429,6 +429,7 @@
   "ValueSelector.noOptions": "No options. Start typing to add the first one!",
   "ValueSelector.noFixedOptions": "No options available",
   "ValueSelector.valueSelector": "Value selector",
+  "ValueSelector.clearColor": "Automatic colour",
   "ValueSelector.rename": "Rename",
   "RenameOptionDialog.title": "Rename option",
   "RenameOptionDialog.placeholder": "Option name",
