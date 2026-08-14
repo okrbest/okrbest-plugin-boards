@@ -184,6 +184,14 @@ func (a *App) CreateSubCard(card *model.Card, parentCardID string, boardID strin
 		// overwrite the ones that decide where the author may work.
 		card.Properties = deepCopyProperties(parentCard.Properties)
 
+		// The rung the card starts on, when the board is used as an OKR board.
+		// It goes after the parent copy so 본부, 부서 and everything else still
+		// come down, and before the rules so a rule that decides this property
+		// still wins — the rules are permission, this is convenience (008 R5).
+		if fillErr := a.fillOkrLevel(card, boardID); fillErr != nil {
+			return nil, fillErr
+		}
+
 		if fillErr := a.fillDefaultConditionValues(card, boardID, userID); fillErr != nil {
 			return nil, fillErr
 		}
@@ -514,6 +522,40 @@ func deepCopyProperties(props map[string]any) map[string]any {
 // either the server or the screen knowing anything about OKR. A property whose
 // rows are ambiguous, or a user no row admits, is left alone; a blank card is
 // always creatable, so nothing is lost by declining to guess.
+// fillOkrLevel puts the card on the rung its depth implies.
+//
+// Only the one property is touched. Inheriting the parent wholesale is what
+// broke the OKR ladder in the first place — a card under an Object card came out
+// an Object card — and this is that fix, generalised to boards that carry no
+// access rules at all.
+//
+// A board that was never marked as an OKR board, settings that name no rung for
+// this depth, or a property the settings no longer point at all leave the card
+// as the parent left it.
+func (a *App) fillOkrLevel(card *model.Card, boardID string) error {
+	board, err := a.GetBoard(boardID)
+	if err != nil || board == nil {
+		return err
+	}
+
+	settings, err := model.OkrBoardSettingsFromProperties(board.Properties)
+	if err != nil {
+		return err
+	}
+
+	option := settings.OptionForDepth(card.Depth)
+	if option == "" {
+		return nil
+	}
+
+	if card.Properties == nil {
+		card.Properties = map[string]interface{}{}
+	}
+	card.Properties[settings.PropertyID] = option
+
+	return nil
+}
+
 func (a *App) fillDefaultConditionValues(card *model.Card, boardID, userID string) error {
 	board, err := a.GetBoard(boardID)
 	if err != nil || board == nil {
