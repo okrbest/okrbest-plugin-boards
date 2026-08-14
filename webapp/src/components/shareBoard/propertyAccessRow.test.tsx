@@ -211,6 +211,141 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         expect(container.querySelectorAll('.PropertyAccessRow__broken').length).toBeGreaterThan(0)
     })
 
+    // ---- 009 US1: 조직을 이름이 아니라 관계로 고른다 ----
+    //
+    // 조직 칸 하나가 관계와 특정 조직을 함께 담는다. 칸을 늘리지 않는 이유는 하나다 —
+    // 둘은 같은 질문에 대한 두 가지 답이라 나란히 두면 어느 쪽이 답인지 화면이 말해주지
+    // 못한다.
+
+    test('조직 칸이 관계 다섯을 내놓는다', async () => {
+        const {container} = await renderRow({...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'})
+
+        await openSelector(container, 2)
+
+        expect(screen.queryByText('같은 본부')).not.toBeNull()
+        expect(screen.queryByText('다른 본부')).not.toBeNull()
+        expect(screen.queryByText('같은 부서')).not.toBeNull()
+        expect(screen.queryByText('본인')).not.toBeNull()
+    })
+
+    test('조직 칸이 특정 조직도 함께 내놓는다', async () => {
+        const {container} = await renderRow({...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'})
+
+        await openSelector(container, 2)
+
+        expect(screen.queryByText('전략본부')).not.toBeNull()
+    })
+
+    test('관계를 고르면 관계로 저장하고 절대값을 비운다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', divisionId: 'div-strategy'}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 2)
+        await userEvent.click(screen.getByText('같은 본부'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            relation: 'sameDivision',
+            divisionId: '',
+            departmentId: '',
+        }))
+    })
+
+    test('특정 조직을 고르면 관계를 비운다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', relation: 'sameDivision' as const}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 2)
+        await userEvent.click(screen.getByText('전략본부'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            relation: '',
+            divisionId: 'div-strategy',
+        }))
+    })
+
+    test('관계가 빈 옛 규칙은 부서 칸을 그대로 보여준다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', divisionId: 'div-strategy'}
+        const {container} = await renderRow(rule)
+
+        await openSelector(container, 3)
+
+        expect(screen.queryByText('경영개선팀')).not.toBeNull()
+    })
+
+    test('본부 관계를 고르면 다음 칸이 볼 속성을 묻는다', async () => {
+        const withOrgProperty = {
+            ...board,
+            cardProperties: [
+                ...board.cardProperties,
+                {id: 'prop-division', name: '주관 본부', type: 'orgDivision' as const, options: []},
+                {id: 'prop-support', name: '협조 본부', type: 'orgDivision' as const, options: []},
+            ],
+        }
+        const store = mockStateStore([thunk], state)
+        const onChange = jest.fn()
+        let container: Element | undefined
+        await act(async () => {
+            container = render(wrapDNDIntl(
+                <ReduxProvider store={store}>
+                    <PropertyAccessRow
+                        board={withOrgProperty}
+                        rule={{...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', relation: 'sameDivision'}}
+                        onChange={onChange}
+                        onDelete={jest.fn()}
+                    />
+                </ReduxProvider>)).container
+        })
+
+        await openSelector(container!, 3)
+
+        expect(screen.queryByText('주관 본부')).not.toBeNull()
+        expect(screen.queryByText('협조 본부')).not.toBeNull()
+    })
+
+    test('조직 속성이 하나뿐이면 볼 속성이 자동으로 채워진다', async () => {
+        const oneOrgProperty = {
+            ...board,
+            cardProperties: [
+                ...board.cardProperties,
+                {id: 'prop-division', name: '본부', type: 'orgDivision' as const, options: []},
+            ],
+        }
+        const store = mockStateStore([thunk], state)
+        const onChange = jest.fn()
+        await act(async () => {
+            render(wrapDNDIntl(
+                <ReduxProvider store={store}>
+                    <PropertyAccessRow
+                        board={oneOrgProperty}
+                        rule={{...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'}}
+                        onChange={onChange}
+                        onDelete={jest.fn()}
+                    />
+                </ReduxProvider>))
+        })
+
+        const relationButton = document.querySelectorAll('.user-item__button')[2]
+        await userEvent.click(relationButton)
+        await userEvent.click(screen.getByText('같은 본부'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            relation: 'sameDivision',
+            orgPropertyId: 'prop-division',
+        }))
+    })
+
+    test('관계를 쓰면 사람 쪽 조건이 있는 것으로 세어 유효해진다', async () => {
+        const rule = {
+            ...emptyRule,
+            propertyId: 'prop-clevel',
+            propertyValueId: 'opt-strategy',
+            relation: 'mine' as const,
+        }
+        const {container} = await renderRow(rule)
+
+        expect(container.querySelector('.PropertyAccessRow--invalid')).toBeNull()
+    })
+
     test('the delete button reports the row', async () => {
         const {container, onDelete} = await renderRow(emptyRule)
 

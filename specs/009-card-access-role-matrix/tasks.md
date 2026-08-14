@@ -147,7 +147,7 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 - [X] T006 [P] [US1] `server/model/property_access_test.go`에 필드 우선순위 실패 테스트를 더한다 — 새 필드가 빈 기존 규칙은 지금과 같은 판정, `relation`이 있으면 `divisionId`를 **무시**, `propertyValueIds`에 값 둘이면 그중 하나만 맞아도 일치 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 3절 3-1·3-2·3-4)
 - [X] T007 [P] [US1] `server/app/property_access_test.go`에 관계 판정 실패 테스트 열 개를 더한다 — 같은 본부, **부서 소속자가 조상을 따라 본부 조건에 걸림**, 다른 본부, 카드에 본부 값이 없으면 `sameDivision`도 `otherDivision`도 **불성립**, 조직 배정 없는 사용자, `mine`이 작성자·담당자·multiPerson에서 성립 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 2절)
 - [X] T008 [P] [US1] `server/app/property_access_test.go`에 저장 검증 실패 테스트를 더한다 — 모르는 `relation` 거절, 본부·부서 계열인데 `orgPropertyId`가 비면 거절, `relation=mine`에 `assigneePropertyId`가 비면 **통과** ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 4절)
-- [ ] T009 [P] [US1] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 관계 선택 실패 테스트를 더한다 — 관계 다섯이 목록에 나온다, 관계를 고르면 절대값 칸이 사라진다, `relation`이 빈 옛 규칙은 절대값 칸을 그대로 보여준다, 보드에 조직 속성이 하나뿐이면 볼 속성이 자동으로 채워진다
+- [X] T009 [P] [US1] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 관계 선택 실패 테스트를 더한다 — 관계 다섯이 목록에 나온다, 관계를 고르면 절대값 칸이 사라진다, `relation`이 빈 옛 규칙은 절대값 칸을 그대로 보여준다, 보드에 조직 속성이 하나뿐이면 볼 속성이 자동으로 채워진다
 
 ### Implementation for User Story 1
 
@@ -155,11 +155,32 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 - [X] T011 [US1] `server/model/property_access.go`에 우선순위 헬퍼를 더한다 — `CardValueIDs()`가 `propertyValueIds`를 먼저 보고 없으면 `propertyValueId`로 떨어진다. `HasOrgCondition()`이 `relation`도 조직 조건으로 센다 ([data-model.md](./data-model.md) 3절)
 - [X] T012 [US1] `server/app/property_access.go`에 관계 판정을 더한다. 조상 집합은 `orgUnitAncestors`를 그대로 쓴다. **`otherDivision`은 `sameDivision`의 부정이 아니다** — 양쪽 다 값이 있어야 성립한다 ([research.md](./research.md) R3)
 - [X] T013 [US1] `server/app/property_access.go`의 `validatePropertyAccessSettings`에 관계 검증 셋을 더한다 ([data-model.md](./data-model.md) 6절)
-- [ ] T014 [P] [US1] `webapp/src/blocks/board.ts`의 `PropertyAccessRule`에 같은 필드를 더한다. **`relation`은 문자열 유니온으로 정의한다** — `as any`도 넓은 `string`도 쓰지 않는다 (원칙 III). 서버 JSON 태그와 이름을 맞춘다
-- [ ] T015 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 본부·부서 칸을 관계 칸으로 바꾼다. 기존 `Selector`를 그대로 쓰고 **새 컴포넌트를 만들지 않는다** (원칙 II). 관계가 `""`인 옛 규칙은 절대값 칸을 계속 보여준다
-- [ ] T016 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 볼 속성 선택을 더한다. 보드에 그 타입 속성이 하나뿐이면 자동으로 채운다 (FR-006)
-- [ ] T017 [P] [US1] `webapp/i18n/en.json`·`ko.json`에 관계 이름 다섯과 속성 선택 문자열을 넣는다 (원칙 V)
+- [X] T014 [P] [US1] `webapp/src/blocks/board.ts`의 `PropertyAccessRule`에 같은 필드를 더한다. **`relation`은 문자열 유니온으로 정의한다** — `as any`도 넓은 `string`도 쓰지 않는다 (원칙 III). 서버 JSON 태그와 이름을 맞춘다
+- [X] T015 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 본부·부서 칸을 관계 칸으로 바꾼다. 기존 `Selector`를 그대로 쓰고 **새 컴포넌트를 만들지 않는다** (원칙 II). 관계가 `""`인 옛 규칙은 절대값 칸을 계속 보여준다
+- [X] T016 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 볼 속성 선택을 더한다. 보드에 그 타입 속성이 하나뿐이면 자동으로 채운다 (FR-006)
+- [X] T017 [P] [US1] `webapp/i18n/en.json`·`ko.json`에 관계 이름 다섯과 속성 선택 문자열을 넣는다 (원칙 V)
 - [ ] T018 [US1] 빌드·배포 후 규칙을 손으로 여섯 줄 써서 [quickstart.md](./quickstart.md) 4절 표를 훑는다. **팀장·팀원이 타 본부 Objective를 못 보는지**가 이 이야기의 핵심이다
+
+### US1 webapp 설계 메모 — 칸을 안 늘렸다
+
+조직 칸 **하나**가 관계와 특정 조직을 함께 담는다. 둘은 같은 질문에 대한 두 가지 답이라
+나란히 두면 어느 쪽이 답인지 화면이 말해주지 못한다. 관계를 고르면 절대값이 비워지고,
+특정 조직을 고르면 관계가 비워진다.
+
+그 다음 칸은 "무엇을 기준으로"를 묻는다. 같은 자리를 쓰는 이유는 그 질문이 **앞 칸에
+답한 뒤에만 생기기 때문**이다.
+
+| 앞 칸 | 다음 칸 |
+|---|---|
+| 특정 본부 | 부서 (기존 그대로) |
+| 같은/다른 본부, 같은 부서 | 볼 조직 속성 |
+| 본인 | 담당자 속성 |
+| 전체 | 고를 것 없음 |
+
+덕분에 버튼이 여섯 개 그대로다. 기존 테스트 12건이 한 줄도 안 고치고 통과한다.
+
+**보드에 조직 속성이 하나뿐이면 볼 속성을 자동으로 채운다** (FR-006). 고를 것이 없는데
+묻는 칸은 일만 늘린다.
 
 **Checkpoint**: 매트릭스가 표현된다. 화면은 아직 규칙 목록뿐이다.
 

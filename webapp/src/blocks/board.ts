@@ -102,14 +102,59 @@ type BoardPermissionsResponse = {
 // An empty subject field means no constraint on that axis.
 type PropertyAccessPermission = 'viewer' | 'commenter' | 'editor'
 
+// How a rule compares the card's organisation to the viewer's, instead of naming
+// an organisation outright. Naming one means a rule per organisation, and "본인
+// 본부" cannot be written at all.
+//
+// A union rather than a string: a typo would otherwise reach the server, come
+// back rejected, and read as a save failure rather than as a wrong value.
+type OrgRelation = '' | 'any' | 'sameDivision' | 'otherDivision' | 'sameDepartment' | 'mine'
+
 type PropertyAccessRule = {
     id: string
     propertyId: string
+
+    // One row can name several values — "Objective 또는 Key Result" is one row.
+    // propertyValueId is what an older rule carries; both are read, the list first.
+    propertyValueIds?: string[]
     propertyValueId: string
+
     divisionId: string
     departmentId: string
     dutyId: string
+
+    // relation replaces the two absolute organisation axes when set.
+    relation?: OrgRelation
+
+    // Which card property a division or department relation reads. A board can
+    // carry two 본부 properties, so the rule says which.
+    orgPropertyId?: string
+
+    // Which person property `mine` reads. Empty still works — authorship alone
+    // decides.
+    assigneePropertyId?: string
+
     permission: PropertyAccessPermission
+
+    // Marks the rows the matrix editor owns, so saving from the matrix leaves
+    // hand-written exceptions alone.
+    source?: string
+}
+
+// The relations a rule can pick, in the order the selector offers them.
+const orgRelations: OrgRelation[] = ['any', 'sameDivision', 'otherDivision', 'sameDepartment', 'mine']
+
+// The relations that read an organisation property off the card. `mine` reads a
+// person property instead, and `any` reads nothing.
+const orgRelationsNeedingProperty: OrgRelation[] = ['sameDivision', 'otherDivision', 'sameDepartment']
+
+// The values a rule's card side names, reading the list first and falling back
+// to the single value an older rule carries.
+function cardValueIds(rule: PropertyAccessRule): string[] {
+    if (rule.propertyValueIds && rule.propertyValueIds.length > 0) {
+        return rule.propertyValueIds
+    }
+    return rule.propertyValueId ? [rule.propertyValueId] : []
 }
 
 type PropertyAccessSettings = {
@@ -458,6 +503,10 @@ export {
     PropertyAccessPermission,
     PropertyAccessRule,
     PropertyAccessSettings,
+    OrgRelation,
+    orgRelations,
+    orgRelationsNeedingProperty,
+    cardValueIds,
     OrgUnit,
     UserOrgMembership,
     Duty,
