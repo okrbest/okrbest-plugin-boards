@@ -301,19 +301,45 @@ kkv 팀에 실제 묶음 넷을 깔았다 — 대표(CEO) / C-Level(CSO·COO·CF
 
 ### Tests for User Story 3
 
-- [ ] T036 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`(신규)에 표 실패 테스트를 쓴다 — 행이 카드 유형, 열이 묶음, 칸을 고치면 대응하는 규칙만 바뀐다, **표 여섯 칸이 규칙 여섯 줄로 저장된다**(SC-002)
-- [ ] T037 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`에 보존 실패 테스트를 더한다 — 표에서 저장해도 `source`가 빈 줄은 안 지운다, 표 밖의 줄이 있으면 알려준다 (FR-021)
-- [ ] T038 [P] [US3] `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 프리셋 실패 테스트를 더한다 — 처음 켜면 표준 여섯 줄이 깔린다, 팀에 묶음이 없으면 "묶음부터 정하세요"가 뜬다, 카드 유형이 정해지지 않은 보드는 표가 안 나온다 (FR-019·FR-022)
+- [X] T036 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`(신규)에 표 실패 테스트를 쓴다 — 행이 카드 유형, 열이 묶음, 칸을 고치면 대응하는 규칙만 바뀐다, **표 여섯 칸이 규칙 여섯 줄로 저장된다**(SC-002)
+- [X] T037 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`에 보존 실패 테스트를 더한다 — 표에서 저장해도 `source`가 빈 줄은 안 지운다, 표 밖의 줄이 있으면 알려준다 (FR-021)
+- [X] T038 [P] [US3] `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 프리셋 실패 테스트를 더한다 — 처음 켜면 표준 여섯 줄이 깔린다, 팀에 묶음이 없으면 "묶음부터 정하세요"가 뜬다, 카드 유형이 정해지지 않은 보드는 표가 안 나온다 (FR-019·FR-022)
 
 ### Implementation for User Story 3
 
-- [ ] T039 [US3] `webapp/src/components/shareBoard/accessMatrix.ts`(신규)에 표 ↔ 규칙 변환을 만든다. 표가 만든 줄에 `source: 'matrix'`를 붙이고, 저장할 때 그 줄만 갈아 끼운다 ([research.md](./research.md) R7)
-- [ ] T040 [US3] `webapp/src/components/shareBoard/accessMatrix.tsx`(신규)를 만든다. 칸의 컨트롤은 기존 `MenuWrapper` + `Menu.Text`를 쓴다
-- [ ] T041 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 `표로 보기`·`규칙으로 보기` 전환을 더한다. 카드 유형이 정해진 보드에만 표를 보여준다 (FR-022)
-- [ ] T042 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 표준 프리셋을 더한다. 유형 속성과 값은 `board.properties.okrBoard`에서 읽는다 ([data-model.md](./data-model.md) 7절)
-- [ ] T043 [US3] `webapp/src/components/shareBoard/propertyAccessSection.scss`에 표 블록을 더한다. 색·간격은 CSS 변수를 쓰고 하드코딩하지 않는다 (원칙 II)
-- [ ] T044 [P] [US3] `webapp/i18n/en.json`·`ko.json`에 표 문자열을 넣는다
+- [X] T039 [US3] `webapp/src/components/shareBoard/accessMatrix.ts`(신규)에 표 ↔ 규칙 변환을 만든다. 표가 만든 줄에 `source: 'matrix'`를 붙이고, 저장할 때 그 줄만 갈아 끼운다 ([research.md](./research.md) R7)
+- [X] T040 [US3] `webapp/src/components/shareBoard/accessMatrix.tsx`(신규)를 만든다. 칸의 컨트롤은 기존 `MenuWrapper` + `Menu.Text`를 쓴다
+- [X] T041 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 `표로 보기`·`규칙으로 보기` 전환을 더한다. 카드 유형이 정해진 보드에만 표를 보여준다 (FR-022)
+- [X] T042 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 표준 프리셋을 더한다. 유형 속성과 값은 `board.properties.okrBoard`에서 읽는다 ([data-model.md](./data-model.md) 7절)
+- [X] T043 [US3] `webapp/src/components/shareBoard/propertyAccessSection.scss`에 표 블록을 더한다. 색·간격은 CSS 변수를 쓰고 하드코딩하지 않는다 (원칙 II)
+- [X] T044 [P] [US3] `webapp/i18n/en.json`·`ko.json`에 표 문자열을 넣는다
 - [ ] T045 [US3] 빌드·배포 후 [quickstart.md](./quickstart.md) 2·3·7절을 훑는다. **둘째 보드가 스위치 1회로 끝나는지**가 SC-004다
+
+### US3 설계 메모 — 여섯 줄이 나오는 자리
+
+표의 칸을 규칙으로 접을 때 **직사각형이면 한 줄, 아니면 묶음별로 나눈다.** 관계와 권한이
+같은 칸들을 모아 그것이 (유형 집합 × 묶음 집합) 직사각형을 이루는지 본다.
+
+표준 매트릭스는 직사각형 여섯 개다.
+
+| 관계·권한 | 유형 | 묶음 |
+|---|---|---|
+| any·편집 | 셋 다 | 대표 |
+| sameDivision·편집 | 셋 다 | C-Level |
+| otherDivision·댓글 | 셋 다 | C-Level |
+| sameDivision·조회 | Objective, Key Result | 팀장 + 팀원 |
+| sameDepartment·편집 | Tasks | 팀장 |
+| mine·편집 | Tasks | 팀원 |
+
+그래서 12칸이 정확히 여섯 줄이 된다 (SC-002). 직사각형이 아닌 모양을 억지로 접으면 어떤
+묶음이 받은 적 없는 유형을 얻으므로, 그때는 나눈다 — 테스트가 그 경우를 고정한다.
+
+**칸 하나가 관계를 여럿 담는다.** 요구사항 이미지의 C-Level 칸이 "본인 본부 편집 / 타 본부
+댓글" 둘로 갈려 있기 때문이다. 한 칸이 한 답이라고 두면 그 열을 표현할 수 없다.
+
+**표준은 적용하는 게 아니라 권하는 것이다.** 묶음 넷이 먼저 있어야 하고 어느 것이
+C-Level인지는 이름으로 못 맞힌다(research R9). 그래서 묶음이 갖춰지고 표가 비었을 때만
+버튼이 뜬다.
 
 **Checkpoint**: 설정이 요구사항 문서와 1:1로 맞는다.
 
