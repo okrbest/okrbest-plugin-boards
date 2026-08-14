@@ -37,7 +37,7 @@ type Board = {
     showDescription: boolean
     isTemplate: boolean
     templateVersion: number
-    properties: Record<string, string | string[] | PropertyAccessSettings>
+    properties: Record<string, string | string[] | PropertyAccessSettings | OrgColors>
     cardProperties: IPropertyTemplate[]
 
     createAt: number
@@ -149,6 +149,17 @@ type NamedEntry = {
     id: string
     name: string
 }
+
+// Colours a board remembers for organisation values, stored under
+// board.properties.orgColors and keyed by organisation unit ID.
+//
+// Only the picks live here. The colour a value gets without being picked is
+// computed from its ID, so an untouched board stores nothing at all — and the
+// same 본부 keeps its colour across boards.
+//
+// Keyed by unit rather than by property: a board with two 본부 properties shows
+// the same unit in the same colour in both.
+type OrgColors = {[orgUnitId: string]: string}
 
 type BoardsAndBlocks = {
     boards: Board[]
@@ -439,6 +450,7 @@ export {
     UserOrgMembership,
     Duty,
     NamedEntry,
+    OrgColors,
     BoardsAndBlocks,
     BoardsAndBlocksPatch,
     PropertyTypeEnum,
