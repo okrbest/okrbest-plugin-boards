@@ -328,6 +328,7 @@
   "PropertyType.MultiSelect": "Multi select",
   "PropertyType.OrgDivision": "Division",
   "PropertyType.OrgDepartment": "Department",
+  "PropertyType.OrgDuty": "Duty",
   "PropertyType.Number": "Number",
   "PropertyType.Person": "Person",
   "PropertyType.Phone": "Phone",

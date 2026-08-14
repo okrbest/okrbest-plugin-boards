@@ -21,6 +21,7 @@ import CheckboxProperty from './checkbox/property'
 import CardProperty from './card/property'
 import OrgDivisionProperty from './orgDivision/property'
 import OrgDepartmentProperty from './orgDepartment/property'
+import OrgDutyProperty from './orgDuty/property'
 import UnknownProperty from './unknown/property'
 
 import {PropertyType} from './types'
@@ -64,6 +65,7 @@ registry.register(new CheckboxProperty())
 registry.register(new CardProperty())
 registry.register(new OrgDivisionProperty())
 registry.register(new OrgDepartmentProperty())
+registry.register(new OrgDutyProperty())
 registry.register(new CreatedTimeProperty())
 registry.register(new CreatedByProperty())
 registry.register(new UpdatedTimeProperty())
