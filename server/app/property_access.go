@@ -52,6 +52,10 @@ type EvaluatorInput struct {
 	// Duties is the team's duty master, used to find the full visibility flag.
 	Duties []*model.Duty
 
+	// DutyTiers are the team's named duty sets. Rules point at these rather than
+	// at a single duty, so "C-Level" is one row instead of four (009 R5).
+	DutyTiers []model.DutyTier
+
 	// Profile is the user's organization assignment. A nil value means the
 	// user has no organization information and fails every organization
 	// condition (FR-021).
@@ -107,6 +111,18 @@ func (a *App) newPropertyAccessEvaluator(userID string, board *model.Board) (*Pr
 	}
 	if input.Duties, err = a.GetDutiesForTeam(board.TeamID); err != nil {
 		return nil, err
+	}
+
+	// Read beside the organization master rather than off the board: the tiers a
+	// rule points at belong to the team, so this is where they come from.
+	//
+	// Only when some rule actually points at one. Tiers cost a team read, and a
+	// board whose rules name duties directly — every board written before this
+	// feature — has nothing to resolve.
+	if rulesUseTiers(settings.Rules) {
+		if input.DutyTiers, err = a.GetDutyTiers(board.TeamID); err != nil {
+			return nil, err
+		}
 	}
 
 	profiles, err := a.GetUserOrgProfiles(board.TeamID, []string{userID})
@@ -171,6 +187,12 @@ func (a *App) FilterBlockRecipients(userIDs []string, block *model.Block) []stri
 	if err != nil {
 		return nil
 	}
+	var tiers []model.DutyTier
+	if rulesUseTiers(settings.Rules) {
+		if tiers, err = a.GetDutyTiers(board.TeamID); err != nil {
+			return nil
+		}
+	}
 	profiles, err := a.GetUserOrgProfiles(board.TeamID, unique)
 	if err != nil {
 		return nil
@@ -189,6 +211,7 @@ func (a *App) FilterBlockRecipients(userIDs []string, block *model.Block) []stri
 			Settings:        settings,
 			OrgUnits:        orgUnits,
 			Duties:          duties,
+			DutyTiers:       tiers,
 			Profile:         profiles[userID],
 			BoardPermission: boardPermission,
 			IsAdmin: model.EffectivePermissionRank(boardPermission) >=
@@ -245,6 +268,19 @@ func validatePropertyAccessSettings(settings *model.PropertyAccessSettings) erro
 	return nil
 }
 
+// rulesUseTiers reports whether any rule points at a duty tier.
+//
+// Nothing else needs the team's tier set, so this is what decides whether the
+// evaluator pays for a team read at all.
+func rulesUseTiers(rules []model.PropertyAccessRule) bool {
+	for _, rule := range rules {
+		if len(rule.TierIDs) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // relationNeedsOrgProperty reports whether a relation reads an organization
 // property off the card. RelationMine reads a person property that is optional,
 // and RelationAny reads nothing at all.
@@ -293,6 +329,10 @@ type PropertyAccessEvaluator struct {
 	// dutyID is the user's 직책, compared against a rule's duty axis.
 	dutyID string
 
+	// tiers is the team's duty tier set, used to resolve a rule's TierIDs into
+	// the duties they stand for.
+	tiers []model.DutyTier
+
 	// mentioned holds every card condition some rule names. It answers "is this
 	// card governed at all", which decides between the board permission and the
 	// rule set (FR-015).
@@ -326,6 +366,7 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 		return evaluator
 	}
 	evaluator.rules = input.Settings.Rules
+	evaluator.tiers = input.DutyTiers
 
 	var orgUnitID string
 	if input.Profile != nil {
@@ -384,6 +425,26 @@ func (e *PropertyAccessEvaluator) subjectMatchesWithoutCard(rule model.PropertyA
 	if !ruleOrgMatches(rule, e.units) {
 		return false
 	}
+	return e.dutyMatches(rule)
+}
+
+// dutyMatches answers the rule's duty axis, reading the tiers a rule points at
+// first and falling back to the single duty an older rule carries.
+//
+// A tier the team no longer has resolves to nothing, so the row stops matching
+// anyone. Tiers live on the team and rules on boards, so a board can outlive a
+// tier it points at, and refusing to save such a board would block edits that
+// have nothing to do with it (009 data-model §6).
+func (e *PropertyAccessEvaluator) dutyMatches(rule model.PropertyAccessRule) bool {
+	if len(rule.TierIDs) > 0 {
+		for _, dutyID := range model.DutyIDsFor(e.tiers, rule.TierIDs) {
+			if dutyID == e.dutyID {
+				return true
+			}
+		}
+		return false
+	}
+
 	return rule.DutyID == "" || rule.DutyID == e.dutyID
 }
 
@@ -585,7 +646,7 @@ func (e *PropertyAccessEvaluator) evaluate(card *model.Block, ownerFloor model.E
 			gatePassed = gatePassed || orgOK
 		}
 
-		if !orgOK || (rule.DutyID != "" && rule.DutyID != e.dutyID) {
+		if !orgOK || !e.dutyMatches(rule) {
 			continue
 		}
 		rulePermission = higherPermission(rulePermission, rule.Permission.AsEffectivePermission())

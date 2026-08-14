@@ -437,6 +437,126 @@ func TestValidateRelationRules(t *testing.T) {
 	})
 }
 
+// 009 US2 — 규칙이 직책 묶음을 가리킨다. 묶음은 팀이 갖고 규칙은 보드가 가지므로,
+// 평가기는 판정할 때 둘을 함께 읽는다.
+
+func tierEvaluator(rule model.PropertyAccessRule, tiers []model.DutyTier, dutyID string) *PropertyAccessEvaluator {
+	return NewPropertyAccessEvaluator(EvaluatorInput{
+		UserID:          "u1",
+		Settings:        &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{rule}},
+		OrgUnits:        testOrgUnits(),
+		Duties:          testDuties(),
+		DutyTiers:       tiers,
+		Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyID},
+		BoardPermission: model.EffectiveBoardPermissionEdit,
+	})
+}
+
+func TestEvaluatorTierIDs(t *testing.T) {
+	tiers := []model.DutyTier{
+		{ID: "tier-lead", Name: "팀장", DutyIDs: []string{dutyLead}},
+		{ID: "tier-head", Name: "본부장", DutyIDs: []string{dutyHead}},
+	}
+	objective := relationCard(valObjective, divStrategy)
+
+	base := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, PropertyValueID: valObjective,
+		Relation: model.RelationAny, Permission: model.PropertyAccessEditor,
+	}
+
+	t.Run("5-10 묶음 둘 중 하나에 내 직책이 있으면 걸린다", func(t *testing.T) {
+		rule := base
+		rule.TierIDs = []string{"tier-lead", "tier-head"}
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, tierEvaluator(rule, tiers, dutyLead).For(objective))
+		require.Equal(t, model.EffectiveBoardPermissionEdit, tierEvaluator(rule, tiers, dutyHead).For(objective))
+	})
+
+	t.Run("묶음에 없는 직책은 안 걸린다", func(t *testing.T) {
+		rule := base
+		rule.TierIDs = []string{"tier-head"}
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, tierEvaluator(rule, tiers, dutyLead).For(objective))
+	})
+
+	t.Run("5-8 직책 하나짜리 묶음도 여럿짜리와 똑같다", func(t *testing.T) {
+		single := model.PropertyAccessRule{
+			ID: "r1", PropertyID: propType, PropertyValueID: valObjective,
+			Relation: model.RelationAny, TierIDs: []string{"tier-lead"},
+			Permission: model.PropertyAccessEditor,
+		}
+		many := single
+		many.TierIDs = []string{"tier-many"}
+		manyTiers := []model.DutyTier{{ID: "tier-many", Name: "여럿", DutyIDs: []string{dutyLead, dutyHead}}}
+
+		require.Equal(t,
+			tierEvaluator(single, tiers, dutyLead).For(objective),
+			tierEvaluator(many, manyTiers, dutyLead).For(objective))
+	})
+
+	t.Run("3-3 tierIds가 dutyId를 이긴다", func(t *testing.T) {
+		rule := base
+		rule.TierIDs = []string{"tier-lead"}
+		rule.DutyID = dutyHead
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, tierEvaluator(rule, tiers, dutyLead).For(objective),
+			"tierIds가 있으면 dutyId는 안 본다")
+
+		// 본부장은 dutyId로는 걸리지만 tierIds로는 안 걸린다. 남는 것은 전체보기
+		// 바닥뿐이다 — dutyId를 봤다면 편집이 나왔을 자리다 (계약 1-5).
+		require.Equal(t, model.EffectiveBoardPermissionView, tierEvaluator(rule, tiers, dutyHead).For(objective),
+			"규칙이 안 걸리고 전체보기 바닥만 남는다")
+	})
+
+	t.Run("tierIds가 비면 dutyId로 떨어진다", func(t *testing.T) {
+		rule := base
+		rule.DutyID = dutyHead
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, tierEvaluator(rule, tiers, dutyHead).For(objective))
+		require.Equal(t, model.EffectiveBoardPermissionNone, tierEvaluator(rule, tiers, dutyLead).For(objective))
+	})
+
+	t.Run("팀 묶음에 없는 tierId는 아무에게도 안 걸린다", func(t *testing.T) {
+		rule := base
+		rule.TierIDs = []string{"tier-gone"}
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, tierEvaluator(rule, tiers, dutyLead).For(objective),
+			"묶음은 팀이, 규칙은 보드가 가지므로 보드가 묶음보다 오래 살 수 있다")
+	})
+}
+
+func TestEvaluatorTierHighestWins(t *testing.T) {
+	// 5-9 한 직책이 두 묶음에 들고 두 묶음의 규칙 권한이 다르면 높은 쪽이 간다.
+	tiers := []model.DutyTier{
+		{ID: "tier-a", Name: "A", DutyIDs: []string{dutyLead}},
+		{ID: "tier-b", Name: "B", DutyIDs: []string{dutyLead}},
+	}
+
+	evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+		UserID: "u1",
+		Settings: &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{
+			{
+				ID: "r1", PropertyID: propType, PropertyValueID: valObjective,
+				Relation: model.RelationAny, TierIDs: []string{"tier-a"},
+				Permission: model.PropertyAccessViewer,
+			},
+			{
+				ID: "r2", PropertyID: propType, PropertyValueID: valObjective,
+				Relation: model.RelationAny, TierIDs: []string{"tier-b"},
+				Permission: model.PropertyAccessEditor,
+			},
+		}},
+		OrgUnits:        testOrgUnits(),
+		Duties:          testDuties(),
+		DutyTiers:       tiers,
+		Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+		BoardPermission: model.EffectiveBoardPermissionView,
+	})
+
+	require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(relationCard(valObjective, divStrategy)),
+		"겸직을 막지 않는다 — 걸린 규칙 중 높은 쪽이 간다")
+}
+
 func TestEvaluatorAdminBypass(t *testing.T) {
 	input := EvaluatorInput{
 		Settings:        testSettings(),

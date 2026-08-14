@@ -229,19 +229,19 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] `server/model/duty_tier_test.go`(신규)에 묶음 모델 실패 테스트를 쓴다 — 팀 설정에서 읽기, 설정이 없으면 빈 목록, 다른 키를 건드리지 않기, 이름이 비면 거절, 마스터에 없는 직책 ID는 **통과**
-- [ ] T020 [P] [US2] `server/app/duty_tiers_test.go`(신규)에 편집 권한 실패 테스트 일곱 개를 쓴다 — 시스템 관리자 200, 팀 관리자 200, **보드 관리자 403**, 보드 관리자 읽기 200, 팀 밖 사용자 403, 묶음을 고치면 같은 팀 다른 보드 판정이 바뀜, `canEditDutyTiers` 플래그 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 5절 5-1~5-7)
-- [ ] T021 [P] [US2] `server/app/property_access_test.go`에 묶음 판정 실패 테스트 넷을 더한다 — `tierIds`와 `dutyId`가 둘 다 있으면 `tierIds`가 이김, **직책 하나짜리 묶음도 여럿짜리와 똑같이 판정**(FR-013), **한 직책이 두 묶음에 들고 권한이 다르면 높은 쪽**(FR-014), `tierIds`에 묶음 둘이고 내 직책이 그중 하나면 일치(FR-011) ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 3절 3-3, 5절 5-8~5-10)
+- [X] T019 [P] [US2] `server/model/duty_tier_test.go`(신규)에 묶음 모델 실패 테스트를 쓴다 — 팀 설정에서 읽기, 설정이 없으면 빈 목록, 다른 키를 건드리지 않기, 이름이 비면 거절, 마스터에 없는 직책 ID는 **통과**
+- [X] T020 [P] [US2] `server/app/duty_tiers_test.go`(신규)에 편집 권한 실패 테스트 일곱 개를 쓴다 — 시스템 관리자 200, 팀 관리자 200, **보드 관리자 403**, 보드 관리자 읽기 200, 팀 밖 사용자 403, 묶음을 고치면 같은 팀 다른 보드 판정이 바뀜, `canEditDutyTiers` 플래그 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 5절 5-1~5-7)
+- [X] T021 [P] [US2] `server/app/property_access_test.go`에 묶음 판정 실패 테스트 넷을 더한다 — `tierIds`와 `dutyId`가 둘 다 있으면 `tierIds`가 이김, **직책 하나짜리 묶음도 여럿짜리와 똑같이 판정**(FR-013), **한 직책이 두 묶음에 들고 권한이 다르면 높은 쪽**(FR-014), `tierIds`에 묶음 둘이고 내 직책이 그중 하나면 일치(FR-011) ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 3절 3-3, 5절 5-8~5-10)
 - [ ] T022 [P] [US2] `webapp/src/components/shareBoard/dutyTierEditor.test.tsx`(신규)에 묶음 편집기 실패 테스트를 쓴다 — 직책을 여럿 골라 묶는다, **고칠 권한이 없으면 값이 보이되 잠긴다**(FR-011b·FR-011c), "이 팀의 모든 보드에 적용됩니다"가 보인다(FR-011a)
 - [ ] T023 [P] [US2] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 묶음 선택 실패 테스트를 더한다 — 묶음 목록이 나온다, 한 줄이 묶음을 여럿 가리킨다, `tierIds`가 빈 옛 규칙은 직책 칸을 그대로 보여준다
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] `server/model/duty_tier.go`(신규)에 `DutyTier{ID, Name, DutyIDs}`와 팀 설정을 읽고 쓰는 함수를 만든다. 키는 `dutyTiers`다 ([data-model.md](./data-model.md) 1절)
-- [ ] T025 [US2] `server/model/property_access.go`에 `TierIDs []string`를 더하고, 직책 축 우선순위 헬퍼를 만든다 — `tierIds`의 `dutyIds` 합집합을 쓰고 비어 있으면 `dutyId`로 떨어진다 ([data-model.md](./data-model.md) 3절)
-- [ ] T026 [US2] `server/app/duty_tiers.go`(신규)에 조회·저장과 편집 권한 판정을 만든다. 시스템 관리자는 `HasPermissionTo(userID, PermissionManageSystem)`, 팀 관리자는 `HasPermissionToTeam(userID, teamID, PermissionManageTeam)` ([research.md](./research.md) R6)
-- [ ] T027 [US2] `server/api/teams.go`에 `PUT /teams/{teamID}/dutyTiers`를 등록하고, `GET /teams/{teamID}` 응답에 `canEditDutyTiers`를 싣는다
-- [ ] T028 [US2] `server/app/property_access.go`의 `newPropertyAccessEvaluator`가 팀 묶음을 함께 읽어 `tierIds`를 직책 집합으로 푼다. 조직 마스터를 읽는 자리 바로 옆이다
+- [X] T024 [US2] `server/model/duty_tier.go`(신규)에 `DutyTier{ID, Name, DutyIDs}`와 팀 설정을 읽고 쓰는 함수를 만든다. 키는 `dutyTiers`다 ([data-model.md](./data-model.md) 1절)
+- [X] T025 [US2] `server/model/property_access.go`에 `TierIDs []string`를 더하고, 직책 축 우선순위 헬퍼를 만든다 — `tierIds`의 `dutyIds` 합집합을 쓰고 비어 있으면 `dutyId`로 떨어진다 ([data-model.md](./data-model.md) 3절)
+- [X] T026 [US2] `server/app/duty_tiers.go`(신규)에 조회·저장과 편집 권한 판정을 만든다. 시스템 관리자는 `HasPermissionTo(userID, PermissionManageSystem)`, 팀 관리자는 `HasPermissionToTeam(userID, teamID, PermissionManageTeam)` ([research.md](./research.md) R6)
+- [X] T027 [US2] `server/api/teams.go`에 `PUT /teams/{teamID}/dutyTiers`를 등록하고, `GET /teams/{teamID}` 응답에 `canEditDutyTiers`를 싣는다
+- [X] T028 [US2] `server/app/property_access.go`의 `newPropertyAccessEvaluator`가 팀 묶음을 함께 읽어 `tierIds`를 직책 집합으로 푼다. 조직 마스터를 읽는 자리 바로 옆이다
 - [ ] T029 [P] [US2] `webapp/src/octoClient.ts`에 묶음 조회·저장을 더한다
 - [ ] T030 [P] [US2] `webapp/src/store/dutyTiers.ts`(신규)에 팀 묶음 슬라이스를 만든다. `store/orgMaster`와 같은 모양으로 둔다
 - [ ] T031 [US2] `webapp/src/components/shareBoard/dutyTierEditor.tsx`(신규)를 만든다. 직책 다중 선택, 묶음 이름, **권한이 없으면 잠긴 채로 보인다** (FR-011b·FR-011c). "이 팀의 모든 보드에 적용됩니다"를 함께 보여준다
@@ -249,6 +249,20 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 - [ ] T033 [US2] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 묶음 편집기를 끼운다. `propertyAccessSection.scss`에 블록을 더한다 — **새 SCSS 파일을 만들지 않는다** (원칙 II)
 - [ ] T034 [P] [US2] `webapp/i18n/en.json`·`ko.json`에 묶음 화면 문자열을 넣는다
 - [ ] T035 [US2] 빌드·배포 후 [quickstart.md](./quickstart.md) 1·6절을 훑는다. **팀 관리자가 C-Level에 직책을 더하면 다른 보드의 판정이 함께 바뀌는지**를 두 보드에서 확인한다
+
+### US2 서버 설계 메모 — 묶음은 필요할 때만 읽는다
+
+평가기가 팀 묶음을 무조건 읽게 했더니 접근 권한 테스트 30여 건이 한꺼번에 깨졌다.
+mock store에 `GetTeam` 기대가 없어서다. 기대를 다 더하는 대신 **묶음을 가리키는 규칙이
+하나라도 있을 때만 읽게** 했다.
+
+기존 보드는 규칙이 직책을 직접 가리키므로 조회가 아예 없다. plan이 "조회가 하나 는다"고
+적어 둔 비용이 대다수 보드에서 0이 됐다.
+
+**테스트 기대를 한 번 잘못 썼다.** `묶음에 없는 직책은 안 걸린다`에 `dutyHead`를 썼는데
+그 직책은 `FullVisibility: true`라 게이트가 닫혀도 조회가 남는다(계약 1-5). 구현이 맞고
+기대가 틀렸다. 3-3은 오히려 그 성질을 쓰도록 고쳤다 — `dutyId`를 봤다면 편집이 나왔을
+자리에서 전체보기 바닥만 남는 것이 `tierIds`가 이겼다는 증거다.
 
 **Checkpoint**: 묶음이 팀 것이 됐다. 규칙 여섯 줄을 손으로 쓰면 매트릭스가 완성된다.
 
