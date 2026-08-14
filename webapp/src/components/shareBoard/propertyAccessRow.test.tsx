@@ -55,6 +55,16 @@ const state = {
         },
         loadedTeamIds: ['team-id'],
     },
+    dutyTiers: {
+        tiersByTeamId: {
+            'team-id': [
+                {id: 'tier-clevel', name: '임원진', dutyIds: ['duty-head']},
+                {id: 'tier-lead', name: '리더', dutyIds: ['duty-lead']},
+            ],
+        },
+        canEditByTeamId: {'team-id': true},
+        loadedTeamIds: ['team-id'],
+    },
 }
 
 const emptyRule: PropertyAccessRule = {
@@ -344,6 +354,57 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         const {container} = await renderRow(rule)
 
         expect(container.querySelector('.PropertyAccessRow--invalid')).toBeNull()
+    })
+
+    // ---- 009 US2: 직책 칸이 묶음을 가리킨다 ----
+
+    test('직책 칸이 팀 묶음을 내놓는다', async () => {
+        const {container} = await renderRow({...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'})
+
+        await openSelector(container, 4)
+
+        expect(screen.queryByText('임원진')).not.toBeNull()
+    })
+
+    test('묶음을 고르면 tierIds로 저장한다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 4)
+        await userEvent.click(screen.getByText('임원진'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            tierIds: ['tier-clevel'],
+            dutyId: '',
+        }))
+    })
+
+    test('tierIds가 빈 옛 규칙은 직책을 그대로 보여준다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', dutyId: 'duty-head'}
+        const {container} = await renderRow(rule)
+
+        const label = container.querySelectorAll('.user-item__button')[4].textContent
+
+        expect(label).toContain('본부장')
+    })
+
+    test('묶음을 쓰면 사람 쪽 조건이 있는 것으로 센다', async () => {
+        const rule = {
+            ...emptyRule,
+            propertyId: 'prop-clevel',
+            propertyValueId: 'opt-strategy',
+            tierIds: ['tier-clevel'],
+        }
+        const {container} = await renderRow(rule)
+
+        expect(container.querySelector('.PropertyAccessRow--invalid')).toBeNull()
+    })
+
+    test('없는 묶음을 가리키면 깨진 규칙으로 표시한다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', tierIds: ['tier-gone']}
+        const {container} = await renderRow(rule)
+
+        expect(container.querySelectorAll('.PropertyAccessRow__broken').length).toBeGreaterThan(0)
     })
 
     test('the delete button reports the row', async () => {

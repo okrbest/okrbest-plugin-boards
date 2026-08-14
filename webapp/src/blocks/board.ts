@@ -121,6 +121,10 @@ type PropertyAccessRule = {
 
     divisionId: string
     departmentId: string
+
+    // Duty groups the team owns. One row can name several — "팀장 또는 팀원" is
+    // one row. dutyId is what an older rule carries; the groups are read first.
+    tierIds?: string[]
     dutyId: string
 
     // relation replaces the two absolute organisation axes when set.
@@ -139,6 +143,25 @@ type PropertyAccessRule = {
     // Marks the rows the matrix editor owns, so saving from the matrix leaves
     // hand-written exceptions alone.
     source?: string
+}
+
+// A named set of 직책 — "C-Level" standing for CSO, COO, CFO and CGO.
+//
+// It belongs to the team, not to a board: which duties count as C-Level is a
+// fact about the company. It is not a rank — no order, and a tier holding one
+// duty behaves exactly like one holding four.
+type DutyTier = {
+    id: string
+    name: string
+    dutyIds: string[]
+}
+
+// What the server sends back with the tiers. The flag cannot be worked out in
+// the browser — a team admin is not a system role, so it does not appear on the
+// user object.
+type DutyTiersResponse = {
+    tiers: DutyTier[]
+    canEdit: boolean
 }
 
 // The relations a rule can pick, in the order the selector offers them.
@@ -504,6 +527,8 @@ export {
     PropertyAccessRule,
     PropertyAccessSettings,
     OrgRelation,
+    DutyTier,
+    DutyTiersResponse,
     orgRelations,
     orgRelationsNeedingProperty,
     cardValueIds,
