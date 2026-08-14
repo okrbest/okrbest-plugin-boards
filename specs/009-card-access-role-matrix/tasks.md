@@ -6,6 +6,7 @@
 [data-model.md](./data-model.md), [contracts/card-access-matrix.md](./contracts/card-access-matrix.md)
 
 **Tests**: 넣는다. 원칙 IV가 동작 변경에 테스트를 요구하고, 이 기능은 권한 판정을 바꾼다.
+서버와 webapp **양쪽 다** 이야기마다 테스트를 둔다.
 **테스트 과제는 실패 출력을 남긴 뒤에만 완료로 표시한다.**
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -59,18 +60,19 @@
 - [ ] T006 [P] [US1] `server/model/property_access_test.go`에 필드 우선순위 실패 테스트를 더한다 — 새 필드가 빈 기존 규칙은 지금과 같은 판정, `relation`이 있으면 `divisionId`를 **무시**, `propertyValueIds`에 값 둘이면 그중 하나만 맞아도 일치 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 3절 3-1·3-2·3-4)
 - [ ] T007 [P] [US1] `server/app/property_access_test.go`에 관계 판정 실패 테스트 열 개를 더한다 — 같은 본부, **부서 소속자가 조상을 따라 본부 조건에 걸림**, 다른 본부, 카드에 본부 값이 없으면 `sameDivision`도 `otherDivision`도 **불성립**, 조직 배정 없는 사용자, `mine`이 작성자·담당자·multiPerson에서 성립 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 2절)
 - [ ] T008 [P] [US1] `server/app/property_access_test.go`에 저장 검증 실패 테스트를 더한다 — 모르는 `relation` 거절, 본부·부서 계열인데 `orgPropertyId`가 비면 거절, `relation=mine`에 `assigneePropertyId`가 비면 **통과** ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 4절)
+- [ ] T009 [P] [US1] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 관계 선택 실패 테스트를 더한다 — 관계 다섯이 목록에 나온다, 관계를 고르면 절대값 칸이 사라진다, `relation`이 빈 옛 규칙은 절대값 칸을 그대로 보여준다, 보드에 조직 속성이 하나뿐이면 볼 속성이 자동으로 채워진다
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] `server/model/property_access.go`에 `PropertyAccessRule` 필드를 더한다 — `PropertyValueIDs []string`, `Relation string`, `OrgPropertyID string`, `AssigneePropertyID string`, `Source string`. 기존 필드는 지운다 (FR-001, FR-016)
-- [ ] T010 [US1] `server/model/property_access.go`에 우선순위 헬퍼를 더한다 — `CardValueIDs()`가 `propertyValueIds`를 먼저 보고 없으면 `propertyValueId`로 떨어진다. `HasOrgCondition()`이 `relation`도 조직 조건으로 센다 ([data-model.md](./data-model.md) 3절)
-- [ ] T011 [US1] `server/app/property_access.go`에 관계 판정을 더한다. 조상 집합은 `orgUnitAncestors`를 그대로 쓴다. **`otherDivision`은 `sameDivision`의 부정이 아니다** — 양쪽 다 값이 있어야 성립한다 ([research.md](./research.md) R3)
-- [ ] T012 [US1] `server/app/property_access.go`의 `validatePropertyAccessSettings`에 관계 검증 셋을 더한다 ([data-model.md](./data-model.md) 6절)
-- [ ] T013 [P] [US1] `webapp/src/blocks/board.ts`의 `PropertyAccessRule`에 같은 필드를 더한다. 서버 JSON 태그와 이름을 맞춘다
-- [ ] T014 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 본부·부서 칸을 관계 칸으로 바꾼다. 기존 `Selector`를 그대로 쓰고 **새 컴포넌트를 만들지 않는다** (원칙 II). 관계가 `""`인 옛 규칙은 절대값 칸을 계속 보여준다
-- [ ] T015 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 볼 속성 선택을 더한다. 보드에 그 타입 속성이 하나뿐이면 자동으로 채운다 (FR-006)
-- [ ] T016 [P] [US1] `webapp/i18n/en.json`·`ko.json`에 관계 이름 다섯과 속성 선택 문자열을 넣는다 (원칙 V)
-- [ ] T017 [US1] 빌드·배포 후 규칙을 손으로 여섯 줄 써서 [quickstart.md](./quickstart.md) 3절 표를 훑는다. **팀장·팀원이 타 본부 Objective를 못 보는지**가 이 이야기의 핵심이다
+- [ ] T010 [US1] `server/model/property_access.go`에 `PropertyAccessRule` 필드를 더한다 — `PropertyValueIDs []string`, `Relation string`, `OrgPropertyID string`, `AssigneePropertyID string`, `Source string`. 기존 필드는 지우지 않는다 (FR-001, FR-016)
+- [ ] T011 [US1] `server/model/property_access.go`에 우선순위 헬퍼를 더한다 — `CardValueIDs()`가 `propertyValueIds`를 먼저 보고 없으면 `propertyValueId`로 떨어진다. `HasOrgCondition()`이 `relation`도 조직 조건으로 센다 ([data-model.md](./data-model.md) 3절)
+- [ ] T012 [US1] `server/app/property_access.go`에 관계 판정을 더한다. 조상 집합은 `orgUnitAncestors`를 그대로 쓴다. **`otherDivision`은 `sameDivision`의 부정이 아니다** — 양쪽 다 값이 있어야 성립한다 ([research.md](./research.md) R3)
+- [ ] T013 [US1] `server/app/property_access.go`의 `validatePropertyAccessSettings`에 관계 검증 셋을 더한다 ([data-model.md](./data-model.md) 6절)
+- [ ] T014 [P] [US1] `webapp/src/blocks/board.ts`의 `PropertyAccessRule`에 같은 필드를 더한다. **`relation`은 문자열 유니온으로 정의한다** — `as any`도 넓은 `string`도 쓰지 않는다 (원칙 III). 서버 JSON 태그와 이름을 맞춘다
+- [ ] T015 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 본부·부서 칸을 관계 칸으로 바꾼다. 기존 `Selector`를 그대로 쓰고 **새 컴포넌트를 만들지 않는다** (원칙 II). 관계가 `""`인 옛 규칙은 절대값 칸을 계속 보여준다
+- [ ] T016 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 볼 속성 선택을 더한다. 보드에 그 타입 속성이 하나뿐이면 자동으로 채운다 (FR-006)
+- [ ] T017 [P] [US1] `webapp/i18n/en.json`·`ko.json`에 관계 이름 다섯과 속성 선택 문자열을 넣는다 (원칙 V)
+- [ ] T018 [US1] 빌드·배포 후 규칙을 손으로 여섯 줄 써서 [quickstart.md](./quickstart.md) 4절 표를 훑는다. **팀장·팀원이 타 본부 Objective를 못 보는지**가 이 이야기의 핵심이다
 
 **Checkpoint**: 매트릭스가 표현된다. 화면은 아직 규칙 목록뿐이다.
 
@@ -89,23 +91,26 @@
 
 ### Tests for User Story 2
 
-- [ ] T018 [P] [US2] `server/model/duty_tier_test.go`(신규)에 묶음 모델 실패 테스트를 쓴다 — 팀 설정에서 읽기, 설정이 없으면 빈 목록, 다른 키를 건드리지 않기, 이름이 비면 거절, 마스터에 없는 직책 ID는 **통과**
-- [ ] T019 [P] [US2] `server/app/duty_tiers_test.go`(신규)에 편집 권한 실패 테스트 일곱 개를 쓴다 — 시스템 관리자 200, 팀 관리자 200, **보드 관리자 403**, 보드 관리자 읽기 200, 팀 밖 사용자 403, 묶음을 고치면 같은 팀 다른 보드 판정이 바뀜, `canEditDutyTiers` 플래그 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 5절)
-- [ ] T020 [P] [US2] `server/app/property_access_test.go`에 `tierId` 우선순위 실패 테스트를 더한다 — `tierId`와 `dutyId`가 둘 다 있으면 `tierId`가 이기고, `tierId`가 팀 묶음에 없으면 아무에게도 안 걸린다 (저장은 통과)
+- [ ] T019 [P] [US2] `server/model/duty_tier_test.go`(신규)에 묶음 모델 실패 테스트를 쓴다 — 팀 설정에서 읽기, 설정이 없으면 빈 목록, 다른 키를 건드리지 않기, 이름이 비면 거절, 마스터에 없는 직책 ID는 **통과**
+- [ ] T020 [P] [US2] `server/app/duty_tiers_test.go`(신규)에 편집 권한 실패 테스트 일곱 개를 쓴다 — 시스템 관리자 200, 팀 관리자 200, **보드 관리자 403**, 보드 관리자 읽기 200, 팀 밖 사용자 403, 묶음을 고치면 같은 팀 다른 보드 판정이 바뀜, `canEditDutyTiers` 플래그 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 5절 5-1~5-7)
+- [ ] T021 [P] [US2] `server/app/property_access_test.go`에 묶음 판정 실패 테스트 넷을 더한다 — `tierIds`와 `dutyId`가 둘 다 있으면 `tierIds`가 이김, **직책 하나짜리 묶음도 여럿짜리와 똑같이 판정**(FR-013), **한 직책이 두 묶음에 들고 권한이 다르면 높은 쪽**(FR-014), `tierIds`에 묶음 둘이고 내 직책이 그중 하나면 일치(FR-011) ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 3절 3-3, 5절 5-8~5-10)
+- [ ] T022 [P] [US2] `webapp/src/components/shareBoard/dutyTierEditor.test.tsx`(신규)에 묶음 편집기 실패 테스트를 쓴다 — 직책을 여럿 골라 묶는다, **고칠 권한이 없으면 값이 보이되 잠긴다**(FR-011b·FR-011c), "이 팀의 모든 보드에 적용됩니다"가 보인다(FR-011a)
+- [ ] T023 [P] [US2] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 묶음 선택 실패 테스트를 더한다 — 묶음 목록이 나온다, 한 줄이 묶음을 여럿 가리킨다, `tierIds`가 빈 옛 규칙은 직책 칸을 그대로 보여준다
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] `server/model/duty_tier.go`(신규)에 `DutyTier{ID, Name, DutyIDs}`와 팀 설정을 읽고 쓰는 함수를 만든다. 키는 `dutyTiers`다 ([data-model.md](./data-model.md) 1절)
-- [ ] T022 [US2] `server/app/duty_tiers.go`(신규)에 조회·저장과 편집 권한 판정을 만든다. 시스템 관리자는 `HasPermissionTo(userID, PermissionManageSystem)`, 팀 관리자는 `HasPermissionToTeam(userID, teamID, PermissionManageTeam)` ([research.md](./research.md) R6)
-- [ ] T023 [US2] `server/api/teams.go`에 `PUT /teams/{teamID}/dutyTiers`를 등록하고, `GET /teams/{teamID}` 응답에 `canEditDutyTiers`를 싣는다
-- [ ] T024 [US2] `server/app/property_access.go`의 `newPropertyAccessEvaluator`가 팀 묶음을 함께 읽어 `tierId`를 직책 집합으로 푼다. 조직 마스터를 읽는 자리 바로 옆이다
-- [ ] T025 [P] [US2] `webapp/src/octoClient.ts`에 묶음 조회·저장을 더한다
-- [ ] T026 [P] [US2] `webapp/src/store/dutyTiers.ts`(신규)에 팀 묶음 슬라이스를 만든다. `store/orgMaster`와 같은 모양으로 둔다
-- [ ] T027 [US2] `webapp/src/components/shareBoard/dutyTierEditor.tsx`(신규)를 만든다. 직책 다중 선택, 묶음 이름, **권한이 없으면 잠긴 채로 보인다** (FR-011b·FR-011c). "이 팀의 모든 보드에 적용됩니다"를 함께 보여준다
-- [ ] T028 [US2] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 직책 칸을 묶음 선택으로 바꾼다. `tierId`가 빈 옛 규칙은 직책 칸을 계속 보여준다
-- [ ] T029 [US2] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 묶음 편집기를 끼운다. `propertyAccessSection.scss`에 블록을 더한다 — **새 SCSS 파일을 만들지 않는다** (원칙 II)
-- [ ] T030 [P] [US2] `webapp/i18n/en.json`·`ko.json`에 묶음 화면 문자열을 넣는다
-- [ ] T031 [US2] 빌드·배포 후 [quickstart.md](./quickstart.md) 1·5절을 훑는다. **팀 관리자가 C-Level에 직책을 더하면 다른 보드의 판정이 함께 바뀌는지**를 두 보드에서 확인한다
+- [ ] T024 [US2] `server/model/duty_tier.go`(신규)에 `DutyTier{ID, Name, DutyIDs}`와 팀 설정을 읽고 쓰는 함수를 만든다. 키는 `dutyTiers`다 ([data-model.md](./data-model.md) 1절)
+- [ ] T025 [US2] `server/model/property_access.go`에 `TierIDs []string`를 더하고, 직책 축 우선순위 헬퍼를 만든다 — `tierIds`의 `dutyIds` 합집합을 쓰고 비어 있으면 `dutyId`로 떨어진다 ([data-model.md](./data-model.md) 3절)
+- [ ] T026 [US2] `server/app/duty_tiers.go`(신규)에 조회·저장과 편집 권한 판정을 만든다. 시스템 관리자는 `HasPermissionTo(userID, PermissionManageSystem)`, 팀 관리자는 `HasPermissionToTeam(userID, teamID, PermissionManageTeam)` ([research.md](./research.md) R6)
+- [ ] T027 [US2] `server/api/teams.go`에 `PUT /teams/{teamID}/dutyTiers`를 등록하고, `GET /teams/{teamID}` 응답에 `canEditDutyTiers`를 싣는다
+- [ ] T028 [US2] `server/app/property_access.go`의 `newPropertyAccessEvaluator`가 팀 묶음을 함께 읽어 `tierIds`를 직책 집합으로 푼다. 조직 마스터를 읽는 자리 바로 옆이다
+- [ ] T029 [P] [US2] `webapp/src/octoClient.ts`에 묶음 조회·저장을 더한다
+- [ ] T030 [P] [US2] `webapp/src/store/dutyTiers.ts`(신규)에 팀 묶음 슬라이스를 만든다. `store/orgMaster`와 같은 모양으로 둔다
+- [ ] T031 [US2] `webapp/src/components/shareBoard/dutyTierEditor.tsx`(신규)를 만든다. 직책 다중 선택, 묶음 이름, **권한이 없으면 잠긴 채로 보인다** (FR-011b·FR-011c). "이 팀의 모든 보드에 적용됩니다"를 함께 보여준다
+- [ ] T032 [US2] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 직책 칸을 묶음 다중 선택으로 바꾼다. `tierIds`가 빈 옛 규칙은 직책 칸을 계속 보여준다
+- [ ] T033 [US2] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 묶음 편집기를 끼운다. `propertyAccessSection.scss`에 블록을 더한다 — **새 SCSS 파일을 만들지 않는다** (원칙 II)
+- [ ] T034 [P] [US2] `webapp/i18n/en.json`·`ko.json`에 묶음 화면 문자열을 넣는다
+- [ ] T035 [US2] 빌드·배포 후 [quickstart.md](./quickstart.md) 1·6절을 훑는다. **팀 관리자가 C-Level에 직책을 더하면 다른 보드의 판정이 함께 바뀌는지**를 두 보드에서 확인한다
 
 **Checkpoint**: 묶음이 팀 것이 됐다. 규칙 여섯 줄을 손으로 쓰면 매트릭스가 완성된다.
 
@@ -115,24 +120,24 @@
 
 **Goal**: 요구사항 이미지와 같은 표에서 칸을 고른다. 규칙 줄을 직접 쓸 일이 없어진다.
 
-**Independent Test**: 표에서 칸을 골라 저장한 뒤 규칙 목록에 일곱 줄이 만들어졌는지
+**Independent Test**: 표에서 칸을 골라 저장한 뒤 규칙 목록에 여섯 줄이 만들어졌는지
 확인한다.
 
 ### Tests for User Story 3
 
-- [ ] T032 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`(신규)에 표 실패 테스트를 쓴다 — 행이 카드 유형, 열이 묶음, 칸을 고치면 대응하는 규칙만 바뀐다
-- [ ] T033 [P] [US3] `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 프리셋 실패 테스트를 더한다 — 처음 켜면 표준 여섯 줄이 깔린다, 팀에 묶음이 없으면 "묶음부터 정하세요"가 뜬다, 카드 유형이 정해지지 않은 보드는 표가 안 나온다 (FR-019·FR-022)
-- [ ] T034 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`에 보존 실패 테스트를 더한다 — 표에서 저장해도 `source`가 빈 줄은 안 지운다, 표 밖의 줄이 있으면 알려준다 (FR-021)
+- [ ] T036 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`(신규)에 표 실패 테스트를 쓴다 — 행이 카드 유형, 열이 묶음, 칸을 고치면 대응하는 규칙만 바뀐다, **표 여섯 칸이 규칙 여섯 줄로 저장된다**(SC-002)
+- [ ] T037 [P] [US3] `webapp/src/components/shareBoard/accessMatrix.test.tsx`에 보존 실패 테스트를 더한다 — 표에서 저장해도 `source`가 빈 줄은 안 지운다, 표 밖의 줄이 있으면 알려준다 (FR-021)
+- [ ] T038 [P] [US3] `webapp/src/components/shareBoard/propertyAccessSection.test.tsx`에 프리셋 실패 테스트를 더한다 — 처음 켜면 표준 여섯 줄이 깔린다, 팀에 묶음이 없으면 "묶음부터 정하세요"가 뜬다, 카드 유형이 정해지지 않은 보드는 표가 안 나온다 (FR-019·FR-022)
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] `webapp/src/components/shareBoard/accessMatrix.ts`(신규)에 표 ↔ 규칙 변환을 만든다. 표가 만든 줄에 `source: 'matrix'`를 붙이고, 저장할 때 그 줄만 갈아 끼운다 ([research.md](./research.md) R7)
-- [ ] T036 [US3] `webapp/src/components/shareBoard/accessMatrix.tsx`(신규)를 만든다. 칸의 컨트롤은 기존 `MenuWrapper` + `Menu.Text`를 쓴다
-- [ ] T037 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 `표로 보기`·`규칙으로 보기` 전환을 더한다. 카드 유형이 정해진 보드에만 표를 보여준다 (FR-022)
-- [ ] T038 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 표준 프리셋을 더한다. 유형 속성과 값은 `board.properties.okrBoard`에서 읽는다 ([data-model.md](./data-model.md) 7절)
-- [ ] T039 [US3] `webapp/src/components/shareBoard/propertyAccessSection.scss`에 표 블록을 더한다. 색·간격은 CSS 변수를 쓰고 하드코딩하지 않는다 (원칙 II)
-- [ ] T040 [P] [US3] `webapp/i18n/en.json`·`ko.json`에 표 문자열을 넣는다
-- [ ] T041 [US3] 빌드·배포 후 [quickstart.md](./quickstart.md) 2·2절-2·5절-2를 훑는다. **둘째 보드가 스위치 1회로 끝나는지**가 SC-004다
+- [ ] T039 [US3] `webapp/src/components/shareBoard/accessMatrix.ts`(신규)에 표 ↔ 규칙 변환을 만든다. 표가 만든 줄에 `source: 'matrix'`를 붙이고, 저장할 때 그 줄만 갈아 끼운다 ([research.md](./research.md) R7)
+- [ ] T040 [US3] `webapp/src/components/shareBoard/accessMatrix.tsx`(신규)를 만든다. 칸의 컨트롤은 기존 `MenuWrapper` + `Menu.Text`를 쓴다
+- [ ] T041 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 `표로 보기`·`규칙으로 보기` 전환을 더한다. 카드 유형이 정해진 보드에만 표를 보여준다 (FR-022)
+- [ ] T042 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 표준 프리셋을 더한다. 유형 속성과 값은 `board.properties.okrBoard`에서 읽는다 ([data-model.md](./data-model.md) 7절)
+- [ ] T043 [US3] `webapp/src/components/shareBoard/propertyAccessSection.scss`에 표 블록을 더한다. 색·간격은 CSS 변수를 쓰고 하드코딩하지 않는다 (원칙 II)
+- [ ] T044 [P] [US3] `webapp/i18n/en.json`·`ko.json`에 표 문자열을 넣는다
+- [ ] T045 [US3] 빌드·배포 후 [quickstart.md](./quickstart.md) 2·3·7절을 훑는다. **둘째 보드가 스위치 1회로 끝나는지**가 SC-004다
 
 **Checkpoint**: 설정이 요구사항 문서와 1:1로 맞는다.
 
@@ -147,15 +152,15 @@
 
 ### Tests for User Story 4
 
-- [ ] T042 [P] [US4] `webapp/src/components/shareBoard/dutyTierEditor.test.tsx`에 실패 테스트를 더한다 — 어느 묶음에도 없는 직책이 목록에 뜬다 (FR-023)
-- [ ] T043 [P] [US4] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`(신규)에 실패 테스트를 쓴다 — 없는 묶음을 가리키는 규칙이 깨진 규칙으로 표시된다 (FR-024)
+- [ ] T046 [P] [US4] `webapp/src/components/shareBoard/dutyTierEditor.test.tsx`에 실패 테스트를 더한다 — 어느 묶음에도 없는 직책이 목록에 뜬다(FR-023), 묶음을 지우기 전에 그것을 쓰는 보드 수가 보인다
+- [ ] T047 [P] [US4] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 실패 테스트를 더한다 — 없는 묶음을 가리키는 규칙이 깨진 규칙으로 표시된다 (FR-024)
 
 ### Implementation for User Story 4
 
-- [ ] T044 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에 "어느 묶음에도 없음" 목록을 더한다
-- [ ] T045 [US4] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 깨진 묶음 표시를 더한다. 기존 `PropertyAccessRow__broken` 클래스를 그대로 쓴다
-- [ ] T046 [P] [US4] `webapp/i18n/en.json`·`ko.json`에 경고 문자열을 넣는다
-- [ ] T047 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에서 묶음을 지우기 전에 그것을 쓰는 보드가 몇 개인지 보여준다. 개수는 `server/app/duty_tiers.go`가 세어 내려준다 ([spec.md](./spec.md) 엣지 케이스)
+- [ ] T048 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에 "어느 묶음에도 없음" 목록을 더한다
+- [ ] T049 [US4] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 깨진 묶음 표시를 더한다. 기존 `PropertyAccessRow__broken` 클래스를 그대로 쓴다
+- [ ] T050 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에서 묶음을 지우기 전에 그것을 쓰는 보드가 몇 개인지 보여준다. 개수는 `server/app/duty_tiers.go`가 세어 내려준다 ([spec.md](./spec.md) 엣지 케이스)
+- [ ] T051 [P] [US4] `webapp/i18n/en.json`·`ko.json`에 경고 문자열을 넣는다
 
 **Checkpoint**: 조용히 나던 사고가 저장 전에 보인다.
 
@@ -163,10 +168,11 @@
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T048 [quickstart.md](./quickstart.md) 4·6·7·8절 — 값이 없을 때, 기존 보드 15칸 변화 0건(SC-005), 본부를 늘려도 규칙 0줄 증가(SC-003), 005·006·007·008 회귀
-- [ ] T049 새로 쓴 테스트가 **구현을 되돌렸을 때 실패하는지** 확인한다. 첫 실행에서 통과한 테스트는 아무것도 증명하지 않는다 (원칙 IV). 최소 변이 셋 — `server/app/property_access.go`에서 작성자 바닥을 게이트 바깥으로, 같은 파일에서 `otherDivision`을 `sameDivision`의 부정으로, `server/app/duty_tiers.go`에서 묶음 편집을 보드 관리자에게 개방
-- [ ] T050 품질 게이트 — `make webapp-ci`(세 단계 따로), `make server-lint`, `make server-test`를 돌려 T001 기준선과 **실패 목록**을 대조한다. **`server-test`는 CI 미집행이라 로컬 출력을 근거로 제시한다**(원칙 I). `git status`에 새 `.scss`가 없는지, `make server-test` 실행 시간이 늘지 않았는지도 본다
-- [ ] T051 [quickstart.md](./quickstart.md) 9절 완료 판정을 채우고, 게이트·종단 검증·SC 실측을 이 파일 하단에 근거로 남긴다. 검증용 보드는 지운다
+- [ ] T052 신규 파일 여덟 개(`server/model/duty_tier.go`·`duty_tier_test.go`, `server/app/duty_tiers.go`·`duty_tiers_test.go`, `webapp/src/store/dutyTiers.ts`, `webapp/src/components/shareBoard/accessMatrix.ts`·`accessMatrix.tsx`·`dutyTierEditor.tsx`)에 **라이선스 헤더**가 있는지 확인한다. `mattermost-govet -license`가 집행한다 (원칙 VI)
+- [ ] T053 [quickstart.md](./quickstart.md) 5·8·9·10절 — 값이 없을 때, 기존 보드 15칸 변화 0건(SC-005), 본부를 늘려도 규칙 0줄 증가(SC-003), 005·006·007·008 회귀
+- [ ] T054 새로 쓴 테스트가 **구현을 되돌렸을 때 실패하는지** 확인한다. 첫 실행에서 통과한 테스트는 아무것도 증명하지 않는다 (원칙 IV). 최소 변이 셋 — `server/app/property_access.go`에서 작성자 바닥을 게이트 바깥으로, 같은 파일에서 `otherDivision`을 `sameDivision`의 부정으로, `server/app/duty_tiers.go`에서 묶음 편집을 보드 관리자에게 개방
+- [ ] T055 품질 게이트 — `make webapp-ci`(세 단계 따로), `make server-lint`, `make server-test`를 돌려 T001 기준선과 **실패 목록**을 대조한다. **`server-test`는 CI 미집행이라 로컬 출력을 근거로 제시한다**(원칙 I). `git status`에 새 `.scss`가 없는지, `make server-test` 실행 시간이 늘지 않았는지도 본다
+- [ ] T056 [quickstart.md](./quickstart.md) 11절 완료 판정을 채우고, 게이트·종단 검증·SC 실측을 이 파일 하단에 근거로 남긴다. 검증용 보드는 지운다
 
 ---
 
@@ -193,7 +199,7 @@ Phase 7 (검증)
 ### User Story Dependencies
 
 - **US1**: Phase 2만 끝나면 시작한다. 다른 이야기에 의존하지 않는다
-- **US2**: US1의 `tierId` 우선순위 자리가 필요하다. 코드는 겹치지 않지만 같은 파일을 만진다
+- **US2**: US1이 만든 우선순위 헬퍼 자리에 직책 축을 더한다. 같은 파일을 만진다
 - **US3**: US1·US2가 없으면 표가 만들 규칙이 없다
 - **US4**: US2의 묶음이 없으면 "어느 묶음에도 없는 직책"이라는 말이 성립하지 않는다
 
@@ -201,12 +207,12 @@ Phase 7 (검증)
 
 | 묶음 | 과제 |
 |---|---|
-| US1 테스트 | T006 · T007 · T008 — 파일이 둘로 갈린다 |
-| US2 테스트 | T018 · T019 · T020 — 파일이 셋 |
-| US2 클라이언트 | T025 · T026 — 서버 과제와 겹치지 않는다 |
-| US3 테스트 | T032 · T033 · T034 |
-| US4 테스트 | T042 · T043 |
-| i18n | T016 · T030 · T040 · T046 — 각 이야기 안에서 다른 과제와 병렬 |
+| US1 테스트 | T006 · T007 · T008 · T009 — 파일이 셋으로 갈린다 |
+| US2 테스트 | T019 · T020 · T021 · T022 · T023 — 파일이 다섯 |
+| US2 클라이언트 | T029 · T030 — 서버 과제와 겹치지 않는다 |
+| US3 테스트 | T036 · T037 · T038 |
+| US4 테스트 | T046 · T047 |
+| i18n | T017 · T034 · T044 · T051 — 각 이야기 안에서 다른 과제와 병렬 |
 
 ---
 

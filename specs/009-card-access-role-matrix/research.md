@@ -109,8 +109,8 @@ gated이고 passed가 false → 전체보기 바닥        // 매트릭스의 �
 ## R5. 직책 묶음은 팀이 기억한다
 
 **결정.** `focalboard_teams.settings`의 `dutyTiers` 키에 `{id, name, dutyIds[]}` 배열로
-둔다. 규칙(보드 소유)은 `tierId`로 가리킨다. 기존 `dutyId`는 그대로 읽는다 — 둘 다 있으면
-`tierId`가 이긴다.
+둔다. 규칙(보드 소유)은 `tierIds`로 가리킨다 — 한 줄이 묶음을 여럿 가리킬 수 있다. 기존
+`dutyId`는 그대로 읽는다. 둘 다 있으면 `tierIds`가 이긴다.
 
 **근거.** 셋이다.
 
