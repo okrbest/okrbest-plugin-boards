@@ -305,6 +305,78 @@
     }
 
     .PropertyAccessSection {
+        // 직책 묶음 — 규칙이 가리키는 대상이라 규칙 목록 바로 위에 둔다. 고칠 권한이
+        // 없어도 보인다: C-Level이 누구인지 모르면 규칙을 짤 수 없다 (FR-011c).
+        .DutyTierEditor {
+            border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+            margin-top: 16px;
+            padding: 16px 16px 0;
+
+            &.DutyTierEditor--readonly {
+                opacity: 0.75;
+            }
+
+            .DutyTierEditor__header {
+                display: flex;
+                flex-direction: column;
+                margin-bottom: 8px;
+            }
+
+            .DutyTierEditor__title {
+                font-weight: 600;
+            }
+
+            .DutyTierEditor__scope {
+                font-size: 12px;
+                color: rgba(var(--center-channel-color-rgb), 0.56);
+            }
+
+            .DutyTierEditor__tier {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 4px 0;
+            }
+
+            .DutyTierEditor__name {
+                width: 120px;
+                flex-shrink: 0;
+                font-weight: 600;
+            }
+
+            .DutyTierEditor__duties {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .DutyTierEditor__duty {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 2px 8px;
+                border-radius: 4px;
+                background: rgba(var(--center-channel-color-rgb), 0.08);
+            }
+
+            .DutyTierEditor__remove,
+            .DutyTierEditor__add {
+                padding: 0 4px;
+                border: 0;
+                background: none;
+                color: rgba(var(--center-channel-color-rgb), 0.72);
+                cursor: pointer;
+            }
+
+            // 어느 묶음에도 안 든 직책. 그 사람만 아무것도 못 보는 사고가 조용히
+            // 나므로 경고 색으로 세운다 (FR-023).
+            .DutyTierEditor__unassigned {
+                margin-top: 8px;
+                font-size: 12px;
+                color: var(--error-text);
+            }
+        }
+
         .PropertyAccessSection__header {
             display: flex;
             align-items: center;

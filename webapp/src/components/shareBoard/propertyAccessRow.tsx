@@ -21,6 +21,7 @@ import {
 } from '../../blocks/board'
 import {useAppSelector} from '../../store/hooks'
 import {getDivisions, getDepartments, getDuties, isOrgMasterLoaded} from '../../store/orgMaster'
+import {getDutyTiers} from '../../store/dutyTiers'
 
 type Props = {
     board: Board
@@ -90,6 +91,7 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
     const divisions = useAppSelector(getDivisions(board.teamId))
     const departments = useAppSelector(getDepartments(board.teamId, rule.divisionId))
     const duties = useAppSelector(getDuties(board.teamId))
+    const tiers = useAppSelector(getDutyTiers(board.teamId))
     const orgMasterLoaded = useAppSelector(isOrgMasterLoaded(board.teamId))
 
     // Only properties that carry a fixed set of options can name a value, so
@@ -165,8 +167,22 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
 
     const selectedOrgId = usesRelation ? `relation:${relation}` : rule.divisionId
 
+    // The duty axis: a team duty group, or the single duty an older rule names.
+    const usesTiers = (rule.tierIds || []).length > 0
+    const dutyChoices: Choice[] = [
+        ...withAny([]),
+        ...tiers.map((tier) => ({id: `tier:${tier.id}`, name: tier.name})),
+        ...duties.map((duty) => ({id: duty.id, name: duty.name})),
+    ]
+
+    // A rule can outlive a tier: tiers belong to the team, rules to the board.
+    // Such a row matches nobody, and saying so on the row is the only way an
+    // admin finds out (FR-024).
+    const brokenTier = usesTiers && !tiers.some((tier) => tier.id === rule.tierIds![0])
+
     const hasCardCondition = rule.propertyId !== '' && (rule.propertyValueId !== '' || (rule.propertyValueIds || []).length > 0)
-    const hasSubjectCondition = usesRelation || rule.divisionId !== '' || rule.departmentId !== '' || rule.dutyId !== ''
+    const hasSubjectCondition = usesRelation || usesTiers ||
+        rule.divisionId !== '' || rule.departmentId !== '' || rule.dutyId !== ''
     const invalid = !hasCardCondition || !hasSubjectCondition
 
     const className = `user-item PropertyAccessRow${invalid ? ' PropertyAccessRow--invalid' : ''}`
@@ -237,12 +253,24 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
                         onSelect={(id) => props.onChange({...rule, departmentId: id})}
                     />
                 )}
+                {/*
+                  * Duty groups first, then the individual duties an older rule
+                  * may still name. Picking either one clears the other — the row
+                  * has one duty axis, and two answers to it would leave the row
+                  * unable to say which it means.
+                  */}
                 <Selector
                     label={intl.formatMessage({id: 'PropertyAccess.selectDuty', defaultMessage: 'Duty'})}
-                    selectedId={rule.dutyId}
-                    choices={withAny(duties.map((duty) => ({id: duty.id, name: duty.name})))}
-                    broken={brokenDuty}
-                    onSelect={(id) => props.onChange({...rule, dutyId: id})}
+                    selectedId={usesTiers ? `tier:${rule.tierIds![0]}` : rule.dutyId}
+                    choices={dutyChoices}
+                    broken={brokenDuty || brokenTier}
+                    onSelect={(id) => {
+                        if (id.startsWith('tier:')) {
+                            props.onChange({...rule, tierIds: [id.slice('tier:'.length)], dutyId: ''})
+                            return
+                        }
+                        props.onChange({...rule, tierIds: [], dutyId: id})
+                    }}
                 />
                 <Selector
                     label={intl.formatMessage({id: 'PropertyAccess.selectPermission', defaultMessage: 'Permission'})}

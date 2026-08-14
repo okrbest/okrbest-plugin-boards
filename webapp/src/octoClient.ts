@@ -4,7 +4,7 @@
 import { Client4 } from "mattermost-redux/client"
 
 import {Block, BlockPatch, FileInfo} from './blocks/block'
-import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse, OrgUnit, UserOrgMembership, Duty} from './blocks/board'
+import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember, BoardPermissionsResponse, OrgUnit, UserOrgMembership, Duty, DutyTier, DutyTiersResponse} from './blocks/board'
 import {ISharing} from './blocks/sharing'
 import {OctoUtils} from './octoUtils'
 import {IUser, UserConfigPatch, UserPreference} from './user'
@@ -935,6 +935,30 @@ class OctoClient {
             return []
         }
         return (await this.getJson(response, [])) as Duty[]
+    }
+
+    // The team's duty tiers plus whether this viewer may change them. Tiers are
+    // team wide, so one edit reaches every board — the server decides who may.
+    async getDutyTiers(teamId?: string): Promise<DutyTiersResponse> {
+        const path = this.teamPath(teamId) + '/duty-tiers'
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return {tiers: [], canEdit: false}
+        }
+        return (await this.getJson(response, {tiers: [], canEdit: false})) as DutyTiersResponse
+    }
+
+    async setDutyTiers(teamId: string, tiers: DutyTier[]): Promise<DutyTiersResponse | undefined> {
+        const path = this.teamPath(teamId) + '/duty-tiers'
+        const response = await fetch(this.getBaseURL() + path, {
+            method: 'PUT',
+            headers: this.headers(),
+            body: JSON.stringify(tiers),
+        })
+        if (response.status !== 200) {
+            return undefined
+        }
+        return this.getJson<DutyTiersResponse | undefined>(response, undefined)
     }
 
     async duplicateBoard(boardID: string, asTemplate: boolean, toTeam?: string): Promise<BoardsAndBlocks | undefined> {

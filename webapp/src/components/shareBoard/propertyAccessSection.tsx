@@ -7,18 +7,20 @@ import {useIntl} from 'react-intl'
 import Switch from '../../widgets/switch'
 import Button from '../../widgets/buttons/button'
 
-import {Board, createBoard, PropertyAccessRule, PropertyAccessSettings} from '../../blocks/board'
+import {Board, createBoard, PropertyAccessRule, PropertyAccessSettings, cardValueIds} from '../../blocks/board'
 import {Permission} from '../../constants'
 import {Utils} from '../../utils'
 import mutator from '../../mutator'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {fetchOrgMaster, isOrgMasterLoaded} from '../../store/orgMaster'
+import {areDutyTiersLoaded, fetchDutyTiers} from '../../store/dutyTiers'
 import {getBoardUsers, getMe} from '../../store/users'
 import {getClientConfig} from '../../store/clientConfig'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import PropertyAccessRow from './propertyAccessRow'
+import DutyTierEditor from './dutyTierEditor'
 
 const PROPERTY_ACCESS_KEY = 'propertyAccess'
 
@@ -64,10 +66,20 @@ const columnLabels = [
     {id: 'PropertyAccess.selectPermission', defaultMessage: 'Permission'},
 ]
 
+// A row the server would accept: one card condition and one subject condition.
+//
+// Both sides now have two shapes. The card side may name a single value or a
+// list; the subject side may name an organisation outright or a relation, and a
+// duty outright or a duty group. Missing any of the new shapes here does not
+// show up as a validation message — the save silently drops the row.
 const isComplete = (rule: PropertyAccessRule): boolean =>
     rule.propertyId !== '' &&
-    rule.propertyValueId !== '' &&
-    (rule.divisionId !== '' || rule.departmentId !== '' || rule.dutyId !== '')
+    cardValueIds(rule).length > 0 &&
+    (Boolean(rule.relation) ||
+        (rule.tierIds || []).length > 0 ||
+        rule.divisionId !== '' ||
+        rule.departmentId !== '' ||
+        rule.dutyId !== '')
 
 const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const intl = useIntl()
@@ -77,6 +89,7 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const settings = readSettings(board)
     const [rules, setRules] = React.useState<PropertyAccessRule[]>(settings.rules)
     const masterLoaded = useAppSelector(isOrgMasterLoaded(board.teamId))
+    const tiersLoaded = useAppSelector(areDutyTiersLoaded(board.teamId))
     const boardUsers = useAppSelector(getBoardUsers)
     const me = useAppSelector(getMe)
     const clientConfig = useAppSelector(getClientConfig)
@@ -90,6 +103,14 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
             dispatch(fetchOrgMaster(board.teamId))
         }
     }, [board.teamId, masterLoaded])
+
+    // Tiers come from the team, so they are fetched beside the organisation
+    // master rather than read off the board.
+    useEffect(() => {
+        if (board.teamId && !tiersLoaded) {
+            dispatch(fetchDutyTiers(board.teamId))
+        }
+    }, [board.teamId, tiersLoaded])
 
     // Half finished rows live in the editor only. Sending one would be rejected
     // by the server's validation, so the save drops them instead.
@@ -171,6 +192,13 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                                 {user: lastEditorName, date: intl.formatDate(settings.updatedAt, {dateStyle: 'medium', timeStyle: 'short'})},
                             )}
                         </div>}
+                    {/*
+                      * The tiers sit above the rules because a rule points at
+                      * one. Reading the rule list without knowing who "C-Level"
+                      * is leaves the reader guessing, so this is shown even to
+                      * those who may not change it (FR-011c).
+                      */}
+                    {settings.enabled && <DutyTierEditor teamId={board.teamId}/>}
                     {rules.length > 0 &&
                         <div className='PropertyAccessSection__header'>
                             <div className='PropertyAccessRow__axes'>
