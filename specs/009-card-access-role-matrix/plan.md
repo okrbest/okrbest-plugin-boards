@@ -23,8 +23,8 @@
 
 **Primary Dependencies**: Gorilla Mux, Squirrel, Redux Toolkit, react-intl
 
-**Storage**: `board.properties` JSON. **새 테이블도 마이그레이션도 없다** — 007·008이 같은
-자리를 쓴다
+**Storage**: 이미 있는 JSON 칸 둘. 규칙은 `board.properties`, 직책 묶음은
+`focalboard_teams.settings`. **새 테이블도 마이그레이션도 없다**
 
 **Testing**: `go test -race ./...` (colocated `_test.go`) · Jest + React Testing Library
 (colocated `*.test.tsx`)
@@ -39,8 +39,8 @@
 **Constraints**: 기존 규칙을 쓰는 보드의 판정 결과가 바뀌면 안 된다 (SC-005). 조직·직책
 마스터는 메인 서버 소유라 읽기만 한다
 
-**Scale/Scope**: 서버 파일 3개(`model/property_access.go`, `app/property_access.go`,
-검증), webapp 파일 5개 안팎(규칙 행·섹션·매트릭스·타입·i18n)
+**Scale/Scope**: 서버 파일 6개 안팎(모델·평가기·팀 묶음 앱·API 라우트·검증),
+webapp 파일 7개 안팎(규칙 행·섹션·매트릭스·묶음 편집기·팀 스토어·타입·i18n)
 
 ## Constitution Check
 
@@ -63,9 +63,10 @@
 
 | 원칙 | 재판정 | 새로 드러난 것 |
 |---|---|---|
-| II | 통과 | 매트릭스 표는 새 시각 요소다. 다만 **사용자가 요구사항 이미지로 명시적으로 요청**했고 브레인스토밍에서 골랐다. 원칙 II의 "명시적 요청" 예외에 해당한다. 컨트롤은 기존 드롭다운을 쓴다 |
-| IV | 통과 | 계약이 테스트 34개로 펼쳐진다. 1절 6개, 2절 10개, 3절 4개, 4절 6개, 5절 7개 |
-| I | 주의 | 웹소켓 팬아웃 판정이 무거워진다. `make server-test` 실행 시간을 기준선과 함께 적는다 |
+| II | 통과 | 매트릭스 표는 새 시각 요소다. 다만 **사용자가 요구사항 이미지로 명시적으로 요청**했고 브레인스토밍에서 골랐다. 원칙 II의 "명시적 요청" 예외에 해당한다. 컨트롤은 기존 드롭다운을 쓴다. 새 API 라우트는 `server/api/teams.go`에 등록해 `API → App → Store`를 지킨다 |
+| IV | 통과 | 계약이 테스트 45개로 펼쳐진다. 1절 6, 2절 10, 3절 4, 4절 8, 5절 7, 6절 10 |
+| VII | 해당 없음 | 팀 저장을 더했지만 `focalboard_teams.settings`가 이미 있어 마이그레이션이 없다 |
+| I | 주의 | 웹소켓 팬아웃 판정이 무거워지고 팀 묶음 조회가 하나 는다. `make server-test` 실행 시간을 기준선과 함께 적는다 |
 
 ## Project Structure
 
@@ -90,21 +91,24 @@ specs/009-card-access-role-matrix/
 ```text
 server/
 ├── model/
-│   └── property_access.go           # 관계·묶음 필드 추가, 우선순위 헬퍼
-└── app/
-    ├── property_access.go           # 게이트를 규칙 루프로. 관계 판정. 저장 검증
-    ├── org_master.go                # orgUnitAncestors 재사용 (변경 없음)
-    ├── blocks.go / cards.go         # 호출부 (변경 없음 — 평가기 안에서 끝난다)
-    └── property_access_test.go      # 계약 1~4절
+│   ├── property_access.go           # 관계·tierId·다중 값 필드, 우선순위 헬퍼
+│   └── duty_tier.go                 # 신규 — 묶음 모델, 팀 설정 읽고 쓰기
+├── app/
+│   ├── property_access.go           # 게이트를 규칙 루프로. 관계 판정. 검증
+│   ├── duty_tiers.go                # 신규 — 묶음 조회·저장, 편집 권한 판정
+│   ├── org_master.go                # orgUnitAncestors 재사용 (변경 없음)
+│   └── blocks.go / cards.go         # 호출부 (변경 없음)
+└── api/
+    └── teams.go                     # PUT /teams/{teamID}/dutyTiers 등록
 
 webapp/src/
-├── blocks/
-│   └── board.ts                     # PropertyAccessRule 타입 확장, tiers
+├── blocks/board.ts                  # PropertyAccessRule 확장
+├── store/dutyTiers.ts               # 신규 — 팀 묶음 슬라이스 (orgMaster와 같은 모양)
 ├── components/shareBoard/
 │   ├── propertyAccessSection.tsx    # 표/규칙 두 보기 전환, 프리셋
 │   ├── propertyAccessRow.tsx        # 관계 선택, 묶음 선택
 │   ├── accessMatrix.tsx             # 신규 — 매트릭스 표
-│   ├── dutyTierEditor.tsx           # 신규 — 묶음 편집
+│   ├── dutyTierEditor.tsx           # 신규 — 묶음 편집 (권한 없으면 잠김)
 │   └── propertyAccessSection.scss   # 기존 파일에 블록 추가 (새 파일 금지)
 └── i18n/en.json · ko.json           # 문자열
 ```
@@ -112,6 +116,9 @@ webapp/src/
 **Structure Decision.** 판정은 `server/app/property_access.go` 한 파일 안에서 끝난다.
 호출부 여섯 곳(`blocks.go` 4, `cards.go` 2)은 `evaluator.For(card)`만 부르므로 손대지
 않는다. 평가기의 내부를 바꾸면서 바깥 모양을 유지하는 것이 이 계획의 형태다.
+
+묶음은 파일을 나눈다. 저장 자리(팀)와 권한(팀 관리자)이 규칙과 다르므로 같은 파일에 두면
+"이 값은 어느 규칙을 따르나"가 매번 헷갈린다.
 
 webapp은 `shareBoard/` 안에 머문다. 표와 묶음 편집기는 파일을 나눈다 —
 `propertyAccessSection.tsx`가 208줄인데 표까지 넣으면 한 파일이 하는 일이 셋이 된다.
@@ -124,32 +131,41 @@ webapp은 `shareBoard/` 안에 머문다. 표와 묶음 편집기는 파일을 �
 |---|---|---|
 | 0 | 기준선 측정 (`git stash` 후 세 게이트 + `server-test`) | 목록 저장 |
 | 1 | 서버 — 게이트를 규칙 루프로. **동작 변화 없이** | 기존 테스트 전부 통과 |
-| 2 | 서버 — 관계 판정 + 필드 우선순위 + 저장 검증 | 계약 1~4절 |
-| 3 | webapp — 규칙 행에 관계·묶음 선택 (US1·US2) | 규칙을 손으로 여섯 줄 써서 매트릭스 확인 |
-| 4 | webapp — 매트릭스 표 + 프리셋 (US3) | 계약 5절 |
-| 5 | webapp — 빠진 직책·깨진 규칙 표시 (US4) | 계약 5절 |
-| 6 | 종단 검증 + 게이트 | [quickstart.md](./quickstart.md) |
+| 2 | 서버 — 관계 판정 + 필드 우선순위 + 저장 검증 (US1) | 계약 1~4절 |
+| 3 | 서버 — 팀 묶음 저장·조회·편집 권한 + API (US2) | 계약 5절 |
+| 4 | webapp — 규칙 행에 관계·묶음 선택, 묶음 편집기 (US1·US2) | 규칙을 손으로 여섯 줄 써서 매트릭스 확인 |
+| 5 | webapp — 매트릭스 표 + 프리셋 (US3) | 계약 6절 |
+| 6 | webapp — 빠진 직책·깨진 규칙 표시 (US4) | 계약 6절 |
+| 7 | 종단 검증 + 게이트 | [quickstart.md](./quickstart.md) |
 
 **1단계를 따로 떼는 것이 이 순서의 핵심이다.** 게이트 구조를 바꾸는 일과 새 조건을 더하는
 일을 한 커밋에 섞으면, 기존 보드 판정이 달라졌을 때 원인이 둘 중 어느 쪽인지 모른다.
 1단계는 기존 테스트가 전부 통과해야 끝난다 — 새 테스트를 안 쓴다.
 
-## 명세에 되돌려야 할 것 하나
+## 저장 자리가 둘인 것을 어떻게 다루나
 
-**SC-004를 지금 설계로는 못 지킨다.** research R8에 자세히 적었다.
+이 계획에서 가장 헷갈릴 자리다. 규칙은 보드가, 묶음은 팀이 갖는다.
 
-표준 여섯 줄은 자동으로 깔린다 — 유형 속성과 값을 OKR 사다리 설정에서 읽는다. 그런데
-**직책 묶음은 자동으로 못 만든다.** 회사마다 직책 이름이 달라 어느 직책이 C-Level인지
-이름으로 추정할 수 없고, 추정이 틀리면 권한이 조용히 잘못 깔린다.
+| | 규칙·매트릭스 | 직책 묶음 |
+|---|---|---|
+| 저장 | `board.properties.propertyAccess` | `focalboard_teams.settings.dutyTiers` |
+| 고치는 사람 | 보드 관리자 | 시스템 관리자 · 팀 관리자 |
+| 영향 범위 | 이 보드 | 팀의 모든 보드 |
+| 저장 시점 | 보드 저장 | 팀 설정 저장 |
 
-묶음이 보드마다 저장되므로 보드를 새로 만들 때마다 배정을 반복해야 한다.
+**둘이 서로를 검증하지 않는다.** 규칙의 `tierId`가 팀 묶음에 없어도 저장이 통과한다.
+저장 시점이 달라서다 — 팀 관리자가 묶음을 지우면 그 묶음을 쓰던 보드의 규칙이 남는데,
+여기서 400을 내면 관계없는 편집까지 막힌다. 그런 규칙은 아무에게도 안 걸리고 화면이 깨진
+규칙으로 표시한다(FR-024). 002가 조직·직책 ID를 검사하지 않는 것과 같은 판단이다.
 
-**제안** — SC-004를 "묶음이 정의된 보드에서 표준 권한을 켜는 조작이 스위치 1회"로 좁힌다.
-묶음을 팀 단위로 옮기는 일(진짜 스위치 1회)은 저장 위치를 바꾸는 별도 작업이라 이번에
-섞지 않는다.
-
-**사용자 판단이 필요하다.** `/speckit-plan`은 명세를 고치지 않는다.
+평가기는 판정할 때 둘을 함께 읽는다. `newPropertyAccessEvaluator`가 지금 조직 마스터를
+팀에서 읽고 있으므로([property_access.go:105](../../server/app/property_access.go#L105))
+묶음도 같은 자리에서 읽는다. 조회가 하나 는다.
 
 ## Complexity Tracking
 
 정당화가 필요한 헌법 위반이 없다.
+
+저장 자리를 둘로 나눈 것은 복잡도를 더한 선택이지만 원칙 위반이 아니다. 근거는
+[research.md](./research.md) R5·R6에 적었다 — 보드마다 묶음을 두면 같은 사람이 보드마다
+권한이 다른데 아무도 모르는 상태가 생긴다.
