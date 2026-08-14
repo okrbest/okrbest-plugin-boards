@@ -5,11 +5,13 @@ package api
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
+	"github.com/mattermost/mattermost-plugin-boards/server/services/audit"
 
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
@@ -25,6 +27,92 @@ func (a *API) registerOrgRoutes(r *mux.Router) {
 	r.HandleFunc("/teams/{teamID}/org-units", a.sessionRequired(a.handleGetOrgUnits)).Methods("GET")
 	r.HandleFunc("/teams/{teamID}/duties", a.sessionRequired(a.handleGetDuties)).Methods("GET")
 	r.HandleFunc("/teams/{teamID}/org-profiles", a.sessionRequired(a.handleGetOrgProfiles)).Methods("GET")
+
+	// Duty tiers sit beside the organization lookups because they are read
+	// under the same bar — a board admin writing a rule has to see which duties
+	// "C-Level" stands for. Writing is a different question and the handler asks
+	// it separately (009 FR-011b).
+	r.HandleFunc("/teams/{teamID}/duty-tiers", a.sessionRequired(a.handleGetDutyTiers)).Methods("GET")
+	r.HandleFunc("/teams/{teamID}/duty-tiers", a.sessionRequired(a.handleSetDutyTiers)).Methods("PUT")
+}
+
+// dutyTiersResponse carries the tiers plus whether this viewer may change them.
+//
+// The flag is computed here rather than on the client: a team admin is not a
+// system role, so the browser cannot tell from the user object alone.
+type dutyTiersResponse struct {
+	Tiers   []model.DutyTier `json:"tiers"`
+	CanEdit bool             `json:"canEdit"`
+}
+
+func (a *API) handleGetDutyTiers(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	teamID := vars["teamID"]
+	userID := getUserID(r)
+
+	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
+		return
+	}
+
+	tiers, err := a.app.GetDutyTiers(teamID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	data, err := json.Marshal(dutyTiersResponse{Tiers: tiers, CanEdit: a.app.CanEditDutyTiers(userID, teamID)})
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+}
+
+func (a *API) handleSetDutyTiers(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	teamID := vars["teamID"]
+	userID := getUserID(r)
+
+	// Viewing the team is the floor; the app layer asks the real question. Doing
+	// it in both places keeps a caller who is not on the team from learning
+	// whether the team exists.
+	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
+		return
+	}
+
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	var tiers []model.DutyTier
+	if err = json.Unmarshal(requestBody, &tiers); err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest("invalid duty tiers: "+err.Error()))
+		return
+	}
+
+	auditRec := a.makeAuditRecord(r, "setDutyTiers", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelModify, auditRec)
+	auditRec.AddMeta("teamID", teamID)
+	auditRec.AddMeta("tierCount", len(tiers))
+
+	if err = a.app.SetDutyTiers(userID, teamID, tiers); err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	data, err := json.Marshal(dutyTiersResponse{Tiers: tiers, CanEdit: true})
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+	auditRec.Success()
 }
 
 func (a *API) handleGetOrgUnits(w http.ResponseWriter, r *http.Request) {

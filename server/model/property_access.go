@@ -110,7 +110,12 @@ type PropertyAccessRule struct {
 
 	DivisionID   string `json:"divisionId"`
 	DepartmentID string `json:"departmentId"`
-	DutyID       string `json:"dutyId"`
+
+	// TierIDs point at duty tiers the team owns. One row can name several —
+	// "팀장 또는 팀원" is one row. DutyID is what an older rule carries; the
+	// tiers are read first.
+	TierIDs []string `json:"tierIds,omitempty"`
+	DutyID  string   `json:"dutyId"`
 
 	// Relation replaces the two absolute organization axes when set.
 	Relation OrgRelation `json:"relation,omitempty"`
