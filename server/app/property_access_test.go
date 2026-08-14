@@ -125,6 +125,318 @@ func evaluatorForUser(userID, orgUnitID, dutyID string, boardPermission model.Ef
 	})
 }
 
+// ---- 009: 관계 조건 ----
+//
+// 조직을 이름이 아니라 카드와의 관계로 고른다. 계약 2절의 열 줄이 여기 있다.
+
+const (
+	propDivision = "prop-division" // orgDivision 속성
+	propPerson   = "prop-assignee" // person 속성
+	propType     = "prop-type"     // 유형
+	valObjective = "opt-objective" //
+	valTask      = "opt-task"      //
+)
+
+// relationCard builds a card carrying a 유형 value plus whatever organization
+// and assignee values the case needs.
+func relationCard(typeValue, divisionValue string, assignees ...string) *model.Block {
+	properties := map[string]interface{}{}
+	if typeValue != "" {
+		properties[propType] = typeValue
+	}
+	if divisionValue != "" {
+		properties[propDivision] = divisionValue
+	}
+	switch len(assignees) {
+	case 0:
+	case 1:
+		properties[propPerson] = assignees[0]
+	default:
+		values := make([]interface{}, 0, len(assignees))
+		for _, id := range assignees {
+			values = append(values, id)
+		}
+		properties[propPerson] = values
+	}
+	return &model.Block{ID: "card-1", Type: model.TypeCard, Fields: map[string]interface{}{"properties": properties}}
+}
+
+// relationEvaluator builds an evaluator over a single relation rule.
+func relationEvaluator(rule model.PropertyAccessRule, userID, orgUnitID, dutyID string) *PropertyAccessEvaluator {
+	var profile *model.UserOrgProfile
+	if orgUnitID != "" || dutyID != "" {
+		profile = &model.UserOrgProfile{PrimaryOrgUnitID: orgUnitID, PrimaryDutyID: dutyID}
+	}
+	return NewPropertyAccessEvaluator(EvaluatorInput{
+		UserID:          userID,
+		Settings:        &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{rule}},
+		OrgUnits:        testOrgUnits(),
+		Duties:          testDuties(),
+		Profile:         profile,
+		BoardPermission: model.EffectiveBoardPermissionEdit,
+	})
+}
+
+func divisionRule(relation model.OrgRelation) model.PropertyAccessRule {
+	return model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, PropertyValueID: valObjective,
+		Relation: relation, OrgPropertyID: propDivision,
+		Permission: model.PropertyAccessEditor,
+	}
+}
+
+func TestEvaluatorRelationSameDivision(t *testing.T) {
+	rule := divisionRule(model.RelationSameDivision)
+	objective := relationCard(valObjective, divStrategy)
+
+	t.Run("2-1 같은 본부 소속이면 성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", divStrategy, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(objective))
+	})
+
+	t.Run("2-2 부서 소속자가 조상을 따라 본부 조건에 걸린다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(objective),
+			"FR-017 — 절대값 규칙과 같은 방식으로 올라간다")
+	})
+
+	t.Run("2-3 다른 본부 소속이면 불성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", depFactory, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(objective))
+	})
+}
+
+func TestEvaluatorRelationOtherDivision(t *testing.T) {
+	rule := divisionRule(model.RelationOtherDivision)
+	objective := relationCard(valObjective, divStrategy)
+
+	t.Run("2-4 다른 본부 소속이면 성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", depFactory, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(objective))
+	})
+
+	t.Run("같은 본부 소속이면 불성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(objective))
+	})
+}
+
+func TestEvaluatorRelationNeedsBothValues(t *testing.T) {
+	blank := relationCard(valObjective, "")
+
+	t.Run("2-5 카드에 본부 값이 없으면 sameDivision이 불성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(divisionRule(model.RelationSameDivision), "u1", divStrategy, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(blank))
+	})
+
+	t.Run("2-6 카드에 본부 값이 없으면 otherDivision도 불성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(divisionRule(model.RelationOtherDivision), "u1", divStrategy, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(blank),
+			"다른 본부는 같은 본부의 부정이 아니다 — 값이 없으면 어느 쪽도 아니다")
+	})
+
+	t.Run("2-7 조직 배정이 없는 사용자는 모든 관계가 불성립한다", func(t *testing.T) {
+		objective := relationCard(valObjective, divStrategy)
+
+		for _, relation := range []model.OrgRelation{
+			model.RelationSameDivision, model.RelationOtherDivision, model.RelationSameDepartment,
+		} {
+			evaluator := relationEvaluator(divisionRule(relation), "u1", "", "")
+
+			require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(objective),
+				"관계 %s", relation)
+		}
+	})
+}
+
+func TestEvaluatorRelationSameDepartment(t *testing.T) {
+	rule := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, PropertyValueID: valTask,
+		Relation: model.RelationSameDepartment, OrgPropertyID: propDivision,
+		Permission: model.PropertyAccessEditor,
+	}
+	task := relationCard(valTask, depPlanning)
+
+	t.Run("같은 부서면 성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(task))
+	})
+
+	t.Run("같은 본부의 다른 부서는 불성립한다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", divStrategy, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(task),
+			"부서 조건은 상위 본부 소속자에게 내려가지 않는다")
+	})
+}
+
+func TestEvaluatorRelationMine(t *testing.T) {
+	const me = "user-me"
+
+	rule := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, PropertyValueID: valTask,
+		Relation: model.RelationMine, AssigneePropertyID: propPerson,
+		Permission: model.PropertyAccessEditor,
+	}
+
+	t.Run("2-8 담당자 속성이 없어도 작성자면 성립한다", func(t *testing.T) {
+		bare := model.PropertyAccessRule{
+			ID: "r1", PropertyID: propType, PropertyValueID: valTask,
+			Relation: model.RelationMine, Permission: model.PropertyAccessEditor,
+		}
+		card := relationCard(valTask, "")
+		card.CreatedBy = me
+
+		evaluator := relationEvaluator(bare, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(card))
+	})
+
+	t.Run("2-9 작성자가 남이어도 담당자면 성립한다", func(t *testing.T) {
+		card := relationCard(valTask, "", me)
+		card.CreatedBy = "somebody-else"
+
+		evaluator := relationEvaluator(rule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(card),
+			"팀장이 만들어 배정한 과제를 팀원이 고칠 수 있어야 한다")
+	})
+
+	t.Run("2-10 담당자가 여럿이고 그중 하나가 나면 성립한다", func(t *testing.T) {
+		card := relationCard(valTask, "", "someone", me, "another")
+		card.CreatedBy = "somebody-else"
+
+		evaluator := relationEvaluator(rule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(card))
+	})
+
+	t.Run("작성자도 담당자도 아니면 불성립한다", func(t *testing.T) {
+		card := relationCard(valTask, "", "someone-else")
+		card.CreatedBy = "somebody-else"
+
+		evaluator := relationEvaluator(rule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(card),
+			"게이트가 닫히면 작성자 바닥도 안 준다")
+	})
+}
+
+func TestEvaluatorRelationAny(t *testing.T) {
+	rule := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, PropertyValueID: valObjective,
+		Relation: model.RelationAny, DutyID: dutyHead,
+		Permission: model.PropertyAccessEditor,
+	}
+	objective := relationCard(valObjective, divStrategy)
+
+	t.Run("조직을 안 따진다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", depFactory, dutyHead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(objective),
+			"매트릭스의 대표 열 — 전체 본부를 편집한다")
+	})
+
+	t.Run("직책이 다르면 게이트가 닫힌다", func(t *testing.T) {
+		evaluator := relationEvaluator(rule, "u1", depFactory, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(objective),
+			"relation=any도 게이트다 — 매트릭스의 빈칸이 빈칸으로 남는다")
+	})
+}
+
+func TestEvaluatorCardValuesList(t *testing.T) {
+	rule := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType,
+		PropertyValueIDs: []string{valObjective, valTask},
+		Relation:         model.RelationSameDivision, OrgPropertyID: propDivision,
+		Permission: model.PropertyAccessViewer,
+	}
+
+	evaluator := relationEvaluator(rule, "u1", depPlanning, dutyLead)
+
+	require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(relationCard(valObjective, divStrategy)))
+	require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(relationCard(valTask, divStrategy)),
+		"한 줄이 값 둘을 가리킨다 — Objective 또는 Key Result")
+}
+
+// 009 계약 4절 — 저장할 때 막는 것들. 화면이 만들 수 없는 상태만 막고, 마스터가 메인
+// 서버 소유라 우리가 보장할 수 없는 것은 통과시킨다.
+func TestValidateRelationRules(t *testing.T) {
+	settingsWith := func(rule model.PropertyAccessRule) *model.PropertyAccessSettings {
+		return &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{rule}}
+	}
+
+	t.Run("모르는 관계는 거절한다", func(t *testing.T) {
+		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+			PropertyID: propType, PropertyValueID: valObjective,
+			Relation: "sameGalaxy", Permission: model.PropertyAccessViewer,
+		}))
+
+		require.Error(t, err, "모르는 관계를 통과시키면 판정이 조용히 달라진다")
+	})
+
+	t.Run("본부 계열인데 볼 속성이 없으면 거절한다", func(t *testing.T) {
+		for _, relation := range []model.OrgRelation{
+			model.RelationSameDivision, model.RelationOtherDivision, model.RelationSameDepartment,
+		} {
+			err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+				PropertyID: propType, PropertyValueID: valObjective,
+				Relation: relation, Permission: model.PropertyAccessViewer,
+			}))
+
+			require.Error(t, err, "관계 %s — 볼 속성이 없으면 절대 성립하지 않는 죽은 규칙이다", relation)
+		}
+	})
+
+	t.Run("mine은 담당자 속성이 없어도 통과한다", func(t *testing.T) {
+		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+			PropertyID: propType, PropertyValueID: valTask,
+			Relation: model.RelationMine, Permission: model.PropertyAccessEditor,
+		}))
+
+		require.NoError(t, err, "작성자만으로 판정된다 — 담당자 속성은 선택이다")
+	})
+
+	t.Run("관계가 있으면 사람 쪽 조건이 있는 것으로 센다", func(t *testing.T) {
+		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+			PropertyID: propType, PropertyValueID: valObjective,
+			Relation: model.RelationAny, DutyID: dutyHead,
+			Permission: model.PropertyAccessEditor,
+		}))
+
+		require.NoError(t, err)
+	})
+
+	t.Run("사람 쪽 조건이 하나도 없으면 거절한다", func(t *testing.T) {
+		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+			PropertyID: propType, PropertyValueID: valObjective,
+			Permission: model.PropertyAccessEditor,
+		}))
+
+		require.Error(t, err, "모두에게 권한을 주는 줄은 실수다")
+	})
+
+	t.Run("값 목록만 있는 규칙을 거절하지 않는다", func(t *testing.T) {
+		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+			PropertyID:       propType,
+			PropertyValueIDs: []string{valObjective, valTask},
+			Relation:         model.RelationSameDivision, OrgPropertyID: propDivision,
+			Permission: model.PropertyAccessViewer,
+		}))
+
+		require.NoError(t, err, "한 값짜리 칸이 비어 있어도 목록이 있으면 카드 조건이 있는 것이다")
+	})
+}
+
 func TestEvaluatorAdminBypass(t *testing.T) {
 	input := EvaluatorInput{
 		Settings:        testSettings(),

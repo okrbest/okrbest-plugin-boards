@@ -45,6 +45,21 @@
 
 server 실패 패키지 셋: `server/app`, `server/model`, `server/services/store/sqlstore`.
 
+**기준선에 불안정한 테스트가 하나 있다 — `TestPatchBoard`.** T001 회차에는 통과했지만
+실행마다 결과가 달라진다. 여덟 번씩 돌려 재보면 이렇다.
+
+| | TestPatchBoard 실패 |
+|---|---|
+| 009 변경 전 | 2/8 |
+| US1 서버 변경 후 | 1/8 |
+
+원인은 `GetMembersForBoard`의 mock 기대를 웹소켓 브로드캐스트 고루틴(`ws/server.go:458`)과
+`AddTeamMembers` 검사(`boards.go:638`)가 동시에 소진하는 경합이다. 먼저 걸린 쪽이
+보고되므로 실패 문구의 파일명까지 회차마다 달라진다.
+
+**이 기능의 범위가 아니라 고치지 않는다.** 다만 회귀를 판정할 때 이 한 줄은 diff에서
+빼고 본다 — 넣고 보면 내 변경과 무관한 이유로 목록이 어긋난다.
+
 **회귀 판정은 개수가 아니라 목록 diff로 한다.** `make webapp-ci`는 기준선에서도
 실패하므로 세 단계를 따로 돌려 대조한다.
 
@@ -129,17 +144,17 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 
 ### Tests for User Story 1
 
-- [ ] T006 [P] [US1] `server/model/property_access_test.go`에 필드 우선순위 실패 테스트를 더한다 — 새 필드가 빈 기존 규칙은 지금과 같은 판정, `relation`이 있으면 `divisionId`를 **무시**, `propertyValueIds`에 값 둘이면 그중 하나만 맞아도 일치 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 3절 3-1·3-2·3-4)
-- [ ] T007 [P] [US1] `server/app/property_access_test.go`에 관계 판정 실패 테스트 열 개를 더한다 — 같은 본부, **부서 소속자가 조상을 따라 본부 조건에 걸림**, 다른 본부, 카드에 본부 값이 없으면 `sameDivision`도 `otherDivision`도 **불성립**, 조직 배정 없는 사용자, `mine`이 작성자·담당자·multiPerson에서 성립 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 2절)
-- [ ] T008 [P] [US1] `server/app/property_access_test.go`에 저장 검증 실패 테스트를 더한다 — 모르는 `relation` 거절, 본부·부서 계열인데 `orgPropertyId`가 비면 거절, `relation=mine`에 `assigneePropertyId`가 비면 **통과** ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 4절)
+- [X] T006 [P] [US1] `server/model/property_access_test.go`에 필드 우선순위 실패 테스트를 더한다 — 새 필드가 빈 기존 규칙은 지금과 같은 판정, `relation`이 있으면 `divisionId`를 **무시**, `propertyValueIds`에 값 둘이면 그중 하나만 맞아도 일치 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 3절 3-1·3-2·3-4)
+- [X] T007 [P] [US1] `server/app/property_access_test.go`에 관계 판정 실패 테스트 열 개를 더한다 — 같은 본부, **부서 소속자가 조상을 따라 본부 조건에 걸림**, 다른 본부, 카드에 본부 값이 없으면 `sameDivision`도 `otherDivision`도 **불성립**, 조직 배정 없는 사용자, `mine`이 작성자·담당자·multiPerson에서 성립 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 2절)
+- [X] T008 [P] [US1] `server/app/property_access_test.go`에 저장 검증 실패 테스트를 더한다 — 모르는 `relation` 거절, 본부·부서 계열인데 `orgPropertyId`가 비면 거절, `relation=mine`에 `assigneePropertyId`가 비면 **통과** ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 4절)
 - [ ] T009 [P] [US1] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 관계 선택 실패 테스트를 더한다 — 관계 다섯이 목록에 나온다, 관계를 고르면 절대값 칸이 사라진다, `relation`이 빈 옛 규칙은 절대값 칸을 그대로 보여준다, 보드에 조직 속성이 하나뿐이면 볼 속성이 자동으로 채워진다
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] `server/model/property_access.go`에 `PropertyAccessRule` 필드를 더한다 — `PropertyValueIDs []string`, `Relation string`, `OrgPropertyID string`, `AssigneePropertyID string`, `Source string`. 기존 필드는 지우지 않는다 (FR-001, FR-016)
-- [ ] T011 [US1] `server/model/property_access.go`에 우선순위 헬퍼를 더한다 — `CardValueIDs()`가 `propertyValueIds`를 먼저 보고 없으면 `propertyValueId`로 떨어진다. `HasOrgCondition()`이 `relation`도 조직 조건으로 센다 ([data-model.md](./data-model.md) 3절)
-- [ ] T012 [US1] `server/app/property_access.go`에 관계 판정을 더한다. 조상 집합은 `orgUnitAncestors`를 그대로 쓴다. **`otherDivision`은 `sameDivision`의 부정이 아니다** — 양쪽 다 값이 있어야 성립한다 ([research.md](./research.md) R3)
-- [ ] T013 [US1] `server/app/property_access.go`의 `validatePropertyAccessSettings`에 관계 검증 셋을 더한다 ([data-model.md](./data-model.md) 6절)
+- [X] T010 [US1] `server/model/property_access.go`에 `PropertyAccessRule` 필드를 더한다 — `PropertyValueIDs []string`, `Relation string`, `OrgPropertyID string`, `AssigneePropertyID string`, `Source string`. 기존 필드는 지우지 않는다 (FR-001, FR-016)
+- [X] T011 [US1] `server/model/property_access.go`에 우선순위 헬퍼를 더한다 — `CardValueIDs()`가 `propertyValueIds`를 먼저 보고 없으면 `propertyValueId`로 떨어진다. `HasOrgCondition()`이 `relation`도 조직 조건으로 센다 ([data-model.md](./data-model.md) 3절)
+- [X] T012 [US1] `server/app/property_access.go`에 관계 판정을 더한다. 조상 집합은 `orgUnitAncestors`를 그대로 쓴다. **`otherDivision`은 `sameDivision`의 부정이 아니다** — 양쪽 다 값이 있어야 성립한다 ([research.md](./research.md) R3)
+- [X] T013 [US1] `server/app/property_access.go`의 `validatePropertyAccessSettings`에 관계 검증 셋을 더한다 ([data-model.md](./data-model.md) 6절)
 - [ ] T014 [P] [US1] `webapp/src/blocks/board.ts`의 `PropertyAccessRule`에 같은 필드를 더한다. **`relation`은 문자열 유니온으로 정의한다** — `as any`도 넓은 `string`도 쓰지 않는다 (원칙 III). 서버 JSON 태그와 이름을 맞춘다
 - [ ] T015 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 본부·부서 칸을 관계 칸으로 바꾼다. 기존 `Selector`를 그대로 쓰고 **새 컴포넌트를 만들지 않는다** (원칙 II). 관계가 `""`인 옛 규칙은 절대값 칸을 계속 보여준다
 - [ ] T016 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 볼 속성 선택을 더한다. 보드에 그 타입 속성이 하나뿐이면 자동으로 채운다 (FR-006)
