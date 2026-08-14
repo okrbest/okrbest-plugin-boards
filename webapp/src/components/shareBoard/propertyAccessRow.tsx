@@ -11,7 +11,14 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 import IconButton from '../../widgets/buttons/iconButton'
 import DeleteIcon from '../../widgets/icons/delete'
 
-import {Board, PropertyAccessPermission, PropertyAccessRule} from '../../blocks/board'
+import {
+    Board,
+    OrgRelation,
+    PropertyAccessPermission,
+    PropertyAccessRule,
+    orgRelations,
+    orgRelationsNeedingProperty,
+} from '../../blocks/board'
 import {useAppSelector} from '../../store/hooks'
 import {getDivisions, getDepartments, getDuties, isOrgMasterLoaded} from '../../store/orgMaster'
 
@@ -109,8 +116,57 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
     const brokenDepartment = orgMasterLoaded && rule.departmentId !== '' && !departments.some((unit) => unit.id === rule.departmentId)
     const brokenDuty = orgMasterLoaded && rule.dutyId !== '' && !duties.some((duty) => duty.id === rule.dutyId)
 
-    const hasCardCondition = rule.propertyId !== '' && rule.propertyValueId !== ''
-    const hasSubjectCondition = rule.divisionId !== '' || rule.departmentId !== '' || rule.dutyId !== ''
+    const relation: OrgRelation = rule.relation || ''
+    const usesRelation = relation !== ''
+
+    // The organisation axis takes one cell, not two. A relation and a named
+    // organisation are two answers to the same question, so offering both at
+    // once would leave the row unable to say which one it means.
+    const relationNames: Record<Exclude<OrgRelation, ''>, string> = {
+        any: intl.formatMessage({id: 'PropertyAccess.relationAny', defaultMessage: '전체'}),
+        sameDivision: intl.formatMessage({id: 'PropertyAccess.relationSameDivision', defaultMessage: '같은 본부'}),
+        otherDivision: intl.formatMessage({id: 'PropertyAccess.relationOtherDivision', defaultMessage: '다른 본부'}),
+        sameDepartment: intl.formatMessage({id: 'PropertyAccess.relationSameDepartment', defaultMessage: '같은 부서'}),
+        mine: intl.formatMessage({id: 'PropertyAccess.relationMine', defaultMessage: '본인'}),
+    }
+
+    const orgChoices: Choice[] = [
+        ...withAny([]),
+        ...orgRelations.map((value) => ({id: `relation:${value}`, name: relationNames[value as Exclude<OrgRelation, ''>]})),
+        ...divisions.map((unit) => ({id: unit.id, name: unit.name})),
+    ]
+
+    // Which card property the relation reads. Offered only when the relation
+    // needs one, and filled in without asking when the board has exactly one —
+    // a board with a single 본부 property has nothing to choose between.
+    const orgPropertyChoices = board.cardProperties.filter((property) =>
+        property.type === 'orgDivision' || property.type === 'orgDepartment')
+    const personPropertyChoices = board.cardProperties.filter((property) =>
+        property.type === 'person' || property.type === 'multiPerson')
+
+    const soleOrgPropertyId = orgPropertyChoices.length === 1 ? orgPropertyChoices[0].id : ''
+
+    const onPickOrgCondition = (id: string) => {
+        if (!id.startsWith('relation:')) {
+            // A named organisation. The relation goes, so the row keeps one answer.
+            props.onChange({...rule, relation: '', divisionId: id, departmentId: ''})
+            return
+        }
+
+        const picked = id.slice('relation:'.length) as OrgRelation
+        props.onChange({
+            ...rule,
+            relation: picked,
+            divisionId: '',
+            departmentId: '',
+            orgPropertyId: orgRelationsNeedingProperty.includes(picked) ? (rule.orgPropertyId || soleOrgPropertyId) : '',
+        })
+    }
+
+    const selectedOrgId = usesRelation ? `relation:${relation}` : rule.divisionId
+
+    const hasCardCondition = rule.propertyId !== '' && (rule.propertyValueId !== '' || (rule.propertyValueIds || []).length > 0)
+    const hasSubjectCondition = usesRelation || rule.divisionId !== '' || rule.departmentId !== '' || rule.dutyId !== ''
     const invalid = !hasCardCondition || !hasSubjectCondition
 
     const className = `user-item PropertyAccessRow${invalid ? ' PropertyAccessRow--invalid' : ''}`
@@ -133,25 +189,54 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
                     onSelect={(id) => props.onChange({...rule, propertyValueId: id})}
                 />
                 <Selector
-                    label={intl.formatMessage({id: 'PropertyAccess.selectDivision', defaultMessage: 'Division'})}
-                    selectedId={rule.divisionId}
-                    choices={withAny(divisions.map((unit) => ({id: unit.id, name: unit.name})))}
+                    label={intl.formatMessage({id: 'PropertyAccess.selectOrgCondition', defaultMessage: 'Organisation'})}
+                    selectedId={selectedOrgId}
+                    choices={orgChoices}
                     broken={brokenDivision}
                     onSelect={(id) => {
+                        if (id === '' || id.startsWith('relation:')) {
+                            onPickOrgCondition(id)
+                            return
+                        }
+
                         // The department list is scoped to the division, so a
                         // department left over from the previous one would be a
                         // condition the admin can no longer see.
                         const keepDepartment = departments.some((unit) => unit.id === rule.departmentId && unit.parentId === id)
-                        props.onChange({...rule, divisionId: id, departmentId: keepDepartment ? rule.departmentId : ''})
+                        props.onChange({
+                            ...rule,
+                            relation: '',
+                            divisionId: id,
+                            departmentId: keepDepartment ? rule.departmentId : '',
+                        })
                     }}
                 />
-                <Selector
-                    label={intl.formatMessage({id: 'PropertyAccess.selectDepartment', defaultMessage: 'Department'})}
-                    selectedId={rule.departmentId}
-                    choices={withAny(departments.map((unit) => ({id: unit.id, name: unit.name})))}
-                    broken={brokenDepartment}
-                    onSelect={(id) => props.onChange({...rule, departmentId: id})}
-                />
+                {/*
+                  * The cell after the organisation one answers "measured against
+                  * what". A named division asks which department; a relation asks
+                  * which property to read. Same slot, because the question only
+                  * exists once the cell before it has been answered.
+                  */}
+                {usesRelation ? (
+                    <Selector
+                        label={intl.formatMessage({id: 'PropertyAccess.selectOrgProperty', defaultMessage: 'Property to compare'})}
+                        selectedId={relation === 'mine' ? (rule.assigneePropertyId || '') : (rule.orgPropertyId || '')}
+                        choices={withAny((relation === 'mine' ? personPropertyChoices : orgPropertyChoices)
+                            .map((property) => ({id: property.id, name: property.name})))}
+                        broken={false}
+                        onSelect={(id) => props.onChange(relation === 'mine' ?
+                            {...rule, assigneePropertyId: id} :
+                            {...rule, orgPropertyId: id})}
+                    />
+                ) : (
+                    <Selector
+                        label={intl.formatMessage({id: 'PropertyAccess.selectDepartment', defaultMessage: 'Department'})}
+                        selectedId={rule.departmentId}
+                        choices={withAny(departments.map((unit) => ({id: unit.id, name: unit.name})))}
+                        broken={brokenDepartment}
+                        onSelect={(id) => props.onChange({...rule, departmentId: id})}
+                    />
+                )}
                 <Selector
                     label={intl.formatMessage({id: 'PropertyAccess.selectDuty', defaultMessage: 'Duty'})}
                     selectedId={rule.dutyId}
