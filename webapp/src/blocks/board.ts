@@ -142,6 +142,14 @@ type Duty = {
     fullVisibility: boolean
 }
 
+// What the organisation property screens actually read: a card stores IDs and
+// every screen has to put a name next to one. Both OrgUnit and Duty satisfy it,
+// which is what lets 본부, 부서 and 직책 share one editor and one name resolver.
+type NamedEntry = {
+    id: string
+    name: string
+}
+
 type BoardsAndBlocks = {
     boards: Board[]
     blocks: Block[]
@@ -154,7 +162,7 @@ type BoardsAndBlocksPatch = {
     blockPatches: BlockPatch[]
 }
 
-type PropertyTypeEnum = 'text' | 'number' | 'select' | 'multiSelect' | 'date' | 'person' | 'multiPerson' | 'file' | 'checkbox' | 'url' | 'email' | 'phone' | 'createdTime' | 'createdBy' | 'updatedTime' | 'updatedBy' | 'card' | 'orgDivision' | 'orgDepartment' | 'unknown'
+type PropertyTypeEnum = 'text' | 'number' | 'select' | 'multiSelect' | 'date' | 'person' | 'multiPerson' | 'file' | 'checkbox' | 'url' | 'email' | 'phone' | 'createdTime' | 'createdBy' | 'updatedTime' | 'updatedBy' | 'card' | 'orgDivision' | 'orgDepartment' | 'orgDuty' | 'unknown'
 
 interface IPropertyOption {
     id: string
@@ -430,6 +438,7 @@ export {
     OrgUnit,
     UserOrgMembership,
     Duty,
+    NamedEntry,
     BoardsAndBlocks,
     BoardsAndBlocksPatch,
     PropertyTypeEnum,

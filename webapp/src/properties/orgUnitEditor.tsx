@@ -4,15 +4,15 @@
 import React, {useState, useCallback, useMemo} from 'react'
 import {useIntl} from 'react-intl'
 
-import {IPropertyOption, OrgUnit} from '../blocks/board'
+import {IPropertyOption, NamedEntry} from '../blocks/board'
 import mutator from '../mutator'
 import Label from '../widgets/label'
 import ValueSelector from '../widgets/valueSelector'
 
 import {PropertyProps} from './types'
 
-// The editor shared by the 본부 and 부서 property types. They differ only in
-// which units they offer, so the caller passes those in and everything else —
+// The editor shared by the 본부, 부서 and 직책 property types. They differ only in
+// which entries they offer, so the caller passes those in and everything else —
 // storage shape, display, stale value handling — is identical.
 //
 // It is modelled on the multiselect editor. The one real difference is that the
@@ -20,13 +20,16 @@ import {PropertyProps} from './types'
 // ValueSelector runs with fixedOptions and offers no create, rename, delete or
 // recolour.
 
+// NamedEntry — an id and a name — is everything the editor reads. Typing the
+// props that way rather than as OrgUnit is what lets 직책, which carries a rank
+// instead of a parent, share the editor without a cast.
 type Props = PropertyProps & {
 
-    // Active units the card may pick from, already narrowed by the caller.
-    options: OrgUnit[]
+    // Active entries the card may pick from, already narrowed by the caller.
+    options: NamedEntry[]
 
-    // Every unit of the team, used to name values that are no longer offered.
-    allUnits: OrgUnit[]
+    // Every entry of the team, used to name values that are no longer offered.
+    allUnits: NamedEntry[]
 }
 
 const orgOptionColor = 'propColorDefault'
@@ -36,7 +39,7 @@ const orgOptionColor = 'propColorDefault'
 // that a card's history is wrong (FR-006).
 const staleOptionColor = 'propColorRed'
 
-export function toPropertyOption(unit: OrgUnit): IPropertyOption {
+export function toPropertyOption(unit: NamedEntry): IPropertyOption {
     return {id: unit.id, value: unit.name, color: orgOptionColor}
 }
 
@@ -44,7 +47,7 @@ export function toPropertyOption(unit: OrgUnit): IPropertyOption {
 //
 // Order follows the card's stored order so the chips do not jump around when
 // the narrowing changes.
-export function selectedOptions(values: string[], allUnits: OrgUnit[], staleSuffix: string): IPropertyOption[] {
+export function selectedOptions(values: string[], allUnits: NamedEntry[], staleSuffix: string): IPropertyOption[] {
     const byID = new Map(allUnits.map((unit) => [unit.id, unit]))
     return values.map((id) => {
         const unit = byID.get(id)
@@ -59,7 +62,7 @@ export function selectedOptions(values: string[], allUnits: OrgUnit[], staleSuff
 // card that the allowed set does not cover (FR-015). One union covers all three
 // cases that produce such a value — a retired unit, a narrowing that moved, and
 // a unit outside the current 본부 selection.
-export function displayOptions(allowed: OrgUnit[], selected: IPropertyOption[]): IPropertyOption[] {
+export function displayOptions(allowed: NamedEntry[], selected: IPropertyOption[]): IPropertyOption[] {
     const options = allowed.map(toPropertyOption)
     const listed = new Set(options.map((option) => option.id))
     selected.forEach((option) => {
