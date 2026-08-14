@@ -339,9 +339,40 @@
             }
 
             .DutyTierEditor__name {
+                display: flex;
+                align-items: center;
+                gap: 4px;
                 width: 120px;
                 flex-shrink: 0;
                 font-weight: 600;
+            }
+
+            .DutyTierEditor__new {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 8px;
+            }
+
+            .DutyTierEditor__newName {
+                height: 32px;
+                padding: 0 8px;
+                border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+                border-radius: 4px;
+            }
+
+            .DutyTierEditor__addTier,
+            .DutyTierEditor__removeTier {
+                padding: 0 4px;
+                border: 0;
+                background: none;
+                color: rgba(var(--center-channel-color-rgb), 0.72);
+                cursor: pointer;
+
+                &:disabled {
+                    opacity: 0.4;
+                    cursor: default;
+                }
             }
 
             .DutyTierEditor__duties {

@@ -20,12 +20,14 @@ import {RootState} from './index'
 type DutyTiersState = {
     tiersByTeamId: {[teamId: string]: DutyTier[]}
     canEditByTeamId: {[teamId: string]: boolean}
+    boardCountsByTeamId: {[teamId: string]: {[tierId: string]: number}}
     loadedTeamIds: string[]
 }
 
 const initialState: DutyTiersState = {
     tiersByTeamId: {},
     canEditByTeamId: {},
+    boardCountsByTeamId: {},
     loadedTeamIds: [],
 }
 
@@ -33,7 +35,7 @@ export const fetchDutyTiers = createAsyncThunk(
     'dutyTiers/fetch',
     async (teamId: string) => {
         const response = await client.getDutyTiers(teamId)
-        return {teamId, tiers: response.tiers, canEdit: response.canEdit}
+        return {teamId, tiers: response.tiers, canEdit: response.canEdit, boardCounts: response.boardCounts || {}}
     },
 )
 
@@ -54,9 +56,10 @@ const dutyTiersSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(fetchDutyTiers.fulfilled, (state, action) => {
-            const {teamId, tiers, canEdit} = action.payload
+            const {teamId, tiers, canEdit, boardCounts} = action.payload
             state.tiersByTeamId[teamId] = tiers
             state.canEditByTeamId[teamId] = canEdit
+            state.boardCountsByTeamId[teamId] = boardCounts
             if (!state.loadedTeamIds.includes(teamId)) {
                 state.loadedTeamIds.push(teamId)
             }
@@ -91,6 +94,11 @@ export const getDutyTiers = (teamId: string): ((state: RootState) => DutyTier[])
 export const canEditDutyTiers = (teamId: string): ((state: RootState) => boolean) => createSelector(
     (state: RootState) => state.dutyTiers?.canEditByTeamId?.[teamId],
     (canEdit) => Boolean(canEdit),
+)
+
+export const getTierBoardCounts = (teamId: string): ((state: RootState) => {[tierId: string]: number}) => createSelector(
+    (state: RootState) => state.dutyTiers?.boardCountsByTeamId?.[teamId],
+    (counts) => counts || {},
 )
 
 export const areDutyTiersLoaded = (teamId: string): ((state: RootState) => boolean) => createSelector(

@@ -11,7 +11,8 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 import {DutyTier} from '../../blocks/board'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {getDuties} from '../../store/orgMaster'
-import {canEditDutyTiers, getDutyTiers, saveDutyTiers} from '../../store/dutyTiers'
+import {canEditDutyTiers, getDutyTiers, getTierBoardCounts, saveDutyTiers} from '../../store/dutyTiers'
+import {Utils} from '../../utils'
 
 type Props = {
     teamId: string
@@ -35,6 +36,8 @@ const DutyTierEditor = (props: Props): React.JSX.Element => {
     const tiers = useAppSelector(getDutyTiers(props.teamId))
     const canEdit = useAppSelector(canEditDutyTiers(props.teamId))
     const duties = useAppSelector(getDuties(props.teamId))
+    const boardCounts = useAppSelector(getTierBoardCounts(props.teamId))
+    const [newName, setNewName] = React.useState('')
 
     const dutyName = (dutyId: string): string => duties.find((duty) => duty.id === dutyId)?.name || dutyId
 
@@ -59,6 +62,34 @@ const DutyTierEditor = (props: Props): React.JSX.Element => {
             tier)))
     }
 
+    const addTier = () => {
+        const name = newName.trim()
+        if (!name) {
+            return
+        }
+        setNewName('')
+        save([...tiers, {id: Utils.createGuid(Utils.blockTypeToIDType('block')), name, dutyIds: []}])
+    }
+
+    // Deleting is the one edit here that cannot be undone by re-typing. Every
+    // rule pointing at the group stops matching, on every board in the team at
+    // once, so the count goes in the confirmation rather than after it.
+    const removeTier = (tier: DutyTier) => {
+        const used = boardCounts[tier.id] || 0
+        const message = used > 0 ?
+            intl.formatMessage(
+                {id: 'DutyTier.confirmDeleteUsed', defaultMessage: '"{name}" is used by {count} boards. Their rules will stop matching anyone. Delete it?'},
+                {name: tier.name, count: used},
+            ) :
+            intl.formatMessage({id: 'DutyTier.confirmDelete', defaultMessage: 'Delete "{name}"?'}, {name: tier.name})
+
+        // eslint-disable-next-line no-alert
+        if (!window.confirm(message)) {
+            return
+        }
+        save(tiers.filter((other) => other.id !== tier.id))
+    }
+
     const className = `DutyTierEditor${canEdit ? '' : ' DutyTierEditor--readonly'}`
 
     return (
@@ -80,7 +111,18 @@ const DutyTierEditor = (props: Props): React.JSX.Element => {
                     key={tier.id}
                     className='DutyTierEditor__tier'
                 >
-                    <div className='DutyTierEditor__name'>{tier.name}</div>
+                    <div className='DutyTierEditor__name'>
+                        {tier.name}
+                        {canEdit && (
+                            <button
+                                className='DutyTierEditor__removeTier'
+                                onClick={() => removeTier(tier)}
+                                title={intl.formatMessage({id: 'DutyTier.removeTier', defaultMessage: 'Delete group'})}
+                            >
+                                <CompassIcon icon='trash-can-outline'/>
+                            </button>
+                        )}
+                    </div>
                     <div className='DutyTierEditor__duties'>
                         {tier.dutyIds.map((dutyId) => (
                             <span
@@ -125,6 +167,29 @@ const DutyTierEditor = (props: Props): React.JSX.Element => {
                     </div>
                 </div>
             ))}
+
+            {canEdit && (
+                <div className='DutyTierEditor__new'>
+                    <input
+                        className='DutyTierEditor__newName'
+                        value={newName}
+                        placeholder={intl.formatMessage({id: 'DutyTier.newName', defaultMessage: 'New group name'})}
+                        onChange={(event) => setNewName(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                addTier()
+                            }
+                        }}
+                    />
+                    <button
+                        className='DutyTierEditor__addTier'
+                        onClick={addTier}
+                        disabled={newName.trim() === ''}
+                    >
+                        {intl.formatMessage({id: 'DutyTier.addTier', defaultMessage: '+ Add group'})}
+                    </button>
+                </div>
+            )}
 
             {unassigned.length > 0 && (
                 <div className='DutyTierEditor__unassigned'>

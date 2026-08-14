@@ -385,15 +385,28 @@ mine           editor     유형1 묶음[팀원]
 
 ### Tests for User Story 4
 
-- [ ] T046 [P] [US4] `webapp/src/components/shareBoard/dutyTierEditor.test.tsx`에 실패 테스트를 더한다 — 어느 묶음에도 없는 직책이 목록에 뜬다(FR-023), 묶음을 지우기 전에 그것을 쓰는 보드 수가 보인다
-- [ ] T047 [P] [US4] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 실패 테스트를 더한다 — 없는 묶음을 가리키는 규칙이 깨진 규칙으로 표시된다 (FR-024)
+- [X] T046 [P] [US4] `webapp/src/components/shareBoard/dutyTierEditor.test.tsx`에 실패 테스트를 더한다 — 어느 묶음에도 없는 직책이 목록에 뜬다(FR-023), 묶음을 지우기 전에 그것을 쓰는 보드 수가 보인다
+- [X] T047 [P] [US4] `webapp/src/components/shareBoard/propertyAccessRow.test.tsx`에 실패 테스트를 더한다 — 없는 묶음을 가리키는 규칙이 깨진 규칙으로 표시된다 (FR-024)
 
 ### Implementation for User Story 4
 
-- [ ] T048 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에 "어느 묶음에도 없음" 목록을 더한다
-- [ ] T049 [US4] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 깨진 묶음 표시를 더한다. 기존 `PropertyAccessRow__broken` 클래스를 그대로 쓴다
-- [ ] T050 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에서 묶음을 지우기 전에 그것을 쓰는 보드가 몇 개인지 보여준다. 개수는 `server/app/duty_tiers.go`가 세어 내려준다 ([spec.md](./spec.md) 엣지 케이스)
-- [ ] T051 [P] [US4] `webapp/i18n/en.json`·`ko.json`에 경고 문자열을 넣는다
+- [X] T048 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에 "어느 묶음에도 없음" 목록을 더한다
+- [X] T049 [US4] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 깨진 묶음 표시를 더한다. 기존 `PropertyAccessRow__broken` 클래스를 그대로 쓴다
+- [X] T050 [US4] `webapp/src/components/shareBoard/dutyTierEditor.tsx`에서 묶음을 지우기 전에 그것을 쓰는 보드가 몇 개인지 보여준다. 개수는 `server/app/duty_tiers.go`가 세어 내려준다 ([spec.md](./spec.md) 엣지 케이스)
+- [X] T051 [P] [US4] `webapp/i18n/en.json`·`ko.json`에 경고 문자열을 넣는다
+
+### US4에서 드러난 것 — 묶음을 만들 길이 없었다
+
+FR-023(어느 묶음에도 없는 직책)과 FR-024(깨진 묶음)는 US2에서 이미 만들어져 있었다.
+대신 US4에서 **더 큰 구멍**이 드러났다.
+
+**묶음 자체를 만드는 길이 화면에 없었다.** 편집기는 묶음 안의 직책만 넣고 뺐다. 검증에
+쓴 kkv 묶음 넷은 내가 `curl`로 만든 것이고, 사용자는 같은 일을 할 수 없었다. 프리셋이
+묶음 넷을 요구하는데 그 넷을 만들 방법이 없으니 기능 전체가 막혀 있었다.
+
+이름을 입력해 만들고, 지울 수 있게 했다. 지우기는 되돌릴 수 없으므로 **그 묶음을 쓰는
+보드 수를 확인 대화상자에 담는다** — 서버가 사용자가 볼 수 있는 보드만 세어 내려준다.
+못 보는 보드까지 세면 몇 개가 있는지 새어 나간다.
 
 **Checkpoint**: 조용히 나던 사고가 저장 전에 보인다.
 
