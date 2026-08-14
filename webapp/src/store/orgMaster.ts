@@ -1,10 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {createAsyncThunk, createSlice} from '@reduxjs/toolkit'
+import {createAsyncThunk, createSelector, createSlice} from '@reduxjs/toolkit'
 
 import client from '../octoClient'
-import {OrgUnit, UserOrgMembership, Duty} from '../blocks/board'
+import {OrgUnit, UserOrgMembership, Duty, NamedEntry} from '../blocks/board'
 
 import {RootState} from './index'
 
@@ -78,3 +78,31 @@ export const getDuties = (teamId: string) => (state: RootState): Duty[] =>
 
 export const isOrgMasterLoaded = (teamId: string) => (state: RootState): boolean =>
     Boolean(state.orgMaster?.loadedTeamIds?.includes(teamId))
+
+// Every organisation value a card can carry, named. 본부, 부서 and 직책 all store
+// IDs and all need a name on screen, so the resolvers that used to build their
+// own maps read this one instead (research R2).
+//
+// Merging the two sources is safe because the IDs come from different tables and
+// never collide.
+const labelSelectorsByTeamId = new Map<string, (state: RootState) => NamedEntry[]>()
+
+export const getOrgLabels = (teamId: string) => {
+    // The selector is cached per team rather than rebuilt per call: callers pass
+    // the result to useAppSelector, which re-renders whenever the reference
+    // changes, and a fresh array every call would mean a re-render on every
+    // store update.
+    let selector = labelSelectorsByTeamId.get(teamId)
+    if (!selector) {
+        selector = createSelector(
+            getOrgUnits(teamId),
+            getDuties(teamId),
+            (orgUnits: OrgUnit[], duties: Duty[]): NamedEntry[] => [
+                ...orgUnits.map((unit) => ({id: unit.id, name: unit.name})),
+                ...duties.map((duty) => ({id: duty.id, name: duty.name})),
+            ],
+        )
+        labelSelectorsByTeamId.set(teamId, selector)
+    }
+    return selector
+}
