@@ -305,6 +305,8 @@
   "PropertyAccess.selectPermission": "Permission",
   "PropertyAccess.selectProperty": "Property",
   "PropertyAccess.selectValue": "Value",
+  "OkrBoard.title": "Use as OKR Board",
+  "OkrBoard.description": "New cards start on the rung their depth implies — Objective, Key Results, then Tasks. You can change any of them afterwards.",
   "PropertyAccess.title": "Card access by property",
   "PropertyMenu.Delete": "Delete",
   "PropertyMenu.Loading": "Loading...",

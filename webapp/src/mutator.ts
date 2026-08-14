@@ -16,6 +16,7 @@ import {AttachmentBlock} from './blocks/attachmentBlock'
 import {FilterGroup} from './blocks/filterGroup'
 import octoClient from './octoClient'
 import {ORG_COLORS_KEY, pickedOrgColors} from './properties/orgLabels'
+import {OKR_BOARD_KEY, OKR_LEVEL_NAMES, OKR_TYPE_PROPERTY_NAME} from './okrBoard'
 import {sendFlashMessage} from './components/flashMessages'
 import undoManager from './undomanager'
 import {Utils, IDType} from './utils'
@@ -765,6 +766,65 @@ class Mutator {
         const newOption = newTemplate.options.find((o) => o.id === option.id)!
         newOption.color = color
         await this.updateBoardCardProperties(boardId, oldCardProperties, newCardProperties, 'rename option')
+    }
+
+    // Turning a board into an OKR board.
+    //
+    // One write, not five. The property, its values and the settings all go in a
+    // single board update so undo is one step and no intermediate state — a
+    // board carrying the property but no settings — is ever stored (008 R2).
+    //
+    // A 유형 select the board already has is reused rather than duplicated, and a
+    // value whose name differs is renamed in place: cards store the option ID, so
+    // replacing the option would empty every card that used it (FR-004).
+    async enableOkrBoard(board: Board) {
+        const newBoard = createBoard(board)
+
+        let template = newBoard.cardProperties.find((property) => property.name === OKR_TYPE_PROPERTY_NAME && property.type === 'select')
+        if (!template) {
+            template = {
+                id: Utils.createGuid(IDType.BlockID),
+                name: OKR_TYPE_PROPERTY_NAME,
+                type: 'select',
+                options: [],
+            }
+            newBoard.cardProperties.push(template)
+        }
+
+        const levels = OKR_LEVEL_NAMES.map((name, index) => {
+            const existing = template!.options[index]
+            if (existing) {
+                // Renamed in place. The ID is what cards hold.
+                existing.value = name
+                return existing.id
+            }
+
+            const option: IPropertyOption = {
+                id: Utils.createGuid(IDType.BlockID),
+                value: name,
+                color: 'propColorDefault',
+            }
+            template!.options.push(option)
+            return option.id
+        })
+
+        newBoard.properties = {
+            ...board.properties,
+            [OKR_BOARD_KEY]: {propertyId: template.id, levels},
+        }
+
+        await this.updateBoard(newBoard, board, 'use as OKR board')
+    }
+
+    // Turning it off stops the filling and nothing else. The property and every
+    // value a card carries stay exactly where they are (FR-011).
+    async disableOkrBoard(board: Board) {
+        const newBoard = createBoard(board)
+        const properties = {...board.properties}
+        delete properties[OKR_BOARD_KEY]
+        newBoard.properties = properties
+
+        await this.updateBoard(newBoard, board, 'stop using as OKR board')
     }
 
     // Colour for one organisation value, remembered by this board.
