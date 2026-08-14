@@ -84,7 +84,7 @@ gated && passed == false    → 전체보기 바닥            ← 작성자 바
 | 축 | 새 필드가 있을 때 | 없을 때 |
 |---|---|---|
 | 카드 값 | `propertyValueIds` | `propertyValueId` |
-| 직책 | `tierId`의 `dutyIds` | `dutyId` |
+| 직책 | `tierIds`의 `dutyIds` 합집합 | `dutyId` |
 | 조직 | `relation` (절대값 무시) | `divisionId` · `departmentId` |
 
 ### 테스트
@@ -93,7 +93,7 @@ gated && passed == false    → 전체보기 바닥            ← 작성자 바
 |---|---|---|
 | 3-1 | 새 필드가 전부 빈 기존 규칙 | 지금과 같은 판정 |
 | 3-2 | `relation`과 `divisionId`가 둘 다 있음 | `relation`으로 판정 |
-| 3-3 | `tierId`와 `dutyId`가 둘 다 있음 | `tierId`로 판정 |
+| 3-3 | `tierIds`와 `dutyId`가 둘 다 있음 | `tierIds`로 판정 |
 | 3-4 | `propertyValueIds`에 값 둘, 카드가 그중 하나 | 일치 |
 
 ---
@@ -106,7 +106,7 @@ gated && passed == false    → 전체보기 바닥            ← 작성자 바
 | `relation`이 본부·부서 계열인데 `orgPropertyId`가 빔 | 400 |
 | `relation=mine`이고 `assigneePropertyId`가 빔 | 통과 |
 | 사람 쪽 조건이 하나도 없음 | 400 (기존) |
-| `tierId`가 팀의 묶음에 없음 | **통과** — 저장 시점이 다르다. 아무에게도 안 걸리고 화면이 깨진 규칙으로 표시한다 |
+| `tierIds`가 팀의 묶음에 없음 | **통과** — 저장 시점이 다르다. 아무에게도 안 걸리고 화면이 깨진 규칙으로 표시한다 |
 
 묶음 쪽은 따로다.
 
@@ -138,6 +138,9 @@ gated && passed == false    → 전체보기 바닥            ← 작성자 바
 | 5-5 | 팀 밖의 사용자가 묶음을 읽는다 | 403 |
 | 5-6 | 팀 관리자가 묶음을 고치면 같은 팀 다른 보드의 판정이 바뀐다 | 즉시 반영 |
 | 5-7 | `GET /teams/{teamID}` 응답의 `canEditDutyTiers` | 위 표대로 |
+| 5-8 | 직책 하나만 든 묶음 | 여럿 든 묶음과 **똑같이** 판정된다 (FR-013) |
+| 5-9 | 한 직책이 두 묶음에 들고 두 묶음의 규칙 권한이 다름 | **높은 쪽** (FR-014) |
+| 5-10 | `tierIds`에 묶음 둘, 내 직책이 그중 하나에 있음 | 일치 (FR-011) |
 
 ---
 

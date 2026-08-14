@@ -40,7 +40,7 @@
         "propertyId": "prop-type",
         "propertyValueIds": ["opt-objective", "opt-key-result"],  // 새로 생김 (FR-008)
         "propertyValueId": "",                                     // 기존 — 한 값짜리
-        "tierId": "tier-3",                                        // 새로 생김 (FR-011)
+        "tierIds": ["tier-3"],                                     // 새로 생김 (FR-011)
         "dutyId": "",                                              // 기존 — 직책 하나
         "relation": "sameDivision",                                // 새로 생김 (FR-002)
         "orgPropertyId": "prop-division",                          // 새로 생김 (FR-006)
@@ -63,7 +63,7 @@
 | 축 | 새 필드 | 기존 필드 | 규칙 |
 |---|---|---|---|
 | 카드 값 | `propertyValueIds` | `propertyValueId` | 새 필드가 비어 있지 않으면 그것을 쓴다 |
-| 직책 | `tierId` | `dutyId` | `tierId`가 있으면 그것을 쓴다 |
+| 직책 | `tierIds` | `dutyId` | `tierIds`가 비어 있지 않으면 그것을 쓴다 |
 | 조직 | `relation` | `divisionId` · `departmentId` | `relation`이 있으면 절대값 두 칸을 **무시한다** |
 
 셋째만 "무시"다. 관계와 절대값이 같은 축을 두고 다투므로 둘을 함께 적용하면 어느 쪽이
@@ -131,7 +131,7 @@
 | `relation=mine`인데 `assigneePropertyId`가 비면 **통과** | 작성자만으로 판정된다. 담당자 속성은 선택이다 |
 | 사람 쪽 조건이 하나도 없으면 거절 (기존) | 모두에게 권한을 주는 줄은 실수다 |
 
-**`tierId`가 팀의 묶음에 없어도 거절하지 않는다.** 묶음은 팀이, 규칙은 보드가 가지므로
+**`tierIds`가 팀의 묶음에 없어도 거절하지 않는다.** 묶음은 팀이, 규칙은 보드가 가지므로
 저장 시점이 다르다. 팀 관리자가 묶음을 지우면 그 묶음을 쓰던 보드의 규칙이 저장된 채로
 남는데, 그 보드를 저장할 때 400을 내면 관계없는 편집까지 막힌다. 그런 규칙은 아무에게도
 안 걸리고 화면이 깨진 규칙으로 표시한다 (FR-024).
@@ -150,7 +150,7 @@
 설정(`board.properties.okrBoard`)에서 읽는다. 직책 묶음은 사용자가 만든다 — 이름으로
 추정하지 않는다 (research R9).
 
-**팀에 묶음이 아직 없으면** 규칙은 깔리되 `tierId`가 빈 채로 남고 아무에게도 안 걸린다.
+**팀에 묶음이 아직 없으면** 규칙은 깔리되 `tierIds`가 빈 채로 남고 아무에게도 안 걸린다.
 화면이 "묶음부터 정하세요"를 띄운다.
 
 | # | 카드 값 | 묶음 | 관계 | 권한 |
@@ -158,12 +158,12 @@
 | 1 | 세 값 전부 | 대표 | `any` | 편집 |
 | 2 | 세 값 전부 | C-Level | `sameDivision` | 편집 |
 | 3 | 세 값 전부 | C-Level | `otherDivision` | 댓글 |
-| 4 | Objective, Key Result | 팀장, 팀원 | `sameDivision` | 조회 |
+| 4 | Objective, Key Result | 팀장 + 팀원 | `sameDivision` | 조회 |
 | 5 | Tasks | 팀장 | `sameDepartment` | 편집 |
 | 6 | Tasks | 팀원 | `mine` | 편집 |
 
-4번이 묶음 둘을 가리킨다. 규칙 한 줄이 묶음 하나만 가리키므로 실제로는 두 줄이 된다 —
-표에서는 한 칸 행위로 보이고 저장은 두 줄이다. 여섯 칸이 일곱 줄이 되는 자리다.
+4번 한 줄이 묶음 둘을 가리킨다. `tierIds`가 목록이라 갈리지 않는다 — **표의 여섯 칸이
+저장에서도 여섯 줄이다** (SC-002).
 
 ## 8. API
 

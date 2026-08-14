@@ -53,7 +53,7 @@ webapp 파일 7개 안팎(규칙 행·섹션·매트릭스·묶음 편집기·�
 | III. 타입·오류 엄격성 | 통과 | `as any` 없음. 관계 값은 문자열 유니온으로 좁힌다. 저장 검증은 `model.NewErrBadRequest`를 쓴다 |
 | IV. 동작 변경 시 테스트 동반 | 통과 | [contracts/card-access-matrix.md](./contracts/card-access-matrix.md)의 표가 그대로 테스트 목록이다. 판정이 바뀌므로 **구현을 되돌려 빨강을 확인한 뒤** 완료로 표시한다 |
 | V. i18n 동기화 | 통과 | 관계 이름·묶음 화면·매트릭스 문자열을 `en.json`·`ko.json`에 같이 넣는다 |
-| VI. Upstream 충실성 | 통과 | 라이선스 헤더 유지. `plugin.json` 안 건드림. 업스트림에 없는 파일만 늘어난다 |
+| VI. Upstream 충실성 | 통과 | 라이선스 헤더 유지 — **신규 파일 8개에 헤더를 넣는다**(`mattermost-govet -license`가 집행). `plugin.json` 안 건드림. 업스트림에 없는 파일만 늘어난다 |
 | VII. DB 마이그레이션 규율 | 해당 없음 | 마이그레이션이 없다 |
 | VIII. 브랜치·커밋·PR | 통과 | `009-card-access-role-matrix`를 설계 전에 만들었다. Conventional Commits, PR 경유 |
 
@@ -64,7 +64,7 @@ webapp 파일 7개 안팎(규칙 행·섹션·매트릭스·묶음 편집기·�
 | 원칙 | 재판정 | 새로 드러난 것 |
 |---|---|---|
 | II | 통과 | 매트릭스 표는 새 시각 요소다. 다만 **사용자가 요구사항 이미지로 명시적으로 요청**했고 브레인스토밍에서 골랐다. 원칙 II의 "명시적 요청" 예외에 해당한다. 컨트롤은 기존 드롭다운을 쓴다. 새 API 라우트는 `server/api/teams.go`에 등록해 `API → App → Store`를 지킨다 |
-| IV | 통과 | 계약이 테스트 45개로 펼쳐진다. 1절 6, 2절 10, 3절 4, 4절 8, 5절 7, 6절 10 |
+| IV | 통과 | 계약이 테스트 48개로 펼쳐진다. 1절 6, 2절 10, 3절 4, 4절 8, 5절 10, 6절 10. **webapp 테스트도 이야기마다 있다** |
 | VII | 해당 없음 | 팀 저장을 더했지만 `focalboard_teams.settings`가 이미 있어 마이그레이션이 없다 |
 | I | 주의 | 웹소켓 팬아웃 판정이 무거워지고 팀 묶음 조회가 하나 는다. `make server-test` 실행 시간을 기준선과 함께 적는다 |
 
@@ -78,12 +78,12 @@ specs/009-card-access-role-matrix/
 ├── spec.md                          # 명세
 ├── research.md                      # Phase 0 — 결정 9개
 ├── data-model.md                    # Phase 1 — 저장 형태
-├── quickstart.md                    # Phase 1 — 종단 검증 9절
+├── quickstart.md                    # Phase 1 — 종단 검증 11절
 ├── contracts/
-│   └── card-access-matrix.md        # Phase 1 — 판정 계약
+│   └── card-access-matrix.md        # Phase 1 — 판정 계약 (테스트 48개)
 ├── checklists/
 │   └── requirements.md              # 명세 품질
-└── tasks.md                         # /speckit-tasks 산출물 (아직 없음)
+└── tasks.md                         # Phase 2 — 과제 목록
 ```
 
 ### Source Code (repository root)
@@ -91,7 +91,7 @@ specs/009-card-access-role-matrix/
 ```text
 server/
 ├── model/
-│   ├── property_access.go           # 관계·tierId·다중 값 필드, 우선순위 헬퍼
+│   ├── property_access.go           # 관계·tierIds·다중 값 필드, 우선순위 헬퍼
 │   └── duty_tier.go                 # 신규 — 묶음 모델, 팀 설정 읽고 쓰기
 ├── app/
 │   ├── property_access.go           # 게이트를 규칙 루프로. 관계 판정. 검증
@@ -102,11 +102,13 @@ server/
     └── teams.go                     # PUT /teams/{teamID}/dutyTiers 등록
 
 webapp/src/
-├── blocks/board.ts                  # PropertyAccessRule 확장
+├── blocks/board.ts                  # PropertyAccessRule 확장, DutyTier 타입
+├── octoClient.ts                    # 묶음 조회·저장
 ├── store/dutyTiers.ts               # 신규 — 팀 묶음 슬라이스 (orgMaster와 같은 모양)
 ├── components/shareBoard/
 │   ├── propertyAccessSection.tsx    # 표/규칙 두 보기 전환, 프리셋
 │   ├── propertyAccessRow.tsx        # 관계 선택, 묶음 선택
+│   ├── accessMatrix.ts              # 신규 — 표 ↔ 규칙 변환
 │   ├── accessMatrix.tsx             # 신규 — 매트릭스 표
 │   ├── dutyTierEditor.tsx           # 신규 — 묶음 편집 (권한 없으면 잠김)
 │   └── propertyAccessSection.scss   # 기존 파일에 블록 추가 (새 파일 금지)
@@ -133,7 +135,7 @@ webapp은 `shareBoard/` 안에 머문다. 표와 묶음 편집기는 파일을 �
 | 1 | 서버 — 게이트를 규칙 루프로. **동작 변화 없이** | 기존 테스트 전부 통과 |
 | 2 | 서버 — 관계 판정 + 필드 우선순위 + 저장 검증 (US1) | 계약 1~4절 |
 | 3 | 서버 — 팀 묶음 저장·조회·편집 권한 + API (US2) | 계약 5절 |
-| 4 | webapp — 규칙 행에 관계·묶음 선택, 묶음 편집기 (US1·US2) | 규칙을 손으로 여섯 줄 써서 매트릭스 확인 |
+| 4 | webapp — 규칙 행에 관계·묶음 선택, 묶음 편집기 (US1·US2) | webapp 테스트 + 규칙을 손으로 여섯 줄 써서 확인 |
 | 5 | webapp — 매트릭스 표 + 프리셋 (US3) | 계약 6절 |
 | 6 | webapp — 빠진 직책·깨진 규칙 표시 (US4) | 계약 6절 |
 | 7 | 종단 검증 + 게이트 | [quickstart.md](./quickstart.md) |
@@ -153,7 +155,7 @@ webapp은 `shareBoard/` 안에 머문다. 표와 묶음 편집기는 파일을 �
 | 영향 범위 | 이 보드 | 팀의 모든 보드 |
 | 저장 시점 | 보드 저장 | 팀 설정 저장 |
 
-**둘이 서로를 검증하지 않는다.** 규칙의 `tierId`가 팀 묶음에 없어도 저장이 통과한다.
+**둘이 서로를 검증하지 않는다.** 규칙의 `tierIds`가 팀 묶음에 없어도 저장이 통과한다.
 저장 시점이 달라서다 — 팀 관리자가 묶음을 지우면 그 묶음을 쓰던 보드의 규칙이 남는데,
 여기서 400을 내면 관계없는 편집까지 막힌다. 그런 규칙은 아무에게도 안 걸리고 화면이 깨진
 규칙으로 표시한다(FR-024). 002가 조직·직책 ID를 검사하지 않는 것과 같은 판단이다.
