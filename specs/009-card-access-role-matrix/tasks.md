@@ -313,7 +313,7 @@ kkv 팀에 실제 묶음 넷을 깔았다 — 대표(CEO) / C-Level(CSO·COO·CF
 - [X] T042 [US3] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 표준 프리셋을 더한다. 유형 속성과 값은 `board.properties.okrBoard`에서 읽는다 ([data-model.md](./data-model.md) 7절)
 - [X] T043 [US3] `webapp/src/components/shareBoard/propertyAccessSection.scss`에 표 블록을 더한다. 색·간격은 CSS 변수를 쓰고 하드코딩하지 않는다 (원칙 II)
 - [X] T044 [P] [US3] `webapp/i18n/en.json`·`ko.json`에 표 문자열을 넣는다
-- [ ] T045 [US3] 빌드·배포 후 [quickstart.md](./quickstart.md) 2·3·7절을 훑는다. **둘째 보드가 스위치 1회로 끝나는지**가 SC-004다
+- [X] T045 [US3] 빌드·배포 후 [quickstart.md](./quickstart.md) 2·3·7절을 훑는다. **둘째 보드가 스위치 1회로 끝나는지**가 SC-004다
 
 ### US3 설계 메모 — 여섯 줄이 나오는 자리
 
@@ -340,6 +340,37 @@ kkv 팀에 실제 묶음 넷을 깔았다 — 대표(CEO) / C-Level(CSO·COO·CF
 **표준은 적용하는 게 아니라 권하는 것이다.** 묶음 넷이 먼저 있어야 하고 어느 것이
 C-Level인지는 이름으로 못 맞힌다(research R9). 그래서 묶음이 갖춰지고 표가 비었을 때만
 버튼이 뜬다.
+
+### T045 종단 검증 (2026-08-15, 팀 `한국케이밸브`)
+
+| 확인 | 결과 |
+|---|---|
+| 묶음 편집기가 실제 직책으로 뜬다 | 통과 — CEO / CSO·COO·CFO·CHRO·본부장 … |
+| 표가 행 3(유형) × 열 4(묶음)로 뜬다 | 통과 |
+| 표준 적용이 **규칙 여섯 줄**로 저장된다 | 통과 (SC-002) |
+| 4번 줄이 팀장·팀원을 한 줄에 담는다 | 통과 — `tierIds: [tier-lead, tier-member]` |
+
+저장된 여섯 줄:
+
+```
+any            editor     유형3 묶음[대표]
+sameDivision   editor     유형3 묶음[C-Level]
+otherDivision  commenter  유형3 묶음[C-Level]
+sameDivision   viewer     유형2 묶음[팀장, 팀원]
+sameDepartment editor     유형1 묶음[팀장]
+mine           editor     유형1 묶음[팀원]
+```
+
+**결함 둘을 여기서 잡았다.** 둘 다 단위 테스트가 못 잡는 종류다.
+
+1. **OKR을 나중에 켜면 표가 안 떴다.** `showMatrix` 초기값이 첫 렌더 시점의 판정으로
+   굳어서다. 보드를 만들고 그 자리에서 OKR을 켜는 것이 실제 순서인데, 그 순서에서만
+   깨졌다. 사용자가 보기를 고르기 전에는 보드를 따라가도록 고쳤다.
+2. **본부 속성이 없는 보드에서 표준을 적용하면 서버가 400으로 거절했다.**
+   `sameDivision`인데 `orgPropertyId`가 빌 수밖에 없어서다. 화면이 먼저 막았어야 하는
+   상태라, 표 대신 "본부 속성을 먼저 만드세요"를 띄우고 표준 버튼을 감췄다.
+
+검증용 보드는 지웠다. 실보드는 열지 않았다.
 
 **Checkpoint**: 설정이 요구사항 문서와 1:1로 맞는다.
 
