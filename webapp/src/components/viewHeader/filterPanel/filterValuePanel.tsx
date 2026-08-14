@@ -5,7 +5,7 @@ import React, {useState, useMemo, useCallback, useEffect, useRef} from 'react'
 import {useIntl} from 'react-intl'
 
 import {useAppSelector} from '../../../store/hooks'
-import {Board, IPropertyTemplate, IPropertyOption} from '../../../blocks/board'
+import {Board, IPropertyTemplate, IPropertyOption, NamedEntry} from '../../../blocks/board'
 import {BoardView} from '../../../blocks/boardView'
 import {FilterClause, FilterCondition, createFilterClause} from '../../../blocks/filterClause'
 import {createFilterGroup, isAFilterGroupInstance} from '../../../blocks/filterGroup'
@@ -13,7 +13,7 @@ import {Card} from '../../../blocks/card'
 import mutator from '../../../mutator'
 import propsRegistry from '../../../properties'
 import {getBoardUsersList} from '../../../store/users'
-import {getDivisions, getDepartments} from '../../../store/orgMaster'
+import {getDivisions, getDepartments, getDuties} from '../../../store/orgMaster'
 import {getCards} from '../../../store/cards'
 import octoClient from '../../../octoClient'
 import Label from '../../../widgets/label'
@@ -330,14 +330,23 @@ type OrgUnitFilterPanelProps = {
 // live in the organisation master, not on the board.
 //
 // Unlike the card editor, the filter is not narrowed by what a card names. A
-// filter is a question about the whole board, so every active unit of the right
+// filter is a question about the whole board, so every active entry of the right
 // kind is offered.
+//
+// All three organisation properties share this panel: the filter UI is the same
+// search-and-checkboxes list for each, and only the source of the entries
+// differs (research R3).
 const OrgUnitFilterPanel = (props: OrgUnitFilterPanelProps): React.JSX.Element => {
     const {board, activeView, propertyTemplate} = props
-    const isDivision = propertyTemplate.type === 'orgDivision'
     const divisions = useAppSelector(getDivisions(board.teamId))
     const departments = useAppSelector(getDepartments(board.teamId, ''))
-    const units = isDivision ? divisions : departments
+    const duties = useAppSelector(getDuties(board.teamId))
+    let units: NamedEntry[] = departments
+    if (propertyTemplate.type === 'orgDivision') {
+        units = divisions
+    } else if (propertyTemplate.type === 'orgDuty') {
+        units = duties
+    }
     const intl = useIntl()
     const [searchText, setSearchText] = useState('')
 

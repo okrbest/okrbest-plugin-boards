@@ -43,7 +43,8 @@ import octoClient from '../octoClient'
 import {Constants} from '../constants'
 
 import propsRegistry from '../properties'
-import {getOrgUnits} from '../store/orgMaster'
+import {getOrgLabels} from '../store/orgMaster'
+import {orgNamesForIds, isOrgProperty} from '../properties/orgLabels'
 
 import {sendFlashMessage} from './flashMessages'
 
@@ -544,24 +545,23 @@ const CenterPanel = (props: Props) => {
         return names.join(', ')
     }
 
-    const orgUnits = useAppSelector(getOrgUnits(props.board.teamId))
-    const orgUnitsById = useMemo(() => new Map(orgUnits.map((unit) => [unit.id, unit])), [orgUnits])
+    const orgLabels = useAppSelector(getOrgLabels(props.board.teamId))
 
     // Organisation group labels come from the master, not from the property
     // template: an organisation property's options array is always empty, so
-    // the generic multi-value grouping would print raw OrgUnit IDs.
+    // the generic multi-value grouping would print raw IDs.
     const getOrgUnitDisplayName = (boardGroup: BoardGroup) => {
-        const unitIds = boardGroup.option.id.split(',').filter((id) => id)
-        if (unitIds.length === 0) {
+        const names = orgNamesForIds(boardGroup.option.id.split(','), orgLabels)
+        if (names.length === 0) {
             return intl.formatMessage({
                 id: 'centerPanel.undefined',
                 defaultMessage: 'No {propertyName}',
             }, {propertyName: groupByProperty?.name})
         }
 
-        // A retired unit keeps its ID on screen rather than becoming "unknown",
+        // A retired entry keeps its ID on screen rather than becoming "unknown",
         // which is what the card editor and the CSV export also do.
-        return unitIds.map((unitId) => orgUnitsById.get(unitId)?.name || unitId).join(', ')
+        return names.join(', ')
     }
 
     const {visible: visibleGroups, hidden: hiddenGroups} = useMemo(() => {
@@ -571,7 +571,7 @@ const CenterPanel = (props: Props) => {
         let resolve: ((group: BoardGroup) => string) | undefined
         if (groupPropertyType?.isPersonLike && boardUsers) {
             resolve = groupPropertyType.isMultiValue ? getMultiPersonDisplayName : getUserDisplayName
-        } else if (groupByProperty?.type === 'orgDivision' || groupByProperty?.type === 'orgDepartment') {
+        } else if (groupByProperty && isOrgProperty(groupByProperty.type)) {
             resolve = getOrgUnitDisplayName
         }
 
@@ -585,7 +585,7 @@ const CenterPanel = (props: Props) => {
         }
         return {visible: vg, hidden: hg}
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty, boardUsers, orgUnitsById])
+    }, [cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty, boardUsers, orgLabels])
 
     return (
         <div
