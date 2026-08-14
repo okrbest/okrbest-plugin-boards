@@ -51,11 +51,15 @@ export const readSettings = (board: Board): PropertyAccessSettings => {
 // The six axes of a rule row, in the order propertyAccessRow renders them. The
 // header exists because six unlabelled dropdowns in a row are unreadable — the
 // values alone do not say which axis each one is.
+// The third column holds either a relation or a named organisation, and the
+// fourth holds whatever that choice still needs — a department for a named
+// division, a property to read for a relation. The headers say what the column
+// is for rather than naming one of the two things it can hold.
 const columnLabels = [
     {id: 'PropertyAccess.selectProperty', defaultMessage: 'Property'},
     {id: 'PropertyAccess.selectValue', defaultMessage: 'Value'},
-    {id: 'PropertyAccess.selectDivision', defaultMessage: 'Division'},
-    {id: 'PropertyAccess.selectDepartment', defaultMessage: 'Department'},
+    {id: 'PropertyAccess.selectOrgCondition', defaultMessage: 'Organisation'},
+    {id: 'PropertyAccess.selectBasis', defaultMessage: 'Measured against'},
     {id: 'PropertyAccess.selectDuty', defaultMessage: 'Duty'},
     {id: 'PropertyAccess.selectPermission', defaultMessage: 'Permission'},
 ]

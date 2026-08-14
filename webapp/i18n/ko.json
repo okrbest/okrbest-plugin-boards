@@ -296,6 +296,7 @@
   "PersonProperty.non-board-members": "보드 멤버가 아님",
   "PropertyAccess.addRule": "규칙 추가",
   "PropertyAccess.any": "전체",
+  "PropertyAccess.selectBasis": "기준",
   "PropertyAccess.relationAny": "전체",
   "PropertyAccess.relationMine": "본인",
   "PropertyAccess.relationOtherDivision": "다른 본부",
