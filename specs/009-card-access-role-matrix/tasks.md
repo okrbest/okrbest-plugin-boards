@@ -248,7 +248,7 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 - [X] T032 [US2] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 직책 칸을 묶음 다중 선택으로 바꾼다. `tierIds`가 빈 옛 규칙은 직책 칸을 계속 보여준다
 - [X] T033 [US2] `webapp/src/components/shareBoard/propertyAccessSection.tsx`에 묶음 편집기를 끼운다. `propertyAccessSection.scss`에 블록을 더한다 — **새 SCSS 파일을 만들지 않는다** (원칙 II)
 - [X] T034 [P] [US2] `webapp/i18n/en.json`·`ko.json`에 묶음 화면 문자열을 넣는다
-- [ ] T035 [US2] 빌드·배포 후 [quickstart.md](./quickstart.md) 1·6절을 훑는다. **팀 관리자가 C-Level에 직책을 더하면 다른 보드의 판정이 함께 바뀌는지**를 두 보드에서 확인한다
+- [X] T035 [US2] 빌드·배포 후 [quickstart.md](./quickstart.md) 1·6절을 훑는다. **팀 관리자가 C-Level에 직책을 더하면 다른 보드의 판정이 함께 바뀌는지**를 두 보드에서 확인한다
 
 ### US2 서버 설계 메모 — 묶음은 필요할 때만 읽는다
 
@@ -263,6 +263,30 @@ mock store에 `GetTeam` 기대가 없어서다. 기대를 다 더하는 대신 *
 그 직책은 `FullVisibility: true`라 게이트가 닫혀도 조회가 남는다(계약 1-5). 구현이 맞고
 기대가 틀렸다. 3-3은 오히려 그 성질을 쓰도록 고쳤다 — `dutyId`를 봤다면 편집이 나왔을
 자리에서 전체보기 바닥만 남는 것이 `tierIds`가 이겼다는 증거다.
+
+### T035 종단 검증 — 실계정 (2026-08-15)
+
+배포한 플러그인에 실제 계정으로 붙어 확인했다.
+
+| 계약 | 계정 | 결과 |
+|---|---|---|
+| 5-1 시스템 관리자가 고친다 | `okrbest` | `PUT` **200** |
+| 5-3 팀원이 고치려 한다 | `jiho.moon@kkv.co.kr` | `PUT` **403** |
+| 5-4 보드 관리자가 읽는다 | 팀원·팀장·CSO 셋 다 | 묶음 4개 보임, `canEdit: false` |
+| 5-7 `canEdit` 플래그 | 시스템 관리자 `true`, 나머지 `false` | 표대로 |
+
+kkv 팀에 실제 묶음 넷을 깔았다 — 대표(CEO) / C-Level(CSO·COO·CFO·CHRO) / 팀장 / 팀원.
+
+**여기서 결함을 하나 잡았다.** 저장은 200인데 조회가 0건이었다. `GetTeam`이 메인 서버의
+`Teams` 테이블에서 이름만 읽고 `focalboard_teams.settings`는 **읽지 않는다** —
+`UpsertTeamSettings`가 쓰는 자리를 아무도 되읽지 않는 상태였다. `getAllTeams`만 그 칸을
+읽고 있었다.
+
+`GetTeamSettings`를 Store에 더해 풀었다. `getTeam`은 건드리지 않았다 — 그 함수가 답하는
+질문("이 팀 이름이 뭐냐")과 다르고, 모든 호출자에 질의를 하나씩 더하게 된다.
+
+이 결함은 단위 테스트로는 안 잡혔다. mock이 `GetTeam`에 settings를 담아 돌려주도록
+내가 직접 짰기 때문이다 — 배포해서 실제로 왕복시켜야 드러나는 자리다.
 
 **Checkpoint**: 묶음이 팀 것이 됐다. 규칙 여섯 줄을 손으로 쓰면 매트릭스가 완성된다.
 
