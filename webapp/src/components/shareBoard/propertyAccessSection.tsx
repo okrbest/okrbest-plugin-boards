@@ -7,13 +7,14 @@ import {useIntl} from 'react-intl'
 import Switch from '../../widgets/switch'
 import Button from '../../widgets/buttons/button'
 
-import {Board, createBoard, PropertyAccessRule, PropertyAccessSettings, cardValueIds} from '../../blocks/board'
+import {Board, IPropertyOption, createBoard, PropertyAccessRule, PropertyAccessSettings, cardValueIds} from '../../blocks/board'
 import {Permission} from '../../constants'
 import {Utils} from '../../utils'
 import mutator from '../../mutator'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {fetchOrgMaster, isOrgMasterLoaded} from '../../store/orgMaster'
-import {areDutyTiersLoaded, fetchDutyTiers} from '../../store/dutyTiers'
+import {areDutyTiersLoaded, fetchDutyTiers, getDutyTiers} from '../../store/dutyTiers'
+import {okrBoardSettings} from '../../okrBoard'
 import {getBoardUsers, getMe} from '../../store/users'
 import {getClientConfig} from '../../store/clientConfig'
 
@@ -21,6 +22,8 @@ import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import PropertyAccessRow from './propertyAccessRow'
 import DutyTierEditor from './dutyTierEditor'
+import AccessMatrixTable from './accessMatrixTable'
+import {MatrixCells, matrixToRules, rulesToMatrix, standardMatrix} from './accessMatrix'
 
 const PROPERTY_ACCESS_KEY = 'propertyAccess'
 
@@ -90,6 +93,38 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const [rules, setRules] = React.useState<PropertyAccessRule[]>(settings.rules)
     const masterLoaded = useAppSelector(isOrgMasterLoaded(board.teamId))
     const tiersLoaded = useAppSelector(areDutyTiersLoaded(board.teamId))
+    const tiers = useAppSelector(getDutyTiers(board.teamId))
+
+    // The table needs rows, and the rows are the rungs of the OKR ladder. A board
+    // that never set one has nothing to put down the side, so it gets the rule
+    // list instead (FR-022).
+    const okr = okrBoardSettings(board.properties)
+    const typeProperty = board.cardProperties.find((property) => property.id === okr?.propertyId)
+    const canShowMatrix = Boolean(okr && typeProperty)
+    const [showMatrix, setShowMatrix] = React.useState(canShowMatrix)
+
+    const matrixContext = {
+        typeProperty: okr?.propertyId || '',
+        levels: okr?.levels || [],
+        orgProperty: board.cardProperties.find((property) => property.type === 'orgDivision')?.id || '',
+        personProperty: board.cardProperties.find((property) => property.type === 'person' || property.type === 'multiPerson')?.id || '',
+    }
+
+    // The rungs in ladder order, dropping any the property no longer carries —
+    // a value someone deleted should leave a gap, not an unnamed row.
+    const matrixLevels = (okr?.levels || [])
+        .map((valueId) => (typeProperty?.options || []).find((option) => option.id === valueId))
+        .filter((option): option is IPropertyOption => Boolean(option))
+
+    // Rows the table does not own. Saying how many there are is what keeps the
+    // table from looking like the whole truth (FR-021).
+    const outsideMatrix = rules.filter((rule) => rule.source !== 'matrix').length
+
+    const onChangeMatrix = (cells: MatrixCells) => {
+        const nextRules = matrixToRules(cells, matrixContext, rules)
+        setRules(nextRules)
+        save(settings.enabled, nextRules)
+    }
     const boardUsers = useAppSelector(getBoardUsers)
     const me = useAppSelector(getMe)
     const clientConfig = useAppSelector(getClientConfig)
@@ -199,7 +234,74 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                       * those who may not change it (FR-011c).
                       */}
                     {settings.enabled && <DutyTierEditor teamId={board.teamId}/>}
-                    {rules.length > 0 &&
+
+                    {/*
+                      * Two views of one thing. The table is the default because
+                      * it matches the document the rules were written from; the
+                      * rule list stays for the exceptions a table cannot hold.
+                      */}
+                    {settings.enabled && canShowMatrix &&
+                        <div className='PropertyAccessSection__views'>
+                            <Button
+                                active={showMatrix}
+                                onClick={() => setShowMatrix(true)}
+                            >
+                                {intl.formatMessage({id: 'AccessMatrix.tableView', defaultMessage: 'Table'})}
+                            </Button>
+                            <Button
+                                active={!showMatrix}
+                                onClick={() => setShowMatrix(false)}
+                            >
+                                {intl.formatMessage({id: 'AccessMatrix.ruleView', defaultMessage: 'Rules'})}
+                            </Button>
+                            {outsideMatrix > 0 &&
+                                <span className='PropertyAccessSection__outside'>
+                                    {intl.formatMessage(
+                                        {id: 'AccessMatrix.outsideTable', defaultMessage: '{count} rules live outside the table'},
+                                        {count: outsideMatrix},
+                                    )}
+                                </span>}
+                        </div>}
+
+                    {settings.enabled && canShowMatrix && showMatrix && tiers.length === 0 &&
+                        <div className='PropertyAccessSection__needTiers'>
+                            {intl.formatMessage({
+                                id: 'AccessMatrix.needTiers',
+                                defaultMessage: 'Set up duty groups first — the table has no columns without them.',
+                            })}
+                        </div>}
+
+                    {/*
+                      * The standard is offered rather than applied. Four duty
+                      * groups have to exist first, and which of them is C-Level
+                      * cannot be guessed from a name — so the button appears
+                      * once the groups do, and only when the table is empty.
+                      */}
+                    {settings.enabled && canShowMatrix && showMatrix && tiers.length >= 4 &&
+                        Object.keys(rulesToMatrix(rules, matrixContext)).length === 0 &&
+                        <Button
+                            className='PropertyAccessSection__preset'
+                            onClick={() => onChangeMatrix(standardMatrix(matrixContext.levels, {
+                                ceo: tiers[0].id,
+                                cLevel: tiers[1].id,
+                                lead: tiers[2].id,
+                                member: tiers[3].id,
+                            }))}
+                            emphasis='secondary'
+                            size='medium'
+                        >
+                            {intl.formatMessage({id: 'AccessMatrix.applyStandard', defaultMessage: 'Apply the standard matrix'})}
+                        </Button>}
+
+                    {settings.enabled && canShowMatrix && showMatrix && tiers.length > 0 &&
+                        <AccessMatrixTable
+                            levels={matrixLevels}
+                            tiers={tiers}
+                            cells={rulesToMatrix(rules, matrixContext)}
+                            onChange={onChangeMatrix}
+                        />}
+
+                    {(!showMatrix || !canShowMatrix) && rules.length > 0 &&
                         <div className='PropertyAccessSection__header'>
                             <div className='PropertyAccessRow__axes'>
                                 {columnLabels.map((label) => (
@@ -212,6 +314,7 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                                 ))}
                             </div>
                         </div>}
+                    {(!showMatrix || !canShowMatrix) &&
                     <div className='user-items PropertyAccessSection__rules'>
                         {rules.map((rule) => (
                             <PropertyAccessRow
@@ -222,7 +325,8 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                                 onDelete={onDeleteRule}
                             />
                         ))}
-                    </div>
+                    </div>}
+                    {(!showMatrix || !canShowMatrix) &&
                     <Button
                         className='PropertyAccessSection__add'
                         onClick={onAddRule}
@@ -230,7 +334,7 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                         size='medium'
                     >
                         {intl.formatMessage({id: 'PropertyAccess.addRule', defaultMessage: 'Add rule'})}
-                    </Button>
+                    </Button>}
                 </div>
             </div>
         </BoardPermissionGate>

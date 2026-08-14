@@ -377,6 +377,99 @@
             }
         }
 
+        // 매트릭스 — 요구사항 이미지와 같은 모양. 행이 카드 유형, 열이 직책 묶음이라
+        // 두 축을 표의 형태에서 읽고, 칸은 관계와 권한만 답한다.
+        .PropertyAccessSection__views {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px 0;
+        }
+
+        .PropertyAccessSection__outside,
+        .PropertyAccessSection__needTiers {
+            font-size: 12px;
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+        }
+
+        .PropertyAccessSection__needTiers {
+            padding: 12px 16px;
+        }
+
+        .PropertyAccessSection__preset {
+            margin: 12px 16px 0;
+        }
+
+        .AccessMatrix {
+            padding: 12px 16px 0;
+
+            .AccessMatrix__row {
+                display: grid;
+                grid-template-columns: 140px repeat(auto-fit, minmax(0, 1fr));
+                gap: 4px 8px;
+                align-items: start;
+                padding: 4px 0;
+                border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+            }
+
+            .AccessMatrix__row--head {
+                border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            }
+
+            .AccessMatrix__column,
+            .AccessMatrix__rowLabel {
+                font-weight: 600;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .AccessMatrix__column {
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.02em;
+            }
+
+            .AccessMatrix__cell {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                min-width: 0;
+            }
+
+            .AccessMatrix__entry {
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                min-width: 0;
+            }
+
+            .AccessMatrix__pick {
+                display: flex;
+                align-items: center;
+                min-width: 0;
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: rgba(var(--link-color-rgb), 1);
+
+                span {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+            }
+
+            .AccessMatrix__add,
+            .AccessMatrix__clear {
+                padding: 0 4px;
+                border: 0;
+                background: none;
+                color: rgba(var(--center-channel-color-rgb), 0.56);
+                cursor: pointer;
+            }
+        }
+
         .PropertyAccessSection__header {
             display: flex;
             align-items: center;
