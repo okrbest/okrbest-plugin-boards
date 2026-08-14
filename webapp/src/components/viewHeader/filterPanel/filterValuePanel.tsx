@@ -14,6 +14,7 @@ import mutator from '../../../mutator'
 import propsRegistry from '../../../properties'
 import {getBoardUsersList} from '../../../store/users'
 import {getDivisions, getDepartments, getDuties} from '../../../store/orgMaster'
+import {orgColorForId, pickedOrgColors} from '../../../properties/orgLabels'
 import {getCards} from '../../../store/cards'
 import octoClient from '../../../octoClient'
 import Label from '../../../widgets/label'
@@ -350,6 +351,10 @@ const OrgUnitFilterPanel = (props: OrgUnitFilterPanelProps): React.JSX.Element =
     const intl = useIntl()
     const [searchText, setSearchText] = useState('')
 
+    // The same colours the card editor draws. A filter that coloured its list
+    // differently would be worse than one with no colour at all (FR-007).
+    const picked = useMemo(() => pickedOrgColors(board.properties), [board.properties])
+
     const existingClause = useMemo(() => {
         return findClauseForProperty(activeView, propertyTemplate.id)
     }, [activeView, propertyTemplate.id])
@@ -400,9 +405,9 @@ const OrgUnitFilterPanel = (props: OrgUnitFilterPanelProps): React.JSX.Element =
                         }}
                     >
                         <div className={`FilterValuePanel__checkbox${selectedValues.includes(unit.id) ? ' FilterValuePanel__checkbox--checked' : ''}`}/>
-                        <span className='FilterValuePanel__option-label'>
+                        <Label color={orgColorForId(unit.id, units, picked)}>
                             {unit.name}
-                        </span>
+                        </Label>
                     </div>
                 ))}
                 {filteredUnits.length === 0 && (
