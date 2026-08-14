@@ -26,7 +26,27 @@
 **Purpose**: 회귀 판정의 기준선을 잡는다. 깨끗한 상태에서도 실패가 있으므로 개수가 아니라
 목록을 저장한다.
 
-- [ ] T001 기준선 측정 — `git stash -u` 후 `webapp/`에서 `npm run test`·`npm run check-types`·`npm run check`를, 저장소 루트에서 `make server-lint`와 `make server-test`를 돌려 **실패 목록**을 작업 폴더에 저장한다. `make server-test` 실행 시간도 함께 적는다 ([plan.md](./plan.md) Constitution Check I)
+- [X] T001 기준선 측정 — `git stash -u` 후 `webapp/`에서 `npm run test`·`npm run check-types`·`npm run check`를, 저장소 루트에서 `make server-lint`와 `make server-test`를 돌려 **실패 목록**을 작업 폴더에 저장한다. `make server-test` 실행 시간도 함께 적는다 ([plan.md](./plan.md) Constitution Check I)
+
+### T001 기준선 (2026-08-15 측정)
+
+작업 트리가 깨끗하고 명세는 전부 커밋돼 있어 `git stash`가 필요 없었다 — HEAD가 곧
+기준선이다.
+
+| 게이트 | 값 | 목록 저장 위치 |
+|---|---|---|
+| jest 실패 스위트 | **57** / 182 | `jest-fail-suites.txt` |
+| jest 실패 테스트 | **144** / 1119 | `jest-fail-tests.txt` (146줄, 이름 기준) |
+| tsc 오류 | **23** | `tsc.txt` |
+| eslint | **2482 problems** | `eslint.txt` |
+| `make server-test` | **실패 33줄** (상위 12 · 하위 21), 패키지 3개 | `server-fail-list.txt` |
+| `make server-test` 실행 시간 | **24.13초** | |
+| `make server-lint` | **지적 11건** | `server-lint.txt` |
+
+server 실패 패키지 셋: `server/app`, `server/model`, `server/services/store/sqlstore`.
+
+**회귀 판정은 개수가 아니라 목록 diff로 한다.** `make webapp-ci`는 기준선에서도
+실패하므로 세 단계를 따로 돌려 대조한다.
 
 ---
 
@@ -38,10 +58,62 @@
 **⚠️ 이 단계를 따로 떼는 이유**: 구조 변경과 새 조건을 한 커밋에 섞으면 기존 보드 판정이
 달라졌을 때 원인이 둘 중 어느 쪽인지 못 가린다.
 
-- [ ] T002 `server/app/property_access_test.go`에 계약 1절 테스트 여섯 개를 **절대값 규칙만으로** 쓴다 — 규칙 밖 카드는 조회, 규칙 밖 카드에 작성자면 편집, 게이트가 닫히면 접근 없음, **게이트가 닫히면 작성자여도 접근 없음**, 게이트가 닫혀도 전체보기 직책은 조회, 두 규칙이 통과시키면 높은 쪽 ([contracts/card-access-matrix.md](./contracts/card-access-matrix.md) 1절). 지금 코드로 전부 통과해야 한다 — 이 여섯 개가 T003의 안전망이다
-- [ ] T003 `server/app/property_access.go`의 `evaluate`를 규칙 루프로 바꾼다. `gates`·`grants` 두 map을 없애고 `mentioned`·`gated`·`passed`·`granted` 네 값으로 판정한다. **작성자 바닥을 게이트 안쪽에 두는 배치를 그대로 지킨다** ([research.md](./research.md) R2)
-- [ ] T004 `server/app/property_access.go`의 `NewPropertyAccessEvaluator`에서 미리 계산하는 것을 조상 집합·직책·전체보기 바닥으로 줄인다. 규칙별 판정에 쓸 값만 남긴다
-- [ ] T005 Phase 2 검증 — `make server-test`를 돌려 **기존 테스트가 하나도 안 깨졌는지** T001 목록과 대조한다. 새 테스트를 쓰지 않는다. 실행 시간도 대조한다
+- [X] T002 계약 1절 여섯 줄의 안전망을 확보한다. **새로 쓰지 않았다 — 이미 전부 있었다.** `server/app/property_access_test.go`를 읽어 계약 행마다 대응하는 기존 테스트를 찾아 아래 표로 고정하고, 일곱 스위트가 지금 코드로 통과하는 것을 확인했다
+
+### T002 안전망 — 계약 1절 ↔ 기존 테스트
+
+새 테스트를 쓰지 않은 이유는 하나다. **여섯 줄이 이미 테스트되고 있었다.** 같은 것을 다시
+쓰면 신호가 늘지 않고 파일만 길어진다 (원칙 II — 기존 패턴을 먼저 쓴다).
+
+| 계약 | 기존 테스트 | 확인한 단언 |
+|---|---|---|
+| 1-1 규칙 밖 카드 → 조회 | `TestEvaluatorCardOutsideAnyRule` | 값·속성·nil 카드 셋 다 조회 |
+| 1-2 규칙 밖 + 작성자 → 편집 | `TestEvaluatorOwnerFloor` | "the author edits a card outside every rule" |
+| 1-3 게이트 닫힘 → 접근 없음 | `TestEvaluatorOrgGate` | "a 팀장 of another division is stopped by the gate" |
+| **1-4 게이트 닫힘 + 작성자 → 접근 없음** | `TestEvaluatorOwnerFloorDoesNotCrossOrgGate` | "a 팀장 of another division stays out even of their own card" |
+| 1-5 게이트 닫힘 + 전체보기 → 조회 | `TestEvaluatorFullVisibilityFloor` | "US4-1 a blocked card is still readable" |
+| 1-6 두 규칙 → 높은 쪽 | `TestEvaluatorMaxAcrossRows` | "both rows match, so the higher of the two applies" |
+| (보강) 조직 조건 없는 규칙은 게이트가 아니다 | `TestEvaluatorDutyOnlyRule` | "no organization row means no gate" |
+
+마지막 줄을 안전망에 넣은 이유가 있다. T003이 `gated`를 규칙 단위로 다시 세는데, 조직
+조건이 **없는** 규칙을 게이트로 잘못 세면 이 테스트가 깨진다.
+
+**통과 증거** (2026-08-15)
+
+```
+--- PASS: TestEvaluatorCardOutsideAnyRule (0.00s)
+--- PASS: TestEvaluatorOrgGate (0.00s)
+--- PASS: TestEvaluatorMaxAcrossRows (0.00s)
+--- PASS: TestEvaluatorDutyOnlyRule (0.00s)
+--- PASS: TestEvaluatorFullVisibilityFloor (0.00s)
+--- PASS: TestEvaluatorOwnerFloor (0.00s)
+--- PASS: TestEvaluatorOwnerFloorDoesNotCrossOrgGate (0.00s)
+ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
+```
+
+이 일곱 스위트가 T003의 판정 기준이다. 하나라도 깨지면 구조 변경이 동작을 바꾼 것이다.
+- [X] T003 `server/app/property_access.go`의 `evaluate`를 규칙 루프로 바꾼다. `gates`·`grants` 두 map을 없애고 `mentioned`·`gated`·`passed`·`granted` 네 값으로 판정한다. **작성자 바닥을 게이트 안쪽에 두는 배치를 그대로 지킨다** ([research.md](./research.md) R2)
+- [X] T004 `server/app/property_access.go`의 `NewPropertyAccessEvaluator`에서 미리 계산하는 것을 조상 집합·직책·전체보기 바닥으로 줄인다. 규칙별 판정에 쓸 값만 남긴다
+- [X] T005 Phase 2 검증 — `make server-test`를 돌려 **기존 테스트가 하나도 안 깨졌는지** T001 목록과 대조한다. 새 테스트를 쓰지 않는다. 실행 시간도 대조한다
+
+### T005 Phase 2 검증 결과 (2026-08-15)
+
+| 게이트 | 기준선 | T003·T004 이후 | 판정 |
+|---|---|---|---|
+| `make server-test` 실패 목록 | 33줄 | 33줄 — **diff 없음** | 통과 |
+| `make server-test` 실행 시간 | 24.13초 | 25.39초 | 통과 (오차 범위) |
+| `make server-lint` | 지적 11건 | 11건, `property_access.go` 지적 없음 | 통과 |
+| `gofmt -l` | — | 출력 없음 | 통과 |
+| 안전망 일곱 스위트 | 통과 | 통과 | 통과 |
+
+**옮기면서 지킨 것 셋.** 리팩터가 조용히 의미를 바꿀 수 있던 자리다.
+
+1. **게이트와 권한을 따로 센다.** 조직 조건이 **없는** 규칙은 `gated`를 올리지 않는다.
+   합치면 duty-only 규칙이 게이트가 되어 `TestEvaluatorDutyOnlyRule`이 깨진다
+2. **게이트가 닫히면 duty-only 규칙의 권한도 버린다.** 조직이 게이트라는 뜻이 이것이다 —
+   `granted`를 계산해 두고도 `gated && !gatePassed`면 `floor`만 남긴다
+3. **작성자 바닥은 게이트 안쪽에 둔다.** `gated && !gatePassed` 갈래는 `ownerFloor`를
+   더하지 않는다
 
 **Checkpoint**: 저장된 규칙도 판정 결과도 그대로다. 코드 구조만 바뀌었다.
 
