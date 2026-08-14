@@ -739,3 +739,185 @@ func TestUnlinkSubCard(t *testing.T) {
 		require.Nil(t, unlinkedCard)
 	})
 }
+
+// A sub-card starts on the rung its depth implies when the board is used as an
+// OKR board. The fill happens here rather than in the browser because the
+// browser cannot send properties without making this function skip the block
+// that copies the parent's — 본부 and 부서 would stop reaching sub-cards
+// (008 research R4, FR-008).
+func TestCreateSubCardOkrBoard(t *testing.T) {
+	const typePropertyID = "p-type"
+	const divisionPropertyID = "p-div"
+
+	okrBoard := func() *model.Board {
+		return &model.Board{
+			ID: utils.NewID(utils.IDTypeBoard),
+			Properties: map[string]interface{}{
+				model.OkrBoardKey: map[string]interface{}{
+					"propertyId": typePropertyID,
+					"levels":     []interface{}{"opt-objective", "opt-key-result", "opt-task"},
+				},
+			},
+		}
+	}
+
+	userID := utils.NewID(utils.IDTypeUser)
+
+	// Each case gets its own helper: a catch-all expectation from one case would
+	// otherwise swallow the specific parent lookup of the next.
+	setupCreate := func(t *testing.T, board *model.Board, parent *model.Card) (*TestHelper, func()) {
+		t.Helper()
+		th, tearDown := SetupTestHelper(t)
+
+		th.Store.EXPECT().GetBlock(parent.ID).Return(model.Card2Block(parent), nil).AnyTimes()
+		th.Store.EXPECT().GetBoard(board.ID).Return(board, nil).AnyTimes()
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+		th.Store.EXPECT().InsertBlock(gomock.Any(), userID).Return(nil).AnyTimes()
+		th.Store.EXPECT().GetMembersForBoard(board.ID).Return([]*model.BoardMember{}, nil).AnyTimes()
+
+		return th, tearDown
+	}
+
+	t.Run("a sub-card of an Objective starts on the second rung", func(t *testing.T) {
+		board := okrBoard()
+		parent := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    board.ID,
+			Depth:      0,
+			Properties: map[string]interface{}{typePropertyID: "opt-objective"},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, "opt-key-result", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("deeper cards share the last rung", func(t *testing.T) {
+		board := okrBoard()
+		parent := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    board.ID,
+			Depth:      2,
+			Properties: map[string]interface{}{typePropertyID: "opt-task"},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, "opt-task", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("the parent's other properties still come down", func(t *testing.T) {
+		// The regression this feature is most likely to cause. Only the rung is
+		// replaced; everything else the parent carries is inherited as before.
+		board := okrBoard()
+		parent := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Depth:   0,
+			Properties: map[string]interface{}{
+				typePropertyID:     "opt-objective",
+				divisionPropertyID: []interface{}{"div-production"},
+			},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, []interface{}{"div-production"}, newCard.Properties[divisionPropertyID])
+		require.Equal(t, "opt-key-result", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("a board that was never switched on is untouched", func(t *testing.T) {
+		board := &model.Board{ID: utils.NewID(utils.IDTypeBoard)}
+		parent := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    board.ID,
+			Depth:      0,
+			Properties: map[string]interface{}{typePropertyID: "opt-objective"},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, "opt-objective", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("what the caller chose is left alone", func(t *testing.T) {
+		board := okrBoard()
+		parent := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    board.ID,
+			Depth:      0,
+			Properties: map[string]interface{}{typePropertyID: "opt-objective"},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		chosen := &model.Card{
+			BoardID:    board.ID,
+			Properties: map[string]interface{}{typePropertyID: "opt-task"},
+		}
+		newCard, err := th.App.CreateSubCard(chosen, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, "opt-task", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("a rule that decides the rung outranks the ladder", func(t *testing.T) {
+		// The rules are permission — they say which cards this author may make.
+		// The ladder is convenience. A card born outside the rules would be one
+		// its author cannot edit, so the rules fill last (008 research R5).
+		teamID := utils.NewID(utils.IDTypeTeam)
+		board := okrBoard()
+		board.TeamID = teamID
+		board.Properties[model.PropertyAccessKey] = map[string]interface{}{
+			"enabled": true,
+			"rules": []interface{}{
+				map[string]interface{}{
+					"id":              "rule-1",
+					"propertyId":      typePropertyID,
+					"propertyValueId": "opt-task",
+					"divisionId":      "",
+					"departmentId":    "",
+					"dutyId":          "",
+					"permission":      "editor",
+				},
+			},
+		}
+
+		parent := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    board.ID,
+			Depth:      0,
+			Properties: map[string]interface{}{typePropertyID: "opt-objective"},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		// Everything the rule evaluator reads. The rule admits every user, so
+		// the property has exactly one admitted value and becomes a default.
+		th.PermissionsStore.EXPECT().GetBoard(board.ID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetMemberForBoard(board.ID, gomock.Any()).
+			Return(&model.BoardMember{BoardID: board.ID, SchemeEditor: true}, nil).AnyTimes()
+		th.API.EXPECT().HasPermissionToTeam(gomock.Any(), teamID, gomock.Any()).Return(true).AnyTimes()
+		th.Store.EXPECT().GetOrgUnitsForTeam(teamID).Return([]*model.OrgUnit{}, nil).AnyTimes()
+		th.Store.EXPECT().GetDutiesForTeam(teamID).Return([]*model.Duty{}, nil).AnyTimes()
+		th.Store.EXPECT().GetUserOrgProfiles(teamID, gomock.Any()).
+			Return([]*model.UserOrgProfile{}, nil).AnyTimes()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, "opt-task", newCard.Properties[typePropertyID])
+	})
+}
