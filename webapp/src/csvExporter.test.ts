@@ -249,4 +249,63 @@ describe('csvExporter', () => {
         expect(exportedCsv).toContain('"생산본부|관리본부|div-retired"')
         expect(exportedCsv).toContain('"생산팀"')
     })
+
+    test('exports duty values as names, the same way as 본부 and 부서 (FR-009)', () => {
+        const intl = createIntl({locale: 'en-us'})
+        const board = TestBlockFactory.createBoard()
+        board.teamId = 'team-1'
+        const activeView = TestBlockFactory.createBoardView(board)
+        const card = TestBlockFactory.createCard(board)
+
+        store.dispatch(fetchOrgMaster.fulfilled(
+            {
+                teamId: 'team-1',
+                orgUnits: [
+                    {id: 'div-production', name: '생산본부', type: 'division', parentId: ''},
+                ],
+                duties: [
+                    {id: 'duty-head', code: 'head', name: '본부장', rank: 2, fullVisibility: true},
+                    {id: 'duty-lead', code: 'lead', name: '팀장', rank: 3, fullVisibility: false},
+                ],
+                orgProfiles: [],
+            },
+            'test-request',
+            'team-1',
+        ))
+
+        const dutyProperty = {id: 'p-duty', name: '직책', type: 'orgDuty', options: []} as IPropertyTemplate
+        board.cardProperties.push(dutyProperty)
+        activeView.fields.visiblePropertyIds = [dutyProperty.id]
+
+        // A retired duty is written as its ID, the same as a retired unit.
+        card.fields.properties[dutyProperty.id] = ['duty-head', 'duty-lead', 'duty-retired']
+
+        const openInNewBrowser = jest.fn()
+        window.openInNewBrowser = openInNewBrowser
+
+        CsvExporter.exportTableCsv(board, activeView, [card], intl)
+
+        const exportedCsv = decodeCsvFromDataUri(openInNewBrowser.mock.calls[0][0])
+        expect(exportedCsv).toContain('"본부장|팀장|duty-retired"')
+    })
+
+    test('leaves a duty column empty when the card names none', () => {
+        const intl = createIntl({locale: 'en-us'})
+        const board = TestBlockFactory.createBoard()
+        board.teamId = 'team-1'
+        const activeView = TestBlockFactory.createBoardView(board)
+        const card = TestBlockFactory.createCard(board)
+
+        const dutyProperty = {id: 'p-duty', name: '직책', type: 'orgDuty', options: []} as IPropertyTemplate
+        board.cardProperties.push(dutyProperty)
+        activeView.fields.visiblePropertyIds = [dutyProperty.id]
+
+        const openInNewBrowser = jest.fn()
+        window.openInNewBrowser = openInNewBrowser
+
+        CsvExporter.exportTableCsv(board, activeView, [card], intl)
+
+        const exportedCsv = decodeCsvFromDataUri(openInNewBrowser.mock.calls[0][0])
+        expect(exportedCsv).toContain('""')
+    })
 })
