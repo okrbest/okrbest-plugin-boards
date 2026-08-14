@@ -8,18 +8,39 @@
 권한 판정은 **보는 사람이 누구냐**로 갈리므로 계정이 여럿 필요하다. 조직 배정은 메인
 서버가 소유하니 배정부터 확인한다.
 
-| 계정 | 본부 | 부서 | 직책 | 그 밖 |
-|---|---|---|---|---|
-| A | — | — | 대표 | |
-| B | 영업본부 | — | CSO | |
-| C | 개발본부 | — | COO | |
-| D | 영업본부 | 영업1팀 | 팀장 | |
-| E | 영업본부 | 영업1팀 | 팀원 | |
-| F | 영업본부 | 영업2팀 | 팀원 | |
-| G | — | — | — | **팀 관리자** |
-| H | — | — | — | **보드 관리자만** (팀 관리자 아님) |
+로컬 개발 환경(팀 `한국케이밸브`)에 이미 배정된 계정을 쓴다. **비밀번호는 공통
+`kkv1234!!`다.**
 
-배정이 모자라면 메인 서버에서 채운다. **이 플러그인은 배정을 못 바꾼다.**
+| 계정 | 이메일 | 본부 | 부서 | 직책 |
+|---|---|---|---|---|
+| A | `sungmin.ahn@kkv.co.kr` | 대표 | — | CEO |
+| B | `myoungeon.lee@kkv.co.kr` | CSO - 영업 | — | CSO |
+| C | `minsu.kwon@kkv.co.kr` | COO - 생산 | — | COO |
+| D | `kisun.kim@kkv.co.kr` | — | 영업1팀 | 팀장 |
+| E | `jiho.moon@kkv.co.kr` | — | 영업1팀 | 팀원 |
+| F | `daechan.lee@kkv.co.kr` | — | 영업2팀 | 팀원 |
+| G | (팀 관리자 계정) | — | — | — |
+| H | (보드 관리자만, 팀 관리자 아님) | — | — | — |
+
+D·E는 같은 부서, F는 다른 부서다. B·C는 서로 다른 본부라 "본인 본부 / 타 본부"가 한
+쌍으로 확인된다.
+
+배정을 바꿔야 하면 메인 서버에서 한다. **이 플러그인은 배정을 못 바꾼다.**
+
+배정은 이렇게 확인한다.
+
+```bash
+docker exec -e PGPASSWORD='<postgres 비밀번호>' mattermost-postgres \
+  psql -U mmuser -d mattermost_test -t -A -F'|' -c "
+SELECT pd.name, u.email, ou.name
+FROM userorgprofiles p JOIN users u ON u.id=p.userid
+JOIN positiondefinitions pd ON pd.id=p.primarydutyid
+LEFT JOIN orgunits ou ON ou.id=p.primaryorgunitid
+ORDER BY pd.rank, ou.name;"
+```
+
+플러그인 API(`/teams/{teamID}/org-profiles`)는 직책을 안 내려준다 — 조직 정보를 최소한만
+내보내려고 일부러 뺐다. 그래서 확인은 DB로 한다.
 
 G·H는 6절에서만 쓴다. 묶음 편집 권한이 갈리는지 보려면 둘이 필요하다.
 

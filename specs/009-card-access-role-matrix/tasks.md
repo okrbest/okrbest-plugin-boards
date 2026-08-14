@@ -196,13 +196,21 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 
 검증용 보드는 지웠다. 실보드(`FY27 KKV OKR`)는 열지 않았다.
 
-**여기서 막힌 것 하나.** [quickstart.md](./quickstart.md) 4절의 판정 표는 계정 여섯 개로
-로그인해야 한다. `okrbest` 자격 증명만 있어 **보는 사람이 달라질 때의 판정은 화면으로
-확인하지 못했다.** 조직 데이터 자체는 갖춰져 있다 — kkv 팀에 조직 28개, 직책 9개
-(CEO·CSO·COO·CFO·팀장·팀원), 배정된 사용자 67명.
+**막혔다가 풀린 것 하나.** [quickstart.md](./quickstart.md) 4절의 판정 표는 계정 여섯
+개로 로그인해야 하는데 처음엔 `okrbest` 자격 증명만 있었다. 사용자가 공통 비밀번호를
+알려줘 풀렸다 — 계정 지도를 quickstart 준비 절에 박아 뒀다.
 
-그 판정은 지금 계약 2절 테스트 열 개가 덮고 있다. 화면으로도 확인하려면 계정 접근이
-필요하다 — 마감 전에 받아야 할 항목이다.
+| | 이메일 | 조직 | 직책 |
+|---|---|---|---|
+| A | `sungmin.ahn@kkv.co.kr` | 대표 | CEO |
+| B | `myoungeon.lee@kkv.co.kr` | CSO - 영업 | CSO |
+| C | `minsu.kwon@kkv.co.kr` | COO - 생산 | COO |
+| D | `kisun.kim@kkv.co.kr` | 영업1팀 | 팀장 |
+| E | `jiho.moon@kkv.co.kr` | 영업1팀 | 팀원 |
+| F | `daechan.lee@kkv.co.kr` | 영업2팀 | 팀원 |
+
+로그인은 확인했다(200). **판정 표 자체는 US3까지 끝난 뒤 한 번에 훑는다** — 지금은
+규칙을 손으로 여섯 줄 써야 하고, 그건 US3의 프리셋이 하는 일이다.
 
 **Checkpoint**: 매트릭스가 표현된다. 화면은 아직 규칙 목록뿐이다.
 
