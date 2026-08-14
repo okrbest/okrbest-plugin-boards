@@ -57,6 +57,11 @@ type Props = {
     onClick?: (e: React.MouseEvent<HTMLDivElement>, card: Card) => void
     onDrop: (srcCard: Card, dstCard: Card) => void
     hasSubCards?: boolean
+
+    // Whether the row draws a toggle. Wider than hasSubCards: on an OKR board a
+    // rung that has one below it opens onto its add row before any sub-card
+    // exists. Left out, the row falls back to the sub-card count.
+    isExpandable?: boolean
     addSubCard?: (parentCard: Card) => Promise<void>
     isExpanded?: boolean
     onToggleExpand?: (e: React.MouseEvent) => void
@@ -99,10 +104,12 @@ const TableRow = (props: Props) => {
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = useState<boolean>(false)
     const columnResize = useColumnResize()
 
-    // A card at the depth limit cannot hold another level, and a card that
-    // already has sub-cards is served by the add row under them.
+    const isExpandable = props.isExpandable ?? Boolean(props.hasSubCards)
+
+    // A card at the depth limit cannot hold another level, and a card whose row
+    // already opens onto an add row is served by that row.
     const canAddFirstSubCard = Boolean(props.addSubCard) &&
-        !props.hasSubCards &&
+        !isExpandable &&
         (card.fields.depth || 0) < Constants.maxCardDepth
 
     useEffect(() => {
@@ -263,8 +270,8 @@ const TableRow = (props: Props) => {
                         style={{width: (card.fields.depth || 0) * Constants.tableSubCardIndentPx}}
                     />
                 )}
-                {/* 하위 카드가 있으면 확장 버튼 추가, 없으면 같은 크기의 placeholder */}
-                {props.hasSubCards ? (
+                {/* 펼칠 것이 있으면 확장 버튼 추가, 없으면 같은 크기의 placeholder */}
+                {isExpandable ? (
                     <button
                         className={`expand-toggle ${props.isExpanded ? 'expand-toggle--expanded' : ''}`}
                         onClick={props.onToggleExpand}
