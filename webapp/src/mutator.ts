@@ -15,6 +15,7 @@ import {CommentBlock} from './blocks/commentBlock'
 import {AttachmentBlock} from './blocks/attachmentBlock'
 import {FilterGroup} from './blocks/filterGroup'
 import octoClient from './octoClient'
+import {ORG_COLORS_KEY, pickedOrgColors} from './properties/orgLabels'
 import {sendFlashMessage} from './components/flashMessages'
 import undoManager from './undomanager'
 import {Utils, IDType} from './utils'
@@ -764,6 +765,36 @@ class Mutator {
         const newOption = newTemplate.options.find((o) => o.id === option.id)!
         newOption.color = color
         await this.updateBoardCardProperties(boardId, oldCardProperties, newCardProperties, 'rename option')
+    }
+
+    // Colour for one organisation value, remembered by this board.
+    //
+    // It goes next to the access rules under board.properties rather than into
+    // the property's options array. An organisation property's options being
+    // empty is what keeps it out of the card access rules, so filling them with
+    // colours would put 본부, 부서 and 직책 into the rule editor (007 research R1).
+    //
+    // updateBoard is the same path the access rules take, which is where undo
+    // and the websocket update come from.
+    async changeOrgUnitColor(board: Board, orgUnitId: string, color: string) {
+        const newBoard = createBoard(board)
+        newBoard.properties = {
+            ...board.properties,
+            [ORG_COLORS_KEY]: {...pickedOrgColors(board.properties), [orgUnitId]: color},
+        }
+        await this.updateBoard(newBoard, board, 'change organisation colour')
+    }
+
+    // Drops the pick so the value goes back to the colour derived from its ID.
+    // The key is removed rather than set to a neutral colour — an absent pick is
+    // what "automatic" means (007 data-model 2절).
+    async clearOrgUnitColor(board: Board, orgUnitId: string) {
+        const picks = pickedOrgColors(board.properties)
+        delete picks[orgUnitId]
+
+        const newBoard = createBoard(board)
+        newBoard.properties = {...board.properties, [ORG_COLORS_KEY]: picks}
+        await this.updateBoard(newBoard, board, 'clear organisation colour')
     }
 
     // When 본부 changes, the 부서 values it no longer contains stop making sense.
