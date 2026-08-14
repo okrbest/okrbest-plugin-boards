@@ -27,7 +27,7 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 기준선 측정 — `git stash -u`로 미추적 파일까지 치운 뒤 `webapp/`에서 `npx jest --silent`, `npm run check-types`, `npm run check`를 각각 돌려 실패 목록을 작업 폴더에 저장한다. 회귀 판정은 개수가 아니라 목록 diff로 한다 ([quickstart.md](./quickstart.md) 8절)
+- [X] T001 기준선 측정 — `git stash -u`로 미추적 파일까지 치운 뒤 `webapp/`에서 `npx jest --silent`, `npm run check-types`, `npm run check`를 각각 돌려 실패 목록을 작업 폴더에 저장한다. 회귀 판정은 개수가 아니라 목록 diff로 한다 ([quickstart.md](./quickstart.md) 8절)
 
 ---
 
@@ -38,10 +38,10 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 **⚠️ 이 단계는 화면을 바꾸지 않는다.** 함수만 생기고 아직 아무도 부르지 않는다.
 
-- [ ] T002 [P] `webapp/src/blocks/board.ts`에 보드가 기억하는 색 지정의 타입을 더한다 — 조직 단위 ID를 팔레트 키에 대응시키는 맵. `board.properties`에 들어가는 형태다 ([data-model.md](./data-model.md) 1절)
-- [ ] T003 `webapp/src/properties/orgLabels.test.ts`에 색 결정의 실패 테스트를 더한다 — 같은 ID는 항상 같은 색이다, 자동 배정에 `propColorDefault`가 나오지 않는다, 지정 색이 자동 색을 이긴다, 마스터에 없는 ID는 지정 색이 있어도 경고색이다, 팔레트에 없는 저장값은 자동 색으로 떨어진다, 지정이 없으면 저장을 읽지 않는다
-- [ ] T004 `webapp/src/properties/orgLabels.ts`에 문자열 해시와 색 결정 함수를 더해 T003을 통과시킨다. 팔레트는 `Constants.menuColors`에서 `propColorDefault`를 뺀 9종. 우선순위는 경고색 → 지정 색 → 자동 색 ([data-model.md](./data-model.md) 2절)
-- [ ] T005 Phase 2 검증 — `npx jest --silent`, `npm run check-types`를 돌려 T001 기준선과 **실패 목록이 같은지** 확인한다. 새 실패가 있으면 다음 단계로 넘어가지 않는다
+- [X] T002 [P] `webapp/src/blocks/board.ts`에 보드가 기억하는 색 지정의 타입을 더한다 — 조직 단위 ID를 팔레트 키에 대응시키는 맵. `board.properties`에 들어가는 형태다 ([data-model.md](./data-model.md) 1절)
+- [X] T003 `webapp/src/properties/orgLabels.test.ts`에 색 결정의 실패 테스트를 더한다 — 같은 ID는 항상 같은 색이다, 자동 배정에 `propColorDefault`가 나오지 않는다, 지정 색이 자동 색을 이긴다, 마스터에 없는 ID는 지정 색이 있어도 경고색이다, 팔레트에 없는 저장값은 자동 색으로 떨어진다, 지정이 없으면 저장을 읽지 않는다
+- [X] T004 `webapp/src/properties/orgLabels.ts`에 문자열 해시와 색 결정 함수를 더해 T003을 통과시킨다. 팔레트는 `Constants.menuColors`에서 `propColorDefault`를 뺀 9종. 우선순위는 경고색 → 지정 색 → 자동 색 ([data-model.md](./data-model.md) 2절)
+- [X] T005 Phase 2 검증 — `npx jest --silent`, `npm run check-types`를 돌려 T001 기준선과 **실패 목록이 같은지** 확인한다. 새 실패가 있으면 다음 단계로 넘어가지 않는다
 
 **Checkpoint**: 색 규칙이 섰다. 화면은 아직 그대로다.
 
@@ -56,12 +56,12 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 ### Tests for User Story 1
 
-- [ ] T006 [P] [US1] `webapp/src/properties/orgDivision/orgDivision.test.tsx`에 색 표시 실패 테스트를 더한다 — 서로 다른 본부가 서로 다른 색 클래스로 그려진다, 같은 본부는 두 카드에서 같은 색이다, 마스터에 없는 값은 경고색이다. 직책·부서는 같은 에디터를 공유하므로 한 곳만 검증한다
+- [X] T006 [P] [US1] `webapp/src/properties/orgDivision/orgDivision.test.tsx`에 색 표시 실패 테스트를 더한다 — 서로 다른 본부가 서로 다른 색 클래스로 그려진다, 같은 본부는 두 카드에서 같은 색이다, 마스터에 없는 값은 경고색이다. 직책·부서는 같은 에디터를 공유하므로 한 곳만 검증한다
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] `webapp/src/properties/orgUnitEditor.tsx`의 고정 색(`orgOptionColor`)을 걷어내고 T004의 결정 함수를 쓴다. 보드에 저장된 색 지정을 함수에 넘긴다. 사라진 값의 경고색 처리는 결정 함수 안으로 옮겨 한 곳에서 정해지게 한다 ([contracts/org-colors.md](./contracts/org-colors.md) 1절)
-- [ ] T008 [US1] 빌드·배포 후 [quickstart.md](./quickstart.md) 1절을 실제 계정으로 훑는다 — 본부 7개가 서로 다른 색이다, 회색 항목이 없다, 새로고침·다른 보드에서 같은 색이다, DB에 `orgColors` 키가 아직 없다
+- [X] T007 [US1] `webapp/src/properties/orgUnitEditor.tsx`의 고정 색(`orgOptionColor`)을 걷어내고 T004의 결정 함수를 쓴다. 보드에 저장된 색 지정을 함수에 넘긴다. 사라진 값의 경고색 처리는 결정 함수 안으로 옮겨 한 곳에서 정해지게 한다 ([contracts/org-colors.md](./contracts/org-colors.md) 1절)
+- [X] T008 [US1] 빌드·배포 후 [quickstart.md](./quickstart.md) 1절을 실제 계정으로 훑는다 — 본부 7개가 서로 다른 색이다, 회색 항목이 없다, 새로고침·다른 보드에서 같은 색이다, DB에 `orgColors` 키가 아직 없다
 
 **Checkpoint**: 여기까지가 MVP다. 색을 고르는 기능이 없어도 값이 구분된다.
 
@@ -76,16 +76,16 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 ### Tests for User Story 2
 
-- [ ] T009 [P] [US2] `webapp/src/widgets/valueSelector.test.tsx`(없으면 신규)에 메뉴 실패 테스트를 더한다 — `fixedOptions`이고 색 변경 핸들러가 있으면 팔레트가 나오고 이름 변경·삭제는 나오지 않는다, 핸들러가 없으면 메뉴 자체가 없다, `fixedOptions`가 아니면 지금처럼 셋 다 나온다 ([contracts/org-colors.md](./contracts/org-colors.md) 4절)
-- [ ] T010 [P] [US2] `webapp/src/mutator.test.ts`에 저장 실패 테스트를 더한다 — 색을 고르면 `board.properties`의 색 맵에 들어간다, 해제하면 그 키가 사라진다, **`cardProperties`의 `options` 배열은 어느 경우에도 비어 있다**(FR-011 회귀 방지)
+- [X] T009 [P] [US2] `webapp/src/widgets/valueSelector.test.tsx`(없으면 신규)에 메뉴 실패 테스트를 더한다 — `fixedOptions`이고 색 변경 핸들러가 있으면 팔레트가 나오고 이름 변경·삭제는 나오지 않는다, 핸들러가 없으면 메뉴 자체가 없다, `fixedOptions`가 아니면 지금처럼 셋 다 나온다 ([contracts/org-colors.md](./contracts/org-colors.md) 4절)
+- [X] T010 [P] [US2] `webapp/src/mutator.test.ts`에 저장 실패 테스트를 더한다 — 색을 고르면 `board.properties`의 색 맵에 들어간다, 해제하면 그 키가 사라진다, **`cardProperties`의 `options` 배열은 어느 경우에도 비어 있다**(FR-011 회귀 방지)
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] `webapp/src/widgets/valueSelector.tsx`의 `fixedOptions` 분기를 "메뉴 없음"에서 "색 변경 핸들러가 있으면 색만"으로 쪼갠다. 이름 변경이 `onStartRename` 유무로 걸린 기존 방식을 따르고, 새 prop을 만들지 않는다 ([research.md](./research.md) R4)
-- [ ] T012 [US2] `webapp/src/mutator.ts`에 조직 색을 저장·해제하는 메서드를 더한다. 보드를 복제해 `properties`의 색 맵을 갈아 끼우고 `updateBoard`를 호출한다 — 접근 규칙이 쓰는 것과 같은 경로라 실행 취소가 따라온다 ([contracts/org-colors.md](./contracts/org-colors.md) 3절)
-- [ ] T013 [US2] `webapp/src/properties/orgUnitEditor.tsx`에서 `ValueSelector`에 색 변경·해제 핸들러를 넘긴다
-- [ ] T014 [P] [US2] `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 색 지정 해제 항목 문구를 추가한다. **두 파일을 같은 커밋에** 넣는다 (원칙 V)
-- [ ] T015 [US2] 빌드·배포 후 [quickstart.md](./quickstart.md) 2절과 **5절**을 훑는다. 5절이 이 이야기의 핵심 회귀다 — 색을 지정한 뒤에도 접근 규칙의 속성 후보 목록이 그대로여야 한다
+- [X] T011 [US2] `webapp/src/widgets/valueSelector.tsx`의 `fixedOptions` 분기를 "메뉴 없음"에서 "색 변경 핸들러가 있으면 색만"으로 쪼갠다. 이름 변경이 `onStartRename` 유무로 걸린 기존 방식을 따르고, 새 prop을 만들지 않는다 ([research.md](./research.md) R4)
+- [X] T012 [US2] `webapp/src/mutator.ts`에 조직 색을 저장·해제하는 메서드를 더한다. 보드를 복제해 `properties`의 색 맵을 갈아 끼우고 `updateBoard`를 호출한다 — 접근 규칙이 쓰는 것과 같은 경로라 실행 취소가 따라온다 ([contracts/org-colors.md](./contracts/org-colors.md) 3절)
+- [X] T013 [US2] `webapp/src/properties/orgUnitEditor.tsx`에서 `ValueSelector`에 색 변경·해제 핸들러를 넘긴다
+- [X] T014 [P] [US2] `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 색 지정 해제 항목 문구를 추가한다. **두 파일을 같은 커밋에** 넣는다 (원칙 V)
+- [X] T015 [US2] 빌드·배포 후 [quickstart.md](./quickstart.md) 2절과 **5절**을 훑는다. 5절이 이 이야기의 핵심 회귀다 — 색을 지정한 뒤에도 접근 규칙의 속성 후보 목록이 그대로여야 한다
 
 **Checkpoint**: 자동 색 위에 지정이 얹혔다. US1과 독립으로 검증된다.
 
@@ -100,24 +100,24 @@ superpowers `test-driven-development`가 실패 테스트 우선을 집행한다
 
 ### Tests for User Story 3
 
-- [ ] T016 [P] [US3] `webapp/src/components/viewHeader/filterPanel/filterValuePanel.test.tsx`에 필터 색 실패 테스트를 더한다 — 조직 필터 항목이 색 라벨로 그려진다, 색이 결정 규칙과 일치한다
-- [ ] T017 [P] [US3] `webapp/src/properties/orgLabels.test.ts`에 그룹 색 실패 테스트를 더한다 — 값이 여럿인 그룹은 첫 값의 색을 쓴다, 값이 없으면 색이 없다. **`centerPanel.test.tsx`에 쓰지 않는다** — 기준선에서 이미 실패하는 스위트라 새 테스트가 묻힌다(006에서 겪었다)
+- [X] T016 [P] [US3] `webapp/src/components/viewHeader/filterPanel/filterValuePanel.test.tsx`에 필터 색 실패 테스트를 더한다 — 조직 필터 항목이 색 라벨로 그려진다, 색이 결정 규칙과 일치한다
+- [X] T017 [P] [US3] `webapp/src/properties/orgLabels.test.ts`에 그룹 색 실패 테스트를 더한다 — 값이 여럿인 그룹은 첫 값의 색을 쓴다, 값이 없으면 색이 없다. **`centerPanel.test.tsx`에 쓰지 않는다** — 기준선에서 이미 실패하는 스위트라 새 테스트가 묻힌다(006에서 겪었다)
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] `webapp/src/components/viewHeader/filterPanel/filterValuePanel.tsx`의 조직 필터 항목을 `<span>`에서 `Label` 위젯으로 바꾸고 결정된 색을 넘긴다. 새 SCSS 파일을 만들지 말고 기존 패널 스타일 안에서 정렬을 맞춘다 ([research.md](./research.md) R6)
-- [ ] T019 [US3] `webapp/src/components/centerPanel.tsx`에서 조직 그룹의 이름을 덮어쓰는 자리에 색도 채운다. `boardUtils.ts`는 건드리지 않는다 ([research.md](./research.md) R5)
-- [ ] T020 [US3] 빌드·배포 후 [quickstart.md](./quickstart.md) 3절을 훑는다 — 색을 바꾸면 카드·필터·그룹 세 자리가 동시에 바뀌는지 확인한다
+- [X] T018 [US3] `webapp/src/components/viewHeader/filterPanel/filterValuePanel.tsx`의 조직 필터 항목을 `<span>`에서 `Label` 위젯으로 바꾸고 결정된 색을 넘긴다. 새 SCSS 파일을 만들지 말고 기존 패널 스타일 안에서 정렬을 맞춘다 ([research.md](./research.md) R6)
+- [X] T019 [US3] `webapp/src/components/centerPanel.tsx`에서 조직 그룹의 이름을 덮어쓰는 자리에 색도 채운다. `boardUtils.ts`는 건드리지 않는다 ([research.md](./research.md) R5)
+- [X] T020 [US3] 빌드·배포 후 [quickstart.md](./quickstart.md) 3절을 훑는다 — 색을 바꾸면 카드·필터·그룹 세 자리가 동시에 바뀌는지 확인한다
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T021 [quickstart.md](./quickstart.md) 4절 — 사라진 값의 경고색이 지정 색을 이기는지 종단으로 확인한다. 조직 관리에서 직책 하나를 비활성으로 바꾼 뒤 보고, 되돌리면 지정한 색이 돌아오는지도 본다 (FR-009)
-- [ ] T022 [quickstart.md](./quickstart.md) 6·7절 — 담당자·다중 사용자 화면에 변화가 없는지(FR-012), 005·006 동작(부서 좁히기, 담당자 좁히기, 직책 좁히기 없음, CSV)이 그대로인지 확인한다 (SC-006)
-- [ ] T023 새로 쓴 테스트가 **구현을 되돌렸을 때 실패하는지** 확인한다. 첫 실행에서 통과한 테스트는 아무것도 증명하지 않는다 (원칙 IV)
-- [ ] T024 품질 게이트 — `make webapp-ci`를 돌리고 세 단계를 따로 돌려 T001 기준선과 실패 목록을 대조한다. `git diff --stat`에 `server/` 경로가 없는지, `git status`에 새 `.scss` 파일이 없는지도 확인한다
-- [ ] T025 [quickstart.md](./quickstart.md) 9절 완료 판정을 채우고, 게이트·종단 검증·SC 실측 결과를 이 파일 하단에 근거로 남긴다
+- [X] T021 [quickstart.md](./quickstart.md) 4절 — 사라진 값의 경고색이 지정 색을 이기는지 종단으로 확인한다. 조직 관리에서 직책 하나를 비활성으로 바꾼 뒤 보고, 되돌리면 지정한 색이 돌아오는지도 본다 (FR-009)
+- [X] T022 [quickstart.md](./quickstart.md) 6·7절 — 담당자·다중 사용자 화면에 변화가 없는지(FR-012), 005·006 동작(부서 좁히기, 담당자 좁히기, 직책 좁히기 없음, CSV)이 그대로인지 확인한다 (SC-006)
+- [X] T023 새로 쓴 테스트가 **구현을 되돌렸을 때 실패하는지** 확인한다. 첫 실행에서 통과한 테스트는 아무것도 증명하지 않는다 (원칙 IV)
+- [X] T024 품질 게이트 — `make webapp-ci`를 돌리고 세 단계를 따로 돌려 T001 기준선과 실패 목록을 대조한다. `git diff --stat`에 `server/` 경로가 없는지, `git status`에 새 `.scss` 파일이 없는지도 확인한다
+- [X] T025 [quickstart.md](./quickstart.md) 9절 완료 판정을 채우고, 게이트·종단 검증·SC 실측 결과를 이 파일 하단에 근거로 남긴다
 
 ---
 
@@ -222,3 +222,84 @@ T001~T008까지가 MVP다. 여기서 멈춰도 **아무 설정 없이 조직 값
   이유다. 저장이 생기면 "같은 조직은 어디서나 같은 색"이 깨진다
 - `boardUtils.ts`나 `server/` 아래 파일을 열게 되면 계획이 틀어진 것이다. 멈추고
   [plan.md](./plan.md)를 다시 본다
+
+---
+
+## 실행 결과 (2026-08-14)
+
+### 품질 게이트 — 기준선 대비
+
+기준선은 006 병합 직후의 `main` + 명세 커밋 상태에서 다시 측정했다.
+
+| 게이트 | 기준선 | 구현 후 | 판정 |
+|---|---|---|---|
+| jest 실패 스위트 | 57 | 57 (**목록 동일**) | 통과 |
+| jest 실패 테스트 | 144 / 1042 | 145 / 1077 | 통과 — 새 테스트 35건 전부 통과, +1은 아래 flapper |
+| tsc 오류 | 23 | 23 (**내용 동일**, 줄 번호만 이동) | 통과 |
+| eslint | 2478 problems | 2479 problems | 통과 — 늘어난 1건은 신규 파일에 붙는 저장소 공통 `Resolve error` |
+| `git diff --stat`에 `server/` | — | 없음 | 통과 |
+| 새 `.scss` 파일 | — | 없음 | 통과 |
+
+실패 테스트 +1은 006에서 원인을 규명한 `GalleryCard › should match snapshot with
+only first image`다. 기준선에서도 실패 중인 스위트 안에 있고 실행마다 뒤집힌다.
+
+### 테스트 빨강 증거 (원칙 IV)
+
+| 테스트 | 구현 전 실패 내용 |
+|---|---|
+| `orgLabels.test.ts` — 색 결정 (8) | `orgColorForId is not a function` |
+| `orgLabels.test.ts` — 저장 읽기 (5) | `pickedOrgColors is not a function` |
+| `orgLabels.test.ts` — 그룹 색 (4) | `orgGroupColor is not a function` |
+| `orgDivision.test.tsx` — 색 표시 (2) | 값이 전부 같은 회색이라 실패 |
+| `valueSelector.test.tsx` — 색만 메뉴 (2) | 고정 옵션에 메뉴가 없어 실패 |
+| `valueSelector.test.tsx` — 해제 항목 (1) | 항목이 없어 실패 |
+| `mutator.test.ts` — 저장·해제 (5) | `changeOrgUnitColor is not a function` |
+| `filterValuePanel.test.tsx` — 필터 색 (3) | 텍스트로 그려 색이 없어 실패 |
+
+즉시 통과한 가드 3건은 **변이로 검증**했다.
+
+| 변이 | 실패한 테스트 |
+|---|---|
+| 자동 색을 매번 랜덤으로 | `같은 ID는 같은 색` 외 4건 |
+| 사라진 값 경고 분기 제거 | `경고색이 지정 색을 이긴다`, `사라진 값 경고` |
+| 해제 항목을 항상 렌더 | `핸들러가 없으면 해제 항목도 없다` |
+
+### 종단 검증 — 배포 후 실제 계정 (`전유홍`, 팀 `kkv`)
+
+검증용 보드를 새로 만들어 훑고 끝나고 지웠다. 비활성으로 바꾼 직책도 되돌렸다.
+
+| 절 | 확인 | 결과 |
+|---|---|---|
+| 1 | 본부 7개가 색을 받고 회색 0건 | 통과 (FR-001) |
+| 1 | 새로고침 후 같은 색 | 통과 (FR-002) |
+| 1 | 값을 골라도 DB에 `orgColors` 키 없음 | 통과 — 자동 색은 저장하지 않는다 |
+| 2 | 메뉴에 팔레트 10종 + 자동 색 복귀, 이름 변경·삭제 없음 | 통과 (FR-003, FR-010) |
+| 2 | 고른 색이 저장되고 그 값만 바뀜 | 통과 (FR-004) |
+| 2 | **조직 속성의 `options` 배열이 여전히 0** | 통과 (FR-011 핵심) |
+| 2 | 해제하니 저장이 비고 자동 색으로 복귀 (회색 아님) | 통과 (FR-005) |
+| 3 | 필터 목록 색이 카드와 일치 | 통과 (FR-007) |
+| 3 | 그룹 헤더 색이 카드와 일치 | 통과 (FR-007) |
+| 4 | 지정 색이 있어도 사라진 값은 경고색, 되살리면 지정 색 복귀 | 통과 (FR-009) |
+| 5 | 색 저장 후에도 규칙 속성 후보가 그대로 (조직 속성 없음) | 통과 (FR-011) |
+| 6 | 담당자 속성 안에 색 라벨 0개 | 통과 (FR-012) |
+| 7 | 본부를 고르면 부서가 하위 4개로 좁혀짐 | 통과 (005 회귀 없음) |
+
+### SC 실측 — SC-001을 고쳤다
+
+| SC | 실측 |
+|---|---|
+| SC-001 | 회색 0건, 본부 7개가 **5종**으로 갈림. **명세를 고쳤다** — 아래 참조 |
+| SC-002 | 새로고침·다른 보드에서 같은 자동 색 |
+| SC-003 | 색을 바꾸면 카드·필터·그룹 세 자리가 함께 바뀜 |
+| SC-004 | 규칙 속성 후보 목록 변화 0 |
+| SC-005 | 담당자 화면 변화 0 |
+| SC-006 | 005·006 시나리오 회귀 0 |
+
+**SC-001은 처음부터 산술적으로 불가능했다.** "서로 다른 8개가 서로 다른 색"을 요구했는데
+팔레트가 9종이라 그럴 확률이 0.09%다. 무작위 ID 8개로 2000회 돌린 평균 색 종수는
+5.48이고 이론 기대값 5.5와 일치했다 — 해시 분포 문제가 아니라 팔레트 크기의 문제다.
+명세의 Edge Cases는 이미 겹침을 받아들이고 있었으므로, SC-001이 그 문서 안에서
+혼자 어긋나 있었다. 실측값으로 고쳤다.
+
+겹치는 값은 US2로 갈라놓을 수 있다. 검증 중 CHRO-전략과 COO-생산이 같은 초록이었는데
+CHRO-전략을 보라로 지정해 풀었고, 지정 후 색 종수가 5 → 6이 됐다.
