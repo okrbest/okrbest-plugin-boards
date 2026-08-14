@@ -4,11 +4,12 @@
 import React, {useState, useCallback, useMemo} from 'react'
 import {useIntl} from 'react-intl'
 
-import {IPropertyOption, NamedEntry} from '../blocks/board'
+import {IPropertyOption, NamedEntry, OrgColors} from '../blocks/board'
 import mutator from '../mutator'
 import Label from '../widgets/label'
 import ValueSelector from '../widgets/valueSelector'
 
+import {orgColorForId, pickedOrgColors} from './orgLabels'
 import {PropertyProps} from './types'
 
 // The editor shared by the 본부, 부서 and 직책 property types. They differ only in
@@ -32,29 +33,28 @@ type Props = PropertyProps & {
     allUnits: NamedEntry[]
 }
 
-const orgOptionColor = 'propColorDefault'
-
-// A value the master no longer offers is shown rather than dropped: the master
-// belongs to the main server, so this plugin is not in a position to decide
-// that a card's history is wrong (FR-006).
-const staleOptionColor = 'propColorRed'
-
-export function toPropertyOption(unit: NamedEntry): IPropertyOption {
-    return {id: unit.id, value: unit.name, color: orgOptionColor}
+// Colour is not decided here. orgColorForId owns the three rules — warning,
+// picked, derived — so the card editor, the filter list and the group header
+// cannot drift apart (007 contract 1절). A value the master dropped comes back
+// warned by that same call, which is why the stale branch below no longer names
+// a colour of its own.
+export function toPropertyOption(unit: NamedEntry, color: string): IPropertyOption {
+    return {id: unit.id, value: unit.name, color}
 }
 
 // Values currently on the card, named from the master where possible.
 //
 // Order follows the card's stored order so the chips do not jump around when
 // the narrowing changes.
-export function selectedOptions(values: string[], allUnits: NamedEntry[], staleSuffix: string): IPropertyOption[] {
+export function selectedOptions(values: string[], allUnits: NamedEntry[], staleSuffix: string, picked?: OrgColors): IPropertyOption[] {
     const byID = new Map(allUnits.map((unit) => [unit.id, unit]))
     return values.map((id) => {
+        const color = orgColorForId(id, allUnits, picked)
         const unit = byID.get(id)
         if (unit) {
-            return toPropertyOption(unit)
+            return toPropertyOption(unit, color)
         }
-        return {id, value: `${id} ${staleSuffix}`, color: staleOptionColor}
+        return {id, value: `${id} ${staleSuffix}`, color}
     })
 }
 
@@ -62,8 +62,8 @@ export function selectedOptions(values: string[], allUnits: NamedEntry[], staleS
 // card that the allowed set does not cover (FR-015). One union covers all three
 // cases that produce such a value — a retired unit, a narrowing that moved, and
 // a unit outside the current 본부 selection.
-export function displayOptions(allowed: NamedEntry[], selected: IPropertyOption[]): IPropertyOption[] {
-    const options = allowed.map(toPropertyOption)
+export function displayOptions(allowed: NamedEntry[], selected: IPropertyOption[], picked?: OrgColors): IPropertyOption[] {
+    const options = allowed.map((unit) => toPropertyOption(unit, orgColorForId(unit.id, allowed, picked)))
     const listed = new Set(options.map((option) => option.id))
     selected.forEach((option) => {
         if (!listed.has(option.id)) {
@@ -95,19 +95,37 @@ const OrgUnitEditor = (props: Props): React.JSX.Element => {
         [propertyValue],
     )
 
+    // Only the colours somebody picked live on the board. An untouched board
+    // has no such key at all, and every value falls through to the derived
+    // colour (007 data-model 1절).
+    const picked = useMemo(() => pickedOrgColors(board?.properties), [board?.properties])
+
     const selected = useMemo(
-        () => selectedOptions(values, allUnits, staleSuffix),
-        [values, allUnits, staleSuffix],
+        () => selectedOptions(values, allUnits, staleSuffix, picked),
+        [values, allUnits, staleSuffix, picked],
     )
 
     const listed = useMemo(
-        () => displayOptions(options, selected),
-        [options, selected],
+        () => displayOptions(options, selected, picked),
+        [options, selected, picked],
     )
 
     const onChange = useCallback(
         (newValue: string | string[]) => mutator.changePropertyValue(board.id, card, propertyTemplate.id, newValue),
         [board.id, card, propertyTemplate.id],
+    )
+
+    // Colour is the board's to choose even though the organisation is not.
+    // The pick is keyed by unit, so it holds for every property that names the
+    // same 본부 on this board (007 data-model 1절).
+    const onChangeColor = useCallback(
+        (option: IPropertyOption, color: string) => mutator.changeOrgUnitColor(board, option.id, color),
+        [board],
+    )
+
+    const onClearColor = useCallback(
+        (option: IPropertyOption) => mutator.clearOrgUnitColor(board, option.id),
+        [board],
     )
 
     const onDeleteValue = useCallback(
@@ -151,6 +169,8 @@ const OrgUnitEditor = (props: Props): React.JSX.Element => {
             options={listed}
             value={selected}
             onChange={onChange}
+            onChangeColor={onChangeColor}
+            onClearColor={onClearColor}
             onDeleteValue={onDeleteValue}
             onBlur={() => setOpen(false)}
         />
