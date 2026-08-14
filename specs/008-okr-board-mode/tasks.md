@@ -143,6 +143,8 @@ Go를 다시 빌드하지 않는다. 하위 카드 채움을 종단으로 볼 �
 - [X] T029 `webapp/src/components/table/tableRowExpandable.tsx`가 `hasSubCards`와 초대를 합쳐 `isExpandable`을 만든다. 초대는 읽기 전용·최대 깊이·`canCommentCard`를 모두 통과해야 선다 — `TableSubCardRows`가 어차피 막을 줄을 열어 놓으면 토글이 빈 목록으로 열린다 (FR-014b)
 - [X] T030 `webapp/src/components/table/tableRow.tsx`에 `isExpandable` prop을 더한다. 안 넘기면 `hasSubCards`로 떨어져 **OKR이 아닌 보드는 markup 한 글자도 달라지지 않는다** (FR-015). 카드 메뉴의 "Add sub-card"는 행이 이미 추가 줄을 열었으면 내놓지 않는다 — 같은 일을 하는 입구가 둘이 된다
 
+- [X] T031 배포 후 실제 계정으로 훑는다 — OKR Board를 켠 새 보드의 표 보기에서 Objective·Key Results·Tasks 세 행을 만들어 무엇이 서고 무엇이 안 서는지 본다. **OKR이 아닌 보드도 같이 본다**(FR-015)
+
 **Checkpoint**: 표 보기에서 빈 Objective에 클릭 한 번으로 Key Results가 붙는다 (SC-007).
 
 ---
@@ -284,6 +286,23 @@ US2를 클라이언트와 서버로 나누는 이유는 배포 단위가 다르�
 떠 있는 두 스위트(`sidebarBoardItem`, `viewHeader/dateFilter`)는 이 변경과 무관하게
 실행마다 결과가 달라진다. 따로 돌리면 또 다른 조합으로 실패한다 — 표 컴포넌트를
 건드리지 않는 스위트다.
+
+### Phase 7 종단 검증 — 배포 후 실제 계정 (`okrbest`, 팀 `억셉트커피`)
+
+webapp만 바뀌어 `npm run debug` → `make deploy-from-watch`로 올렸다. 번들에
+`isOkrParentLevel`이 들어간 것을 확인한 뒤 브라우저로 훑었다. 검증용 보드
+`FR-014 검증용`은 끝나고 지웠다.
+
+| 확인 | 결과 |
+|---|---|
+| OKR Board를 켠 보드의 표 보기에서 **하위 없는** Objective 행에 펼침 화살표와 `+ New sub-card`가 함께 선다 | 통과 (FR-014) |
+| 그 줄을 눌러 만든 Key Results 카드도 하위가 없는 채로 화살표와 추가 줄을 갖는다 | 통과 (FR-014) |
+| Key Results 아래 만든 **Tasks 카드에는 화살표도 추가 줄도 없다.** 제목은 placeholder 폭만큼 밀려 같은 자리에서 시작한다 | 통과 (FR-014a) |
+| Tasks 카드의 ⋯ 메뉴에 **"Add sub-card"가 그대로 있다** | 통과 (FR-014a) |
+| 새로고침 뒤에도 세 행의 상태가 같다 | 통과 |
+| OKR이 아닌 보드(`프로젝트 작업`) 표 보기 — 행 4개, 화살표 0개, placeholder 4개, 하위 추가 줄 0개 | 통과 (FR-015) |
+
+SC-007 실측: 빈 Objective에 첫 Key Results를 다는 데 클릭 1회. 카드 메뉴를 열지 않았다.
 
 ### 테스트 빨강 증거 (원칙 IV)
 
