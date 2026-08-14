@@ -122,4 +122,41 @@ describe('properties/orgDivision', () => {
         expect(screen.queryByText('Rename')).toBeNull()
         expect(screen.queryByText('Delete')).toBeNull()
     })
+    // Colour is what makes a row of organisation labels readable at a glance.
+    // Before 007 every one of them was the same grey.
+    const colorOf = (container: HTMLElement, name: string): string => {
+        const label = [...container.querySelectorAll('.Label')].find((node) => node.textContent?.includes(name))
+        return label ? label.className.replace('Label', '').trim() : ''
+    }
+
+    test('draws different units in different colours (FR-001)', () => {
+        const {container} = renderEditor(['div-production', 'div-sales'])
+
+        expect(colorOf(container, '생산본부')).not.toBe(colorOf(container, '영업본부'))
+    })
+
+    test('never leaves a unit in the default grey (FR-001)', () => {
+        // Grey reads as "no colour", so an automatic pick landing there would
+        // look like the feature had not been applied.
+        const {container} = renderEditor(['div-production', 'div-sales'])
+
+        expect(colorOf(container, '생산본부')).not.toBe('propColorDefault')
+        expect(colorOf(container, '영업본부')).not.toBe('propColorDefault')
+    })
+
+    test('gives a unit the same colour on every render (FR-002)', () => {
+        const first = renderEditor(['div-production'])
+        const firstColor = colorOf(first.container, '생산본부')
+        first.unmount()
+
+        const second = renderEditor(['div-production'])
+
+        expect(colorOf(second.container, '생산본부')).toBe(firstColor)
+    })
+
+    test('warns about a value the master dropped, whatever its colour would be (FR-009)', () => {
+        const {container} = renderEditor(['div-retired'])
+
+        expect(colorOf(container, 'div-retired')).toBe('propColorRed')
+    })
 })
