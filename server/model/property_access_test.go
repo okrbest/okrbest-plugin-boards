@@ -98,6 +98,55 @@ func TestPropertyAccessRuleHasOrgCondition(t *testing.T) {
 	require.False(t, PropertyAccessRule{}.HasOrgCondition())
 }
 
+// 009 계약 3절 — 새 필드와 기존 필드가 겹치는 자리. 읽는 쪽이 새 필드를 먼저 보고
+// 없으면 기존 필드로 떨어진다. 기존 보드는 새 필드가 비어 있어 지금과 똑같이 읽힌다.
+func TestPropertyAccessRuleCardValueIDs(t *testing.T) {
+	t.Run("3-1 새 필드가 빈 기존 규칙은 한 값짜리를 쓴다", func(t *testing.T) {
+		rule := PropertyAccessRule{PropertyValueID: "opt-objective"}
+
+		require.Equal(t, []string{"opt-objective"}, rule.CardValueIDs())
+	})
+
+	t.Run("3-4 새 필드가 있으면 그것을 쓴다", func(t *testing.T) {
+		rule := PropertyAccessRule{
+			PropertyValueID:  "opt-objective",
+			PropertyValueIDs: []string{"opt-objective", "opt-key-result"},
+		}
+
+		require.Equal(t, []string{"opt-objective", "opt-key-result"}, rule.CardValueIDs(),
+			"둘 다 있으면 목록이 이긴다")
+	})
+
+	t.Run("둘 다 비면 아무 값도 없다", func(t *testing.T) {
+		require.Empty(t, PropertyAccessRule{}.CardValueIDs())
+	})
+}
+
+func TestPropertyAccessRuleRelationOutranksAbsoluteOrg(t *testing.T) {
+	t.Run("3-2 관계가 있으면 절대값을 무시한다", func(t *testing.T) {
+		rule := PropertyAccessRule{Relation: RelationSameDivision, DivisionID: "div-strategy"}
+
+		require.True(t, rule.UsesRelation())
+		require.True(t, rule.HasOrgCondition(),
+			"관계도 조직 조건이다 — 게이트로 세어야 매트릭스의 빈칸이 빈칸으로 남는다")
+	})
+
+	t.Run("관계가 비면 절대값으로 읽는다", func(t *testing.T) {
+		rule := PropertyAccessRule{DivisionID: "div-strategy"}
+
+		require.False(t, rule.UsesRelation())
+		require.True(t, rule.HasOrgCondition())
+	})
+
+	t.Run("relation=any도 조직 조건으로 센다", func(t *testing.T) {
+		// 매트릭스의 대표 열이 여기 해당한다. 조직을 안 따지지만 관계를 쓴다.
+		rule := PropertyAccessRule{Relation: RelationAny}
+
+		require.True(t, rule.UsesRelation())
+		require.True(t, rule.HasOrgCondition())
+	})
+}
+
 func TestPropertyAccessPermissionLadder(t *testing.T) {
 	require.Equal(t, EffectiveBoardPermissionView, PropertyAccessViewer.AsEffectivePermission())
 	require.Equal(t, EffectiveBoardPermissionCommenter, PropertyAccessCommenter.AsEffectivePermission())

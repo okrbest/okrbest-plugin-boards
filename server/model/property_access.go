@@ -44,29 +44,126 @@ func (p PropertyAccessPermission) AsEffectivePermission() EffectiveBoardPermissi
 	}
 }
 
+// OrgRelation is how a rule compares the card's organization to the viewer's,
+// instead of naming an organization outright.
+//
+// Naming one means writing a rule per organization, and "본인 본부" cannot be
+// written at all — which is what made the standard OKR permission matrix
+// inexpressible. See specs/009-card-access-role-matrix/research.md R1.
+type OrgRelation = string
+
+const (
+	// RelationNone is an old rule: no relation, read the absolute axes.
+	RelationNone OrgRelation = ""
+
+	// RelationAny uses a relation but places no organization constraint. It is
+	// still a gate — that is what tells it apart from RelationNone.
+	RelationAny OrgRelation = "any"
+
+	RelationSameDivision   OrgRelation = "sameDivision"
+	RelationOtherDivision  OrgRelation = "otherDivision"
+	RelationSameDepartment OrgRelation = "sameDepartment"
+
+	// RelationMine matches when the viewer authored the card or is named in its
+	// assignee property. Either one is enough.
+	RelationMine OrgRelation = "mine"
+)
+
+// IsOrgRelation reports whether a stored value is one this build understands.
+// Anything else is refused at save time rather than silently ignored: a relation
+// nobody recognizes would change a judgement without anyone seeing it.
+func IsOrgRelation(relation OrgRelation) bool {
+	switch relation {
+	case RelationNone, RelationAny, RelationSameDivision,
+		RelationOtherDivision, RelationSameDepartment, RelationMine:
+		return true
+	default:
+		return false
+	}
+}
+
 // PropertyAccessRule is one row of the rule table.
 //
-// The card side (PropertyID, PropertyValueID) selects which cards the row
-// applies to. The subject side (DivisionID, DepartmentID, DutyID) selects
-// which users it applies to; an empty field means "no constraint on this axis".
+// The card side (PropertyID plus PropertyValueIDs, or the single
+// PropertyValueID an older rule carries) selects which cards the row applies to.
+// The subject side selects which users; an empty field means "no constraint on
+// this axis".
 //
-// All three subject axes store IDs: OrgUnits.id for the organization axes and
-// PositionDefinitions.id for the duty axis. UserOrgProfiles binds both the same
-// way, so no conversion is needed. See specs/002-card-property-access/research.md R5.
+// The organization axis comes in two forms. An older rule names a division or a
+// department outright. A newer one sets Relation and has the axis judged against
+// the card. Relation wins when both are present — two answers to the same
+// question cannot both be applied, and reading the row would not say which one
+// the author meant.
+//
+// The absolute axes store IDs: OrgUnits.id for organization and
+// PositionDefinitions.id for duty. UserOrgProfiles binds both the same way, so
+// no conversion is needed. See specs/002-card-property-access/research.md R5.
 type PropertyAccessRule struct {
-	ID              string                   `json:"id"`
-	PropertyID      string                   `json:"propertyId"`
-	PropertyValueID string                   `json:"propertyValueId"`
-	DivisionID      string                   `json:"divisionId"`
-	DepartmentID    string                   `json:"departmentId"`
-	DutyID          string                   `json:"dutyId"`
-	Permission      PropertyAccessPermission `json:"permission"`
+	ID         string `json:"id"`
+	PropertyID string `json:"propertyId"`
+
+	// PropertyValueIDs lets one row name several values — "Objective 또는 Key
+	// Result" is one row rather than two. PropertyValueID is what an older rule
+	// carries; CardValueIDs reads whichever is present.
+	PropertyValueIDs []string `json:"propertyValueIds,omitempty"`
+	PropertyValueID  string   `json:"propertyValueId"`
+
+	DivisionID   string `json:"divisionId"`
+	DepartmentID string `json:"departmentId"`
+	DutyID       string `json:"dutyId"`
+
+	// Relation replaces the two absolute organization axes when set.
+	Relation OrgRelation `json:"relation,omitempty"`
+
+	// OrgPropertyID names the card property a division or department relation
+	// reads. A board can carry two 본부 properties — "주관" and "협조" — so the
+	// rule says which, rather than the server picking the first and changing its
+	// answer when the property order changes.
+	OrgPropertyID string `json:"orgPropertyId,omitempty"`
+
+	// AssigneePropertyID names the person property RelationMine reads. Empty is
+	// allowed: authorship alone still decides.
+	AssigneePropertyID string `json:"assigneePropertyId,omitempty"`
+
+	Permission PropertyAccessPermission `json:"permission"`
+
+	// Source marks the rows the matrix editor owns, so saving from the matrix
+	// replaces those and leaves hand-written exceptions alone.
+	Source string `json:"source,omitempty"`
+}
+
+// SourceMatrix marks a rule the matrix editor generated.
+const SourceMatrix = "matrix"
+
+// CardValueIDs returns the values this rule's card side names, reading the list
+// first and falling back to the single value an older rule carries.
+func (r PropertyAccessRule) CardValueIDs() []string {
+	if len(r.PropertyValueIDs) > 0 {
+		return r.PropertyValueIDs
+	}
+	if r.PropertyValueID == "" {
+		return nil
+	}
+	return []string{r.PropertyValueID}
+}
+
+// UsesRelation reports whether the row judges organization against the card
+// rather than against a named organization.
+func (r PropertyAccessRule) UsesRelation() bool {
+	return r.Relation != RelationNone
 }
 
 // HasOrgCondition reports whether the row constrains the organization axis.
 // Rows that do act as a gate: a user matching none of them gets no rule
 // permission at all, however high their duty is.
+//
+// A relation counts, RelationAny included. Leaving it out would drop a matrix
+// row that grants nothing to this viewer out of the gate, and the blank cells of
+// the matrix would come back as readable instead of hidden (009 FR-009).
 func (r PropertyAccessRule) HasOrgCondition() bool {
+	if r.UsesRelation() {
+		return true
+	}
 	return r.DivisionID != "" || r.DepartmentID != ""
 }
 

@@ -219,12 +219,20 @@ func validatePropertyAccessSettings(settings *model.PropertyAccessSettings) erro
 		switch {
 		case rule.PropertyID == "":
 			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: propertyId is required", i))
-		case rule.PropertyValueID == "":
+		case len(rule.CardValueIDs()) == 0:
 			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: propertyValueId is required", i))
 		case !rule.HasOrgCondition() && rule.DutyID == "":
 			// A row with no subject condition would grant everyone the
 			// permission, which is never what an admin means to express.
-			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: at least one of divisionId, departmentId or dutyId is required", i))
+			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: at least one of divisionId, departmentId, dutyId or relation is required", i))
+		case !model.IsOrgRelation(rule.Relation):
+			// A relation nobody recognizes would change a judgement without
+			// anyone seeing it, so it is refused rather than ignored.
+			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: relation %q is not recognized", i, rule.Relation))
+		case relationNeedsOrgProperty(rule.Relation) && rule.OrgPropertyID == "":
+			// Without a property to read, the relation can never hold. Such a
+			// row is dead on arrival and only looks like it grants something.
+			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: relation %q needs orgPropertyId", i, rule.Relation))
 		}
 
 		switch rule.Permission {
@@ -235,6 +243,18 @@ func validatePropertyAccessSettings(settings *model.PropertyAccessSettings) erro
 	}
 
 	return nil
+}
+
+// relationNeedsOrgProperty reports whether a relation reads an organization
+// property off the card. RelationMine reads a person property that is optional,
+// and RelationAny reads nothing at all.
+func relationNeedsOrgProperty(relation model.OrgRelation) bool {
+	switch relation {
+	case model.RelationSameDivision, model.RelationOtherDivision, model.RelationSameDepartment:
+		return true
+	default:
+		return false
+	}
 }
 
 // cardCondition identifies the card side of a rule: one property and one of its
@@ -326,9 +346,11 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	}
 
 	for _, rule := range input.Settings.Rules {
-		evaluator.mentioned[cardCondition{propertyID: rule.PropertyID, valueID: rule.PropertyValueID}] = true
+		for _, valueID := range rule.CardValueIDs() {
+			evaluator.mentioned[cardCondition{propertyID: rule.PropertyID, valueID: valueID}] = true
+		}
 
-		if !evaluator.subjectMatches(rule) {
+		if !evaluator.subjectMatchesWithoutCard(rule) {
 			continue
 		}
 
@@ -348,27 +370,124 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	return evaluator
 }
 
-// subjectMatches reports whether the user satisfies every subject axis the rule
-// sets — organization and duty alike.
+// subjectMatchesWithoutCard answers the subject axes that can be settled before
+// a card exists. A relation cannot: it compares the card to the viewer, so there
+// is nothing to compare against yet.
 //
-// An axis the rule leaves empty places no constraint. That is what makes a
-// duty-only row apply to every division, and an organization-only row apply
-// whatever duty the user holds (FR-018).
-func (e *PropertyAccessEvaluator) subjectMatches(rule model.PropertyAccessRule) bool {
+// Only DefaultConditionValues uses this. A board whose rules are all relations
+// therefore fills nothing into a new card, which is correct — the value a
+// relation would admit depends on the card that does not exist yet.
+func (e *PropertyAccessEvaluator) subjectMatchesWithoutCard(rule model.PropertyAccessRule) bool {
+	if rule.UsesRelation() {
+		return false
+	}
 	if !ruleOrgMatches(rule, e.units) {
 		return false
 	}
 	return rule.DutyID == "" || rule.DutyID == e.dutyID
 }
 
-// ruleMentionsCard reports whether the card carries the value the rule's card
-// side names. A multiSelect property contributes one value per selection, so any
-// one of them is enough (FR-023).
+// orgMatches answers the rule's organization axis against one card.
+//
+// A rule that names a division or a department is judged as it always was. A
+// rule that sets a relation is judged against the card, which is the whole point
+// of the relation (009 R3).
+func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card *model.Block) bool {
+	if !rule.UsesRelation() {
+		return ruleOrgMatches(rule, e.units)
+	}
+
+	switch rule.Relation {
+	case model.RelationAny:
+		return true
+
+	// Same division and same department ask the same question — is the unit the
+	// card names one this user belongs to or sits under. They differ only in
+	// which property the rule reads, and keeping them apart is what lets one
+	// board answer both without the rule having to say which level it meant.
+	case model.RelationSameDivision, model.RelationSameDepartment:
+		unit := cardValue(card, rule.OrgPropertyID)
+		return unit != "" && e.units[unit]
+
+	// Not the negation of same division. A card with no value is neither, and a
+	// viewer with no assignment is neither — otherwise every blank card would
+	// land in "other division" the moment it was created (FR-007).
+	case model.RelationOtherDivision:
+		unit := cardValue(card, rule.OrgPropertyID)
+		return unit != "" && len(e.units) > 0 && !e.units[unit]
+
+	case model.RelationMine:
+		return e.isMine(rule, card)
+
+	default:
+		// A relation this build does not know grants nothing. Saving refuses it,
+		// so getting here means the row was written by a newer client.
+		return false
+	}
+}
+
+// isMine reports whether the viewer authored the card or is named in the
+// property the rule points at. Either one is enough (FR-005).
+func (e *PropertyAccessEvaluator) isMine(rule model.PropertyAccessRule, card *model.Block) bool {
+	if e.userID == "" || card == nil {
+		return false
+	}
+	if card.CreatedBy == e.userID {
+		return true
+	}
+	if rule.AssigneePropertyID == "" {
+		return false
+	}
+
+	found := false
+	eachPropertyValueID(cardRawValue(card, rule.AssigneePropertyID), func(value string) {
+		if value == e.userID {
+			found = true
+		}
+	})
+	return found
+}
+
+// cardRawValue returns one property off a card exactly as it was stored, which
+// is a string for person and a list for multiPerson.
+func cardRawValue(card *model.Block, propertyID string) interface{} {
+	if card == nil || propertyID == "" {
+		return nil
+	}
+	properties, ok := card.Fields["properties"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return properties[propertyID]
+}
+
+// cardValue returns a single-valued property off a card. An organization
+// property holds one unit ID; anything else is treated as absent rather than
+// guessed at.
+func cardValue(card *model.Block, propertyID string) string {
+	value, _ := cardRawValue(card, propertyID).(string)
+	return value
+}
+
+// ruleMentionsCard reports whether the card carries any value the rule's card
+// side names. A multiSelect property contributes one value per selection, and a
+// rule may name several values, so one overlap is enough (FR-023, FR-008).
 func ruleMentionsCard(rule model.PropertyAccessRule, card *model.Block) bool {
+	wanted := rule.CardValueIDs()
+	if len(wanted) == 0 {
+		return false
+	}
+
 	found := false
 	eachCardCondition(card, func(condition cardCondition) {
-		if condition.propertyID == rule.PropertyID && condition.valueID == rule.PropertyValueID {
-			found = true
+		if condition.propertyID != rule.PropertyID {
+			return
+		}
+		for _, valueID := range wanted {
+			if condition.valueID == valueID {
+				found = true
+				return
+			}
 		}
 	})
 	return found
@@ -460,7 +579,7 @@ func (e *PropertyAccessEvaluator) evaluate(card *model.Block, ownerFloor model.E
 		}
 		matched = true
 
-		orgOK := ruleOrgMatches(rule, e.units)
+		orgOK := e.orgMatches(rule, card)
 		if rule.HasOrgCondition() {
 			gated = true
 			gatePassed = gatePassed || orgOK
