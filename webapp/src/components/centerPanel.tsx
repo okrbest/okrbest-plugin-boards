@@ -45,6 +45,7 @@ import {Constants} from '../constants'
 import propsRegistry from '../properties'
 import {getOrgLabels} from '../store/orgMaster'
 import {orgNamesForIds, isOrgProperty, orgGroupColor, pickedOrgColors} from '../properties/orgLabels'
+import {okrPropertiesForNewCard} from '../okrBoard'
 
 import {sendFlashMessage} from './flashMessages'
 
@@ -249,6 +250,18 @@ const CenterPanel = (props: Props) => {
             }
         }
 
+        // The rung comes from the card that was made, not from an assumption
+        // that a template is a top level card. Block duplication copies depth,
+        // and "New template from card" is offered on sub-cards too, so a
+        // template built from a 3단계 card carries that depth (FR-006a).
+        const templateCard = cardTemplates.find((c) => c.id === cardTemplateId)
+        const okrProperties = okrPropertiesForNewCard(
+            board.properties,
+            templateCard?.fields.depth || 0,
+            {...(templateCard?.fields.properties || {}), ...propertiesThatMeetFilters} as Record<string, string | string[]>,
+        )
+        const templateOverrides = {...okrProperties, ...propertiesThatMeetFilters}
+
         mutator.performAsUndoGroup(async () => {
             const [, newCardId] = await mutator.duplicateCard(
                 cardTemplateId,
@@ -256,7 +269,7 @@ const CenterPanel = (props: Props) => {
                 true,
                 intl.formatMessage({id: 'Mutator.new-card-from-template', defaultMessage: 'new card from template'}),
                 false,
-                propertiesThatMeetFilters,
+                templateOverrides,
                 async (cardId) => {
                     dispatch(updateView({...activeView, fields: {...activeView.fields, cardOrder: [...activeView.fields.cardOrder, cardId]}}))
                     TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.CreateCardViaTemplate, {board: props.board.id, view: props.activeView.id, card: cardId, cardTemplateId})
@@ -270,7 +283,7 @@ const CenterPanel = (props: Props) => {
                 await mutator.changeViewCardOrder(props.board.id, activeView.id, activeView.fields.cardOrder, [...activeView.fields.cardOrder, newCardId], 'add-card')
             }
         })
-    }, [props.board, props.activeView, showCard, props.cards, intl, dispatch, getGroupByValue])
+    }, [props.board, props.activeView, showCard, props.cards, intl, dispatch, getGroupByValue, cardTemplates])
 
     const addCard = useCallback(async (groupByOptionId?: string, show = false, properties: Record<string, string | string[]> = {}): Promise<void> => {
         const {activeView, board, groupByProperty} = props
@@ -326,7 +339,15 @@ const CenterPanel = (props: Props) => {
             }
         }
 
-        card.fields.properties = {...card.fields.properties, ...properties, ...propertiesThatMeetFilters}
+        // A card made here is a top level card, so its rung is the first one.
+        // Anything a filter, a group or the caller already decided wins.
+        const okrProperties = okrPropertiesForNewCard(
+            board.properties,
+            0,
+            {...card.fields.properties, ...properties, ...propertiesThatMeetFilters} as Record<string, string | string[]>,
+        )
+
+        card.fields.properties = {...card.fields.properties, ...okrProperties, ...properties, ...propertiesThatMeetFilters}
         if (!card.fields.icon && UserSettings.prefillRandomIcons) {
             card.fields.icon = BlockIcons.shared.randomIcon()
         }
