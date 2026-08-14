@@ -196,6 +196,42 @@ func (s *SQLStore) getTeam(db sq.BaseRunner, id string) (*model.Team, error) {
 	return &model.Team{ID: id, Title: displayName}, nil
 }
 
+// getTeamSettings reads the settings bag this plugin keeps for a team.
+//
+// getTeam deliberately does not: it answers "what is this team called", which it
+// takes from the main server's Teams table, and the plugin's own row may not
+// exist at all. The settings live in the plugin's table and are read on their
+// own so a team that never had any comes back empty rather than missing.
+func (s *SQLStore) getTeamSettings(db sq.BaseRunner, id string) (map[string]interface{}, error) {
+	query := s.getQueryBuilder(db).
+		Select("COALESCE(settings, '{}')").
+		From(s.tablePrefix + "teams").
+		Where(sq.Eq{"id": id})
+
+	row := query.QueryRow()
+
+	var settingsBytes []byte
+	if err := row.Scan(&settingsBytes); err != nil {
+		if model.IsErrNotFound(err) {
+			// A team with no row of its own has no settings, which is what every
+			// team looks like until something writes one.
+			return map[string]interface{}{}, nil
+		}
+		s.logger.Error("GetTeamSettings scan error",
+			mlog.String("team_id", id),
+			mlog.Err(err),
+		)
+		return nil, err
+	}
+
+	settings := map[string]interface{}{}
+	if err := json.Unmarshal(settingsBytes, &settings); err != nil {
+		return nil, err
+	}
+
+	return settings, nil
+}
+
 func (s *SQLStore) getTeamsForUser(db sq.BaseRunner, userID string) ([]*model.Team, error) {
 	query := s.getQueryBuilder(db).
 		Select("t.Id", "t.DisplayName").

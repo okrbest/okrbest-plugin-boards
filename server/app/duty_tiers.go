@@ -39,15 +39,15 @@ func (a *App) CanEditDutyTiers(userID, teamID string) bool {
 // A team the store does not have is not an error — it is a team with no tiers,
 // which is exactly what a team that never opened the dialog looks like.
 func (a *App) GetDutyTiers(teamID string) ([]model.DutyTier, error) {
-	team, err := a.store.GetTeam(teamID)
+	// GetTeam is not the way in. It answers "what is this team called" from the
+	// main server's Teams table and leaves Settings empty, so reading tiers
+	// through it silently returns none however many are stored.
+	settings, err := a.store.GetTeamSettings(teamID)
 	if err != nil {
 		return nil, err
 	}
-	if team == nil {
-		return []model.DutyTier{}, nil
-	}
 
-	tiers, err := model.DutyTiersFromSettings(team.Settings)
+	tiers, err := model.DutyTiersFromSettings(settings)
 	if err != nil {
 		return nil, err
 	}
@@ -72,21 +72,21 @@ func (a *App) SetDutyTiers(userID, teamID string, tiers []model.DutyTier) error 
 		return err
 	}
 
-	team, err := a.store.GetTeam(teamID)
-	if err != nil {
-		return err
-	}
-	if team == nil {
-		team = &model.Team{ID: teamID}
-	}
-
-	settings, err := model.DutyTiersIntoSettings(team.Settings, tiers)
+	// Read the plugin's own settings row rather than the team, so the other keys
+	// sharing this bag survive the write.
+	existing, err := a.store.GetTeamSettings(teamID)
 	if err != nil {
 		return err
 	}
 
-	team.Settings = settings
-	team.ModifiedBy = userID
+	settings, err := model.DutyTiersIntoSettings(existing, tiers)
+	if err != nil {
+		return err
+	}
 
-	return a.store.UpsertTeamSettings(*team)
+	return a.store.UpsertTeamSettings(model.Team{
+		ID:         teamID,
+		Settings:   settings,
+		ModifiedBy: userID,
+	})
 }

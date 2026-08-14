@@ -59,12 +59,9 @@ func TestGetDutyTiers(t *testing.T) {
 	th, tearDown := SetupTestHelper(t)
 	defer tearDown()
 
-	th.Store.EXPECT().GetTeam(tierTeamID).Return(&model.Team{
-		ID: tierTeamID,
-		Settings: map[string]interface{}{
-			model.DutyTiersKey: []interface{}{
-				map[string]interface{}{"id": "t1", "name": "C-Level", "dutyIds": []interface{}{"duty-cso"}},
-			},
+	th.Store.EXPECT().GetTeamSettings(tierTeamID).Return(map[string]interface{}{
+		model.DutyTiersKey: []interface{}{
+			map[string]interface{}{"id": "t1", "name": "C-Level", "dutyIds": []interface{}{"duty-cso"}},
 		},
 	}, nil).AnyTimes()
 
@@ -79,7 +76,8 @@ func TestGetDutyTiersMissingTeam(t *testing.T) {
 	th, tearDown := SetupTestHelper(t)
 	defer tearDown()
 
-	th.Store.EXPECT().GetTeam(tierTeamID).Return(nil, nil).AnyTimes()
+	// 플러그인 쪽 행이 없는 팀. 묶음이 없는 것이지 오류가 아니다.
+	th.Store.EXPECT().GetTeamSettings(tierTeamID).Return(map[string]interface{}{}, nil).AnyTimes()
 
 	tiers, err := th.App.GetDutyTiers(tierTeamID)
 
@@ -93,10 +91,7 @@ func TestSetDutyTiers(t *testing.T) {
 		defer tearDown()
 
 		th.API.EXPECT().HasPermissionTo(tierUserID, mmModel.PermissionManageSystem).Return(true).AnyTimes()
-		th.Store.EXPECT().GetTeam(tierTeamID).Return(&model.Team{
-			ID:       tierTeamID,
-			Settings: map[string]interface{}{"somethingElse": "keep me"},
-		}, nil).AnyTimes()
+		th.Store.EXPECT().GetTeamSettings(tierTeamID).Return(map[string]interface{}{"somethingElse": "keep me"}, nil).AnyTimes()
 
 		// 다른 키를 건드리지 않는 것까지 확인한다 — 이 가방은 여러 기능이 나눠 쓴다.
 		th.Store.EXPECT().UpsertTeamSettings(gomock.Any()).DoAndReturn(func(team model.Team) error {

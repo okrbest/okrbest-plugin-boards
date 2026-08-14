@@ -563,6 +563,11 @@ func (s *SQLStore) GetTeamCount() (int64, error) {
 
 }
 
+func (s *SQLStore) GetTeamSettings(ID string) (map[string]interface{}, error) {
+	return s.getTeamSettings(s.db, ID)
+
+}
+
 func (s *SQLStore) GetTeamsForUser(userID string) ([]*model.Team, error) {
 	return s.getTeamsForUser(s.db, userID)
 
