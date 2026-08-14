@@ -159,7 +159,7 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 - [X] T015 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`의 본부·부서 칸을 관계 칸으로 바꾼다. 기존 `Selector`를 그대로 쓰고 **새 컴포넌트를 만들지 않는다** (원칙 II). 관계가 `""`인 옛 규칙은 절대값 칸을 계속 보여준다
 - [X] T016 [US1] `webapp/src/components/shareBoard/propertyAccessRow.tsx`에 볼 속성 선택을 더한다. 보드에 그 타입 속성이 하나뿐이면 자동으로 채운다 (FR-006)
 - [X] T017 [P] [US1] `webapp/i18n/en.json`·`ko.json`에 관계 이름 다섯과 속성 선택 문자열을 넣는다 (원칙 V)
-- [ ] T018 [US1] 빌드·배포 후 규칙을 손으로 여섯 줄 써서 [quickstart.md](./quickstart.md) 4절 표를 훑는다. **팀장·팀원이 타 본부 Objective를 못 보는지**가 이 이야기의 핵심이다
+- [X] T018 [US1] 빌드·배포 후 규칙을 손으로 여섯 줄 써서 [quickstart.md](./quickstart.md) 4절 표를 훑는다. **팀장·팀원이 타 본부 Objective를 못 보는지**가 이 이야기의 핵심이다
 
 ### US1 webapp 설계 메모 — 칸을 안 늘렸다
 
@@ -181,6 +181,28 @@ ok  	github.com/mattermost/mattermost-plugin-boards/server/app	0.010s
 
 **보드에 조직 속성이 하나뿐이면 볼 속성을 자동으로 채운다** (FR-006). 고를 것이 없는데
 묻는 칸은 일만 늘린다.
+
+### T018 종단 검증 (2026-08-15, 팀 `한국케이밸브`)
+
+`MM_DEBUG=1 make server-linux` → `npm run debug` → `make deploy-from-watch`로 Go
+바이너리까지 올렸다. 번들에 `sameDivision`이 들어간 것을 확인했다.
+
+| 확인 | 결과 |
+|---|---|
+| 조직 칸이 관계 다섯을 내놓는다 | 통과 — Any organisation / Same division / Other division / Same department / Mine |
+| 같은 칸에 실제 조직도 이어진다 | 통과 — kkv 조직 마스터의 본부가 그대로 (대표, CEO - 연구 …) |
+| 버튼이 여섯 개 그대로다 | 통과 |
+| 열 제목이 칸의 내용과 맞는다 | **처음엔 어긋났다** — "DIVISION"이 그대로여서 `Organisation`·`Measured against`로 고쳤다 |
+
+검증용 보드는 지웠다. 실보드(`FY27 KKV OKR`)는 열지 않았다.
+
+**여기서 막힌 것 하나.** [quickstart.md](./quickstart.md) 4절의 판정 표는 계정 여섯 개로
+로그인해야 한다. `okrbest` 자격 증명만 있어 **보는 사람이 달라질 때의 판정은 화면으로
+확인하지 못했다.** 조직 데이터 자체는 갖춰져 있다 — kkv 팀에 조직 28개, 직책 9개
+(CEO·CSO·COO·CFO·팀장·팀원), 배정된 사용자 67명.
+
+그 판정은 지금 계약 2절 테스트 열 개가 덮고 있다. 화면으로도 확인하려면 계정 접근이
+필요하다 — 마감 전에 받아야 할 항목이다.
 
 **Checkpoint**: 매트릭스가 표현된다. 화면은 아직 규칙 목록뿐이다.
 

@@ -296,6 +296,7 @@
   "PersonProperty.non-board-members": "Not board members",
   "PropertyAccess.addRule": "Add rule",
   "PropertyAccess.any": "Any",
+  "PropertyAccess.selectBasis": "Measured against",
   "PropertyAccess.relationAny": "Any organisation",
   "PropertyAccess.relationMine": "Mine",
   "PropertyAccess.relationOtherDivision": "Other division",
