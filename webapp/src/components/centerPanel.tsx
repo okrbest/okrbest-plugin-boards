@@ -44,7 +44,7 @@ import {Constants} from '../constants'
 
 import propsRegistry from '../properties'
 import {getOrgLabels} from '../store/orgMaster'
-import {orgNamesForIds, isOrgProperty} from '../properties/orgLabels'
+import {orgNamesForIds, isOrgProperty, orgGroupColor, pickedOrgColors} from '../properties/orgLabels'
 
 import {sendFlashMessage} from './flashMessages'
 
@@ -547,6 +547,10 @@ const CenterPanel = (props: Props) => {
 
     const orgLabels = useAppSelector(getOrgLabels(props.board.teamId))
 
+    // Group headers take the same colours the card editor and the filter list
+    // use, so a colour means one thing across the board (FR-007).
+    const orgPicks = useMemo(() => pickedOrgColors(props.board.properties), [props.board.properties])
+
     // Organisation group labels come from the master, not from the property
     // template: an organisation property's options array is always empty, so
     // the generic multi-value grouping would print raw IDs.
@@ -564,15 +568,20 @@ const CenterPanel = (props: Props) => {
         return names.join(', ')
     }
 
+    const getOrgUnitColor = (boardGroup: BoardGroup) =>
+        orgGroupColor(boardGroup.option.id.split(','), orgLabels, orgPicks)
+
     const {visible: visibleGroups, hidden: hiddenGroups} = useMemo(() => {
         const {visible: vg, hidden: hg} = getVisibleAndHiddenGroups(cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty)
         const groupPropertyType = groupByProperty ? propsRegistry.get(groupByProperty.type) : undefined
 
         let resolve: ((group: BoardGroup) => string) | undefined
+        let resolveColor: ((group: BoardGroup) => string) | undefined
         if (groupPropertyType?.isPersonLike && boardUsers) {
             resolve = groupPropertyType.isMultiValue ? getMultiPersonDisplayName : getUserDisplayName
         } else if (groupByProperty && isOrgProperty(groupByProperty.type)) {
             resolve = getOrgUnitDisplayName
+            resolveColor = getOrgUnitColor
         }
 
         if (resolve) {
@@ -583,9 +592,18 @@ const CenterPanel = (props: Props) => {
                 value.option.value = resolve!(value)
             })
         }
+
+        if (resolveColor) {
+            vg.forEach((value) => {
+                value.option.color = resolveColor!(value)
+            })
+            hg.forEach((value) => {
+                value.option.color = resolveColor!(value)
+            })
+        }
         return {visible: vg, hidden: hg}
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty, boardUsers, orgLabels])
+    }, [cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty, boardUsers, orgLabels, orgPicks])
 
     return (
         <div

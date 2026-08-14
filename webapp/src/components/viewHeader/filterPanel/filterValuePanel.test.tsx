@@ -10,6 +10,8 @@ import {wrapIntl} from '../../../testUtils'
 import {Board, IPropertyTemplate} from '../../../blocks/board'
 import {BoardView} from '../../../blocks/boardView'
 
+import {orgColorForId} from '../../../properties/orgLabels'
+
 import FilterValuePanel from './filterValuePanel'
 
 // The organisation branch of the filter panel. It cannot reuse the options
@@ -111,5 +113,31 @@ describe('components/viewHeader/filterPanel/filterValuePanel — organisation', 
         const {container} = renderPanel('orgDivision')
 
         expect(container.querySelectorAll('.FilterValuePanel__option').length).toBe(2)
+    })
+
+    // The filter list used to be plain text while the card editor drew labels,
+    // so the same 본부 looked different in the two places (FR-007).
+    const filterColorOf = (container: HTMLElement, name: string): string => {
+        const label = [...container.querySelectorAll('.Label')].find((node) => node.textContent?.includes(name))
+        return label ? label.className.replace('Label', '').trim() : ''
+    }
+
+    test('draws organisation choices as coloured labels (FR-007)', () => {
+        const {container} = renderPanel('orgDivision')
+
+        expect(filterColorOf(container, '생산본부')).not.toBe('')
+        expect(filterColorOf(container, '생산본부')).not.toBe('propColorDefault')
+    })
+
+    test('uses the same colour the card editor would (FR-007)', () => {
+        const {container} = renderPanel('orgDivision')
+
+        expect(filterColorOf(container, '생산본부')).toBe(orgColorForId('div-production', [{id: 'div-production', name: '생산본부'}]))
+    })
+
+    test('draws duties from the same rule', () => {
+        const {container} = renderPanel('orgDuty')
+
+        expect(filterColorOf(container, '팀장')).toBe(orgColorForId('duty-lead', [{id: 'duty-lead', name: '팀장'}]))
     })
 })
