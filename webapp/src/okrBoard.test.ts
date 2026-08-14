@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {okrBoardSettings, optionForDepth, okrPropertiesForNewCard, OKR_BOARD_KEY} from './okrBoard'
+import {okrBoardSettings, optionForDepth, okrPropertiesForNewCard, isOkrParentLevel, OKR_BOARD_KEY} from './okrBoard'
 
 // The ladder a board follows when it is used as an OKR board.
 //
@@ -106,5 +106,51 @@ describe('okrBoard — okrPropertiesForNewCard', () => {
 
     test('leaves other properties alone', () => {
         expect(okrPropertiesForNewCard(properties, 1, {'p-div': 'div-1'})).toEqual({'p-type': 'opt-key-result'})
+    })
+})
+
+// Which rungs have another rung under them. The table asks this to decide
+// whether a row keeps its sub-card entry point open before any sub-card exists.
+describe('okrBoard — isOkrParentLevel', () => {
+    const settings = {propertyId: 'p-type', levels: ['opt-objective', 'opt-key-result', 'opt-task']}
+    const properties = {[OKR_BOARD_KEY]: settings}
+
+    test('every rung but the last has one under it', () => {
+        expect(isOkrParentLevel(properties, {'p-type': 'opt-objective'})).toBe(true)
+        expect(isOkrParentLevel(properties, {'p-type': 'opt-key-result'})).toBe(true)
+    })
+
+    test('the last rung is not offered one', () => {
+        // Tasks can still be given a sub-card by hand up to the depth limit.
+        // What it does not get is the row opening itself and inviting one.
+        expect(isOkrParentLevel(properties, {'p-type': 'opt-task'})).toBe(false)
+    })
+
+    test('a board that was never switched on has no rungs', () => {
+        expect(isOkrParentLevel({}, {'p-type': 'opt-objective'})).toBe(false)
+        expect(isOkrParentLevel(undefined, {'p-type': 'opt-objective'})).toBe(false)
+    })
+
+    test('a card off the ladder is not on a rung', () => {
+        expect(isOkrParentLevel(properties, {})).toBe(false)
+        expect(isOkrParentLevel(properties, {'p-type': ''})).toBe(false)
+        expect(isOkrParentLevel(properties, {'p-type': 'opt-something-else'})).toBe(false)
+        expect(isOkrParentLevel(properties, undefined)).toBe(false)
+    })
+
+    test('the rung is read from the value the card carries, not its depth', () => {
+        // A card moved under another keeps the 유형 it was given (FR-010), and
+        // the ladder the row shows is the one the card says it is on.
+        expect(isOkrParentLevel(properties, {'p-type': 'opt-objective'})).toBe(true)
+    })
+
+    test('a multi select value is not a rung', () => {
+        // 유형 is a select, but board.properties is free form and a card can
+        // carry an array here. An array is not a rung rather than a crash.
+        expect(isOkrParentLevel(properties, {'p-type': ['opt-objective']})).toBe(false)
+    })
+
+    test('a one rung ladder has no parent rung', () => {
+        expect(isOkrParentLevel({[OKR_BOARD_KEY]: {propertyId: 'p-type', levels: ['opt-objective']}}, {'p-type': 'opt-objective'})).toBe(false)
     })
 })

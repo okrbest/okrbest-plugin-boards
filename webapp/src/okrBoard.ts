@@ -90,6 +90,35 @@ export function okrPropertiesForNewCard(
     return {[settings.propertyId]: option}
 }
 
+// Whether a card sits on a rung that has another rung under it.
+//
+// Read from the 유형 value the card carries, not from its depth. The value is
+// what the board shows and what the user can change (FR-010), so a card moved
+// under another still belongs to the rung it says it is on.
+//
+// The last rung answers false. It has nothing under it on the ladder, so it gets
+// no standing invitation to add one — hanging a card under it by hand, up to the
+// depth limit, is untouched.
+export function isOkrParentLevel(
+    boardProperties: Record<string, unknown> | undefined,
+    cardProperties: Record<string, string | string[]> | undefined,
+): boolean {
+    const settings = okrBoardSettings(boardProperties)
+    if (!settings || settings.levels.length < 2) {
+        return false
+    }
+
+    // A select holds one option ID. An array here is a property that is not the
+    // ladder's, so it is not a rung rather than a crash.
+    const value = cardProperties?.[settings.propertyId]
+    if (typeof value !== 'string' || !value) {
+        return false
+    }
+
+    const rung = settings.levels.indexOf(value)
+    return rung >= 0 && rung < settings.levels.length - 1
+}
+
 // The property this feature looks for when it is switched on, and the names it
 // gives the rungs.
 //

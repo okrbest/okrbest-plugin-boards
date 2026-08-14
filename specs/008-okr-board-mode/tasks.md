@@ -126,6 +126,27 @@ Go를 다시 빌드하지 않는다. 하위 카드 채움을 종단으로 볼 �
 
 ---
 
+## Phase 7: 표 보기에서 사다리를 세울 자리를 연다 (FR-014·FR-015, 후속)
+
+배포 뒤 드러난 자리다. 빈 Objective 행에는 펼침 버튼도 `+ New sub-card` 줄도 없어서,
+사다리의 첫 칸을 놓으려면 카드 메뉴를 열어야 했다. 하위 카드가 **생긴 뒤에야** 길을
+보여주는 순서가 거꾸로다.
+
+### Tests
+
+- [X] T026 [P] `webapp/src/okrBoard.test.ts`에 `isOkrParentLevel` 실패 테스트를 더한다 — 마지막을 뺀 모든 단계가 참, 마지막 단계는 거짓, 켜지지 않은 보드는 거짓, 사다리에 없는 값·빈 값·배열 값은 거짓, 단계가 하나뿐인 사다리는 거짓
+- [X] T027 [P] `webapp/src/components/table/tableRowExpandable.test.tsx`에 행 실패 테스트를 더한다 — 하위 없는 Objective·Key Results가 펼친 채로 시작하고 추가 줄을 내놓는다, Tasks는 지금 그대로, 토글로 다시 닫힌다, 읽기 전용·최대 깊이·OKR 아닌 보드는 아무것도 바뀌지 않는다
+
+### Implementation
+
+- [X] T028 `webapp/src/okrBoard.ts`에 `isOkrParentLevel`을 더한다. 깊이가 아니라 **카드가 든 유형 값**으로 판정한다 — 값은 사용자가 바꿀 수 있고(FR-010) 행이 보여줄 사다리는 카드가 말하는 쪽이다
+- [X] T029 `webapp/src/components/table/tableRowExpandable.tsx`가 `hasSubCards`와 초대를 합쳐 `isExpandable`을 만든다. 초대는 읽기 전용·최대 깊이·`canCommentCard`를 모두 통과해야 선다 — `TableSubCardRows`가 어차피 막을 줄을 열어 놓으면 토글이 빈 목록으로 열린다 (FR-014b)
+- [X] T030 `webapp/src/components/table/tableRow.tsx`에 `isExpandable` prop을 더한다. 안 넘기면 `hasSubCards`로 떨어져 **OKR이 아닌 보드는 markup 한 글자도 달라지지 않는다** (FR-015). 카드 메뉴의 "Add sub-card"는 행이 이미 추가 줄을 열었으면 내놓지 않는다 — 같은 일을 하는 입구가 둘이 된다
+
+**Checkpoint**: 표 보기에서 빈 Objective에 클릭 한 번으로 Key Results가 붙는다 (SC-007).
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -251,6 +272,19 @@ US2를 클라이언트와 서버로 나누는 이유는 배포 단위가 다르�
 | eslint | 007 기준 2478 | 2483 | 통과 — 늘어난 5건은 신규 파일에 붙는 저장소 공통 `Resolve error` |
 | 새 `.scss` | — | 없음 | 통과 |
 
+### Phase 7 게이트 (webapp만 — server 미변경)
+
+| 게이트 | 기준선 | 구현 후 | 판정 |
+|---|---|---|---|
+| jest 실패 스위트 | 58 | 57 (**목록 동일**, `sidebarBoardItem` 하나 줄어듦) | 통과 |
+| jest 실패 테스트 | 144 / 1105 | 145 / 1119 | 통과 — 새 테스트 14건 전부 통과 |
+| tsc 오류 | 23 | 23 (**손댄 파일 0건**) | 통과 |
+| eslint | 2483 | 2482 | 통과 — `tableRowExpandable.tsx`의 기존 들여쓰기 지적 1건을 같이 고쳤다 |
+
+떠 있는 두 스위트(`sidebarBoardItem`, `viewHeader/dateFilter`)는 이 변경과 무관하게
+실행마다 결과가 달라진다. 따로 돌리면 또 다른 조합으로 실패한다 — 표 컴포넌트를
+건드리지 않는 스위트다.
+
 ### 테스트 빨강 증거 (원칙 IV)
 
 | 테스트 | 구현 전 실패 내용 |
@@ -269,6 +303,18 @@ US2를 클라이언트와 서버로 나누는 이유는 배포 단위가 다르�
 | 서버 채움을 접근 규칙 **뒤로** 옮김 | `a rule that decides the rung outranks the ladder` |
 | 깊이를 무시하고 항상 1단계 | `depth decides the rung, not the way the card was made` 외 1건 |
 | 이미 정해진 값도 덮게 함 | `a value already decided wins` |
+
+### Phase 7 — 테스트 빨강 증거와 변이 (원칙 IV)
+
+구현 전 `okrBoard.test.ts` 7건 + `tableRowExpandable.test.tsx` 3건이 실패했다
+(`isOkrParentLevel is not a function`, 그리고 펼침 버튼·추가 줄 없음). 나머지 4건은
+바뀌지 않은 작동을 지키는 테스트라 처음부터 통과했다 — 그래서 변이로 따로 확인했다.
+
+| 변이 | 실패한 테스트 |
+|---|---|
+| `isOkrParentLevel`이 마지막 단계도 참으로 답함 | `the last rung is not offered one`, `a Tasks card is left as it was` |
+| 읽기 전용·최대 깊이·권한 조건을 뺌 | `a read only view invites nothing`, `an Objective at the depth limit invites nothing` |
+| `TableRow`가 `isExpandable`을 무시하고 `hasSubCards`만 봄 | OKR 행 3건 |
 
 ### 종단 검증 — 배포 후 실제 계정 (`전유홍`, 팀 `kkv`)
 
@@ -298,6 +344,7 @@ US2를 클라이언트와 서버로 나누는 이유는 배포 단위가 다르�
 | SC-004 | (US3) 바꾼 값이 되돌아간 경우 0건 |
 | SC-005 | 빈 카드·템플릿 카드·하위 카드 세 입구 결과 일치 |
 | SC-006 | 005·006·007 회귀 0건 |
+| SC-007 | (Phase 7) 빈 Objective에 첫 Key Results를 다는 클릭 1회 — `+ New sub-card`가 행에 이미 열려 있다 |
 
 ### 계획에서 바뀐 것
 
