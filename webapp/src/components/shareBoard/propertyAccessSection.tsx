@@ -101,7 +101,13 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const okr = okrBoardSettings(board.properties)
     const typeProperty = board.cardProperties.find((property) => property.id === okr?.propertyId)
     const canShowMatrix = Boolean(okr && typeProperty)
-    const [showMatrix, setShowMatrix] = React.useState(canShowMatrix)
+
+    // Until the user picks a view, follow the board. Freezing the choice at the
+    // first render would leave the table hidden on a board that becomes an OKR
+    // board while the dialog is open — which is exactly the order someone sets
+    // one up in.
+    const [viewChoice, setViewChoice] = React.useState<'auto' | 'table' | 'rules'>('auto')
+    const showMatrix = viewChoice === 'auto' ? canShowMatrix : viewChoice === 'table'
 
     const matrixContext = {
         typeProperty: okr?.propertyId || '',
@@ -244,13 +250,13 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                         <div className='PropertyAccessSection__views'>
                             <Button
                                 active={showMatrix}
-                                onClick={() => setShowMatrix(true)}
+                                onClick={() => setViewChoice('table')}
                             >
                                 {intl.formatMessage({id: 'AccessMatrix.tableView', defaultMessage: 'Table'})}
                             </Button>
                             <Button
                                 active={!showMatrix}
-                                onClick={() => setShowMatrix(false)}
+                                onClick={() => setViewChoice('rules')}
                             >
                                 {intl.formatMessage({id: 'AccessMatrix.ruleView', defaultMessage: 'Rules'})}
                             </Button>
@@ -272,12 +278,27 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                         </div>}
 
                     {/*
+                      * A division relation has to read a card property, and a
+                      * board with none can only produce rules the server will
+                      * refuse. Saying so here is the difference between "this
+                      * board is not ready" and an unexplained failed save.
+                      */}
+                    {settings.enabled && canShowMatrix && showMatrix && !matrixContext.orgProperty &&
+                        <div className='PropertyAccessSection__needTiers'>
+                            {intl.formatMessage({
+                                id: 'AccessMatrix.needOrgProperty',
+                                defaultMessage: 'Add a 본부 property to this board — the table compares each card against it.',
+                            })}
+                        </div>}
+
+                    {/*
                       * The standard is offered rather than applied. Four duty
                       * groups have to exist first, and which of them is C-Level
                       * cannot be guessed from a name — so the button appears
                       * once the groups do, and only when the table is empty.
                       */}
                     {settings.enabled && canShowMatrix && showMatrix && tiers.length >= 4 &&
+                        matrixContext.orgProperty !== '' &&
                         Object.keys(rulesToMatrix(rules, matrixContext)).length === 0 &&
                         <Button
                             className='PropertyAccessSection__preset'

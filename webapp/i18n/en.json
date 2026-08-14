@@ -299,6 +299,7 @@
   "AccessMatrix.add": "+",
   "AccessMatrix.applyStandard": "Apply the standard matrix",
   "AccessMatrix.clear": "Remove",
+  "AccessMatrix.needOrgProperty": "Add a division property to this board — the table compares each card against it.",
   "AccessMatrix.needTiers": "Set up duty groups first — the table has no columns without them.",
   "AccessMatrix.outsideTable": "{count} rules live outside the table",
   "AccessMatrix.ruleView": "Rules",
