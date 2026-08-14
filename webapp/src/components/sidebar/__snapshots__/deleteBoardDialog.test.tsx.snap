@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/sidebar/DeleteBoardDialog Cancel should not submit 1`] = `
+<div>
+  exists
+</div>
+`;
+
+exports[`components/sidebar/DeleteBoardDialog Delete should submit 1`] = `
+<div>
+  deleted
+</div>
+`;

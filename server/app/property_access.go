@@ -244,17 +244,6 @@ type cardCondition struct {
 	valueID    string
 }
 
-// orgGate records, for one card condition, whether any rule constrains the
-// organization axis and whether this user satisfies at least one of them.
-//
-// Both facts are needed: a condition with no organization rows lets everyone
-// through to the grant map, while a condition that has them and matches none of
-// them denies regardless of how high the user's duty is (research.md R6).
-type orgGate struct {
-	constrained bool
-	passed      bool
-}
-
 // PropertyAccessEvaluator answers "what may this user do with this card".
 // It is immutable and its answers have no side effects.
 type PropertyAccessEvaluator struct {
@@ -268,10 +257,26 @@ type PropertyAccessEvaluator struct {
 	// floor is the minimum granted by a full visibility duty (FR-022).
 	floor model.EffectiveBoardPermission
 
-	// gates and grants are keyed by card condition, so evaluating a card is a
-	// lookup per property value rather than a scan over every rule (R3).
-	gates  map[cardCondition]orgGate
-	grants map[cardCondition]model.EffectiveBoardPermission
+	// rules is the board's rule set, walked once per card.
+	//
+	// Kept whole rather than folded into per-condition maps: a rule is the unit
+	// a decision is made in, and a condition that several rules share cannot say
+	// which of them admitted the user. Folding was fine while every condition was
+	// one (property, value) pair judged against fixed subject axes; it stops
+	// being fine the moment a condition's answer depends on the card (009 R2).
+	rules []model.PropertyAccessRule
+
+	// units is the user's own organization unit plus every ancestor, so a rule
+	// written against a division covers every department beneath it (FR-017).
+	units map[string]bool
+
+	// dutyID is the user's 직책, compared against a rule's duty axis.
+	dutyID string
+
+	// mentioned holds every card condition some rule names. It answers "is this
+	// card governed at all", which decides between the board permission and the
+	// rule set (FR-015).
+	mentioned map[cardCondition]bool
 
 	// admitted records, per property, the values whose rules admit this user.
 	// A new card is filled from it, so the card starts life in the one place
@@ -280,15 +285,17 @@ type PropertyAccessEvaluator struct {
 }
 
 // NewPropertyAccessEvaluator precomputes everything that does not depend on the
-// card, so evaluating one card later costs a lookup rather than a rule scan.
+// card. What is left for evaluation time is one pass over the rules, which is
+// what lets a rule's organization condition be answered against the card rather
+// than ahead of it.
 func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	evaluator := &PropertyAccessEvaluator{
 		isAdmin:         input.IsAdmin,
 		boardPermission: input.BoardPermission,
 		userID:          input.UserID,
 		floor:           model.EffectiveBoardPermissionNone,
-		gates:           map[cardCondition]orgGate{},
-		grants:          map[cardCondition]model.EffectiveBoardPermission{},
+		units:           map[string]bool{},
+		mentioned:       map[cardCondition]bool{},
 	}
 
 	if input.Settings == nil {
@@ -298,46 +305,32 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	if !evaluator.enabled {
 		return evaluator
 	}
+	evaluator.rules = input.Settings.Rules
 
-	var orgUnitID, dutyID string
+	var orgUnitID string
 	if input.Profile != nil {
 		orgUnitID = input.Profile.PrimaryOrgUnitID
-		dutyID = input.Profile.PrimaryDutyID
+		evaluator.dutyID = input.Profile.PrimaryDutyID
 	}
 
 	// A division condition is satisfied by the user's own unit or any of its
 	// ancestors, so a rule written against a division covers every department
 	// beneath it (FR-017).
-	units := orgUnitAncestors(input.OrgUnits, orgUnitID)
+	evaluator.units = orgUnitAncestors(input.OrgUnits, orgUnitID)
 
 	// "보드 전체보기" is the one thing that reaches across the organization gate.
 	// It is a floor rather than a grant: it guarantees reading and never lowers
 	// what a rule already gave (FR-022).
-	if hasFullVisibility(input.Duties, dutyID) {
+	if hasFullVisibility(input.Duties, evaluator.dutyID) {
 		evaluator.floor = model.EffectiveBoardPermissionView
 	}
 
 	for _, rule := range input.Settings.Rules {
-		condition := cardCondition{propertyID: rule.PropertyID, valueID: rule.PropertyValueID}
-		orgMatches := ruleOrgMatches(rule, units)
+		evaluator.mentioned[cardCondition{propertyID: rule.PropertyID, valueID: rule.PropertyValueID}] = true
 
-		if rule.HasOrgCondition() {
-			gate := evaluator.gates[condition]
-			gate.constrained = true
-			gate.passed = gate.passed || orgMatches
-			evaluator.gates[condition] = gate
-		} else if _, seen := evaluator.gates[condition]; !seen {
-			// Record the condition even when the row places no organization
-			// constraint, so For() can tell "no rule mentions this value" from
-			// "a rule mentions it and lets everyone through".
-			evaluator.gates[condition] = orgGate{}
-		}
-
-		if !orgMatches || (rule.DutyID != "" && rule.DutyID != dutyID) {
+		if !evaluator.subjectMatches(rule) {
 			continue
 		}
-		granted := rule.Permission.AsEffectivePermission()
-		evaluator.grants[condition] = higherPermission(evaluator.grants[condition], granted)
 
 		// The row admits this user, so its value is a place they are meant to
 		// work. Collected whatever permission it grants: on the OKR board the
@@ -353,6 +346,32 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	}
 
 	return evaluator
+}
+
+// subjectMatches reports whether the user satisfies every subject axis the rule
+// sets — organization and duty alike.
+//
+// An axis the rule leaves empty places no constraint. That is what makes a
+// duty-only row apply to every division, and an organization-only row apply
+// whatever duty the user holds (FR-018).
+func (e *PropertyAccessEvaluator) subjectMatches(rule model.PropertyAccessRule) bool {
+	if !ruleOrgMatches(rule, e.units) {
+		return false
+	}
+	return rule.DutyID == "" || rule.DutyID == e.dutyID
+}
+
+// ruleMentionsCard reports whether the card carries the value the rule's card
+// side names. A multiSelect property contributes one value per selection, so any
+// one of them is enough (FR-023).
+func ruleMentionsCard(rule model.PropertyAccessRule, card *model.Block) bool {
+	found := false
+	eachCardCondition(card, func(condition cardCondition) {
+		if condition.propertyID == rule.PropertyID && condition.valueID == rule.PropertyValueID {
+			found = true
+		}
+	})
+	return found
 }
 
 // hasFullVisibility reports whether the duty the user holds carries the board
@@ -427,18 +446,31 @@ func (e *PropertyAccessEvaluator) evaluate(card *model.Block, ownerFloor model.E
 		rulePermission = model.EffectiveBoardPermissionNone
 	)
 
-	// Walked in place rather than collected first: this runs once per card per
-	// request, and once per card per recipient in the websocket fan-out.
-	eachCardCondition(card, func(condition cardCondition) {
-		gate, ok := e.gates[condition]
-		if !ok {
-			return
+	// One pass over the rules. Each rule is judged whole — card side first, then
+	// the subject axes — so the three facts below stay attributable to the rule
+	// that produced them.
+	//
+	// The gate is counted separately from the grant on purpose. A row that places
+	// no organization condition never opens the gate, and a row whose gate this
+	// user fails never grants: that split is what makes organization a gate and
+	// duty additive (research.md R6).
+	for _, rule := range e.rules {
+		if !ruleMentionsCard(rule, card) {
+			continue
 		}
 		matched = true
-		gated = gated || gate.constrained
-		gatePassed = gatePassed || gate.passed
-		rulePermission = higherPermission(rulePermission, e.grants[condition])
-	})
+
+		orgOK := ruleOrgMatches(rule, e.units)
+		if rule.HasOrgCondition() {
+			gated = true
+			gatePassed = gatePassed || orgOK
+		}
+
+		if !orgOK || (rule.DutyID != "" && rule.DutyID != e.dutyID) {
+			continue
+		}
+		rulePermission = higherPermission(rulePermission, rule.Permission.AsEffectivePermission())
+	}
 
 	if !matched {
 		// An active rule set outranks the board's sharing role, so a card no
@@ -509,7 +541,7 @@ func (e *PropertyAccessEvaluator) conditionsOf(card *model.Block) map[cardCondit
 
 	var matched map[cardCondition]bool
 	eachCardCondition(card, func(condition cardCondition) {
-		if _, ok := e.gates[condition]; !ok {
+		if !e.mentioned[condition] {
 			return
 		}
 		if matched == nil {
