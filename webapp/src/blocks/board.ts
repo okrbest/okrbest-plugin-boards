@@ -37,7 +37,7 @@ type Board = {
     showDescription: boolean
     isTemplate: boolean
     templateVersion: number
-    properties: Record<string, string | string[] | PropertyAccessSettings | OrgColors>
+    properties: Record<string, string | string[] | PropertyAccessSettings | OrgColors | OkrBoardSettings>
     cardProperties: IPropertyTemplate[]
 
     createAt: number
@@ -148,6 +148,18 @@ type Duty = {
 type NamedEntry = {
     id: string
     name: string
+}
+
+// What a board remembers when it is used as an OKR board, stored under
+// board.properties.okrBoard.
+//
+// levels holds option IDs rather than names: a user may rename Tasks to 할 일
+// at any time, and the ladder has to survive it. Depth indexes the array and
+// anything past the end takes the last entry, so 3단계 and deeper share one
+// value without the shape having to know how deep cards can go.
+type OkrBoardSettings = {
+    propertyId: string
+    levels: string[]
 }
 
 // Colours a board remembers for organisation values, stored under
@@ -451,6 +463,7 @@ export {
     Duty,
     NamedEntry,
     OrgColors,
+    OkrBoardSettings,
     BoardsAndBlocks,
     BoardsAndBlocksPatch,
     PropertyTypeEnum,
