@@ -264,6 +264,7 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
             // 관계가 견줄 값이 있어야 표가 쓸 만한 규칙을 만든다. 없으면 서버가
             // orgPropertyId 없는 규칙을 거절한다.
             {id: 'prop-division', name: '본부', type: 'orgDivision', options: []},
+            {id: 'prop-department', name: '부서', type: 'orgDepartment', options: []},
             {id: 'prop-assignee', name: '담당자', type: 'person', options: []},
         ]
         return board

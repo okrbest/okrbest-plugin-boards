@@ -33,9 +33,11 @@ export type MatrixContext = {
     typeProperty: string
     levels: string[]
 
-    // Which card properties the relations read. Empty is allowed: the rule is
-    // still written, and the row shows up as needing a property.
+    // Which card properties the relations read. Division and department are kept
+    // apart on purpose: a department relation pointed at the 본부 property
+    // compares the wrong thing and quietly admits everyone in the division.
     orgProperty: string
+    departmentProperty: string
     personProperty: string
 }
 
@@ -43,9 +45,19 @@ export function cellKey(valueId: string, tierId: string): string {
     return `${valueId}:${tierId}`
 }
 
-// The relations that read an organisation property rather than a person one.
-const readsOrgProperty = (relation: OrgRelation): boolean =>
-    relation === 'sameDivision' || relation === 'otherDivision' || relation === 'sameDepartment'
+// Which card property a relation reads. Division relations read the 본부
+// property, the department relation reads 부서, and the rest read none.
+const orgPropertyFor = (relation: OrgRelation, context: MatrixContext): string => {
+    switch (relation) {
+    case 'sameDivision':
+    case 'otherDivision':
+        return context.orgProperty
+    case 'sameDepartment':
+        return context.departmentProperty
+    default:
+        return ''
+    }
+}
 
 // rulesToMatrix spreads the rows this editor owns back across the cells.
 //
@@ -146,7 +158,7 @@ function buildRule(
         dutyId: '',
         tierIds,
         relation: entry.relation,
-        orgPropertyId: readsOrgProperty(entry.relation) ? context.orgProperty : '',
+        orgPropertyId: orgPropertyFor(entry.relation, context),
         assigneePropertyId: entry.relation === 'mine' ? context.personProperty : '',
         permission: entry.permission,
         source: SourceMatrix,

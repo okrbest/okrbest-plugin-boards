@@ -299,7 +299,7 @@
   "AccessMatrix.add": "+",
   "AccessMatrix.applyStandard": "표준 매트릭스 적용",
   "AccessMatrix.clear": "지우기",
-  "AccessMatrix.needOrgProperty": "이 보드에 본부 속성을 먼저 만드세요 — 표가 카드를 그 값으로 견줍니다.",
+  "AccessMatrix.needOrgProperty": "이 보드에 본부·부서 속성을 먼저 만드세요 — 표가 카드를 그 값으로 견줍니다.",
   "AccessMatrix.needTiers": "직책 묶음부터 정하세요 — 없으면 표에 열이 생기지 않습니다.",
   "AccessMatrix.outsideTable": "표 밖의 규칙 {count}줄",
   "AccessMatrix.ruleView": "규칙으로 보기",
