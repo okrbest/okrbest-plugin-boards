@@ -414,13 +414,70 @@ FR-023(어느 묶음에도 없는 직책)과 FR-024(깨진 묶음)는 US2에서 
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T052 신규 파일 여덟 개(`server/model/duty_tier.go`·`duty_tier_test.go`, `server/app/duty_tiers.go`·`duty_tiers_test.go`, `webapp/src/store/dutyTiers.ts`, `webapp/src/components/shareBoard/accessMatrix.ts`·`accessMatrix.tsx`·`dutyTierEditor.tsx`)에 **라이선스 헤더**가 있는지 확인한다. `mattermost-govet -license`가 집행한다 (원칙 VI)
-- [ ] T053 [quickstart.md](./quickstart.md) 5·8·9·10절 — 값이 없을 때, 기존 보드 15칸 변화 0건(SC-005), 본부를 늘려도 규칙 0줄 증가(SC-003), 005·006·007·008 회귀
-- [ ] T054 새로 쓴 테스트가 **구현을 되돌렸을 때 실패하는지** 확인한다. 첫 실행에서 통과한 테스트는 아무것도 증명하지 않는다 (원칙 IV). 최소 변이 셋 — `server/app/property_access.go`에서 작성자 바닥을 게이트 바깥으로, 같은 파일에서 `otherDivision`을 `sameDivision`의 부정으로, `server/app/duty_tiers.go`에서 묶음 편집을 보드 관리자에게 개방
+- [X] T052 신규 파일 여덟 개(`server/model/duty_tier.go`·`duty_tier_test.go`, `server/app/duty_tiers.go`·`duty_tiers_test.go`, `webapp/src/store/dutyTiers.ts`, `webapp/src/components/shareBoard/accessMatrix.ts`·`accessMatrix.tsx`·`dutyTierEditor.tsx`)에 **라이선스 헤더**가 있는지 확인한다. `mattermost-govet -license`가 집행한다 (원칙 VI)
+- [X] T053 [quickstart.md](./quickstart.md) 5·8·9·10절 — 값이 없을 때, 기존 보드 15칸 변화 0건(SC-005), 본부를 늘려도 규칙 0줄 증가(SC-003), 005·006·007·008 회귀
+- [X] T054 새로 쓴 테스트가 **구현을 되돌렸을 때 실패하는지** 확인한다. 첫 실행에서 통과한 테스트는 아무것도 증명하지 않는다 (원칙 IV). 최소 변이 셋 — `server/app/property_access.go`에서 작성자 바닥을 게이트 바깥으로, 같은 파일에서 `otherDivision`을 `sameDivision`의 부정으로, `server/app/duty_tiers.go`에서 묶음 편집을 보드 관리자에게 개방
 - [ ] T055 품질 게이트 — `make webapp-ci`(세 단계 따로), `make server-lint`, `make server-test`를 돌려 T001 기준선과 **실패 목록**을 대조한다. **`server-test`는 CI 미집행이라 로컬 출력을 근거로 제시한다**(원칙 I). `git status`에 새 `.scss`가 없는지, `make server-test` 실행 시간이 늘지 않았는지도 본다
 - [ ] T056 [quickstart.md](./quickstart.md) 11절 완료 판정을 채우고, 게이트·종단 검증·SC 실측을 이 파일 하단에 근거로 남긴다. 검증용 보드는 지운다
 
 ---
+
+### T053 종단 검증 — 판정 표 (2026-08-15, 팀 `한국케이밸브`)
+
+계정 여섯으로 카드 여섯 장을 훑었다. 표준 여섯 줄은 표에서 버튼 하나로 깔았다.
+
+| 계정 | ①영업Obj | ②생산Obj | ③영업KR | ④1팀T(담당 E) | ⑤1팀T(담당 D) | ⑥2팀T(담당 F) |
+|---|---|---|---|---|---|---|
+| A 대표 | 보임 | 보임 | 보임 | 보임 | 보임 | 보임 |
+| B CSO(영업) | 보임 | 보임 | 보임 | 보임 | 보임 | 보임 |
+| C COO(생산) | 보임 | 보임 | 보임 | 보임 | 보임 | 보임 |
+| D 팀장(영업1팀) | 보임 | **없음** | 보임 | 보임 | 보임 | **없음** |
+| E 팀원(영업1팀) | 보임 | **없음** | 보임 | 보임 | **없음** | **없음** |
+| F 팀원(영업2팀) | 보임 | **없음** | 보임 | **없음** | **없음** | 보임 |
+
+**②를 팀장·팀원이 못 보는 것이 이 기능의 전부다.** 지금까지 표현할 수 없던 칸이고,
+매트릭스의 빈칸이 빈칸으로 남는다는 뜻이다 (FR-009).
+
+E는 자기가 담당인 ④만 보이고 ⑤·⑥은 안 보인다. F는 ⑥만 보인다 — `mine`이 작동한다.
+
+**여기서 결함을 하나 더 잡았다.** 첫 회차에 D 팀장이 ⑥(영업2팀 Task)을 봤다.
+`sameDepartment` 규칙이 **본부 속성을 읽고 있었다** — `MatrixContext`가 조직 속성을
+하나만 들고 있어서다. 같은 본부면 부서가 달라도 통과했다.
+
+관계별로 읽을 속성을 나눴다. 본부 계열은 `orgDivision`, 부서 계열은 `orgDepartment`.
+고친 뒤 D가 ⑥을 못 본다.
+
+이 결함은 단위 테스트가 못 잡았다. 테스트 픽스처에서 내가 두 속성에 같은 값을 넣고
+있었기 때문이다 — 실제 보드에 둘을 따로 만들어야 드러나는 자리다.
+
+### 그 밖의 절
+
+| 절 | 확인 | 결과 |
+|---|---|---|
+| 9절 | 본부 28개인 팀에서 규칙 6줄, 본부 이름을 쓰는 줄 0 | 통과 (SC-003) |
+| 10절 | 실보드 `FY27 KKV 업무관리`·`FY27 KKV OKR` 규칙 9줄씩 그대로 | 통과 (SC-005) |
+
+### 실보드를 건드린 사고와 복구
+
+검증 도중 `FY27 KKV OKR`에 `source=matrix` 규칙 2줄이 들어갔다. 원래 9줄이던 보드가
+11줄이 됐다. 백업을 뜬 뒤 그 2줄만 지워 9줄로 되돌렸고, 팀의 모든 보드에서
+`source=matrix` 줄이 0인 것을 확인했다.
+
+**교훈은 절차다.** 검증용 보드를 만들기 전에 실보드가 열려 있었고, 화면 조작이 현재
+보드를 대상으로 돌았다. 다음부터는 검증용 보드를 만든 **직후** URL을 확인하고 그
+보드에서만 조작한다.
+
+### T054 변이 검증 (원칙 IV)
+
+새로 쓴 테스트가 구현을 되돌렸을 때 실패하는지 확인했다.
+
+| 변이 | 실패한 테스트 |
+|---|---|
+| 게이트 갈래(`gated && !gatePassed`)를 제거 | 9건 — `OwnerFloorDoesNotCrossOrgGate`, `FullVisibilityFloor`, `DutyIsAdditive`, `ForByRulesOnly` |
+| `otherDivision`을 `sameDivision`의 부정으로 | 2건 — 2-6(카드 값 없음), 2-7(배정 없음) |
+| `relation=any`를 게이트에서 뺌 | `RelationOutranksAbsoluteOrg` |
+| 묶음 편집을 보드 관리자에게 개방 | `CanEditDutyTiers`, `SetDutyTiers` |
+| 매트릭스의 직사각형 판정 제거 | `직사각형이 아니면 묶음별로 나눈다` |
 
 ## Dependencies & Execution Order
 

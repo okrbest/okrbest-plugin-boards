@@ -12,9 +12,10 @@ const levels = ['opt-objective', 'opt-key-result', 'opt-task']
 const typeProperty = 'prop-type'
 
 const orgProperty = 'prop-division'
+const departmentProperty = 'prop-department'
 const personProperty = 'prop-assignee'
 
-const context = {typeProperty, levels, orgProperty, personProperty}
+const context = {typeProperty, levels, orgProperty, departmentProperty, personProperty}
 
 describe('src/components/shareBoard/accessMatrix', () => {
     describe('matrixToRules', () => {
@@ -91,19 +92,20 @@ describe('src/components/shareBoard/accessMatrix', () => {
             expect(rules).toHaveLength(2)
         })
 
-        test('본부 관계는 조직 속성을, 본인은 담당자 속성을 싣는다', () => {
+        test('관계마다 읽을 속성이 다르다', () => {
+            // 부서 관계가 본부 속성을 읽으면 같은 본부면 전부 통과한다 — 종단
+            // 검증에서 팀장이 남의 부서 Task를 보던 원인이다.
             const cells = {
                 [cellKey('opt-objective', 'tier-clevel')]: [{relation: 'sameDivision' as const, permission: 'editor' as const}],
+                [cellKey('opt-key-result', 'tier-lead')]: [{relation: 'sameDepartment' as const, permission: 'editor' as const}],
                 [cellKey('opt-task', 'tier-member')]: [{relation: 'mine' as const, permission: 'editor' as const}],
             }
 
             const rules = matrixToRules(cells, context, [])
 
-            const division = rules.find((rule) => rule.relation === 'sameDivision')!
-            const mine = rules.find((rule) => rule.relation === 'mine')!
-
-            expect(division.orgPropertyId).toBe(orgProperty)
-            expect(mine.assigneePropertyId).toBe(personProperty)
+            expect(rules.find((rule) => rule.relation === 'sameDivision')!.orgPropertyId).toBe(orgProperty)
+            expect(rules.find((rule) => rule.relation === 'sameDepartment')!.orgPropertyId).toBe(departmentProperty)
+            expect(rules.find((rule) => rule.relation === 'mine')!.assigneePropertyId).toBe(personProperty)
         })
 
         test('손으로 만든 줄은 그대로 남는다', () => {

@@ -113,6 +113,7 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
         typeProperty: okr?.propertyId || '',
         levels: okr?.levels || [],
         orgProperty: board.cardProperties.find((property) => property.type === 'orgDivision')?.id || '',
+        departmentProperty: board.cardProperties.find((property) => property.type === 'orgDepartment')?.id || '',
         personProperty: board.cardProperties.find((property) => property.type === 'person' || property.type === 'multiPerson')?.id || '',
     }
 
@@ -283,11 +284,12 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                       * refuse. Saying so here is the difference between "this
                       * board is not ready" and an unexplained failed save.
                       */}
-                    {settings.enabled && canShowMatrix && showMatrix && !matrixContext.orgProperty &&
+                    {settings.enabled && canShowMatrix && showMatrix &&
+                        (!matrixContext.orgProperty || !matrixContext.departmentProperty) &&
                         <div className='PropertyAccessSection__needTiers'>
                             {intl.formatMessage({
                                 id: 'AccessMatrix.needOrgProperty',
-                                defaultMessage: 'Add a 본부 property to this board — the table compares each card against it.',
+                                defaultMessage: 'Add 본부 and 부서 properties to this board — the table compares each card against them.',
                             })}
                         </div>}
 
@@ -298,7 +300,7 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                       * once the groups do, and only when the table is empty.
                       */}
                     {settings.enabled && canShowMatrix && showMatrix && tiers.length >= 4 &&
-                        matrixContext.orgProperty !== '' &&
+                        matrixContext.orgProperty !== '' && matrixContext.departmentProperty !== '' &&
                         Object.keys(rulesToMatrix(rules, matrixContext)).length === 0 &&
                         <Button
                             className='PropertyAccessSection__preset'
