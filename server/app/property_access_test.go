@@ -139,13 +139,18 @@ const (
 
 // relationCard builds a card carrying a 유형 value plus whatever organization
 // and assignee values the case needs.
+//
+// The organization value goes in as a list because that is how the screens store
+// it — orgDivision and orgDepartment hold an array of unit IDs, not a single one
+// (005). Reading it as a plain string is what made every relation fail on a real
+// board while every test here passed.
 func relationCard(typeValue, divisionValue string, assignees ...string) *model.Block {
 	properties := map[string]interface{}{}
 	if typeValue != "" {
 		properties[propType] = typeValue
 	}
 	if divisionValue != "" {
-		properties[propDivision] = divisionValue
+		properties[propDivision] = []interface{}{divisionValue}
 	}
 	switch len(assignees) {
 	case 0:
@@ -327,6 +332,54 @@ func TestEvaluatorRelationMine(t *testing.T) {
 
 		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(card),
 			"게이트가 닫히면 작성자 바닥도 안 준다")
+	})
+}
+
+func TestEvaluatorRelationReadsListValues(t *testing.T) {
+	// 조직 속성은 값을 배열로 담는다. 문자열만 읽으면 실제 보드에서 어떤 관계도
+	// 성립하지 않는다.
+	rule := divisionRule(model.RelationSameDivision)
+
+	t.Run("값이 하나인 배열", func(t *testing.T) {
+		card := &model.Block{ID: "c", Type: model.TypeCard, Fields: map[string]interface{}{
+			"properties": map[string]interface{}{propType: valObjective, propDivision: []interface{}{divStrategy}},
+		}}
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, relationEvaluator(rule, "u1", depPlanning, dutyLead).For(card))
+	})
+
+	t.Run("값이 여럿인 배열 — 하나만 맞아도 성립한다", func(t *testing.T) {
+		card := &model.Block{ID: "c", Type: model.TypeCard, Fields: map[string]interface{}{
+			"properties": map[string]interface{}{propType: valObjective, propDivision: []interface{}{divProduction, divStrategy}},
+		}}
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, relationEvaluator(rule, "u1", depPlanning, dutyLead).For(card))
+	})
+
+	t.Run("빈 배열은 값이 없는 것과 같다", func(t *testing.T) {
+		card := &model.Block{ID: "c", Type: model.TypeCard, Fields: map[string]interface{}{
+			"properties": map[string]interface{}{propType: valObjective, propDivision: []interface{}{}},
+		}}
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, relationEvaluator(rule, "u1", depPlanning, dutyLead).For(card))
+	})
+
+	t.Run("문자열 하나도 그대로 읽는다", func(t *testing.T) {
+		card := &model.Block{ID: "c", Type: model.TypeCard, Fields: map[string]interface{}{
+			"properties": map[string]interface{}{propType: valObjective, propDivision: divStrategy},
+		}}
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, relationEvaluator(rule, "u1", depPlanning, dutyLead).For(card))
+	})
+
+	t.Run("다른 본부는 어느 값도 내 것이 아닐 때만 성립한다", func(t *testing.T) {
+		other := divisionRule(model.RelationOtherDivision)
+		mixed := &model.Block{ID: "c", Type: model.TypeCard, Fields: map[string]interface{}{
+			"properties": map[string]interface{}{propType: valObjective, propDivision: []interface{}{divProduction, divStrategy}},
+		}}
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, relationEvaluator(other, "u1", depPlanning, dutyLead).For(mixed),
+			"내 본부가 섞여 있으면 타 본부가 아니다")
 	})
 }
 
