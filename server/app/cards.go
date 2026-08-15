@@ -591,13 +591,16 @@ func (a *App) fillDefaultConditionValues(card *model.Card, boardID, userID strin
 // their division's card inside another division's tree, while creating the very
 // same card at the top level was refused.
 //
-// Commenting is the line, because it is what the organization gate grants once
-// it admits you. The full visibility floor stops at reading and deliberately
-// does not admit anyone across the boundary (FR-022).
+// Being admitted by a rule is the line — not a permission level. What matters is
+// that the organization gate opened for this user on this card. The full
+// visibility floor deliberately does not open it: it grants reading across the
+// boundary and nothing more (FR-022).
 //
-// Sitting below edit is deliberate too: a 팀장 may only comment on the Object
-// card their Key Results belongs under, and demanding edit would break the OKR
-// ladder this fill was written to make possible.
+// It used to ask for commenting, which looked the same while every rule that
+// admitted anyone granted at least that. The standard OKR matrix broke the
+// resemblance: a 팀원 reads their division's Key Results and creates the Tasks
+// beneath them, so demanding commenting made the requirement's own ladder
+// impossible to build (009 FR-005).
 func (a *App) requireSubCardParentAccess(userID, parentCardID, boardID string) error {
 	board, err := a.GetBoard(boardID)
 	if err != nil || board == nil {
@@ -618,8 +621,7 @@ func (a *App) requireSubCardParentAccess(userID, parentCardID, boardID string) e
 		return model.NewErrPermission("access denied to parent card")
 	}
 
-	if model.EffectivePermissionRank(evaluator.For(parent)) <
-		model.EffectivePermissionRank(model.EffectiveBoardPermissionCommenter) {
+	if !evaluator.Admits(parent) {
 		return model.NewErrPermission("access denied: no permission to add a sub-card to this card")
 	}
 

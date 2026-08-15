@@ -610,6 +610,63 @@ func TestEvaluatorTierHighestWins(t *testing.T) {
 		"겸직을 막지 않는다 — 걸린 규칙 중 높은 쪽이 간다")
 }
 
+// 009 — Admits는 "규칙이 나를 이 카드에 들여보냈는가"에 답한다. 권한의 높이가 아니다.
+//
+// 하위 카드 생성이 이걸 기준으로 삼는다. 댓글을 문턱으로 두면 요구사항이 스스로
+// 모순된다 — 팀원은 Key Results를 조회만 하면서 그 아래 자기 Tasks를 만들어야 한다.
+func TestEvaluatorAdmits(t *testing.T) {
+	strategyCard := card(propCLevel, valueStrategy)
+
+	t.Run("조회만 주는 규칙도 들여보낸다", func(t *testing.T) {
+		settings := &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{{
+			ID: "r1", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+			DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+		}}}
+		evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID: "u1", Settings: settings, OrgUnits: testOrgUnits(), Duties: testDuties(),
+			Profile: &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+		})
+
+		require.True(t, evaluator.Admits(strategyCard))
+	})
+
+	t.Run("전체보기 바닥은 들여보내지 않는다", func(t *testing.T) {
+		// 본부장이 타 본부 카드를 읽는 것은 규칙이 들인 것이 아니다. 여기서
+		// 통과시키면 남의 본부 트리에 자기 카드를 매다는 길이 열린다 (FR-022).
+		evaluator := evaluatorFor(depFactory, dutyHead, model.EffectiveBoardPermissionEdit)
+
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(strategyCard),
+			"읽기는 된다")
+		require.False(t, evaluator.Admits(strategyCard), "그래도 들여보내지는 않는다")
+	})
+
+	t.Run("게이트가 닫히면 직책만 맞는 규칙도 못 들인다", func(t *testing.T) {
+		settings := &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{
+			{ID: "org", PropertyID: propCLevel, PropertyValueID: valueStrategy, DivisionID: divStrategy, Permission: model.PropertyAccessCommenter},
+			{ID: "duty", PropertyID: propCLevel, PropertyValueID: valueStrategy, DutyID: dutyHead, Permission: model.PropertyAccessEditor},
+		}}
+		evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID: "u1", Settings: settings, OrgUnits: testOrgUnits(), Duties: testDuties(),
+			Profile: &model.UserOrgProfile{PrimaryOrgUnitID: depFactory, PrimaryDutyID: dutyHead},
+		})
+
+		require.False(t, evaluator.Admits(strategyCard),
+			"조직 게이트가 닫혔으면 직책 규칙이 주는 것도 들이는 것이 아니다")
+	})
+
+	t.Run("어느 규칙도 언급하지 않는 카드는 안 들인다", func(t *testing.T) {
+		evaluator := evaluatorFor(depPlanning, dutyLead, model.EffectiveBoardPermissionEdit)
+
+		require.False(t, evaluator.Admits(card(propCLevel, valueProduction)))
+	})
+
+	t.Run("관리자는 언제나 들어간다", func(t *testing.T) {
+		evaluator := NewPropertyAccessEvaluator(EvaluatorInput{IsAdmin: true})
+
+		require.True(t, evaluator.Admits(strategyCard))
+	})
+}
+
 func TestEvaluatorAdminBypass(t *testing.T) {
 	input := EvaluatorInput{
 		Settings:        testSettings(),
