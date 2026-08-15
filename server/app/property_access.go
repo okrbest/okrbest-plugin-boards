@@ -462,20 +462,37 @@ func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card
 	case model.RelationAny:
 		return true
 
-	// Same division and same department ask the same question — is the unit the
+	// Same division and same department ask the same question — is a unit the
 	// card names one this user belongs to or sits under. They differ only in
 	// which property the rule reads, and keeping them apart is what lets one
 	// board answer both without the rule having to say which level it meant.
+	//
+	// A card may name several units, so one overlap is enough.
 	case model.RelationSameDivision, model.RelationSameDepartment:
-		unit := cardValue(card, rule.OrgPropertyID)
-		return unit != "" && e.units[unit]
+		for _, unit := range cardValues(card, rule.OrgPropertyID) {
+			if e.units[unit] {
+				return true
+			}
+		}
+		return false
 
 	// Not the negation of same division. A card with no value is neither, and a
 	// viewer with no assignment is neither — otherwise every blank card would
 	// land in "other division" the moment it was created (FR-007).
+	//
+	// With several units it holds only when none of them is the viewer's: a card
+	// filed under both 영업 and 개발 is not "another division" to either of them.
 	case model.RelationOtherDivision:
-		unit := cardValue(card, rule.OrgPropertyID)
-		return unit != "" && len(e.units) > 0 && !e.units[unit]
+		units := cardValues(card, rule.OrgPropertyID)
+		if len(units) == 0 || len(e.units) == 0 {
+			return false
+		}
+		for _, unit := range units {
+			if e.units[unit] {
+				return false
+			}
+		}
+		return true
 
 	case model.RelationMine:
 		return e.isMine(rule, card)
@@ -522,12 +539,26 @@ func cardRawValue(card *model.Block, propertyID string) interface{} {
 	return properties[propertyID]
 }
 
-// cardValue returns a single-valued property off a card. An organization
-// property holds one unit ID; anything else is treated as absent rather than
-// guessed at.
-func cardValue(card *model.Block, propertyID string) string {
-	value, _ := cardRawValue(card, propertyID).(string)
-	return value
+// cardValues returns the unit IDs an organization property holds.
+//
+// The screens store these as a list — orgDivision and orgDepartment let a card
+// name more than one unit (005) — and older cards may hold a bare string. Both
+// shapes are read, which is what eachPropertyValueID already does for every
+// other property on the card.
+//
+// Reading only the string was the bug that made every relation fail on a real
+// board while every unit test passed: the tests built cards by hand and put a
+// string where the product puts a list.
+func cardValues(card *model.Block, propertyID string) []string {
+	if propertyID == "" {
+		return nil
+	}
+
+	var units []string
+	eachPropertyValueID(cardRawValue(card, propertyID), func(value string) {
+		units = append(units, value)
+	})
+	return units
 }
 
 // ruleMentionsCard reports whether the card carries any value the rule's card
