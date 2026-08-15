@@ -712,6 +712,74 @@ func (e *PropertyAccessEvaluator) ownerFloor(card *model.Block) model.EffectiveB
 	return model.EffectiveBoardPermissionEdit
 }
 
+// Admits reports whether the rules let this user into the card at all.
+//
+// It is the question "did a rule put me here", not "how much may I do". A rule
+// that grants only reading still admits: what it means is that the organization
+// gate opened for this user on this card.
+//
+// The full visibility floor deliberately does not admit. It reaches across the
+// organization boundary to let someone read, and nothing about that says they
+// belong in the tree (FR-022).
+//
+// Sub-card creation keys on this rather than on a permission level. Requiring
+// commenting looked equivalent while every rule that admitted anyone granted at
+// least commenting, and stopped being equivalent the moment the standard matrix
+// gave 팀원 reading on Key Results and creation on the Tasks beneath them
+// (009 FR-005).
+func (e *PropertyAccessEvaluator) Admits(card *model.Block) bool {
+	if e.isAdmin {
+		return true
+	}
+	if !e.enabled {
+		return model.EffectivePermissionRank(e.boardPermission) >
+			model.EffectivePermissionRank(model.EffectiveBoardPermissionNone)
+	}
+
+	// The same three facts evaluate() walks, judged the same way. Only the last
+	// step differs: this asks whether anything was granted, not how much.
+	//
+	// The gate has to be counted here too. A duty-only row can grant across an
+	// organization the user failed, and letting that admit them would reopen the
+	// hole the parent check exists to close — a 본부장 attaching their card
+	// inside another division's tree.
+	var (
+		matched    bool
+		gated      bool
+		gatePassed bool
+		granted    = model.EffectiveBoardPermissionNone
+	)
+
+	for _, rule := range e.rules {
+		if !ruleMentionsCard(rule, card) {
+			continue
+		}
+		matched = true
+
+		orgOK := e.orgMatches(rule, card)
+		if rule.HasOrgCondition() {
+			gated = true
+			gatePassed = gatePassed || orgOK
+		}
+
+		if !orgOK || !e.dutyMatches(rule) {
+			continue
+		}
+		granted = higherPermission(granted, rule.Permission.AsEffectivePermission())
+	}
+
+	// A card no rule governs is not part of any tree the rules describe, so
+	// attaching to it stays refused exactly as it was.
+	if !matched {
+		return false
+	}
+	if gated && !gatePassed {
+		return false
+	}
+
+	return granted != model.EffectiveBoardPermissionNone
+}
+
 // MatchesAnyCondition reports whether any rule's card side mentions a value this
 // card carries.
 //
