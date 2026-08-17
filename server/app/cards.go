@@ -182,17 +182,22 @@ func (a *App) CreateSubCard(card *model.Card, parentCardID string, boardID strin
 			return nil, boardErr
 		}
 
-		// Where in the company the card belongs is the one thing a sub-card takes
-		// from its parent. Everything else starts empty, the same way a top level
-		// card does — inheriting the lot made each new card a copy of the one above
-		// it, carrying a 기간 and a 담당자 nobody chose.
-		card.Properties = copyOrgProperties(parentCard.Properties, board)
+		// Where the card belongs, and whatever the rules judge. Everything else
+		// starts empty, the same way a top level card does — inheriting the lot
+		// made each new card a copy of the one above it, carrying a 기간 and a
+		// 담당자 nobody chose.
+		inherited, copyErr := copyInheritedProperties(parentCard.Properties, board)
+		if copyErr != nil {
+			return nil, copyErr
+		}
+		card.Properties = inherited
 
 		// The rung the card starts on, when the board is used as an OKR board.
-		// It goes after the organization copy so a board that puts the rung on an
-		// organization property still ends up on the right rung, and before the
-		// rules so a rule that decides this property still wins — the rules are
-		// permission, this is convenience (008 R5).
+		// It goes after the copy because the rung property is itself a rule
+		// condition on a real OKR board and therefore came down with the rest —
+		// without this the ladder would put an Objective under an Objective again.
+		// And it goes before the rules so a rule that decides this property still
+		// wins: the rules are permission, this is convenience (008 R5).
 		if fillErr := a.fillOkrLevel(card, boardID); fillErr != nil {
 			return nil, fillErr
 		}
@@ -493,44 +498,80 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 	return updatedCard, nil
 }
 
-// copyOrgProperties returns the organization values a sub-card takes from its
-// parent — 본부, 부서 and 직책 — and nothing else.
+// inheritedPropertyIDs names the properties a sub-card takes from its parent.
 //
-// Copying the parent wholesale is what this replaces. It made every new card a
-// duplicate of the one above it, so the author had to clear the inherited 기간,
-// 담당자 and description before the card said anything true. Where in the company
-// the card belongs is the one thing that genuinely comes from the tree it hangs
-// in, so that is the one thing that comes down.
+// Two kinds, for two different reasons.
+//
+// 본부 and 부서 say where in the company the card belongs, which is the one thing
+// that genuinely comes from the tree it hangs in. 직책 is deliberately not among
+// them: it says what the person on this card does, so handing it down makes every
+// sub-card claim the rank of the one above it.
+//
+// A property some rule judges comes down whether or not it is organizational. A
+// board may carry its organization as a plain select the rules are written
+// against, and leaving that empty hands the author a card no rule condition
+// mentions — outside the rules entirely, readable by everyone the board admits.
+// The rules still fill last, so this is only the floor.
 //
 // The type comes off the board rather than the card: a card only stores values,
-// and only the board says what each property is. A property the board no longer
-// declares is therefore not copied, which is the same answer as a property that
-// was never organizational.
-func copyOrgProperties(props map[string]any, board *model.Board) map[string]any {
-	copied := make(map[string]any)
-	if props == nil || board == nil {
-		return copied
+// and only the board says what each property is.
+func inheritedPropertyIDs(board *model.Board) (map[string]bool, error) {
+	wanted := map[string]bool{}
+	if board == nil {
+		return wanted, nil
 	}
 
 	for _, property := range board.CardProperties {
 		switch propertyType, _ := property["type"].(string); propertyType {
-		case model.PropertyTypeOrgDivision, model.PropertyTypeOrgDepartment, model.PropertyTypeOrgDuty:
+		case model.PropertyTypeOrgDivision, model.PropertyTypeOrgDepartment:
 		default:
 			continue
 		}
 
-		propertyID, _ := property["id"].(string)
-		if propertyID == "" {
-			continue
+		if propertyID, _ := property["id"].(string); propertyID != "" {
+			wanted[propertyID] = true
 		}
+	}
 
+	settings, err := model.PropertyAccessSettingsFromProperties(board.Properties)
+	if err != nil {
+		return nil, err
+	}
+	if settings != nil {
+		for _, rule := range settings.Rules {
+			if rule.PropertyID != "" {
+				wanted[rule.PropertyID] = true
+			}
+		}
+	}
+
+	return wanted, nil
+}
+
+// copyInheritedProperties returns the parent values a sub-card starts with.
+//
+// Copying the parent wholesale is what this replaces. It made every new card a
+// duplicate of the one above it, so the author had to clear the inherited 기간,
+// 담당자 and description before the card said anything true.
+func copyInheritedProperties(props map[string]any, board *model.Board) (map[string]any, error) {
+	copied := make(map[string]any)
+
+	wanted, err := inheritedPropertyIDs(board)
+	if err != nil {
+		return nil, err
+	}
+	if props == nil {
+		return copied, nil
+	}
+
+	for propertyID := range wanted {
 		value, ok := props[propertyID]
 		if !ok {
 			continue
 		}
 
-		// The screens store these as a list (005), and handing both cards the same
-		// slice would let an edit on one show up on the other.
+		// The screens store organization values as a list (005), and handing both
+		// cards the same slice would let an edit on one show up on the other.
 		switch val := value.(type) {
 		case []interface{}:
 			newArr := make([]interface{}, len(val))
@@ -545,7 +586,7 @@ func copyOrgProperties(props map[string]any, board *model.Board) map[string]any 
 		}
 	}
 
-	return copied
+	return copied, nil
 }
 
 // fillDefaultConditionValues writes the rule condition values a new card should

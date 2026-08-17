@@ -751,6 +751,7 @@ func TestCreateSubCardOkrBoard(t *testing.T) {
 	const departmentPropertyID = "p-dep"
 	const dutyPropertyID = "p-duty"
 	const notePropertyID = "p-note"
+	const legacyOrgPropertyID = "p-legacy-org"
 
 	okrBoard := func() *model.Board {
 		return &model.Board{
@@ -850,9 +851,30 @@ func TestCreateSubCardOkrBoard(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []interface{}{"div-production"}, newCard.Properties[divisionPropertyID])
 		require.Equal(t, []interface{}{"dep-line-1"}, newCard.Properties[departmentPropertyID])
-		require.Equal(t, []interface{}{"duty-lead"}, newCard.Properties[dutyPropertyID])
 		require.NotContains(t, newCard.Properties, notePropertyID)
 		require.Equal(t, "opt-key-result", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("the parent's duty does not come down", func(t *testing.T) {
+		// 직책 says what the person on this card does, not where the card sits.
+		// Handing it down makes every sub-card claim the rank of the one above it.
+		board := okrBoard()
+		parent := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Depth:   0,
+			Properties: map[string]interface{}{
+				typePropertyID: "opt-objective",
+				dutyPropertyID: []interface{}{"duty-lead"},
+			},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.NotContains(t, newCard.Properties, dutyPropertyID)
 	})
 
 	t.Run("a board with no organization property starts the card empty", func(t *testing.T) {
@@ -1001,5 +1023,109 @@ func TestCreateSubCardOkrBoard(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, "opt-task", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("a property the rules judge comes down even when it is not organizational", func(t *testing.T) {
+		// A board may carry the organization as a plain select the rules are
+		// written against. Leaving it empty would hand the author a card no rule
+		// condition mentions — outside the rules entirely, readable by anyone the
+		// board admits. The rules still fill last, so this is only the floor.
+		teamID := utils.NewID(utils.IDTypeTeam)
+		board := okrBoard()
+		board.TeamID = teamID
+		board.CardProperties = append(board.CardProperties, map[string]interface{}{
+			"id": legacyOrgPropertyID, "type": "select",
+		})
+		board.Properties[model.PropertyAccessKey] = map[string]interface{}{
+			"enabled": true,
+			"rules": []interface{}{
+				map[string]interface{}{
+					"id":              "rule-1",
+					"propertyId":      legacyOrgPropertyID,
+					"propertyValueId": "opt-production",
+					// A division nobody in this test belongs to, so no rule admits
+					// the author and the fill writes nothing. What the card ends up
+					// with is what came down from the parent.
+					"divisionId":   "div-nobody",
+					"departmentId": "",
+					"dutyId":       "",
+					"permission":   "editor",
+				},
+			},
+		}
+
+		parent := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Depth:   0,
+			Properties: map[string]interface{}{
+				typePropertyID:      "opt-objective",
+				legacyOrgPropertyID: "opt-production",
+				notePropertyID:      "부모가 적어둔 메모",
+			},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		th.PermissionsStore.EXPECT().GetBoard(board.ID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetMemberForBoard(board.ID, gomock.Any()).
+			Return(&model.BoardMember{BoardID: board.ID, SchemeEditor: true}, nil).AnyTimes()
+		th.API.EXPECT().HasPermissionToTeam(gomock.Any(), teamID, gomock.Any()).Return(true).AnyTimes()
+		th.Store.EXPECT().GetOrgUnitsForTeam(teamID).Return([]*model.OrgUnit{}, nil).AnyTimes()
+		th.Store.EXPECT().GetDutiesForTeam(teamID).Return([]*model.Duty{}, nil).AnyTimes()
+		th.Store.EXPECT().GetUserOrgProfiles(teamID, gomock.Any()).
+			Return([]*model.UserOrgProfile{}, nil).AnyTimes()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, "opt-production", newCard.Properties[legacyOrgPropertyID])
+		require.NotContains(t, newCard.Properties, notePropertyID)
+	})
+
+	t.Run("the ladder still outranks a rung the rules also judge", func(t *testing.T) {
+		// The rung property is a rule condition on a real OKR board, so it now
+		// comes down with the rest. The ladder has to overwrite it or the copy
+		// puts an Objective card under an Objective card again.
+		teamID := utils.NewID(utils.IDTypeTeam)
+		board := okrBoard()
+		board.TeamID = teamID
+		board.Properties[model.PropertyAccessKey] = map[string]interface{}{
+			"enabled": true,
+			"rules": []interface{}{
+				map[string]interface{}{
+					"id":              "rule-1",
+					"propertyId":      typePropertyID,
+					"propertyValueId": "opt-objective",
+					"divisionId":      "div-nobody",
+					"departmentId":    "",
+					"dutyId":          "",
+					"permission":      "editor",
+				},
+			},
+		}
+
+		parent := &model.Card{
+			ID:         utils.NewID(utils.IDTypeCard),
+			BoardID:    board.ID,
+			Depth:      0,
+			Properties: map[string]interface{}{typePropertyID: "opt-objective"},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		th.PermissionsStore.EXPECT().GetBoard(board.ID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetMemberForBoard(board.ID, gomock.Any()).
+			Return(&model.BoardMember{BoardID: board.ID, SchemeEditor: true}, nil).AnyTimes()
+		th.API.EXPECT().HasPermissionToTeam(gomock.Any(), teamID, gomock.Any()).Return(true).AnyTimes()
+		th.Store.EXPECT().GetOrgUnitsForTeam(teamID).Return([]*model.OrgUnit{}, nil).AnyTimes()
+		th.Store.EXPECT().GetDutiesForTeam(teamID).Return([]*model.Duty{}, nil).AnyTimes()
+		th.Store.EXPECT().GetUserOrgProfiles(teamID, gomock.Any()).
+			Return([]*model.UserOrgProfile{}, nil).AnyTimes()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, "opt-key-result", newCard.Properties[typePropertyID])
 	})
 }
