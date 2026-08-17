@@ -83,9 +83,46 @@ describe('components/cardDetail/SubCards', () => {
         jest.clearAllMocks()
     })
 
-    const createMockStore = (subCards: Card[] = [], subCardCount = 0) => {
+    // A card entry the rules wrote. Without one the hooks fall back to the board
+    // wide answer, which is what every test that does not pass one exercises.
+    const cardEntry = (overrides: Record<string, boolean>) => ({
+        boardPermissions: {
+            byBoardId: {
+                [board.id]: {
+                    boardId: board.id,
+                    effectivePermission: 'edit',
+                    capabilities: {
+                        canView: true,
+                        canCommentCard: true,
+                        canCreateCard: true,
+                        canEditCard: true,
+                        canDeleteCard: true,
+                        canManageBoard: false,
+                        canDeleteBoard: false,
+                        canAddSubCard: true,
+                    },
+                    cardPermissions: {
+                        [parentCard.id]: {
+                            canView: true,
+                            canCommentCard: false,
+                            canCreateCard: false,
+                            canEditCard: false,
+                            canDeleteCard: false,
+                            canManageBoard: false,
+                            canDeleteBoard: false,
+                            ...overrides,
+                        },
+                    },
+                    derivedFrom: 'member',
+                },
+            },
+        },
+    })
+
+    const createMockStore = (subCards: Card[] = [], subCardCount = 0, extra: Record<string, unknown> = {}) => {
         const mockStore = configureStore([])
         return mockStore({
+            ...extra,
             users: {
                 me: {id: 'user-id-1'},
                 boardUsers: {},
@@ -453,6 +490,64 @@ describe('components/cardDetail/SubCards', () => {
 
         const unlinkButton = document.querySelector('.SubCards__item-unlink')
         expect(unlinkButton).toBeInTheDocument()
+    })
+
+    // The OKR matrix gives 팀장 and 팀원 only reading on a Key Results card and
+    // has them build the Tasks that hang off it, so the entry point has to follow
+    // the server's own question — did a rule put me in this card's tree — rather
+    // than a permission level (009 FR-005).
+    test('offers the add button on a card the rules only let the user read', async () => {
+        mockedMutator.fetchSubCards.mockResolvedValue([])
+
+        const store = createMockStore([], 0, cardEntry({canAddSubCard: true}))
+
+        await act(async () => {
+            render(
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <SubCards
+                            board={board}
+                            card={parentCard}
+                            readonly={false}
+                            onCardClick={jest.fn()}
+                        />,
+                    )}
+                </ReduxProvider>,
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+        })
+
+        expect(screen.getByText('Add new page')).toBeInTheDocument()
+    })
+
+    test('hides the add button on a card no rule admits the user to', async () => {
+        mockedMutator.fetchSubCards.mockResolvedValue([])
+
+        const store = createMockStore([], 0, cardEntry({canCommentCard: true, canAddSubCard: false}))
+
+        await act(async () => {
+            render(
+                <ReduxProvider store={store}>
+                    {wrapIntl(
+                        <SubCards
+                            board={board}
+                            card={parentCard}
+                            readonly={false}
+                            onCardClick={jest.fn()}
+                        />,
+                    )}
+                </ReduxProvider>,
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+        })
+
+        expect(screen.queryByText('Add new page')).not.toBeInTheDocument()
     })
 
     test('unlink button not shown in readonly mode', async () => {

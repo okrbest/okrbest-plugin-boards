@@ -9,7 +9,7 @@ import {Constants} from '../../constants'
 import {Board} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
 
-import {useHasCardCapabilities} from '../../hooks/permissions'
+import {useCanAddSubCard} from '../../hooks/permissions'
 
 import TableAddRow from './tableAddRow'
 import TableRowExpandable from './tableRowExpandable'
@@ -37,14 +37,14 @@ const TableSubCardRows = (props: Props): React.JSX.Element => {
     // offered rather than offered and refused (spec FR-011).
     const canAddSubCard = (parentCard.fields.depth || 0) < Constants.maxCardDepth
 
-    // Commenting, not editing. A sub-card is born with the values the rules
-    // admit its author to rather than a copy of its parent's, so a 팀장 may add
-    // a Key Results card under an Object card they can only comment on — asking
-    // for edit would hide the row exactly where the OKR ladder needs it. But
-    // reading alone is not enough: a 본부장 sees other divisions' cards through
-    // the full visibility floor, and hanging their own card there would put it
-    // in a tree they have no part in.
-    const canAddUnderParent = useHasCardCapabilities(board.id, parentCard.id, ['canCommentCard'])
+    // Admission, not a rank. The server asks whether a rule put this user in the
+    // parent's tree, and the screen has to ask the same thing: the OKR matrix
+    // gives 팀장 and 팀원 only reading on Key Results while the Tasks they build
+    // hang off exactly those cards, so a gate keyed on commenting hides the row
+    // on the one rung the ladder is built from (009 FR-005). Reading alone is
+    // still not enough — a 본부장 sees other divisions' cards through the full
+    // visibility floor, and canAddSubCard deliberately says no there.
+    const canAddUnderParent = useCanAddSubCard(board.id, parentCard.id)
 
     const onAddSubCard = useCallback(() => {
         props.addSubCard(parentCard)

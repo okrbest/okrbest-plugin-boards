@@ -10,7 +10,7 @@ import {Permission} from '../constants'
 import {MemberRole} from '../blocks/board'
 import {getBoardPermissions} from '../store/boardPermissions'
 
-export type BoardCapability = 'canView' | 'canCommentCard' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard' | 'canDeleteBoard'
+export type BoardCapability = 'canView' | 'canCommentCard' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard' | 'canDeleteBoard' | 'canAddSubCard'
 
 const permissionToCapability: Record<Permission, BoardCapability> = {
     [Permission.ViewBoard]: 'canView',
@@ -157,4 +157,31 @@ export const useHasCurrentBoardPermissions = (permissions: Permission[]): boolea
     const currentBoardId = useAppSelector(getCurrentBoardId)
 
     return useHasCurrentTeamPermissions(currentBoardId || '', permissions)
+}
+
+// useCanAddSubCard answers whether a card may have one hung off it.
+//
+// It is its own hook because the answer is not a permission level. The server
+// asks whether a rule put this user in the card's tree, and the OKR matrix makes
+// that different from any rank: 팀장 and 팀원 only read their division's Key
+// Results and build the Tasks beneath them (009 FR-005).
+//
+// The membership fallback is the part useHasCardCapabilities does not have. A
+// board whose capabilities are still in flight would otherwise hide the entry
+// point on every board for as long as the request takes.
+export const useCanAddSubCard = (boardId: string, cardId: string): boolean => {
+    const boardPermissionsSelector = useMemo(() => getBoardPermissions(boardId), [boardId])
+    const permissions = useAppSelector(boardPermissionsSelector)
+    const membershipAnswer = useHasCurrentTeamPermissions(boardId, [Permission.ManageBoardCards])
+
+    if (!boardId) {
+        return false
+    }
+
+    const source = (cardId ? permissions?.cardPermissions?.[cardId] : undefined) || permissions?.capabilities
+    if (!source) {
+        return membershipAnswer
+    }
+
+    return Boolean(source.canAddSubCard)
 }

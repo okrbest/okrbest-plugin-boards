@@ -35,6 +35,7 @@ func TestBuildCapabilities(t *testing.T) {
 				CanDeleteCard:  false,
 				CanManageBoard: false,
 				CanDeleteBoard: false,
+				CanAddSubCard:  false,
 			},
 		},
 		{
@@ -48,6 +49,7 @@ func TestBuildCapabilities(t *testing.T) {
 				CanDeleteCard:  false,
 				CanManageBoard: false,
 				CanDeleteBoard: false,
+				CanAddSubCard:  false,
 			},
 		},
 		{
@@ -61,6 +63,7 @@ func TestBuildCapabilities(t *testing.T) {
 				CanDeleteCard:  true,
 				CanManageBoard: false,
 				CanDeleteBoard: false,
+				CanAddSubCard:  true,
 			},
 		},
 		{
@@ -74,6 +77,7 @@ func TestBuildCapabilities(t *testing.T) {
 				CanDeleteCard:  true,
 				CanManageBoard: true,
 				CanDeleteBoard: true,
+				CanAddSubCard:  true,
 			},
 		},
 	}

@@ -8,7 +8,7 @@ import {Board} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
 import {Constants} from '../../constants'
 import useSubCardInfo from '../../hooks/useSubCardInfo'
-import {useHasCardCapabilities} from '../../hooks/permissions'
+import {useCanAddSubCard} from '../../hooks/permissions'
 import {isOkrParentLevel} from '../../okrBoard'
 
 import TableRow from './tableRow'
@@ -38,7 +38,7 @@ const TableRowExpandable = (props: Props): React.JSX.Element => {
     // level up so the row never opens a toggle onto a list it may not add to —
     // a 본부장 sees other divisions' cards through the visibility floor and can
     // add nothing under them (spec 008 FR-014).
-    const canAddUnderCard = useHasCardCapabilities(board.id, card.id, ['canCommentCard'])
+    const canAddUnderCard = useCanAddSubCard(board.id, card.id)
 
     // An OKR rung with one below it keeps the entry point open before any
     // sub-card exists. An Objective with no Key Results is where the ladder gets

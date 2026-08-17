@@ -44,6 +44,7 @@ const buildState = (canEditCard: boolean) => ({
                     canDeleteCard: canEditCard,
                     canManageBoard: false,
                     canDeleteBoard: false,
+                    canAddSubCard: true,
                 },
                 derivedFrom: 'member',
             },

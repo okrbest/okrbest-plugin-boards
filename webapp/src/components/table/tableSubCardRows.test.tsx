@@ -51,6 +51,7 @@ const state = {
                     canDeleteCard: true,
                     canManageBoard: false,
                     canDeleteBoard: false,
+                    canAddSubCard: true,
                 },
                 derivedFrom: 'member',
             },
@@ -63,10 +64,21 @@ const state = {
     clientConfig: {value: {teammateNameDisplay: 'username'}},
 }
 
-const renderSubRows = (parent: Card, cardIdToFocusOnRender = '') => {
+const renderSubRows = (parent: Card, cardIdToFocusOnRender = '', cardPermissions?: Record<string, unknown>) => {
     const view = TestBlockFactory.createBoardView(board)
     const addSubCard = jest.fn()
-    const store = mockStateStore([thunk], state)
+    const storeState = cardPermissions ? {
+        ...state,
+        boardPermissions: {
+            byBoardId: {
+                [board.id]: {
+                    ...state.boardPermissions.byBoardId[board.id],
+                    cardPermissions,
+                },
+            },
+        },
+    } : state
+    const store = mockStateStore([thunk], storeState)
 
     const result = render(
         wrapDNDIntl(
@@ -120,6 +132,44 @@ describe('components/table/tableSubCardRows', () => {
 
         const indent = container.querySelector('.octo-table-footer .sub-card-indent') as HTMLElement
         expect(indent.style.width).toBe('66px')
+    })
+
+    // The OKR matrix's own shape. 팀장 and 팀원 only read their division's Key
+    // Results, and the Tasks they build hang off exactly those cards, so a gate
+    // that asks for commenting hides the entry point on the rung the ladder needs
+    // (009 FR-005). The server already keys on admission rather than a rank.
+    test('offers the add row on a card the rules only let the user read', () => {
+        const {container} = renderSubRows(parentCard, '', {
+            [parentCard.id]: {
+                canView: true,
+                canCommentCard: false,
+                canCreateCard: false,
+                canEditCard: false,
+                canDeleteCard: false,
+                canManageBoard: false,
+                canDeleteBoard: false,
+                canAddSubCard: true,
+            },
+        })
+
+        expect(container.querySelector('.octo-table-footer')).not.toBeNull()
+    })
+
+    test('drops the add row on a card no rule admits the user to', () => {
+        const {container} = renderSubRows(parentCard, '', {
+            [parentCard.id]: {
+                canView: true,
+                canCommentCard: true,
+                canCreateCard: false,
+                canEditCard: false,
+                canDeleteCard: false,
+                canManageBoard: false,
+                canDeleteBoard: false,
+                canAddSubCard: false,
+            },
+        })
+
+        expect(container.querySelector('.octo-table-footer')).toBeNull()
     })
 
     test('T-10 drops the add row once the parent is at the depth limit', () => {

@@ -10,7 +10,7 @@ import mutator from '../../mutator'
 import {useAppDispatch} from '../../store/hooks'
 import {setSubCards, addSubCard, setSubCardCount, removeSubCard} from '../../store/cards'
 import CompassIcon from '../../widgets/icons/compassIcon'
-import {useHasCurrentBoardCardPermissions} from '../../hooks/permissions'
+import {useHasCurrentBoardCardPermissions, useCanAddSubCard} from '../../hooks/permissions'
 import {Constants, Permission} from '../../constants'
 import {sendFlashMessage} from '../flashMessages'
 
@@ -37,7 +37,13 @@ const SubCards = (props: Props): React.JSX.Element => {
     // Card aware, but still routed through the permission hook so a board
     // whose capabilities have not arrived yet falls back to the membership
     // answer instead of rendering everything read only.
+    //
+    // Unlinking changes the sub-card, so it asks for editing. Adding one asks a
+    // different question — did a rule put this user in the card's tree — because
+    // the OKR matrix has 팀장 and 팀원 building Tasks under Key Results they may
+    // only read (009 FR-005).
     const canEditBoardCards = useHasCurrentBoardCardPermissions(card.id, [Permission.ManageBoardCards])
+    const canAddUnderCard = useCanAddSubCard(board.id, card.id)
     const intl = useIntl()
 
     const currentDepth = card.fields.depth || 0
@@ -232,28 +238,30 @@ const SubCards = (props: Props): React.JSX.Element => {
                     </div>
                 )}
 
-                {!readonly && canEditBoardCards && canAddSubCard && (
+                {!readonly && canAddSubCard && (canAddUnderCard || canEditBoardCards) && (
                     <div className='SubCards__actions'>
-                        <div
-                            className='SubCards__add'
-                            onClick={handleAddSubCard}
-                            role='button'
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    handleAddSubCard()
-                                }
-                            }}
-                        >
-                            <CompassIcon icon='plus'/>
-                            <span>
-                                <FormattedMessage
-                                    id='SubCards.addNew'
-                                    defaultMessage='Add new page'
-                                />
-                            </span>
-                        </div>
-                        <div className='SubCards__link-wrapper'>
+                        {canAddUnderCard && (
+                            <div
+                                className='SubCards__add'
+                                onClick={handleAddSubCard}
+                                role='button'
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleAddSubCard()
+                                    }
+                                }}
+                            >
+                                <CompassIcon icon='plus'/>
+                                <span>
+                                    <FormattedMessage
+                                        id='SubCards.addNew'
+                                        defaultMessage='Add new page'
+                                    />
+                                </span>
+                            </div>
+                        )}
+                        {canEditBoardCards && <div className='SubCards__link-wrapper'>
                             <div
                                 className='SubCards__link'
                                 onClick={() => setShowLinkSelector(true)}
@@ -282,11 +290,11 @@ const SubCards = (props: Props): React.JSX.Element => {
                                     onClose={() => setShowLinkSelector(false)}
                                 />
                             )}
-                        </div>
+                        </div>}
                     </div>
                 )}
 
-                {subCards.length === 0 && (readonly || !canEditBoardCards || !canAddSubCard) && (
+                {subCards.length === 0 && (readonly || !(canAddUnderCard || canEditBoardCards) || !canAddSubCard) && (
                     <div className='SubCards__empty'>
                         <FormattedMessage
                             id='SubCards.empty'

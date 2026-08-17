@@ -33,6 +33,15 @@ type BoardPermissionCapabilities struct {
 	CanDeleteCard  bool `json:"canDeleteCard"`
 	CanManageBoard bool `json:"canManageBoard"`
 	CanDeleteBoard bool `json:"canDeleteBoard"`
+
+	// CanAddSubCard is the only capability that is not a rank in disguise.
+	//
+	// Hanging a card off another asks whether a rule put this user in that card's
+	// tree, not how much they may do there — the OKR matrix gives 팀장 and 팀원
+	// reading on Key Results and building rights on the Tasks beneath, so a rank
+	// cannot express it. On a card entry it carries the evaluator's own answer;
+	// everywhere else it follows the board, where editing is the whole bar.
+	CanAddSubCard bool `json:"canAddSubCard"`
 }
 
 type BoardPermissionsResponse struct {
@@ -118,5 +127,11 @@ func BuildCapabilities(permission EffectiveBoardPermission) BoardPermissionCapab
 		CanDeleteCard:  rank >= 3,
 		CanManageBoard: rank >= 4,
 		CanDeleteBoard: rank >= 4,
+
+		// The board wide answer, which is what a board with no rules gets. There
+		// the sub-card endpoint asks for manage_board_cards and nothing else, so
+		// editing is the bar. A card entry overwrites this with the evaluator's
+		// answer.
+		CanAddSubCard: rank >= 3,
 	}
 }

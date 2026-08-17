@@ -66,6 +66,7 @@ const buildState = (cards: Card[], stateBoard: Board = board) => ({
                     canDeleteCard: true,
                     canManageBoard: false,
                     canDeleteBoard: false,
+                    canAddSubCard: true,
                 },
                 derivedFrom: 'member',
             },

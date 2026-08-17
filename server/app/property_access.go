@@ -926,7 +926,13 @@ func (a *App) GetCardPermissionsForUser(userID, boardID string) (map[string]mode
 			// would leak the fact that it exists.
 			continue
 		}
-		permissions[block.ID] = model.BuildCapabilities(granted)
+
+		capabilities := model.BuildCapabilities(granted)
+		// The one answer a rank cannot carry. requireSubCardParentAccess asks
+		// whether a rule put this user in the card's tree, so the screen has to be
+		// told the same thing or it hides the entry point the server would allow.
+		capabilities.CanAddSubCard = evaluator.Admits(block)
+		permissions[block.ID] = capabilities
 	}
 
 	return permissions, nil

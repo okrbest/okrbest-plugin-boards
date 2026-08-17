@@ -81,6 +81,12 @@ type BoardCapabilities = {
     canDeleteCard: boolean
     canManageBoard: boolean
     canDeleteBoard: boolean
+
+    // The only one that is not a permission level in disguise. Hanging a card off
+    // another asks whether a rule put this user in that card's tree, which the
+    // OKR matrix makes different from any rank: 팀장 and 팀원 only read their
+    // division's Key Results and build the Tasks beneath them.
+    canAddSubCard: boolean
 }
 
 type BoardPermissionsResponse = {

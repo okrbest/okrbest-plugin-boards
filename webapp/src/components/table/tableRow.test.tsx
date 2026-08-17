@@ -331,6 +331,7 @@ describe('components/table/TableRow sub-card menu item', () => {
                         canDeleteCard: true,
                         canManageBoard: false,
                         canDeleteBoard: false,
+                        canAddSubCard: true,
                     },
                     derivedFrom: 'member',
                 },

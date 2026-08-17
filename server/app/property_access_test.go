@@ -1444,3 +1444,71 @@ func TestEvaluatorDefaultsSkipAmbiguity(t *testing.T) {
 	require.Empty(t, evaluator.DefaultConditionValues(),
 		"both rows admit this user, so the property is left for them to choose")
 }
+
+// TestCapabilitiesCarryAdmission is the OKR matrix's own shape: 팀장 and 팀원 read
+// their division's Key Results and build the Tasks underneath them.
+//
+// Reading is all the rules give them on a Key Results card, and the screen has to
+// offer the sub-card entry point there anyway. Asking for commenting — what the
+// screen used to ask — hides the button on exactly the rung the ladder is built
+// from (009 FR-005).
+func TestCapabilitiesCarryAdmission(t *testing.T) {
+	const propType = "prop-type"
+	const valueKR = "opt-kr"
+	const valueTask = "opt-task"
+
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{
+			{
+				ID: "read-kr", PropertyID: propType, PropertyValueID: valueKR,
+				DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+			},
+			{
+				ID: "own-tasks", PropertyID: propType, PropertyValueID: valueTask,
+				DivisionID: divStrategy, Permission: model.PropertyAccessEditor,
+			},
+		},
+	}
+
+	evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+		UserID:          "user-1",
+		Settings:        settings,
+		OrgUnits:        testOrgUnits(),
+		Duties:          testDuties(),
+		Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+		BoardPermission: model.EffectiveBoardPermissionEdit,
+	})
+
+	t.Run("a card the rules only let them read still admits them", func(t *testing.T) {
+		krCard := card(propType, valueKR)
+
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.For(krCard))
+		require.True(t, evaluator.Admits(krCard),
+			"the organization gate opened, which is what hanging a card off this one asks for")
+	})
+
+	t.Run("capabilities say so, so the screen can ask the same question", func(t *testing.T) {
+		krCard := card(propType, valueKR)
+		capabilities := model.BuildCapabilities(evaluator.For(krCard))
+		capabilities.CanAddSubCard = evaluator.Admits(krCard)
+
+		require.False(t, capabilities.CanCommentCard,
+			"reading is all the rules gave, and that has not changed")
+		require.True(t, capabilities.CanAddSubCard)
+	})
+
+	t.Run("a card no rule admits them to offers nothing", func(t *testing.T) {
+		otherCard := card(propCLevel, valueProduction)
+		capabilities := model.BuildCapabilities(evaluator.For(otherCard))
+		capabilities.CanAddSubCard = evaluator.Admits(otherCard)
+
+		require.False(t, capabilities.CanAddSubCard)
+	})
+
+	t.Run("without rules the bar is editing, the same one the endpoint asks for", func(t *testing.T) {
+		require.False(t, model.BuildCapabilities(model.EffectiveBoardPermissionCommenter).CanAddSubCard,
+			"a board with no rules is guarded by manage_board_cards alone")
+		require.True(t, model.BuildCapabilities(model.EffectiveBoardPermissionEdit).CanAddSubCard)
+	})
+}
