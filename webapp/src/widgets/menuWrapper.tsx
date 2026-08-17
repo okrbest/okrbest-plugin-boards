@@ -6,6 +6,8 @@ import React, {useRef, useState, useEffect, useCallback, useLayoutEffect} from '
 
 import RootPortal from '../components/rootPortal'
 
+import {menuHeightBelow} from './menu/menuHeight'
+
 import './menuWrapper.scss'
 
 type Props = {
@@ -156,7 +158,16 @@ const MenuWrapper = (props: Props) => {
         } else {
             menuEl.style.transform = ''
         }
-    }, [open, props.usePortal, position])
+
+        // A menu opened below a low anchor would run off the bottom, taking its
+        // lower rows and its own scrollbar off-screen with it. Cap the scrolling
+        // list to the room that is actually there so the last row stays reachable.
+        const pos = props.menuPosition || 'left'
+        const optionsEl = menuEl.querySelector('.menu-options') as HTMLElement | null
+        if (optionsEl && (pos === 'bottom' || pos === 'right' || pos === 'left')) {
+            optionsEl.style.maxHeight = `${menuHeightBelow(menuRect.top, window.innerHeight)}px`
+        }
+    }, [open, props.usePortal, props.menuPosition, position])
 
     let className = 'MenuWrapper'
     if (props.disabled) {
