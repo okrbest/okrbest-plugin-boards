@@ -63,8 +63,8 @@ export function optionForDepth(settings: OkrBoardSettings | undefined, depth: nu
 // it unconditionally.
 //
 // Sub-cards do not come through here. The server makes those, and sending it any
-// property at all would make it skip the block that copies the parent's — 본부 and
-// 부서 would stop reaching sub-cards (008 research R4).
+// property at all would make it skip the fill entirely — the rung and the parent's
+// 본부·부서·직책 would both stop reaching sub-cards.
 export function okrPropertiesForNewCard(
     boardProperties: Record<string, unknown> | undefined,
     depth: number,

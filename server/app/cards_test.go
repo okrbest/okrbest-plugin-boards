@@ -748,10 +748,22 @@ func TestUnlinkSubCard(t *testing.T) {
 func TestCreateSubCardOkrBoard(t *testing.T) {
 	const typePropertyID = "p-type"
 	const divisionPropertyID = "p-div"
+	const departmentPropertyID = "p-dep"
+	const dutyPropertyID = "p-duty"
+	const notePropertyID = "p-note"
 
 	okrBoard := func() *model.Board {
 		return &model.Board{
 			ID: utils.NewID(utils.IDTypeBoard),
+			// A sub-card is filled from the parent by property type, so the board
+			// has to say what type each property is.
+			CardProperties: []map[string]interface{}{
+				{"id": typePropertyID, "type": "select"},
+				{"id": divisionPropertyID, "type": model.PropertyTypeOrgDivision},
+				{"id": departmentPropertyID, "type": model.PropertyTypeOrgDepartment},
+				{"id": dutyPropertyID, "type": model.PropertyTypeOrgDuty},
+				{"id": notePropertyID, "type": "text"},
+			},
 			Properties: map[string]interface{}{
 				model.OkrBoardKey: map[string]interface{}{
 					"propertyId": typePropertyID,
@@ -812,10 +824,97 @@ func TestCreateSubCardOkrBoard(t *testing.T) {
 		require.Equal(t, "opt-task", newCard.Properties[typePropertyID])
 	})
 
-	t.Run("the parent's other properties still come down", func(t *testing.T) {
-		// The regression this feature is most likely to cause. Only the rung is
-		// replaced; everything else the parent carries is inherited as before.
+	t.Run("only the parent's organization comes down", func(t *testing.T) {
+		// A sub-card starts where its parent's tree is — the same 본부, 부서 and
+		// 직책 — and starts empty on everything else. Copying the parent wholesale
+		// made every new card a duplicate of the one above it, so the author had to
+		// clear the inherited 기간 and 담당자 before the card said anything true.
 		board := okrBoard()
+		parent := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Depth:   0,
+			Properties: map[string]interface{}{
+				typePropertyID:       "opt-objective",
+				divisionPropertyID:   []interface{}{"div-production"},
+				departmentPropertyID: []interface{}{"dep-line-1"},
+				dutyPropertyID:       []interface{}{"duty-lead"},
+				notePropertyID:       "부모가 적어둔 메모",
+			},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.Equal(t, []interface{}{"div-production"}, newCard.Properties[divisionPropertyID])
+		require.Equal(t, []interface{}{"dep-line-1"}, newCard.Properties[departmentPropertyID])
+		require.Equal(t, []interface{}{"duty-lead"}, newCard.Properties[dutyPropertyID])
+		require.NotContains(t, newCard.Properties, notePropertyID)
+		require.Equal(t, "opt-key-result", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("a board with no organization property starts the card empty", func(t *testing.T) {
+		board := okrBoard()
+		board.CardProperties = []map[string]interface{}{
+			{"id": typePropertyID, "type": "select"},
+			{"id": notePropertyID, "type": "text"},
+		}
+		parent := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Depth:   0,
+			Properties: map[string]interface{}{
+				typePropertyID: "opt-objective",
+				notePropertyID: "부모가 적어둔 메모",
+			},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+
+		require.NoError(t, err)
+		require.NotContains(t, newCard.Properties, notePropertyID)
+		require.Equal(t, "opt-key-result", newCard.Properties[typePropertyID])
+	})
+
+	t.Run("the copied organization is not shared with the parent", func(t *testing.T) {
+		// The value is a list. Handing the same slice to both cards would let an
+		// edit on one show up on the other.
+		board := okrBoard()
+		parent := &model.Card{
+			ID:      utils.NewID(utils.IDTypeCard),
+			BoardID: board.ID,
+			Depth:   0,
+			Properties: map[string]interface{}{
+				typePropertyID:     "opt-objective",
+				divisionPropertyID: []interface{}{"div-production"},
+			},
+		}
+		th, tearDown := setupCreate(t, board, parent)
+		defer tearDown()
+
+		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
+		require.NoError(t, err)
+
+		copied := newCard.Properties[divisionPropertyID].([]interface{})
+		copied[0] = "div-changed"
+
+		require.Equal(t, []interface{}{"div-production"}, parent.Properties[divisionPropertyID])
+	})
+
+	t.Run("a board that was never switched on gets no rung, but still its organization", func(t *testing.T) {
+		// The two fills are independent. The ladder needs the board to have been
+		// switched on; taking the parent's organization does not.
+		board := &model.Board{
+			ID: utils.NewID(utils.IDTypeBoard),
+			CardProperties: []map[string]interface{}{
+				{"id": typePropertyID, "type": "select"},
+				{"id": divisionPropertyID, "type": model.PropertyTypeOrgDivision},
+			},
+		}
 		parent := &model.Card{
 			ID:      utils.NewID(utils.IDTypeCard),
 			BoardID: board.ID,
@@ -831,25 +930,8 @@ func TestCreateSubCardOkrBoard(t *testing.T) {
 		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
 
 		require.NoError(t, err)
+		require.NotContains(t, newCard.Properties, typePropertyID)
 		require.Equal(t, []interface{}{"div-production"}, newCard.Properties[divisionPropertyID])
-		require.Equal(t, "opt-key-result", newCard.Properties[typePropertyID])
-	})
-
-	t.Run("a board that was never switched on is untouched", func(t *testing.T) {
-		board := &model.Board{ID: utils.NewID(utils.IDTypeBoard)}
-		parent := &model.Card{
-			ID:         utils.NewID(utils.IDTypeCard),
-			BoardID:    board.ID,
-			Depth:      0,
-			Properties: map[string]interface{}{typePropertyID: "opt-objective"},
-		}
-		th, tearDown := setupCreate(t, board, parent)
-		defer tearDown()
-
-		newCard, err := th.App.CreateSubCard(&model.Card{BoardID: board.ID}, parent.ID, board.ID, userID, false)
-
-		require.NoError(t, err)
-		require.Equal(t, "opt-objective", newCard.Properties[typePropertyID])
 	})
 
 	t.Run("what the caller chose is left alone", func(t *testing.T) {

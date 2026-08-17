@@ -9,6 +9,18 @@ const (
 	OrgUnitTypeDepartment = "department" // 부서
 )
 
+// Card property types that name a part of the organization. A card wearing one
+// of these says where in the company it belongs, which is what a sub-card has to
+// take from its parent while everything else starts empty.
+//
+// The same three strings live in webapp/src/properties/orgLabels.ts. They are
+// stored on the board, so neither side may rename them alone.
+const (
+	PropertyTypeOrgDivision   = "orgDivision"   // 본부
+	PropertyTypeOrgDepartment = "orgDepartment" // 부서
+	PropertyTypeOrgDuty       = "orgDuty"       // 직책
+)
+
 // DutyKind is the PositionDefinitions.kind value this plugin reads. Rows with
 // kind "position" (직위) are ignored everywhere — see FR-024.
 const DutyKind = "duty"

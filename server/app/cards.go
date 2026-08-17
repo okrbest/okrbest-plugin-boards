@@ -177,17 +177,22 @@ func (a *App) CreateSubCard(card *model.Card, parentCardID string, boardID strin
 	callerChoseProperties := len(card.Properties) > 0
 
 	if !callerChoseProperties {
-		// Inheriting the parent wholesale is what broke the OKR ladder: a 팀장
-		// adding a card under an Object card got another Object card, a shape
-		// the rules never let them create. The parent's values are kept as the
-		// base — a board with no rules still wants them — and the rules then
-		// overwrite the ones that decide where the author may work.
-		card.Properties = deepCopyProperties(parentCard.Properties)
+		board, boardErr := a.GetBoard(boardID)
+		if boardErr != nil {
+			return nil, boardErr
+		}
+
+		// Where in the company the card belongs is the one thing a sub-card takes
+		// from its parent. Everything else starts empty, the same way a top level
+		// card does — inheriting the lot made each new card a copy of the one above
+		// it, carrying a 기간 and a 담당자 nobody chose.
+		card.Properties = copyOrgProperties(parentCard.Properties, board)
 
 		// The rung the card starts on, when the board is used as an OKR board.
-		// It goes after the parent copy so 본부, 부서 and everything else still
-		// come down, and before the rules so a rule that decides this property
-		// still wins — the rules are permission, this is convenience (008 R5).
+		// It goes after the organization copy so a board that puts the rung on an
+		// organization property still ends up on the right rung, and before the
+		// rules so a rule that decides this property still wins — the rules are
+		// permission, this is convenience (008 R5).
 		if fillErr := a.fillOkrLevel(card, boardID); fillErr != nil {
 			return nil, fillErr
 		}
@@ -488,26 +493,58 @@ func (a *App) UnlinkSubCard(cardID, userID string) (*model.Card, error) {
 	return updatedCard, nil
 }
 
-func deepCopyProperties(props map[string]any) map[string]any {
-	if props == nil {
-		return make(map[string]any)
+// copyOrgProperties returns the organization values a sub-card takes from its
+// parent — 본부, 부서 and 직책 — and nothing else.
+//
+// Copying the parent wholesale is what this replaces. It made every new card a
+// duplicate of the one above it, so the author had to clear the inherited 기간,
+// 담당자 and description before the card said anything true. Where in the company
+// the card belongs is the one thing that genuinely comes from the tree it hangs
+// in, so that is the one thing that comes down.
+//
+// The type comes off the board rather than the card: a card only stores values,
+// and only the board says what each property is. A property the board no longer
+// declares is therefore not copied, which is the same answer as a property that
+// was never organizational.
+func copyOrgProperties(props map[string]any, board *model.Board) map[string]any {
+	copied := make(map[string]any)
+	if props == nil || board == nil {
+		return copied
 	}
 
-	copied := make(map[string]any, len(props))
-	for k, v := range props {
-		switch val := v.(type) {
+	for _, property := range board.CardProperties {
+		switch propertyType, _ := property["type"].(string); propertyType {
+		case model.PropertyTypeOrgDivision, model.PropertyTypeOrgDepartment, model.PropertyTypeOrgDuty:
+		default:
+			continue
+		}
+
+		propertyID, _ := property["id"].(string)
+		if propertyID == "" {
+			continue
+		}
+
+		value, ok := props[propertyID]
+		if !ok {
+			continue
+		}
+
+		// The screens store these as a list (005), and handing both cards the same
+		// slice would let an edit on one show up on the other.
+		switch val := value.(type) {
 		case []interface{}:
 			newArr := make([]interface{}, len(val))
 			copy(newArr, val)
-			copied[k] = newArr
+			copied[propertyID] = newArr
 		case []string:
 			newArr := make([]string, len(val))
 			copy(newArr, val)
-			copied[k] = newArr
+			copied[propertyID] = newArr
 		default:
-			copied[k] = v
+			copied[propertyID] = value
 		}
 	}
+
 	return copied
 }
 
