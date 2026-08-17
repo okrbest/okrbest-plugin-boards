@@ -25,6 +25,7 @@ board.cardProperties = [
         options: [
             {id: 'opt-strategy', value: '전략', color: 'propColorBrown'},
             {id: 'opt-production', value: '생산', color: 'propColorBlue'},
+            {id: 'opt-research', value: '연구', color: 'propColorYellow'},
         ],
     },
 ]
@@ -148,7 +149,7 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         await openSelector(container, 1)
         await userEvent.click(screen.getByText('전략'))
 
-        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({propertyValueId: 'opt-strategy'}))
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({propertyValueIds: ['opt-strategy']}))
     })
 
     test('changing the division clears a department that no longer belongs to it', async () => {
@@ -415,5 +416,67 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         await userEvent.click(remove!)
 
         expect(onDelete).toHaveBeenCalledWith('r1')
+    })
+
+    // The value axis holds several values at once. The label reports the state
+    // rather than listing every name, and the menu toggles values without closing.
+    const valueLabel = (container: Element): string | null =>
+        container.querySelectorAll('.user-item__button')[1].querySelector('.PropertyAccessRow__label')!.textContent
+
+    test('속성값 하나면 그 값 이름을 보여준다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', propertyValueIds: ['opt-strategy']}
+        const {container} = await renderRow(rule)
+
+        expect(valueLabel(container)).toBe('전략')
+    })
+
+    test('속성값을 모두 고르면 전체로 표시한다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', propertyValueIds: ['opt-strategy', 'opt-production', 'opt-research']}
+        const {container} = await renderRow(rule)
+
+        expect(valueLabel(container)).toBe('전체')
+    })
+
+    test('속성값이 여럿이지만 전부는 아니면 개수로 표시한다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', propertyValueIds: ['opt-strategy', 'opt-research']}
+        const {container} = await renderRow(rule)
+
+        expect(valueLabel(container)).toBe('2개 선택')
+    })
+
+    test('레거시 단수 propertyValueId도 값 이름으로 보여준다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-production'}
+        const {container} = await renderRow(rule)
+
+        expect(valueLabel(container)).toBe('생산')
+    })
+
+    test('속성값을 토글하면 목록에 더하고 메뉴는 열린 채로 둔다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', propertyValueIds: ['opt-strategy']}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 1)
+        await userEvent.click(screen.getByText('생산'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            propertyValueIds: ['opt-strategy', 'opt-production'],
+            propertyValueId: '',
+        }))
+
+        // 메뉴가 닫히지 않아 다른 값도 이어서 고를 수 있다.
+        expect(screen.queryByText('연구')).not.toBeNull()
+    })
+
+    test('전체를 고르면 모든 옵션이 속성값에 담긴다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', propertyValueIds: ['opt-strategy']}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 1)
+        await userEvent.click(screen.getByText('전체'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            propertyValueIds: ['opt-strategy', 'opt-production', 'opt-research'],
+            propertyValueId: '',
+        }))
     })
 })

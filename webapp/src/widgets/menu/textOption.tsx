@@ -12,10 +12,15 @@ type TextOptionProps = MenuOptionProps & {
     className?: string
     subText?: string
     disabled?: boolean
+
+    // A multi-select row toggles one value and leaves the menu open so the next
+    // can follow. Suppressing the click event is what keeps the menu from
+    // closing on every pick (the same flag SwitchOption carries).
+    suppressItemClicked?: boolean
 }
 
 function TextOption(props: TextOptionProps): React.JSX.Element {
-    const {name, icon, rightIcon, check, subText, disabled} = props
+    const {name, icon, rightIcon, check, subText, disabled, suppressItemClicked} = props
     let className = 'MenuOption TextOption menu-option'
     if (props.className) {
         className += ' ' + props.className
@@ -37,7 +42,9 @@ function TextOption(props: TextOptionProps): React.JSX.Element {
                 if (disabled) {
                     return
                 }
-                e.target.dispatchEvent(new Event('menuItemClicked'))
+                if (!suppressItemClicked) {
+                    e.target.dispatchEvent(new Event('menuItemClicked'))
+                }
                 props.onClick(props.id)
             }}
         >
