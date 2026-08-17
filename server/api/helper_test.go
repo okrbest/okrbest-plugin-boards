@@ -80,6 +80,8 @@ func (f *fakePermissions) HasPermissionToChannel(_, _ string, _ *mmModel.Permiss
 
 // denyBoardPermission carves one permission back out of an otherwise allowed
 // board, which is how a "board admin minus role management" caller is expressed.
+//
+//nolint:unparam // userID names the role under test, and only the editor is ever the one a permission is carved out of
 func (f *fakePermissions) denyBoardPermission(userID, boardID string, permission *mmModel.Permission) {
 	f.boardDenied[userID+"|"+boardID+"|"+permission.Id] = true
 }

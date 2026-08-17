@@ -390,6 +390,17 @@ func (a *API) handlePatchBoard(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// Whether a board is used as an OKR board says what kind of board it is,
+	// which is a coarser statement than who may read which card. Switching it off
+	// stops every new card from landing on its rung, for everyone at once, so it
+	// is barred at the same level as the rules rather than at the looser bar that
+	// guards ordinary board properties.
+	if patchTouchesOkrBoard(patch) {
+		if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) {
+			a.errorResponse(w, r, model.NewErrPermission("access denied to modifying OKR board settings"))
+			return
+		}
+	}
 
 	auditRec := a.makeAuditRecord(r, "patchBoard", audit.Fail)
 	defer a.audit.LogRecord(audit.LevelModify, auditRec)
@@ -427,6 +438,16 @@ func patchTouchesPropertyAccess(patch *model.BoardPatch) bool {
 		return true
 	}
 	return slices.Contains(patch.DeletedProperties, model.PropertyAccessKey)
+}
+
+// patchTouchesOkrBoard reports whether a board patch switches the OKR ladder on
+// or off. Switching it on arrives as a written key and switching it off as a
+// deleted one, so both shapes are asked about.
+func patchTouchesOkrBoard(patch *model.BoardPatch) bool {
+	if _, ok := patch.UpdatedProperties[model.OkrBoardKey]; ok {
+		return true
+	}
+	return slices.Contains(patch.DeletedProperties, model.OkrBoardKey)
 }
 
 func (a *API) handleDeleteBoard(w http.ResponseWriter, r *http.Request) {

@@ -22,7 +22,10 @@ const mockedMutator = jest.mocked(mutator)
 describe('components/shareBoard/okrBoardSection', () => {
     const mockStore = configureStore([])
 
-    const renderSection = (properties: Board['properties'] = {}) => {
+    const renderSection = (
+        properties: Board['properties'] = {},
+        membership: Record<string, unknown> = {userId: 'user-1', schemeAdmin: true},
+    ) => {
         const board = {
             id: 'board-1',
             teamId: 'team-1',
@@ -37,7 +40,7 @@ describe('components/shareBoard/okrBoardSection', () => {
             boards: {
                 current: board.id,
                 boards: {[board.id]: board},
-                myBoardMemberships: {[board.id]: {userId: 'user-1', schemeAdmin: true}},
+                myBoardMemberships: {[board.id]: membership},
             },
             users: {me: {id: 'user-1'}},
         }
@@ -89,5 +92,29 @@ describe('components/shareBoard/okrBoardSection', () => {
         const {container} = renderSection({okrBoard: 'on'})
 
         expect(container.querySelector('.Switch.on')).toBeNull()
+    })
+
+    // What kind of board this is belongs to whoever runs the board. An editor
+    // seeing the switch would be shown a control the server refuses, and the one
+    // that matters — switching a live OKR board off — takes the ladder away from
+    // everybody at once.
+    test('an editor is not shown the switch at all', () => {
+        const {container} = renderSection(
+            {okrBoard: {propertyId: 'p-type', levels: ['a', 'b', 'c']}},
+            {userId: 'user-1', schemeEditor: true},
+        )
+
+        expect(screen.queryByText(/OKR Board/)).toBeNull()
+        expect(container.querySelector('.Switch')).toBeNull()
+    })
+
+    test('a board admin is still shown the switch', () => {
+        const {container} = renderSection(
+            {okrBoard: {propertyId: 'p-type', levels: ['a', 'b', 'c']}},
+            {userId: 'user-1', schemeAdmin: true},
+        )
+
+        expect(screen.getByText(/OKR Board/)).toBeDefined()
+        expect(container.querySelector('.Switch.on')).not.toBeNull()
     })
 })

@@ -242,3 +242,84 @@ func TestPatchBoardPropertyAccess(t *testing.T) {
 		require.Equal(t, http.StatusOK, rec.Code)
 	})
 }
+
+// Whether a board is used as an OKR board says what kind of board it is, which
+// is a coarser statement than who may read which card. It is therefore barred at
+// the same level as the access rules rather than at the looser bar that guards
+// ordinary board properties.
+func TestPatchBoardOkrBoard(t *testing.T) {
+	okrSettings := map[string]interface{}{
+		"propertyId": "prop-type",
+		"levels":     []interface{}{"opt-objective", "opt-key-result", "opt-task"},
+	}
+
+	boardAsOkr := func() *model.Board {
+		return boardWithProperties(map[string]interface{}{model.OkrBoardKey: okrSettings})
+	}
+
+	t.Run("an editor cannot switch a board into an OKR board", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", ruleBoardID)
+		th.Permissions.denyBoardPermission("editor", ruleBoardID, model.PermissionManageBoardRoles)
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(boardWithProperties(nil), nil).AnyTimes()
+
+		body, err := json.Marshal(map[string]interface{}{
+			"updatedProperties": map[string]interface{}{model.OkrBoardKey: okrSettings},
+		})
+		require.NoError(t, err)
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"editor", map[string]string{"boardID": ruleBoardID}, body)
+
+		require.Equal(t, http.StatusForbidden, rec.Code)
+	})
+
+	t.Run("an editor cannot switch a board out of being an OKR board", func(t *testing.T) {
+		// The screen sends the switch off as a deleted key, so a check that only
+		// watched updatedProperties would let exactly the action this is about
+		// straight through.
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", ruleBoardID)
+		th.Permissions.denyBoardPermission("editor", ruleBoardID, model.PermissionManageBoardRoles)
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(boardAsOkr(), nil).AnyTimes()
+
+		body, err := json.Marshal(map[string]interface{}{
+			"deletedProperties": []string{model.OkrBoardKey},
+		})
+		require.NoError(t, err)
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"editor", map[string]string{"boardID": ruleBoardID}, body)
+
+		require.Equal(t, http.StatusForbidden, rec.Code)
+	})
+
+	t.Run("a board admin may switch it off", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("admin", ruleBoardID)
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(boardAsOkr(), nil).AnyTimes()
+		th.Store.EXPECT().PatchBoard(ruleBoardID, gomock.Any(), "admin").
+			DoAndReturn(func(_ string, patch *model.BoardPatch, _ string) (*model.Board, error) {
+				return patch.Patch(boardAsOkr()), nil
+			})
+
+		body, err := json.Marshal(map[string]interface{}{
+			"deletedProperties": []string{model.OkrBoardKey},
+		})
+		require.NoError(t, err)
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"admin", map[string]string{"boardID": ruleBoardID}, body)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+
+		var board model.Board
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &board))
+		settings, err := model.OkrBoardSettingsFromProperties(board.Properties)
+		require.NoError(t, err)
+		require.Nil(t, settings)
+	})
+}

@@ -22,6 +22,11 @@ type Props = {
 // The switch turns the filling on and off and nothing else. Switching off leaves
 // the property and every value a card carries alone, so the action is one a user
 // can undo by switching back on (FR-011).
+//
+// Being coarser is also why it takes the same permission as the access rules
+// rather than the looser one that guards ordinary board properties. Switching a
+// live OKR board off takes the ladder away from everybody at once, and an editor
+// shown the switch would be shown a control the server refuses.
 const OkrBoardSection = (props: Props): React.JSX.Element => {
     const {board} = props
     const intl = useIntl()
@@ -37,7 +42,7 @@ const OkrBoardSection = (props: Props): React.JSX.Element => {
     }
 
     return (
-        <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
+        <BoardPermissionGate permissions={[Permission.ManageBoardRoles]}>
             <div className='tabs-content'>
                 <div className='d-flex justify-content-between'>
                     <div className='d-flex flex-column'>
