@@ -106,6 +106,10 @@ describe('src/components/shareBoard/accessMatrix', () => {
             expect(rules.find((rule) => rule.relation === 'sameDivision')!.orgPropertyId).toBe(orgProperty)
             expect(rules.find((rule) => rule.relation === 'sameDepartment')!.orgPropertyId).toBe(departmentProperty)
             expect(rules.find((rule) => rule.relation === 'mine')!.assigneePropertyId).toBe(personProperty)
+
+            // mine도 부서를 읽어야 한다. 조직을 안 보면 "만드는 순간 내가
+            // 작성자"라는 사실만으로 팀원이 남의 팀 Task를 만들 수 있다.
+            expect(rules.find((rule) => rule.relation === 'mine')!.orgPropertyId).toBe(departmentProperty)
         })
 
         test('손으로 만든 줄은 그대로 남는다', () => {

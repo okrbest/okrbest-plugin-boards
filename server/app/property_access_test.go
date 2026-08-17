@@ -286,18 +286,22 @@ func TestEvaluatorRelationSameDepartment(t *testing.T) {
 func TestEvaluatorRelationMine(t *testing.T) {
 	const me = "user-me"
 
+	// mine은 두 가지를 함께 묻는다 — 누구 카드인가, 그리고 내가 일하는 조직에
+	// 놓였는가. 조직을 빼면 "만드는 순간 내가 작성자"라는 사실만으로 어느 조직의
+	// 카드든 만들 수 있게 된다.
 	rule := model.PropertyAccessRule{
 		ID: "r1", PropertyID: propType, PropertyValueID: valTask,
-		Relation: model.RelationMine, AssigneePropertyID: propPerson,
-		Permission: model.PropertyAccessEditor,
+		Relation: model.RelationMine, OrgPropertyID: propDivision,
+		AssigneePropertyID: propPerson, Permission: model.PropertyAccessEditor,
 	}
 
 	t.Run("2-8 담당자 속성이 없어도 작성자면 성립한다", func(t *testing.T) {
 		bare := model.PropertyAccessRule{
 			ID: "r1", PropertyID: propType, PropertyValueID: valTask,
-			Relation: model.RelationMine, Permission: model.PropertyAccessEditor,
+			Relation: model.RelationMine, OrgPropertyID: propDivision,
+			Permission: model.PropertyAccessEditor,
 		}
-		card := relationCard(valTask, "")
+		card := relationCard(valTask, divStrategy)
 		card.CreatedBy = me
 
 		evaluator := relationEvaluator(bare, me, depPlanning, dutyLead)
@@ -306,7 +310,7 @@ func TestEvaluatorRelationMine(t *testing.T) {
 	})
 
 	t.Run("2-9 작성자가 남이어도 담당자면 성립한다", func(t *testing.T) {
-		card := relationCard(valTask, "", me)
+		card := relationCard(valTask, divStrategy, me)
 		card.CreatedBy = "somebody-else"
 
 		evaluator := relationEvaluator(rule, me, depPlanning, dutyLead)
@@ -316,7 +320,7 @@ func TestEvaluatorRelationMine(t *testing.T) {
 	})
 
 	t.Run("2-10 담당자가 여럿이고 그중 하나가 나면 성립한다", func(t *testing.T) {
-		card := relationCard(valTask, "", "someone", me, "another")
+		card := relationCard(valTask, divStrategy, "someone", me, "another")
 		card.CreatedBy = "somebody-else"
 
 		evaluator := relationEvaluator(rule, me, depPlanning, dutyLead)
@@ -325,13 +329,23 @@ func TestEvaluatorRelationMine(t *testing.T) {
 	})
 
 	t.Run("작성자도 담당자도 아니면 불성립한다", func(t *testing.T) {
-		card := relationCard(valTask, "", "someone-else")
+		card := relationCard(valTask, divStrategy, "someone-else")
 		card.CreatedBy = "somebody-else"
 
 		evaluator := relationEvaluator(rule, me, depPlanning, dutyLead)
 
 		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(card),
 			"게이트가 닫히면 작성자 바닥도 안 준다")
+	})
+
+	t.Run("내 카드라도 남의 조직에 놓이면 불성립한다", func(t *testing.T) {
+		card := relationCard(valTask, divProduction, me)
+		card.CreatedBy = me
+
+		evaluator := relationEvaluator(rule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.For(card),
+			"작성자라는 사실이 남의 조직에 카드를 거는 면허가 되면 안 된다")
 	})
 }
 
@@ -438,8 +452,12 @@ func TestValidateRelationRules(t *testing.T) {
 	})
 
 	t.Run("본부 계열인데 볼 속성이 없으면 거절한다", func(t *testing.T) {
+		// mine도 여기 든다. 조직을 안 보는 mine은 "만드는 순간 내가 작성자"라는
+		// 사실만으로 어느 조직의 카드든 허용해서, 팀원이 남의 팀 Tasks를 만들 수
+		// 있었다.
 		for _, relation := range []model.OrgRelation{
 			model.RelationSameDivision, model.RelationOtherDivision, model.RelationSameDepartment,
+			model.RelationMine,
 		} {
 			err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
 				PropertyID: propType, PropertyValueID: valObjective,
@@ -453,10 +471,11 @@ func TestValidateRelationRules(t *testing.T) {
 	t.Run("mine은 담당자 속성이 없어도 통과한다", func(t *testing.T) {
 		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
 			PropertyID: propType, PropertyValueID: valTask,
-			Relation: model.RelationMine, Permission: model.PropertyAccessEditor,
+			Relation: model.RelationMine, OrgPropertyID: propDivision,
+			Permission: model.PropertyAccessEditor,
 		}))
 
-		require.NoError(t, err, "작성자만으로 판정된다 — 담당자 속성은 선택이다")
+		require.NoError(t, err, "작성자로도 판정된다 — 담당자 속성은 선택이다")
 	})
 
 	t.Run("관계가 있으면 사람 쪽 조건이 있는 것으로 센다", func(t *testing.T) {
@@ -1455,7 +1474,7 @@ func TestEvaluatorDefaultsSkipAmbiguity(t *testing.T) {
 func TestCapabilitiesCarryAdmission(t *testing.T) {
 	const propType = "prop-type"
 	const valueKR = "opt-kr"
-	const valueTask = "opt-task"
+	const valTask = "opt-task"
 
 	settings := &model.PropertyAccessSettings{
 		Enabled: true,
@@ -1465,7 +1484,7 @@ func TestCapabilitiesCarryAdmission(t *testing.T) {
 				DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
 			},
 			{
-				ID: "own-tasks", PropertyID: propType, PropertyValueID: valueTask,
+				ID: "own-tasks", PropertyID: propType, PropertyValueID: valTask,
 				DivisionID: divStrategy, Permission: model.PropertyAccessEditor,
 			},
 		},
@@ -1511,4 +1530,104 @@ func TestCapabilitiesCarryAdmission(t *testing.T) {
 			"a board with no rules is guarded by manage_board_cards alone")
 		require.True(t, model.BuildCapabilities(model.EffectiveBoardPermissionEdit).CanAddSubCard)
 	})
+}
+
+// TestRelationMineIsScopedToTheDepartment is the bug the OKR board showed: a
+// 팀원 could create a Tasks card under any team's Key Results in their division,
+// while the 팀장 beside them was correctly refused.
+//
+// "mine" answered authorship alone, and a card being created is always authored
+// by the person creating it, so the row granted editing on a Tasks card wearing
+// any team's name. The 팀장 row asks sameDepartment and reads the card, which is
+// why only that half of the matrix held.
+func TestRelationMineIsScopedToTheDepartment(t *testing.T) {
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{
+			{
+				ID: "own-tasks", PropertyID: propType, PropertyValueID: valTask,
+				Relation: model.RelationMine, OrgPropertyID: propDivision,
+				AssigneePropertyID: propPerson, Permission: model.PropertyAccessEditor,
+			},
+		},
+	}
+
+	// 계획팀(depPlanning) 소속. 공장팀(depFactory) 카드는 남의 팀이다.
+	evaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+		UserID:          "user-1",
+		Settings:        settings,
+		OrgUnits:        testOrgUnits(),
+		Duties:          testDuties(),
+		Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+		BoardPermission: model.EffectiveBoardPermissionEdit,
+	})
+
+	taskCard := func(team, createdBy string) *model.Block {
+		return &model.Block{
+			ID: "card-1", Type: model.TypeCard, CreatedBy: createdBy,
+			Fields: map[string]interface{}{"properties": map[string]interface{}{
+				propType:     valTask,
+				propDivision: []interface{}{team},
+			}},
+		}
+	}
+
+	t.Run("authoring a card in another team grants nothing", func(t *testing.T) {
+		require.Equal(t, model.EffectiveBoardPermissionNone,
+			evaluator.ForByRulesOnly(taskCard(depFactory, "user-1")),
+			"being the author is not a license to file the card under someone else's team")
+	})
+
+	t.Run("authoring a card in their own team still grants editing", func(t *testing.T) {
+		require.Equal(t, model.EffectiveBoardPermissionEdit,
+			evaluator.ForByRulesOnly(taskCard(depPlanning, "user-1")),
+			"the new card carries no assignee yet, so authorship is what has to carry it")
+	})
+
+	t.Run("a card in their own team assigned to them grants editing", func(t *testing.T) {
+		card := taskCard(depPlanning, "someone-else")
+		props := card.Fields["properties"].(map[string]interface{})
+		props[propPerson] = "user-1"
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForByRulesOnly(card))
+	})
+
+	t.Run("a card in their own team belonging to someone else grants nothing", func(t *testing.T) {
+		require.Equal(t, model.EffectiveBoardPermissionNone,
+			evaluator.ForByRulesOnly(taskCard(depPlanning, "someone-else")))
+	})
+
+	t.Run("a rule with no organization property to read grants nothing", func(t *testing.T) {
+		// Saving such a row is refused, so it can only arrive as older data. It
+		// cannot be judged, and granting on a row that cannot be judged is what
+		// produced this bug in the first place.
+		blind := &model.PropertyAccessSettings{
+			Enabled: true,
+			Rules: []model.PropertyAccessRule{{
+				ID: "own-tasks", PropertyID: propType, PropertyValueID: valTask,
+				Relation: model.RelationMine, AssigneePropertyID: propPerson,
+				Permission: model.PropertyAccessEditor,
+			}},
+		}
+		blindEvaluator := NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID: "user-1", Settings: blind, OrgUnits: testOrgUnits(), Duties: testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+
+		require.Equal(t, model.EffectiveBoardPermissionNone,
+			blindEvaluator.ForByRulesOnly(taskCard(depPlanning, "user-1")))
+	})
+}
+
+func TestValidateRejectsMineWithoutOrgProperty(t *testing.T) {
+	err := validatePropertyAccessSettings(&model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{{
+			ID: "r1", PropertyID: "prop-type", PropertyValueID: "opt-task",
+			Relation: model.RelationMine, Permission: model.PropertyAccessEditor,
+		}},
+	})
+
+	require.Error(t, err, "a mine row with nothing to read cannot be judged")
 }

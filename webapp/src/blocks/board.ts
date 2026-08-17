@@ -179,7 +179,7 @@ const orgRelations: OrgRelation[] = ['any', 'sameDivision', 'otherDivision', 'sa
 
 // The relations that read an organisation property off the card. `mine` reads a
 // person property instead, and `any` reads nothing.
-const orgRelationsNeedingProperty: OrgRelation[] = ['sameDivision', 'otherDivision', 'sameDepartment']
+const orgRelationsNeedingProperty: OrgRelation[] = ['sameDivision', 'otherDivision', 'sameDepartment', 'mine']
 
 // The values a rule's card side names, reading the list first and falling back
 // to the single value an older rule carries.

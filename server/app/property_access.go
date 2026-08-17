@@ -286,7 +286,8 @@ func rulesUseTiers(rules []model.PropertyAccessRule) bool {
 // and RelationAny reads nothing at all.
 func relationNeedsOrgProperty(relation model.OrgRelation) bool {
 	switch relation {
-	case model.RelationSameDivision, model.RelationOtherDivision, model.RelationSameDepartment:
+	case model.RelationSameDivision, model.RelationOtherDivision, model.RelationSameDepartment,
+		model.RelationMine:
 		return true
 	default:
 		return false
@@ -469,12 +470,7 @@ func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card
 	//
 	// A card may name several units, so one overlap is enough.
 	case model.RelationSameDivision, model.RelationSameDepartment:
-		for _, unit := range cardValues(card, rule.OrgPropertyID) {
-			if e.units[unit] {
-				return true
-			}
-		}
-		return false
+		return e.unitMatches(card, rule.OrgPropertyID)
 
 	// Not the negation of same division. A card with no value is neither, and a
 	// viewer with no assignment is neither — otherwise every blank card would
@@ -494,8 +490,16 @@ func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card
 		}
 		return true
 
+	// Mine is two questions, not one. Whose card is this, and is it filed where
+	// this user works.
+	//
+	// Authorship alone is what broke the OKR board: a card being created is
+	// always authored by the person creating it, so the 팀원 row granted editing
+	// on a Tasks card wearing any team's name, and a 팀원 could hang Tasks off
+	// every team's Key Results in their division. The 팀장 row beside it asks
+	// sameDepartment and reads the card, which is why only that half held.
 	case model.RelationMine:
-		return e.isMine(rule, card)
+		return e.isMine(rule, card) && e.unitMatches(card, rule.OrgPropertyID)
 
 	default:
 		// A relation this build does not know grants nothing. Saving refuses it,
@@ -506,6 +510,24 @@ func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card
 
 // isMine reports whether the viewer authored the card or is named in the
 // property the rule points at. Either one is enough (FR-005).
+// unitMatches reports whether a unit the card names is one this user belongs to
+// or sits under.
+//
+// A property the rule does not name cannot be read, so it matches nothing. Such
+// a row is dead on arrival — saving one is refused — and treating it as "no
+// constraint" is exactly what let an unscoped mine row grant everywhere.
+func (e *PropertyAccessEvaluator) unitMatches(card *model.Block, propertyID string) bool {
+	if propertyID == "" {
+		return false
+	}
+	for _, unit := range cardValues(card, propertyID) {
+		if e.units[unit] {
+			return true
+		}
+	}
+	return false
+}
+
 func (e *PropertyAccessEvaluator) isMine(rule model.PropertyAccessRule, card *model.Block) bool {
 	if e.userID == "" || card == nil {
 		return false

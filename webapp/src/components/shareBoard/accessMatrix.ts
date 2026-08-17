@@ -52,7 +52,12 @@ const orgPropertyFor = (relation: OrgRelation, context: MatrixContext): string =
     case 'sameDivision':
     case 'otherDivision':
         return context.orgProperty
+
+    // mine도 부서를 읽는다. "내 것"은 누구 카드인가와 어디 놓였는가를 함께 묻기
+    // 때문이다 — 조직을 빼면 만드는 순간 작성자라는 사실만으로 어느 팀 Task든
+    // 만들 수 있다.
     case 'sameDepartment':
+    case 'mine':
         return context.departmentProperty
     default:
         return ''
