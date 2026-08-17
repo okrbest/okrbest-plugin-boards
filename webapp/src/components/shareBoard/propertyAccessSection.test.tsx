@@ -300,6 +300,45 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         expect(container.querySelector('.AccessMatrix')).not.toBeNull()
     })
 
+    test('OKR 보드는 표와 규칙을 오가는 토글을 두지 않는다', async () => {
+        const board = okrBoard()
+        const container = await renderWith(board, withTiers(board))
+
+        expect(container.querySelector('.PropertyAccessSection__views')).toBeNull()
+    })
+
+    test('OKR 보드는 규칙 목록을 함께 보여주지 않는다', async () => {
+        const board = okrBoard()
+        board.properties = {
+            ...board.properties,
+            propertyAccess: {
+                enabled: true,
+                updatedBy: '',
+                updatedAt: 0,
+                rules: [{id: 'hand-1', propertyId: 'prop-type', propertyValueId: 'opt-task', divisionId: 'div-x', departmentId: '', dutyId: '', permission: 'editor'}],
+            },
+        }
+        const container = await renderWith(board, withTiers(board))
+
+        expect(container.querySelector('.PropertyAccessRow')).toBeNull()
+    })
+
+    test('OKR이 아닌 보드는 표 토글 없이 규칙 뷰만 보여준다', async () => {
+        const board = buildBoard({
+            propertyAccess: {
+                enabled: true,
+                updatedBy: '',
+                updatedAt: 0,
+                rules: [{id: 'r1', propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', divisionId: 'div-x', departmentId: '', dutyId: '', permission: 'editor'}],
+            },
+        })
+        const {container} = await renderSection(board)
+
+        expect(container.querySelector('.AccessMatrix')).toBeNull()
+        expect(container.querySelector('.PropertyAccessSection__views')).toBeNull()
+        expect(container.querySelector('.PropertyAccessRow')).not.toBeNull()
+    })
+
     test('카드 유형이 정해지지 않은 보드는 표가 안 나온다 (FR-022)', async () => {
         const board = buildBoard({propertyAccess: {enabled: true, updatedBy: '', updatedAt: 0, rules: []}})
         const container = await renderWith(board, buildState(board, true))
@@ -336,7 +375,9 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         expect(saved.rules).toHaveLength(6)
     })
 
-    test('손으로 만든 줄이 있으면 표 밖에 있다고 알린다 (FR-021)', async () => {
+    test('OKR 보드는 표만 다루므로 표 밖 안내를 띄우지 않는다', async () => {
+        // 뷰를 가른 뒤로 OKR 보드는 표 하나로만 편집한다. 규칙 뷰가 없으니 "표 밖에
+        // N줄" 안내도 사라진다.
         const board = okrBoard()
         board.properties = {
             ...board.properties,
@@ -349,7 +390,7 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         }
         const container = await renderWith(board, withTiers(board))
 
-        expect(container.querySelector('.PropertyAccessSection__outside')).not.toBeNull()
+        expect(container.querySelector('.PropertyAccessSection__outside')).toBeNull()
     })
 
     test('본부 속성이 없으면 표준 버튼 대신 안내를 띄운다', async () => {

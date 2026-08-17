@@ -102,12 +102,10 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const typeProperty = board.cardProperties.find((property) => property.id === okr?.propertyId)
     const canShowMatrix = Boolean(okr && typeProperty)
 
-    // Until the user picks a view, follow the board. Freezing the choice at the
-    // first render would leave the table hidden on a board that becomes an OKR
-    // board while the dialog is open — which is exactly the order someone sets
-    // one up in.
-    const [viewChoice, setViewChoice] = React.useState<'auto' | 'table' | 'rules'>('auto')
-    const showMatrix = viewChoice === 'auto' ? canShowMatrix : viewChoice === 'table'
+    // One board, one view. An OKR board is governed by the table; every other
+    // board by the rule list. There is no toggle between them: the two describe
+    // the same board differently, and a board is only ever one of the two kinds.
+    const showMatrix = canShowMatrix
 
     const matrixContext = {
         typeProperty: okr?.propertyId || '',
@@ -122,10 +120,6 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const matrixLevels = (okr?.levels || [])
         .map((valueId) => (typeProperty?.options || []).find((option) => option.id === valueId))
         .filter((option): option is IPropertyOption => Boolean(option))
-
-    // Rows the table does not own. Saying how many there are is what keeps the
-    // table from looking like the whole truth (FR-021).
-    const outsideMatrix = rules.filter((rule) => rule.source !== 'matrix').length
 
     const onChangeMatrix = (cells: MatrixCells) => {
         const nextRules = matrixToRules(cells, matrixContext, rules)
@@ -241,34 +235,6 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                       * those who may not change it (FR-011c).
                       */}
                     {settings.enabled && <DutyTierEditor teamId={board.teamId}/>}
-
-                    {/*
-                      * Two views of one thing. The table is the default because
-                      * it matches the document the rules were written from; the
-                      * rule list stays for the exceptions a table cannot hold.
-                      */}
-                    {settings.enabled && canShowMatrix &&
-                        <div className='PropertyAccessSection__views'>
-                            <Button
-                                active={showMatrix}
-                                onClick={() => setViewChoice('table')}
-                            >
-                                {intl.formatMessage({id: 'AccessMatrix.tableView', defaultMessage: 'Table'})}
-                            </Button>
-                            <Button
-                                active={!showMatrix}
-                                onClick={() => setViewChoice('rules')}
-                            >
-                                {intl.formatMessage({id: 'AccessMatrix.ruleView', defaultMessage: 'Rules'})}
-                            </Button>
-                            {outsideMatrix > 0 &&
-                                <span className='PropertyAccessSection__outside'>
-                                    {intl.formatMessage(
-                                        {id: 'AccessMatrix.outsideTable', defaultMessage: '{count} rules live outside the table'},
-                                        {count: outsideMatrix},
-                                    )}
-                                </span>}
-                        </div>}
 
                     {settings.enabled && canShowMatrix && showMatrix && tiers.length === 0 &&
                         <div className='PropertyAccessSection__needTiers'>
