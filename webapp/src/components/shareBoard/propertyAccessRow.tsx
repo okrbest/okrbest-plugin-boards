@@ -16,12 +16,15 @@ import {
     OrgRelation,
     PropertyAccessPermission,
     PropertyAccessRule,
+    cardValueIds,
     orgRelations,
     orgRelationsNeedingProperty,
 } from '../../blocks/board'
 import {useAppSelector} from '../../store/hooks'
 import {getDivisions, getDepartments, getDuties, isOrgMasterLoaded} from '../../store/orgMaster'
 import {getDutyTiers} from '../../store/dutyTiers'
+
+import {summarizeSelection} from './selectionSummary'
 
 type Props = {
     board: Board
@@ -84,6 +87,93 @@ const Selector = (props: {
     )
 }
 
+// MultiSelector is the same control for an axis that holds several values at
+// once. The closed button reports the selection's shape, not its contents —
+// listing every name turns a full pick into an unreadable smear — and the menu
+// stays open while values are toggled so a set can be built in one pass.
+const MultiSelector = (props: {
+    label: string
+    allLabel: string
+    selectedIds: string[]
+    choices: Choice[]
+    broken: boolean
+    onToggle: (id: string) => void
+    onSelectAll: () => void
+}): React.JSX.Element => {
+    const intl = useIntl()
+    const summary = summarizeSelection(props.selectedIds, props.choices)
+
+    let labelText = props.label
+    switch (summary.kind) {
+    case 'all':
+        labelText = props.allLabel
+        break
+    case 'single':
+        labelText = summary.name
+        break
+    case 'count':
+        labelText = intl.formatMessage(
+            {id: 'PropertyAccess.valuesSelected', defaultMessage: '{count}개 선택'},
+            {count: summary.count},
+        )
+        break
+    default:
+        labelText = props.label
+    }
+
+    const className = props.broken ? 'user-item__button PropertyAccessRow__broken' : 'user-item__button'
+
+    return (
+        <div className='PropertyAccessRow__axis'>
+            <MenuWrapper
+                usePortal={true}
+                menuPosition='bottom'
+            >
+                <button className={className}>
+                    <span className='PropertyAccessRow__label'>{labelText}</span>
+                    <CompassIcon
+                        icon='chevron-down'
+                        className='CompassIcon'
+                    />
+                </button>
+                <Menu position='bottom'>
+                    <Menu.Text
+                        key='__all__'
+                        id='__all__'
+                        check={true}
+                        icon={summary.kind === 'all' ? <CheckIcon/> : <div className='empty-icon'/>}
+                        name={props.allLabel}
+                        suppressItemClicked={true}
+                        onClick={() => props.onSelectAll()}
+                    />
+                    {props.choices.map((choice) => (
+                        <Menu.Text
+                            key={choice.id}
+                            id={choice.id}
+                            check={true}
+                            icon={props.selectedIds.includes(choice.id) ? <CheckIcon/> : <div className='empty-icon'/>}
+                            name={choice.name}
+                            suppressItemClicked={true}
+                            onClick={() => props.onToggle(choice.id)}
+                        />
+                    ))}
+                </Menu>
+            </MenuWrapper>
+        </div>
+    )
+}
+
+// toggleCardValues adds or removes one value from the rule's value set, always
+// writing the list form and clearing the legacy single field so the two never
+// disagree about what the rule restricts.
+const toggleCardValues = (rule: PropertyAccessRule, valueId: string): PropertyAccessRule => {
+    const current = cardValueIds(rule)
+    const next = current.includes(valueId) ?
+        current.filter((id) => id !== valueId) :
+        [...current, valueId]
+    return {...rule, propertyValueIds: next, propertyValueId: ''}
+}
+
 const PropertyAccessRow = (props: Props): React.JSX.Element => {
     const intl = useIntl()
     const {board, rule} = props
@@ -113,7 +203,7 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
     // row stops matching any card, and saying so on the row is the only way an
     // admin finds out (FR-036).
     const brokenProperty = rule.propertyId !== '' && !selectedProperty
-    const brokenValue = rule.propertyValueId !== '' && !propertyValues.some((option) => option.id === rule.propertyValueId)
+    const brokenValue = cardValueIds(rule).some((valueId) => !propertyValues.some((option) => option.id === valueId))
     const brokenDivision = orgMasterLoaded && rule.divisionId !== '' && !divisions.some((unit) => unit.id === rule.divisionId)
     const brokenDepartment = orgMasterLoaded && rule.departmentId !== '' && !departments.some((unit) => unit.id === rule.departmentId)
     const brokenDuty = orgMasterLoaded && rule.dutyId !== '' && !duties.some((duty) => duty.id === rule.dutyId)
@@ -195,14 +285,16 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
                     selectedId={rule.propertyId}
                     choices={selectableProperties.map((property) => ({id: property.id, name: property.name}))}
                     broken={brokenProperty}
-                    onSelect={(id) => props.onChange({...rule, propertyId: id, propertyValueId: ''})}
+                    onSelect={(id) => props.onChange({...rule, propertyId: id, propertyValueId: '', propertyValueIds: []})}
                 />
-                <Selector
+                <MultiSelector
                     label={intl.formatMessage({id: 'PropertyAccess.selectValue', defaultMessage: 'Value'})}
-                    selectedId={rule.propertyValueId}
+                    allLabel={intl.formatMessage({id: 'PropertyAccess.allValues', defaultMessage: '전체'})}
+                    selectedIds={cardValueIds(rule)}
                     choices={propertyValues.map((option) => ({id: option.id, name: option.value}))}
                     broken={brokenValue}
-                    onSelect={(id) => props.onChange({...rule, propertyValueId: id})}
+                    onToggle={(id) => props.onChange(toggleCardValues(rule, id))}
+                    onSelectAll={() => props.onChange({...rule, propertyValueIds: propertyValues.map((option) => option.id), propertyValueId: ''})}
                 />
                 <Selector
                     label={intl.formatMessage({id: 'PropertyAccess.selectOrgCondition', defaultMessage: 'Organisation'})}
