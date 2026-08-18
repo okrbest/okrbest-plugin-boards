@@ -323,3 +323,35 @@ func TestPatchBoardOkrBoard(t *testing.T) {
 		require.Nil(t, settings)
 	})
 }
+
+// 안전망 — 잠그지 않은 보드는 이 기능 도입 전과 같아야 한다 (spec US2).
+//
+// 지금 코드에서 통과한다. 앞으로 잠금 관문이 들어온 뒤에도 통과해야 하며, 붉어지면
+// 관문이 잠그지 않은 보드까지 막고 있는 것이다.
+func TestPatchBoardCardPropertiesUnlocked(t *testing.T) {
+	cardProperty := func(id, name string) map[string]interface{} {
+		return map[string]interface{}{"id": id, "name": name, "type": "text", "options": []interface{}{}}
+	}
+
+	t.Run("C-01 에디터가 카드 속성을 갱신한다", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", ruleBoardID)
+		th.Permissions.denyBoardPermission("editor", ruleBoardID, model.PermissionManageBoardRoles)
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(boardWithProperties(nil), nil).AnyTimes()
+		th.Store.EXPECT().PatchBoard(ruleBoardID, gomock.Any(), "editor").
+			DoAndReturn(func(_ string, patch *model.BoardPatch, _ string) (*model.Board, error) {
+				return patch.Patch(boardWithProperties(nil)), nil
+			})
+
+		body, err := json.Marshal(map[string]interface{}{
+			"updatedCardProperties": []interface{}{cardProperty("p-new", "새 속성")},
+		})
+		require.NoError(t, err)
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"editor", map[string]string{"boardID": ruleBoardID}, body)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+	})
+}

@@ -32,7 +32,7 @@ description: "속성 편집 잠금 구현 과제 목록"
 
 ## Phase 1: Setup
 
-- [ ] T001 변경 전 기준선을 재서 `specs/010-admin-only-card-properties/baseline.md`에 남긴다 — `make server-lint` 지적 목록, `make server-test` 실패 테스트 목록, `cd webapp && npm run test` 실패 스위트 목록, `npm run check-types` 오류 목록. 회귀 판정은 개수가 아니라 이 목록의 diff로 한다(헌법 원칙 I)
+- [X] T001 변경 전 기준선을 재서 `specs/010-admin-only-card-properties/baseline.md`에 남긴다 — `make server-lint` 지적 목록, `make server-test` 실패 테스트 목록, `cd webapp && npm run test` 실패 스위트 목록, `npm run check-types` 오류 목록. 회귀 판정은 개수가 아니라 이 목록의 diff로 한다(헌법 원칙 I)
 
 **Checkpoint**: 기준선이 파일로 남아 있어야 이후 모든 게이트 판정이 가능하다
 
@@ -45,15 +45,15 @@ description: "속성 편집 잠금 구현 과제 목록"
 
 ### 안전망 — 지금 동작을 테스트로 고정한다
 
-- [ ] T002 `server/api/boards_test.go`에 잠금이 없는 보드에서 에디터가 `updatedCardProperties`를 보내면 200임을 확인하는 테스트를 더한다 (계약 C-01). **지금 코드에서 통과해야 한다** — 통과하지 않으면 기준선 이해가 틀린 것이다
-- [ ] T003 `server/api/boards_and_blocks_test.go`에 같은 것을 묶음 경로로 더한다 — 에디터가 `deletedCardProperties`를 보내면 200 (계약 C-02). 테스트 파일이 없으면 새로 만든다
-- [ ] T004 T002·T003을 실행해 둘 다 통과함을 확인하고 출력을 남긴다. 이 둘은 앞으로 US1 구현이 기존 보드를 깨뜨리면 즉시 붉어지는 그물이다
+- [X] T002 `server/api/boards_test.go`에 잠금이 없는 보드에서 에디터가 `updatedCardProperties`를 보내면 200임을 확인하는 테스트를 더한다 (계약 C-01). **지금 코드에서 통과해야 한다** — 통과하지 않으면 기준선 이해가 틀린 것이다
+- [X] T003 `server/api/boards_and_blocks_test.go`에 같은 것을 묶음 경로로 더한다 — 에디터가 `deletedCardProperties`를 보내면 200 (계약 C-02). 테스트 파일이 없으면 새로 만든다
+- [X] T004 T002·T003을 실행해 둘 다 통과함을 확인하고 출력을 남긴다. 이 둘은 앞으로 US1 구현이 기존 보드를 깨뜨리면 즉시 붉어지는 그물이다
 
 ### 설정 읽기 (data-model.md)
 
-- [ ] T005 [P] `server/model/card_property_lock_test.go`를 쓴다 — 키 없음/`false`/`true`, 그리고 boolean이 아닌 값(문자열·숫자·개체·nil)이 전부 꺼짐으로 읽히는지 (FR-001·002·003). 실패를 확인한다
-- [ ] T006 `server/model/card_property_lock.go`에 `AdminOnlyCardPropertiesKey`와 읽기 함수를 만들어 T005를 통과시킨다. boolean 단언에 실패하면 꺼짐이다
-- [ ] T007 [P] `webapp/src/blocks/board.ts`에 같은 키를 읽는 헬퍼와 타입을 더한다. 서버와 같은 규율 — boolean일 때만 잠김. 옆에 `*.test.ts`로 같은 경계 케이스를 고정한다
+- [X] T005 [P] `server/model/card_property_lock_test.go`를 쓴다 — 키 없음/`false`/`true`, 그리고 boolean이 아닌 값(문자열·숫자·개체·nil)이 전부 꺼짐으로 읽히는지 (FR-001·002·003). 실패를 확인한다
+- [X] T006 `server/model/card_property_lock.go`에 `AdminOnlyCardPropertiesKey`와 읽기 함수를 만들어 T005를 통과시킨다. boolean 단언에 실패하면 꺼짐이다
+- [X] T007 [P] `webapp/src/blocks/board.ts`에 같은 키를 읽는 헬퍼와 타입을 더한다. 서버와 같은 규율 — boolean일 때만 잠김. 옆에 `*.test.ts`로 같은 경계 케이스를 고정한다
 
 **Checkpoint**: 설정을 양쪽에서 읽을 수 있고, 잠그지 않은 보드의 두 경로가 테스트로 묶였다
 
