@@ -37,7 +37,9 @@ type Board = {
     showDescription: boolean
     isTemplate: boolean
     templateVersion: number
-    properties: Record<string, string | string[] | PropertyAccessSettings | OrgColors | OkrBoardSettings>
+    // 속성 편집 잠금은 boolean 하나다 (010). 이 자리는 기능마다 모양이 다른 값을
+    // 함께 담으므로 유니온이 늘어난다.
+    properties: Record<string, boolean | string | string[] | PropertyAccessSettings | OrgColors | OkrBoardSettings>
     cardProperties: IPropertyTemplate[]
 
     createAt: number

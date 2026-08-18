@@ -155,10 +155,10 @@ description: "속성 편집 잠금 구현 과제 목록"
 
 ## Phase 7: Polish & 검증
 
-- [ ] T036 `make server-lint` 지적 목록을 T001 기준선과 대조한다. 새 지적이 있으면 그 코드를 고친다 — 억누르지 않는다(헌법 원칙 III)
-- [ ] T037 `make server-test` 실패 목록을 기준선과 대조한다 (CI 미집행이라 로컬 필수)
-- [ ] T038 `cd webapp && npm run test`, `npm run check-types` 결과를 각각 기준선과 대조한다
-- [ ] T039 `MM_DEBUG=1 make dist-linux` 후 배포하고 브라우저를 하드 리프레시한다
+- [X] T036 `make server-lint` 지적 목록을 T001 기준선과 대조한다. 새 지적이 있으면 그 코드를 고친다 — 억누르지 않는다(헌법 원칙 III)
+- [X] T037 `make server-test` 실패 목록을 기준선과 대조한다 (CI 미집행이라 로컬 필수)
+- [X] T038 `cd webapp && npm run test`, `npm run check-types` 결과를 각각 기준선과 대조한다
+- [X] T039 `MM_DEBUG=1 make dist-linux` 후 배포하고 브라우저를 하드 리프레시한다
 - [ ] T040 [quickstart.md](./quickstart.md) 시나리오 1~6을 실제 계정으로 훑고 결과를 이 파일에 기록한다. **시나리오 1(잠그지 않은 보드)과 시나리오 4(요청 직접 보내기)를 빠뜨리지 않는다** — 전자는 회귀, 후자는 두 경로가 실제로 막혔는지다
 - [ ] T041 SC-001~SC-006을 하나씩 대조해 충족 여부를 기록한다
 
