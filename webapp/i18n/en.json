@@ -6,6 +6,8 @@
   "AdminConsole.Common.enabled": "Enabled",
   "AdminConsole.EnablePublicSharedBoards.displayName": "Enable Publicly-Shared Boards:",
   "AdminConsole.EnablePublicSharedBoards.helpText": "This allows board editors to share boards that can be accessed by anyone with the link.",
+  "AdminOnlyProperties.description": "Adding, renaming, retyping or deleting a property — and editing the options a select offers — becomes a board admin's job. Filling in card values is unaffected.",
+  "AdminOnlyProperties.title": "Only admins may edit properties",
   "AppBar.Tooltip": "Toggle Linked Boards",
   "Attachment.Attachment-title": "Attachment",
   "AttachmentBlock.DeleteAction": "delete",

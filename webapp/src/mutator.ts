@@ -17,6 +17,7 @@ import {FilterGroup} from './blocks/filterGroup'
 import octoClient from './octoClient'
 import {ORG_COLORS_KEY, pickedOrgColors} from './properties/orgLabels'
 import {OKR_BOARD_KEY, OKR_LEVEL_NAMES, OKR_TYPE_PROPERTY_NAME} from './okrBoard'
+import {ADMIN_ONLY_CARD_PROPERTIES_KEY} from './cardPropertyLock'
 import {sendFlashMessage} from './components/flashMessages'
 import undoManager from './undomanager'
 import {Utils, IDType} from './utils'
@@ -825,6 +826,21 @@ class Mutator {
         newBoard.properties = properties
 
         await this.updateBoard(newBoard, board, 'stop using as OKR board')
+    }
+
+    // Whether this board keeps its property editor to board admins.
+    //
+    // The same board update path the OKR switch and the access rules take — undo
+    // and the websocket update come from there. Turning it off writes false
+    // rather than dropping the key, so the audit trail keeps the decision.
+    async setCardPropertiesAdminOnly(board: Board, adminOnly: boolean) {
+        const newBoard = createBoard(board)
+        newBoard.properties = {
+            ...board.properties,
+            [ADMIN_ONLY_CARD_PROPERTIES_KEY]: adminOnly,
+        }
+
+        await this.updateBoard(newBoard, board, adminOnly ? 'lock card properties' : 'unlock card properties')
     }
 
     // Colour for one organisation value, remembered by this board.
