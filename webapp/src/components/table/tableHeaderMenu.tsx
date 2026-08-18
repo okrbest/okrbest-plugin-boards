@@ -10,6 +10,7 @@ import {BoardView} from '../../blocks/boardView'
 import {Card} from '../../blocks/card'
 import mutator from '../../mutator'
 import Menu from '../../widgets/menu'
+import {useCanEditCardProperties} from '../../hooks/permissions'
 
 type Props = {
     templateId: string
@@ -22,6 +23,11 @@ type Props = {
 const TableHeaderMenu: FC<React.PropsWithChildren<Props>> = (props: Props): React.JSX.Element => {
     const {board, activeView, templateId, views, cards} = props
     const intl = useIntl()
+
+    // 정렬과 숨기기는 뷰를 바꾸는 일이라 여기 걸리지 않는다. 걸리는 것은 보드가
+    // 무엇을 기록하는지 바꾸는 항목 — 넣기, 복제, 지우기다 (spec U-01).
+    const canEditProperties = useCanEditCardProperties(board)
+
     return (
         <Menu>
             <Menu.Text
@@ -34,7 +40,7 @@ const TableHeaderMenu: FC<React.PropsWithChildren<Props>> = (props: Props): Reac
                 name={intl.formatMessage({id: 'TableHeaderMenu.sort-descending', defaultMessage: 'Sort descending'})}
                 onClick={() => mutator.changeViewSortOptions(board.id, activeView.id, activeView.fields.sortOptions, [{propertyId: templateId, reversed: true}])}
             />
-            <Menu.Text
+            {canEditProperties && <Menu.Text
                 id='insertLeft'
                 name={intl.formatMessage({id: 'TableHeaderMenu.insert-left', defaultMessage: 'Insert left'})}
                 onClick={() => {
@@ -46,8 +52,8 @@ const TableHeaderMenu: FC<React.PropsWithChildren<Props>> = (props: Props): Reac
                         mutator.insertPropertyTemplate(board, activeView, index)
                     }
                 }}
-            />
-            <Menu.Text
+            />}
+            {canEditProperties && <Menu.Text
                 id='insertRight'
                 name={intl.formatMessage({id: 'TableHeaderMenu.insert-right', defaultMessage: 'Insert right'})}
                 onClick={() => {
@@ -59,7 +65,7 @@ const TableHeaderMenu: FC<React.PropsWithChildren<Props>> = (props: Props): Reac
                         mutator.insertPropertyTemplate(board, activeView, index)
                     }
                 }}
-            />
+            />}
             {props.templateId !== Constants.titleColumnId &&
                 <>
                     <Menu.Text
@@ -67,16 +73,16 @@ const TableHeaderMenu: FC<React.PropsWithChildren<Props>> = (props: Props): Reac
                         name={intl.formatMessage({id: 'TableHeaderMenu.hide', defaultMessage: 'Hide'})}
                         onClick={() => mutator.changeViewVisibleProperties(board.id, activeView.id, activeView.fields.visiblePropertyIds, activeView.fields.visiblePropertyIds.filter((o: string) => o !== templateId))}
                     />
-                    <Menu.Text
+                    {canEditProperties && <Menu.Text
                         id='duplicate'
                         name={intl.formatMessage({id: 'TableHeaderMenu.duplicate', defaultMessage: 'Duplicate'})}
                         onClick={() => mutator.duplicatePropertyTemplate(board, activeView, templateId)}
-                    />
-                    <Menu.Text
+                    />}
+                    {canEditProperties && <Menu.Text
                         id='delete'
                         name={intl.formatMessage({id: 'TableHeaderMenu.delete', defaultMessage: 'Delete'})}
                         onClick={() => mutator.deleteProperty(board, views, cards, templateId)}
-                    />
+                    />}
                 </>}
         </Menu>
     )

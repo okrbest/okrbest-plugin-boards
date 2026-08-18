@@ -14,6 +14,7 @@ import ValueSelector from '../../widgets/valueSelector'
 import RenameOptionDialog from '../../widgets/renameOptionDialog'
 
 import {PropertyProps} from '../types'
+import {useCanEditCardProperties} from '../../hooks/permissions'
 
 const SelectProperty = (props: PropertyProps) => {
     const {propertyValue, propertyTemplate, board, card} = props
@@ -22,6 +23,13 @@ const SelectProperty = (props: PropertyProps) => {
     const [open, setOpen] = useState(false)
     const [renameOption, setRenameOption] = useState<IPropertyOption | null>(null)
     const isEditable = !props.readOnly && Boolean(board)
+
+    // 옵션 목록을 바꾸는 일과 값을 고르는 일은 다른 질문이다. 보드가 잠그면 앞의
+    // 것만 관리자 몫이 되고, 값 고르기는 그대로 남는다 (spec U-04·U-08).
+    //
+    // readOnly로 넘기지 않는 이유가 이것이다 — 그러면 값 고르기까지 막혀 카드
+    // 작성이 마비된다.
+    const canEditOptions = useCanEditCardProperties(board)
 
     const onCreate = useCallback((newValue: string) => {
         const option: IPropertyOption = {
@@ -79,12 +87,12 @@ const SelectProperty = (props: PropertyProps) => {
                 emptyValue={emptyDisplayValue}
                 options={propertyTemplate.options}
                 value={propertyTemplate.options.find((p: IPropertyOption) => p.id === propertyValue)}
-                onCreate={onCreate}
+                onCreate={canEditOptions ? onCreate : undefined}
                 onChange={onChange}
-                onChangeColor={onChangeColor}
-                onDeleteOption={onDeleteOption}
-                onStartRename={setRenameOption}
-                onReorderOption={onReorderOption}
+                onChangeColor={canEditOptions ? onChangeColor : undefined}
+                onDeleteOption={canEditOptions ? onDeleteOption : undefined}
+                onStartRename={canEditOptions ? setRenameOption : undefined}
+                onReorderOption={canEditOptions ? onReorderOption : undefined}
                 onDeleteValue={onDeleteValue}
                 onBlur={() => setOpen(false)}
             />

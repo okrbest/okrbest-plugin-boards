@@ -156,6 +156,13 @@ const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
         )
     }
 
+    // 옵션을 고치는 손잡이는 그 일을 할 콜백이 넘어왔을 때만 낸다. 드래그 손잡이가
+    // onReorderOption 유무를 보는 것과 같은 규율이고, 위 fixedOptions 분기도 이미
+    // 그렇게 한다. 콜백 없이 열리는 메뉴는 눌러도 아무 일도 일어나지 않는다.
+    const canEditOption = Boolean(
+        props.onStartRename || props.onDeleteOption || props.onChangeColor
+    )
+
     return (
         <div className="value-menu-option" role="menuitem">
             {showDragHandle && (
@@ -166,7 +173,7 @@ const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
             <div className="label-container">
                 <Label color={option.color}>{option.value}</Label>
             </div>
-            <MenuWrapper stopPropagationOnToggle={true}>
+            {canEditOption && <MenuWrapper stopPropagationOnToggle={true}>
                 <IconButton
                     title={intl.formatMessage({
                         id: 'ValueSelectorLabel.openMenu',
@@ -207,7 +214,7 @@ const ValueSelectorLabel = (props: LabelProps): React.JSX.Element => {
                         )
                     )}
                 </Menu>
-            </MenuWrapper>
+            </MenuWrapper>}
         </div>
     )
 }

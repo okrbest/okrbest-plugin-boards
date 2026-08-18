@@ -9,6 +9,8 @@ import {getCurrentTeam} from '../store/teams'
 import {Permission} from '../constants'
 import {MemberRole} from '../blocks/board'
 import {getBoardPermissions} from '../store/boardPermissions'
+import {cardPropertiesAdminOnly} from '../cardPropertyLock'
+import {Board} from '../blocks/board'
 
 export type BoardCapability = 'canView' | 'canCommentCard' | 'canCreateCard' | 'canEditCard' | 'canDeleteCard' | 'canManageBoard' | 'canDeleteBoard' | 'canAddSubCard'
 
@@ -157,6 +159,25 @@ export const useHasCurrentBoardPermissions = (permissions: Permission[]): boolea
     const currentBoardId = useAppSelector(getCurrentBoardId)
 
     return useHasCurrentTeamPermissions(currentBoardId || '', permissions)
+}
+
+// useCanEditCardProperties answers whether this user may change what the board
+// records — a property's name, type, required flag, or the options a select
+// offers.
+//
+// A board may put that behind the board admin bar (spec 010). Until it does, the
+// answer is the one it has always been, so nothing changes on the boards that
+// never asked for this.
+//
+// A board whose settings have not arrived counts as unlocked. Hiding the editor
+// while the response is in flight would take it away on every board for as long
+// as the request takes, and the server judges the request either way.
+export const useCanEditCardProperties = (board?: Board): boolean => {
+    const boardId = board?.id || ''
+    const editorAnswer = useHasCurrentTeamPermissions(boardId, [Permission.ManageBoardProperties])
+    const adminAnswer = useHasCurrentTeamPermissions(boardId, [Permission.ManageBoardRoles])
+
+    return cardPropertiesAdminOnly(board?.properties) ? adminAnswer : editorAnswer
 }
 
 // useCanAddSubCard answers whether a card may have one hung off it.

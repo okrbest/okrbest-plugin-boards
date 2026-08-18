@@ -22,7 +22,7 @@ import Menu from '../../widgets/menu'
 import {IDType, Utils} from '../../utils'
 import AddPropertiesTourStep from '../onboardingTour/addProperties/add_properties'
 import {Permission} from '../../constants'
-import {useHasCurrentBoardPermissions, useHasCurrentBoardCardPermissions} from '../../hooks/permissions'
+import {useCanEditCardProperties, useHasCurrentBoardCardPermissions} from '../../hooks/permissions'
 import propRegistry from '../../properties'
 import {PropertyType} from '../../properties/types'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
@@ -86,7 +86,9 @@ const CardDetailProperties = (props: Props) => {
     const {board, card, cards, views, activeView} = props
     const dispatch = useAppDispatch()
     const [newTemplateId, setNewTemplateId] = useState('')
-    const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
+    // 보드가 잠그면 속성을 더하고 이름·유형을 바꾸고 지우는 일이 보드 관리자 몫이
+    // 된다. 잠그지 않은 보드에서는 지금까지의 답 그대로다 (spec U-02·U-03).
+    const canEditBoardProperties = useCanEditCardProperties(board)
     // Card aware, but still routed through the permission hook so a board
     // whose capabilities have not arrived yet falls back to the membership
     // answer instead of rendering everything read only.

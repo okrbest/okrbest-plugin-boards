@@ -132,19 +132,19 @@ description: "속성 편집 잠금 구현 과제 목록"
 
 ### Tests for User Story 3
 
-- [ ] T023 [P] [US3] `webapp/src/hooks/permissions.test.tsx`에 판정 훅 테스트를 더한다 — 잠금 꺼짐이면 기존 답, 켜짐이면 Manage 등급만, 설정을 아직 모르면 잠기지 않은 것으로 본다 (ui-surfaces 계약). 실패를 확인한다
-- [ ] T024 [P] [US3] `webapp/src/components/table/tableHeaderMenu.test.tsx`에 U-01을 더한다 — 잠김·에디터면 속성 추가·삭제 항목이 없고, 꺼짐이면 있다. 파일이 없으면 새로 만든다
-- [ ] T025 [P] [US3] `webapp/src/components/cardDetail/cardDetailProperties.test.tsx`에 U-02·U-03을 더한다
-- [ ] T026 [P] [US3] `webapp/src/properties/select/select.test.tsx`에 U-04와 **U-08**을 더한다 — 잠김·에디터면 옵션 만들기·이름·색·삭제가 없고, **값 고르기는 남는다**
+- [X] T023 [P] [US3] `webapp/src/hooks/permissions.test.tsx`에 판정 훅 테스트를 더한다 — 잠금 꺼짐이면 기존 답, 켜짐이면 Manage 등급만, 설정을 아직 모르면 잠기지 않은 것으로 본다 (ui-surfaces 계약). 실패를 확인한다
+- [X] T024 [P] [US3] `webapp/src/components/table/tableHeaderMenu.test.tsx`에 U-01을 더한다 — 잠김·에디터면 속성 추가·삭제 항목이 없고, 꺼짐이면 있다. 파일이 없으면 새로 만든다
+- [X] T025 [P] [US3] `webapp/src/components/cardDetail/cardDetailProperties.test.tsx`에 U-02·U-03을 더한다
+- [X] T026 [P] [US3] `webapp/src/properties/select/select.test.tsx`에 U-04와 **U-08**을 더한다 — 잠김·에디터면 옵션 만들기·이름·색·삭제가 없고, **값 고르기는 남는다**
 - [ ] T027 [P] [US3] `webapp/src/properties/multiselect/multiselect.test.tsx`에 U-05·U-08을 같은 방식으로 더한다
 - [ ] T028 [P] [US3] `webapp/src/components/kanban/kanbanColumnHeader.test.tsx`와 `kanban.test.tsx`에 U-06·U-07을 더한다
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] `webapp/src/hooks/permissions.tsx`에 잠금을 반영한 판정 훅을 더한다. 잠금이 꺼져 있으면 기존 `ManageBoardProperties` 답을, 켜져 있으면 `ManageBoardRoles` 답을 돌려준다. T023을 통과시킨다
-- [ ] T030 [P] [US3] `webapp/src/components/table/tableHeaderMenu.tsx`의 속성 추가·삭제 항목을 새 훅으로 감싼다. **이 파일에는 지금 권한 게이트가 아예 없다**(R6) — 잠금과 무관하게 새로 만드는 자리다
-- [ ] T031 [P] [US3] `webapp/src/components/cardDetail/cardDetailProperties.tsx`의 `canEditBoardProperties`를 새 훅으로 바꾼다
-- [ ] T032 [P] [US3] `webapp/src/properties/select/select.tsx`에서 옵션 편집 콜백만 조건부로 넘긴다 — `onCreate`·`onChangeColor`·`onDeleteOption`·`onStartRename`·`onReorderOption`. **`onChange`·`onDeleteValue`는 건드리지 않는다**(FR-013). `readOnly`로 넘기지 않는다 (R5)
+- [X] T029 [US3] `webapp/src/hooks/permissions.tsx`에 잠금을 반영한 판정 훅을 더한다. 잠금이 꺼져 있으면 기존 `ManageBoardProperties` 답을, 켜져 있으면 `ManageBoardRoles` 답을 돌려준다. T023을 통과시킨다
+- [X] T030 [P] [US3] `webapp/src/components/table/tableHeaderMenu.tsx`의 속성 추가·삭제 항목을 새 훅으로 감싼다. **이 파일에는 지금 권한 게이트가 아예 없다**(R6) — 잠금과 무관하게 새로 만드는 자리다
+- [X] T031 [P] [US3] `webapp/src/components/cardDetail/cardDetailProperties.tsx`의 `canEditBoardProperties`를 새 훅으로 바꾼다
+- [X] T032 [P] [US3] `webapp/src/properties/select/select.tsx`에서 옵션 편집 콜백만 조건부로 넘긴다 — `onCreate`·`onChangeColor`·`onDeleteOption`·`onStartRename`·`onReorderOption`. **`onChange`·`onDeleteValue`는 건드리지 않는다**(FR-013). `readOnly`로 넘기지 않는다 (R5)
 - [ ] T033 [P] [US3] `webapp/src/properties/multiselect/multiselect.tsx`에 같은 처리를 한다
 - [ ] T034 [P] [US3] `webapp/src/components/kanban/kanbanColumnHeader.tsx`와 `kanban.tsx`의 열 추가·이름·색·삭제를 새 훅으로 감싼다
 - [ ] T035 [US3] webapp 전체 테스트를 돌려 실패 스위트 목록을 T001 기준선과 대조한다

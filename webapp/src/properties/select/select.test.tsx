@@ -2,7 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React from 'react'
-import {render, screen} from '@testing-library/react'
+import {render, screen, within} from '@testing-library/react'
+import {Provider as ReduxProvider} from 'react-redux'
+import configureStore from 'redux-mock-store'
 import '@testing-library/jest-dom'
 import {mocked} from 'jest-mock'
 
@@ -50,13 +52,33 @@ describe('properties/select', () => {
 
     const clearButton = () => screen.queryByRole('button', {name: /clear/i})
     const board = createBoard()
+    board.teamId = 'team-1'
     const card = createCard()
+
+    // 옵션 목록을 바꾸는 일은 보드가 잠글 수 있다. 판정 훅이 팀과 보드 멤버십을
+    // 읽으므로 렌더할 때 함께 준다.
+    const mockStore = configureStore([])
+    const renderSelect = (
+        ui: React.ReactElement,
+        membership: Record<string, unknown> = {userId: 'user-1', schemeAdmin: true},
+        b = board,
+    ) => render(
+        <ReduxProvider
+            store={mockStore({
+                teams: {current: {id: 'team-1'}},
+                boards: {current: b.id, boards: {[b.id]: b}, myBoardMemberships: {[b.id]: membership}},
+                users: {me: {id: 'user-1'}},
+            })}
+        >
+            {wrapIntl(ui)}
+        </ReduxProvider>,
+    )
 
     it('shows the selected option', () => {
         const propertyTemplate = selectPropertyTemplate()
         const option = propertyTemplate.options[0]
 
-        const {container} = render(wrapIntl(
+        const {container} = renderSelect(
             <Select
                 property={new SelectProperty()}
                 board={{...board}}
@@ -66,7 +88,7 @@ describe('properties/select', () => {
                 readOnly={true}
                 showEmptyPlaceholder={false}
             />,
-        ))
+        )
 
         expect(screen.getByText(option.value)).toBeInTheDocument()
         expect(clearButton()).not.toBeInTheDocument()
@@ -78,7 +100,7 @@ describe('properties/select', () => {
         const propertyTemplate = selectPropertyTemplate()
         const emptyValue = 'Empty'
 
-        const {container} = render(wrapIntl(
+        const {container} = renderSelect(
             <Select
                 property={new SelectProperty()}
                 board={{...board}}
@@ -88,7 +110,7 @@ describe('properties/select', () => {
                 propertyValue={''}
                 readOnly={true}
             />,
-        ))
+        )
 
         expect(screen.getByText(emptyValue)).toBeInTheDocument()
         expect(clearButton()).not.toBeInTheDocument()
@@ -100,7 +122,7 @@ describe('properties/select', () => {
         const propertyTemplate = selectPropertyTemplate()
         const selected = propertyTemplate.options[1]
 
-        render(wrapIntl(
+        renderSelect(
             <Select
                 property={new SelectProperty()}
                 board={{...board}}
@@ -110,7 +132,7 @@ describe('properties/select', () => {
                 showEmptyPlaceholder={false}
                 readOnly={false}
             />,
-        ))
+        )
 
         await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
 
@@ -130,7 +152,7 @@ describe('properties/select', () => {
         const propertyTemplate = selectPropertyTemplate()
         const optionToSelect = propertyTemplate.options[2]
 
-        render(wrapIntl(
+        renderSelect(
             <Select
                 property={new SelectProperty()}
                 board={{...board}}
@@ -140,7 +162,7 @@ describe('properties/select', () => {
                 showEmptyPlaceholder={false}
                 readOnly={false}
             />,
-        ))
+        )
 
         await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
         await userEvent.click(await screen.findByText(optionToSelect.value))
@@ -153,7 +175,7 @@ describe('properties/select', () => {
         const propertyTemplate = selectPropertyTemplate()
         const selected = propertyTemplate.options[1]
 
-        render(wrapIntl(
+        renderSelect(
             <Select
                 property={new SelectProperty()}
                 board={{...board}}
@@ -163,7 +185,7 @@ describe('properties/select', () => {
                 showEmptyPlaceholder={false}
                 readOnly={false}
             />,
-        ))
+        )
 
         await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
 
@@ -179,7 +201,7 @@ describe('properties/select', () => {
         const initialOption = propertyTemplate.options[0]
         const newOption = 'new-option'
 
-        render(wrapIntl(
+        renderSelect(
             <Select
                 property={new SelectProperty()}
                 board={{...board}}
@@ -189,7 +211,7 @@ describe('properties/select', () => {
                 showEmptyPlaceholder={false}
                 readOnly={false}
             />,
-        ))
+        )
 
         mockedMutator.insertPropertyOption.mockResolvedValue()
 
@@ -198,5 +220,87 @@ describe('properties/select', () => {
 
         expect(mockedMutator.insertPropertyOption).toHaveBeenCalledWith(board.id, board.cardProperties, propertyTemplate, expect.objectContaining({value: newOption}), 'add property option')
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, 'option-3')
+    })
+
+    // U-04·U-08 — 잠긴 보드에서 에디터는 옵션 목록을 바꾸지 못한다. 값을 고르는
+    // 일은 잠금과 무관하므로 목록과 선택은 그대로 남는다.
+    describe('속성 편집 잠금', () => {
+        // 이 파일은 mock을 초기화하지 않아, 앞선 테스트의 호출이 남으면
+        // "부르지 않았다"를 확인할 수 없다.
+        beforeEach(() => {
+            jest.clearAllMocks()
+        })
+
+
+        const lockedBoard = () => {
+            const b = createBoard()
+            b.teamId = 'team-1'
+            b.properties = {adminOnlyCardProperties: true}
+            return b
+        }
+        const editor = {userId: 'user-1', schemeEditor: true}
+
+        const openMenu = async (membership: Record<string, unknown>, b = lockedBoard()) => {
+            const propertyTemplate = selectPropertyTemplate()
+            const result = renderSelect(
+                <Select
+                    property={new SelectProperty()}
+                    board={{...b}}
+                    card={{...card}}
+                    propertyTemplate={propertyTemplate}
+                    propertyValue={propertyTemplate.options[0].id}
+                    readOnly={false}
+                    showEmptyPlaceholder={false}
+                />,
+                membership,
+                b,
+            )
+            await userEvent.click(screen.getByTestId(nonEditableSelectTestId))
+            return {...result, propertyTemplate}
+        }
+
+        it('에디터는 옵션을 새로 만들 수 없다', async () => {
+            await openMenu(editor)
+
+            await userEvent.type(
+                await screen.findByRole('combobox', {name: /value selector/i}),
+                '새 옵션{enter}',
+            )
+
+            expect(mockedMutator.insertPropertyOption).not.toHaveBeenCalled()
+        })
+
+        it('에디터는 옵션별 편집 메뉴를 못 본다', async () => {
+            const {baseElement} = await openMenu(editor)
+
+            // 이름·색·삭제는 옵션마다 붙는 "Open menu" 버튼 뒤에 있다.
+            expect(within(baseElement).queryAllByRole('button', {name: /open menu/i})).toHaveLength(0)
+        })
+
+        it('보드 관리자는 옵션별 편집 메뉴를 본다', async () => {
+            const {baseElement} = await openMenu({userId: 'user-1', schemeAdmin: true})
+
+            expect(within(baseElement).queryAllByRole('button', {name: /open menu/i}).length).toBeGreaterThan(0)
+        })
+
+        it('에디터도 값은 고를 수 있다', async () => {
+            const {propertyTemplate} = await openMenu(editor)
+
+            await userEvent.click(screen.getByText(propertyTemplate.options[1].value))
+
+            expect(mockedMutator.changePropertyValue).toHaveBeenCalled()
+        })
+
+        it('보드 관리자는 옵션을 새로 만들 수 있다', async () => {
+            mockedMutator.insertPropertyOption.mockResolvedValue()
+            await openMenu({userId: 'user-1', schemeAdmin: true})
+
+            await userEvent.type(
+                await screen.findByRole('combobox', {name: /value selector/i}),
+                '새 옵션{enter}',
+            )
+
+            expect(mockedMutator.insertPropertyOption).toHaveBeenCalled()
+        })
     })
 })
