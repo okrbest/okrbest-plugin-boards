@@ -27,6 +27,12 @@ const mockedinsertPropertyOption = jest.spyOn(mutator, 'insertPropertyOption')
 
 describe('src/component/kanban/kanban', () => {
     const board = TestBlockFactory.createBoard()
+
+    // 스토어가 'board_id_1'을 현재 보드로 들고 있다. 속성 편집 판정은 그리고 있는
+    // 보드를 기준으로 하므로 prop과 스토어가 같은 보드를 가리켜야 한다.
+    board.id = 'board_id_1'
+    board.teamId = 'team-id'
+
     const activeView = TestBlockFactory.createBoardView(board)
     const card1 = TestBlockFactory.createCard(board)
     card1.id = 'id1'

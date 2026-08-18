@@ -19,7 +19,7 @@ import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import Editable from '../../widgets/editable'
 import Label from '../../widgets/label'
-import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useCanEditCardProperties} from '../../hooks/permissions'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
@@ -52,8 +52,11 @@ const defaultProperty: IPropertyTemplate = {
 export default function KanbanColumnHeader(props: Props): React.JSX.Element {
     const {board, activeView, intl, group, groupByProperty} = props
     const [groupTitle, setGroupTitle] = useState(group.option.value)
-    const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
-    const canEditOption = groupByProperty?.type === 'select' && group.option.id
+    // 칸반 열은 select 옵션이다. 이름을 바꾸고 색을 고르고 지우고 순서를 옮기는 일이
+    // 곧 옵션 편집이라, 보드가 잠그면 여기도 잠긴다 (spec U-07). 열 숨기기는 뷰를
+    // 바꾸는 일이라 아래 메뉴에 그대로 남는다.
+    const canEditProperties = useCanEditCardProperties(board)
+    const canEditOption = groupByProperty?.type === 'select' && group.option.id && canEditProperties
     const isPersonGroup = Boolean(groupByProperty && propsRegistry.get(groupByProperty.type).isPersonLike)
 
     const headerRef = useRef<HTMLDivElement>(null)
@@ -79,7 +82,7 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
         setGroupTitle(group.option.value)
     }, [group.option.value])
 
-    if (canEditBoardProperties) {
+    if (canEditProperties) {
         drop(drag(headerRef))
     }
 
@@ -97,7 +100,7 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
             ref={headerRef}
             style={{opacity: isDragging ? 0.5 : 1}}
             className={className}
-            draggable={!props.readonly && canEditBoardProperties}
+            draggable={!props.readonly && canEditProperties}
         >
             {!group.option.id &&
                 <Label
@@ -134,7 +137,7 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
                             onCancel={() => {
                                 setGroupTitle(group.option.value)
                             }}
-                            readonly={props.readonly || !canEditBoardProperties}
+                            readonly={props.readonly || !canEditProperties}
                             spellCheck={true}
                         />
                     ) : (
@@ -149,7 +152,7 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
                 onMenuClose={props.onCalculationMenuClose}
                 onMenuOpen={props.onCalculationMenuOpen}
                 cardProperties={board.cardProperties}
-                readonly={props.readonly || !canEditBoardProperties}
+                readonly={props.readonly || !canEditProperties}
                 onChange={(data: {calculation: string, propertyId: string}) => {
                     if (data.calculation === calculationValue && data.propertyId === calculationProperty.id) {
                         return
