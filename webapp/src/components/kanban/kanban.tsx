@@ -17,7 +17,7 @@ import mutator from '../../mutator'
 import {Utils, IDType} from '../../utils'
 import Button from '../../widgets/buttons/button'
 import {Constants, Permission} from '../../constants'
-import {useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useCanEditCardProperties, useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
 import {dragAndDropRearrange} from '../cardDetail/cardDetailContentsUtility'
 
@@ -59,6 +59,9 @@ const vStrength = createVerticalStrength(Utils.isMobile() ? 60 : 250)
 const Kanban = (props: Props) => {
     const cardTemplates: Card[] = useAppSelector(getCurrentBoardTemplates)
     const canEditCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
+
+    // 열을 더하는 일은 select 옵션을 더하는 일이다 (spec U-06).
+    const canEditProperties = useCanEditCardProperties(props.board)
     const canEditCardsByCapability = useHasCapabilities(props.board.id, ['canEditCard'])
     const {board, activeView, cards, groupByProperty, visibleGroups, hiddenGroups, hiddenCardsCount} = props
     const [defaultTemplateID, setDefaultTemplateID] = useState<string>()
@@ -312,7 +315,7 @@ const Kanban = (props: Props) => {
                     </div>
                 }
 
-                {!props.readonly &&
+                {!props.readonly && canEditProperties &&
                     <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
                         <div className='octo-board-header-cell narrow'>
                             <Button

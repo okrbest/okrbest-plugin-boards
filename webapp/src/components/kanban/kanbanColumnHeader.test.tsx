@@ -249,4 +249,71 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
          await userEvent.click(menuCountEmpty)
          expect(mockedMutator.changeViewKanbanCalculations).toBeCalledTimes(1)
      })
+
+    // U-07 — 잠긴 보드에서 에디터는 열 이름·색·삭제를 못 한다. 열 숨기기는 뷰를
+    // 바꾸는 일이라 그대로 남는다.
+    describe('속성 편집 잠금', () => {
+        const lockedStore = (membership: Record<string, unknown>) => {
+            const locked = {...board, properties: {adminOnlyCardProperties: true}}
+            return {
+                locked,
+                store: mockStateStore([], {
+                    teams: {current: {id: 'team-id'}},
+                    boards: {
+                        current: locked.id,
+                        boards: {[locked.id]: locked},
+                        myBoardMemberships: {[locked.id]: membership},
+                    },
+                }),
+            }
+        }
+
+        const renderHeader = (membership: Record<string, unknown>) => {
+            const {locked, store: lockedStoreInstance} = lockedStore(membership)
+            return render(wrapDNDIntl(
+                <ReduxProvider store={lockedStoreInstance}>
+                    <KanbanColumnHeader
+                        board={locked}
+                        activeView={activeView}
+                        group={{option, cards: [card]}}
+                        groupByProperty={locked.cardProperties[0]}
+                        intl={intl}
+                        readonly={false}
+                        addCard={jest.fn()}
+                        addCardFromTemplate={jest.fn()}
+                        defaultTemplateID={'1'}
+                        propertyNameChanged={jest.fn()}
+                        onDropToColumn={jest.fn()}
+                        calculationMenuOpen={false}
+                        onCalculationMenuOpen={jest.fn()}
+                        onCalculationMenuClose={jest.fn()}
+                    />
+                </ReduxProvider>,
+            ))
+        }
+
+        test('에디터는 열 삭제·색을 못 본다', async () => {
+            const {container} = renderHeader({userId: 'user_id_1', schemeEditor: true})
+
+            const menu = await screen.findByRole('button', {name: 'menuwrapper'})
+            await userEvent.click(menu)
+
+            expect(screen.queryByText('Delete')).toBeNull()
+
+            // 숨기기는 뷰 조작이라 남는다.
+            expect(screen.getByText('Hide')).toBeDefined()
+
+            // 이름도 못 바꾼다.
+            expect(container.querySelector('.Editable')?.getAttribute('readonly')).not.toBeNull()
+        })
+
+        test('보드 관리자는 열 삭제를 본다', async () => {
+            renderHeader({userId: 'user_id_1', schemeAdmin: true})
+
+            const menu = await screen.findByRole('button', {name: 'menuwrapper'})
+            await userEvent.click(menu)
+
+            expect(screen.getByText('Delete')).toBeDefined()
+        })
+    })
 })

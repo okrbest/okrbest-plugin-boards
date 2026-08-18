@@ -14,10 +14,15 @@ import ValueSelector from '../../widgets/valueSelector'
 import RenameOptionDialog from '../../widgets/renameOptionDialog'
 
 import { PropertyProps } from '../types'
+import { useCanEditCardProperties } from '../../hooks/permissions'
 
 const MultiSelectProperty = (props: PropertyProps): React.JSX.Element => {
     const { propertyTemplate, propertyValue, board, card } = props
     const isEditable = !props.readOnly && Boolean(board)
+
+    // 옵션 목록을 바꾸는 일만 잠근다. 값을 고르고 지우는 일은 그대로다
+    // (spec U-05·U-08) — readOnly로 넘기면 그것까지 막힌다.
+    const canEditOptions = useCanEditCardProperties(board)
     const [open, setOpen] = useState(false)
     const [renameOption, setRenameOption] = useState<IPropertyOption | null>(
         null
@@ -174,14 +179,14 @@ const MultiSelectProperty = (props: PropertyProps): React.JSX.Element => {
                 options={propertyTemplate.options}
                 value={values}
                 onChange={onChange}
-                onChangeColor={onChangeColor}
-                onDeleteOption={onDeleteOption}
-                onStartRename={setRenameOption}
-                onReorderOption={onReorderOption}
+                onChangeColor={canEditOptions ? onChangeColor : undefined}
+                onDeleteOption={canEditOptions ? onDeleteOption : undefined}
+                onStartRename={canEditOptions ? setRenameOption : undefined}
+                onReorderOption={canEditOptions ? onReorderOption : undefined}
                 onDeleteValue={(valueToRemove) =>
                     onDeleteValue(valueToRemove, values)
                 }
-                onCreate={(newValue) => onCreateValue(newValue, values)}
+                onCreate={canEditOptions ? (newValue) => onCreateValue(newValue, values) : undefined}
                 onBlur={() => setOpen(false)}
             />
             {renameDialog}
