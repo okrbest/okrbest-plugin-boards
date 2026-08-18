@@ -247,6 +247,22 @@ func (a *API) handlePatchBoardsAndBlocks(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
+		// Property deletes and type changes come through here, not through the
+		// board patch route — they have to change the board and its cards
+		// together. Judging only the other route would let exactly those two
+		// straight through while the feature looked like it worked.
+		if patchTouchesCardProperties(patch) {
+			locked, lockErr := a.boardLocksCardProperties(boardID)
+			if lockErr != nil {
+				a.errorResponse(w, r, lockErr)
+				return
+			}
+			if locked && !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) {
+				a.errorResponse(w, r, model.NewErrPermission("access denied to modifying card properties"))
+				return
+			}
+		}
+
 		board, err2 := a.app.GetBoard(boardID)
 		if err2 != nil {
 			a.errorResponse(w, r, err2)

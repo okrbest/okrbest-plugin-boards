@@ -355,3 +355,116 @@ func TestPatchBoardCardPropertiesUnlocked(t *testing.T) {
 		require.Equal(t, http.StatusOK, rec.Code)
 	})
 }
+
+// 잠긴 보드 — 카드 속성 편집이 보드 관리자 등급으로 올라간다 (spec US1).
+func TestPatchBoardCardPropertiesLocked(t *testing.T) {
+	lockedBoard := func() *model.Board {
+		return boardWithProperties(map[string]interface{}{model.AdminOnlyCardPropertiesKey: true})
+	}
+	updateBody := func(t *testing.T) []byte {
+		t.Helper()
+		body, err := json.Marshal(map[string]interface{}{
+			"updatedCardProperties": []interface{}{
+				map[string]interface{}{"id": "p-new", "name": "새 속성", "type": "text", "options": []interface{}{}},
+			},
+		})
+		require.NoError(t, err)
+		return body
+	}
+
+	t.Run("C-03 에디터의 속성 갱신을 거절한다", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", ruleBoardID)
+		th.Permissions.denyBoardPermission("editor", ruleBoardID, model.PermissionManageBoardRoles)
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(lockedBoard(), nil).AnyTimes()
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"editor", map[string]string{"boardID": ruleBoardID}, updateBody(t))
+
+		require.Equal(t, http.StatusForbidden, rec.Code)
+	})
+
+	t.Run("C-05 보드 관리자의 속성 갱신을 통과시킨다", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("admin", ruleBoardID)
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(lockedBoard(), nil).AnyTimes()
+		th.Store.EXPECT().PatchBoard(ruleBoardID, gomock.Any(), "admin").
+			DoAndReturn(func(_ string, patch *model.BoardPatch, _ string) (*model.Board, error) {
+				return patch.Patch(lockedBoard()), nil
+			})
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"admin", map[string]string{"boardID": ruleBoardID}, updateBody(t))
+
+		require.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("C-07 카드 속성을 안 건드리는 패치는 잠긴 보드에서도 통과한다", func(t *testing.T) {
+		// 잠금은 보드가 무엇을 기록하는지를 잠근다. 보드 제목처럼 그 밖의 것은 이
+		// 기능이 건드리지 않는다 (FR-016).
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", ruleBoardID)
+		th.Permissions.denyBoardPermission("editor", ruleBoardID, model.PermissionManageBoardRoles)
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(lockedBoard(), nil).AnyTimes()
+		th.Store.EXPECT().PatchBoard(ruleBoardID, gomock.Any(), "editor").
+			DoAndReturn(func(_ string, patch *model.BoardPatch, _ string) (*model.Board, error) {
+				return patch.Patch(lockedBoard()), nil
+			})
+
+		title := "이름만 바꾼다"
+		body, err := json.Marshal(&model.BoardPatch{Title: &title})
+		require.NoError(t, err)
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"editor", map[string]string{"boardID": ruleBoardID}, body)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("C-10 저장값이 스위치가 아니면 잠기지 않은 것으로 본다", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", ruleBoardID)
+		th.Permissions.denyBoardPermission("editor", ruleBoardID, model.PermissionManageBoardRoles)
+		broken := boardWithProperties(map[string]interface{}{model.AdminOnlyCardPropertiesKey: "true"})
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(broken, nil).AnyTimes()
+		th.Store.EXPECT().PatchBoard(ruleBoardID, gomock.Any(), "editor").
+			DoAndReturn(func(_ string, patch *model.BoardPatch, _ string) (*model.Board, error) {
+				return patch.Patch(broken), nil
+			})
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+			"editor", map[string]string{"boardID": ruleBoardID}, updateBody(t))
+
+		require.Equal(t, http.StatusOK, rec.Code)
+	})
+}
+
+// 잠금을 켰다가 끈 보드도 잠기지 않은 보드다 (spec US2 수용 시나리오 3).
+func TestPatchBoardCardPropertiesUnlockedAfterToggleOff(t *testing.T) {
+	th, tearDown := setupAPITestHelper(t)
+	defer tearDown()
+	th.Permissions.allowBoard("editor", ruleBoardID)
+	th.Permissions.denyBoardPermission("editor", ruleBoardID, model.PermissionManageBoardRoles)
+	unlocked := boardWithProperties(map[string]interface{}{model.AdminOnlyCardPropertiesKey: false})
+	th.Store.EXPECT().GetBoard(ruleBoardID).Return(unlocked, nil).AnyTimes()
+	th.Store.EXPECT().PatchBoard(ruleBoardID, gomock.Any(), "editor").
+		DoAndReturn(func(_ string, patch *model.BoardPatch, _ string) (*model.Board, error) {
+			return patch.Patch(unlocked), nil
+		})
+
+	body, err := json.Marshal(map[string]interface{}{
+		"updatedCardProperties": []interface{}{
+			map[string]interface{}{"id": "p-new", "name": "새 속성", "type": "text", "options": []interface{}{}},
+		},
+	})
+	require.NoError(t, err)
+
+	rec := th.callHandlerWithBody(th.API.handlePatchBoard, http.MethodPatch, "/boards/"+ruleBoardID,
+		"editor", map[string]string{"boardID": ruleBoardID}, body)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+}

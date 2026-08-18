@@ -401,6 +401,28 @@ func (a *API) handlePatchBoard(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// The property editor lock itself. A switch that restricts editors is not a
+	// restriction if an editor can turn it off.
+	if patchTouchesAdminOnlyCardProperties(patch) {
+		if !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) {
+			a.errorResponse(w, r, model.NewErrPermission("access denied to modifying the card property lock"))
+			return
+		}
+	}
+	// What the board records, on a board that asked for this to be an admin's job.
+	// A property's type or a select's options reach every card already filed under
+	// them, which is why a board may put them behind the same bar as the rules.
+	if patchTouchesCardProperties(patch) {
+		locked, lockErr := a.boardLocksCardProperties(boardID)
+		if lockErr != nil {
+			a.errorResponse(w, r, lockErr)
+			return
+		}
+		if locked && !a.permissions.HasPermissionToBoard(userID, boardID, model.PermissionManageBoardRoles) {
+			a.errorResponse(w, r, model.NewErrPermission("access denied to modifying card properties"))
+			return
+		}
+	}
 
 	auditRec := a.makeAuditRecord(r, "patchBoard", audit.Fail)
 	defer a.audit.LogRecord(audit.LevelModify, auditRec)
@@ -438,6 +460,40 @@ func patchTouchesPropertyAccess(patch *model.BoardPatch) bool {
 		return true
 	}
 	return slices.Contains(patch.DeletedProperties, model.PropertyAccessKey)
+}
+
+// boardLocksCardProperties reports whether this board put its property editor
+// behind the board admin bar.
+//
+// Read from the board rather than carried in the request: the switch is the
+// board's state, and a client that has not seen the latest one must not decide
+// the answer.
+func (a *API) boardLocksCardProperties(boardID string) (bool, error) {
+	board, err := a.app.GetBoard(boardID)
+	if err != nil {
+		return false, err
+	}
+	if board == nil {
+		return false, nil
+	}
+	return model.CardPropertiesAdminOnly(board.Properties), nil
+}
+
+// patchTouchesCardProperties reports whether a board patch changes what the board
+// records — a property's name, type, required flag, or the options a select
+// offers. All of those arrive the same way, so the five kinds are not told apart.
+func patchTouchesCardProperties(patch *model.BoardPatch) bool {
+	return len(patch.UpdatedCardProperties) > 0 || len(patch.DeletedCardProperties) > 0
+}
+
+// patchTouchesAdminOnlyCardProperties reports whether a board patch flips the
+// property editor lock itself. Written and deleted are both asked about, the same
+// way the OKR switch is.
+func patchTouchesAdminOnlyCardProperties(patch *model.BoardPatch) bool {
+	if _, ok := patch.UpdatedProperties[model.AdminOnlyCardPropertiesKey]; ok {
+		return true
+	}
+	return slices.Contains(patch.DeletedProperties, model.AdminOnlyCardPropertiesKey)
 }
 
 // patchTouchesOkrBoard reports whether a board patch switches the OKR ladder on
