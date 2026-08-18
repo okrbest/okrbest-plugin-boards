@@ -218,3 +218,26 @@ func TestBoardPatchIsValid(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+// 설정을 한 번도 쓴 적 없는 보드는 properties 맵이 아예 없다. 거기에 첫 설정을
+// 쓰면 nil 맵에 대입해 패닉했다 — 010 종단 검증에서 보드를 새로 만들어 잠금을 켜다
+// 드러났다. 잠금뿐 아니라 접근 규칙·OKR 설정도 같은 자리를 지난다.
+func TestBoardPatchWritesFirstProperty(t *testing.T) {
+	board := &Board{ID: "board-1"}
+	require.Nil(t, board.Properties)
+
+	patch := &BoardPatch{UpdatedProperties: map[string]interface{}{"anything": true}}
+
+	patched := patch.Patch(board)
+
+	require.Equal(t, true, patched.Properties["anything"])
+}
+
+func TestBoardPatchDeletesFromBoardWithNoProperties(t *testing.T) {
+	board := &Board{ID: "board-1"}
+	patch := &BoardPatch{DeletedProperties: []string{"anything"}}
+
+	require.NotPanics(t, func() {
+		patch.Patch(board)
+	})
+}

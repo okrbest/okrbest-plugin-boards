@@ -68,15 +68,15 @@ description: "속성 편집 잠금 구현 과제 목록"
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] `server/api/boards_test.go`에 계약 C-03(잠김·에디터·속성 갱신 → 403), C-05(잠김·관리자·속성 갱신 → 200), C-07(잠김·에디터·속성을 안 건드리는 패치 → 200), C-10(저장값이 boolean이 아님·에디터 → 200)을 더한다. 실패를 확인한다
-- [ ] T009 [P] [US1] `server/api/boards_and_blocks_test.go`에 묶음 경로의 C-04(잠김·에디터·속성 삭제 → 403), C-06(잠김·관리자·속성 삭제 → 200)을 더한다. 실패를 확인한다
+- [X] T008 [P] [US1] `server/api/boards_test.go`에 계약 C-03(잠김·에디터·속성 갱신 → 403), C-05(잠김·관리자·속성 갱신 → 200), C-07(잠김·에디터·속성을 안 건드리는 패치 → 200), C-10(저장값이 boolean이 아님·에디터 → 200)을 더한다. 실패를 확인한다
+- [X] T009 [P] [US1] `server/api/boards_and_blocks_test.go`에 묶음 경로의 C-04(잠김·에디터·속성 삭제 → 403), C-06(잠김·관리자·속성 삭제 → 200)을 더한다. 실패를 확인한다
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] `server/api/boards.go`에 보드 패치가 카드 속성을 건드리는지 판정하는 헬퍼를 더한다 — 갱신된 카드 속성이 있거나 삭제된 카드 속성이 있으면 참. 같은 패키지의 `patchTouchesPropertyAccess`·`patchTouchesOkrBoard` 옆에 둔다
-- [ ] T011 [US1] `server/api/boards.go`의 `handlePatchBoard`에 관문을 더한다 — 카드 속성을 건드리고 보드가 잠겨 있으면 Manage 등급을 요구한다. 잠금이 꺼져 있으면 아무것도 하지 않는다 (FR-004·005·006·007). T008을 통과시킨다
-- [ ] T012 [US1] `server/api/boards_and_blocks.go`의 `handlePatchBoardsAndBlocks`에 같은 관문을 더한다. 이 경로가 **속성 삭제와 유형 변경의 길**이다 (R1). 판정 지점 바로 뒤에 이미 `a.app.GetBoard(boardID)`가 있으므로 설정 조회를 그 자리에 맞춘다. T009를 통과시킨다
-- [ ] T013 [US1] T002·T003을 다시 실행해 여전히 통과하는지 확인한다. 붉어지면 잠금이 꺼진 보드까지 막고 있는 것이다
+- [X] T010 [US1] `server/api/boards.go`에 보드 패치가 카드 속성을 건드리는지 판정하는 헬퍼를 더한다 — 갱신된 카드 속성이 있거나 삭제된 카드 속성이 있으면 참. 같은 패키지의 `patchTouchesPropertyAccess`·`patchTouchesOkrBoard` 옆에 둔다
+- [X] T011 [US1] `server/api/boards.go`의 `handlePatchBoard`에 관문을 더한다 — 카드 속성을 건드리고 보드가 잠겨 있으면 Manage 등급을 요구한다. 잠금이 꺼져 있으면 아무것도 하지 않는다 (FR-004·005·006·007). T008을 통과시킨다
+- [X] T012 [US1] `server/api/boards_and_blocks.go`의 `handlePatchBoardsAndBlocks`에 같은 관문을 더한다. 이 경로가 **속성 삭제와 유형 변경의 길**이다 (R1). 판정 지점 바로 뒤에 이미 `a.app.GetBoard(boardID)`가 있으므로 설정 조회를 그 자리에 맞춘다. T009를 통과시킨다
+- [X] T013 [US1] T002·T003을 다시 실행해 여전히 통과하는지 확인한다. 붉어지면 잠금이 꺼진 보드까지 막고 있는 것이다
 
 **Checkpoint**: 서버가 잠긴 보드의 속성 편집을 두 경로에서 거절하고, 잠그지 않은 보드는 그대로다
 
@@ -91,8 +91,8 @@ description: "속성 편집 잠금 구현 과제 목록"
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] `server/api/boards_test.go`에 잠금을 켰다가 끈 보드에서 에디터의 속성 편집이 200임을 확인하는 테스트를 더한다 — `false`가 저장된 경우도 꺼짐이다 (US2 수용 시나리오 3)
-- [ ] T015 [US2] 서버 전체 테스트를 돌려 실패 목록을 T001 기준선과 대조한다. 새 실패가 하나도 없어야 한다
+- [X] T014 [P] [US2] `server/api/boards_test.go`에 잠금을 켰다가 끈 보드에서 에디터의 속성 편집이 200임을 확인하는 테스트를 더한다 — `false`가 저장된 경우도 꺼짐이다 (US2 수용 시나리오 3)
+- [X] T015 [US2] 서버 전체 테스트를 돌려 실패 목록을 T001 기준선과 대조한다. 새 실패가 하나도 없어야 한다
 
 **Checkpoint**: 서버 쪽 회귀가 없음이 목록 대조로 증명됐다
 
@@ -108,16 +108,16 @@ description: "속성 편집 잠금 구현 과제 목록"
 
 ### Tests for User Story 4
 
-- [ ] T016 [P] [US4] `server/api/boards_test.go`에 계약 C-08(에디터가 잠금 설정을 켜거나 끄면 403)과 C-09(관리자면 200이고 결과가 보드에 남는다)를 더한다. 실패를 확인한다
-- [ ] T017 [P] [US4] `webapp/src/components/shareBoard/adminOnlyPropertiesSection.test.tsx`를 쓴다 — 에디터에게 섹션이 없고 보드 관리자에게 있다, 토글이 저장된 상태를 반영한다, 켜고 끄면 각각의 갱신이 호출된다 (U-09, FR-014). 실패를 확인한다
+- [X] T016 [P] [US4] `server/api/boards_test.go`에 계약 C-08(에디터가 잠금 설정을 켜거나 끄면 403)과 C-09(관리자면 200이고 결과가 보드에 남는다)를 더한다. 실패를 확인한다
+- [X] T017 [P] [US4] `webapp/src/components/shareBoard/adminOnlyPropertiesSection.test.tsx`를 쓴다 — 에디터에게 섹션이 없고 보드 관리자에게 있다, 토글이 저장된 상태를 반영한다, 켜고 끄면 각각의 갱신이 호출된다 (U-09, FR-014). 실패를 확인한다
 
 ### Implementation for User Story 4
 
-- [ ] T018 [US4] `server/api/boards.go`에 잠금 설정 키를 건드리는 패치를 판정하는 헬퍼를 더하고 `handlePatchBoard`에서 Manage 등급을 요구한다 (FR-009). `patchTouchesOkrBoard`와 같은 모양이다. T016을 통과시킨다
-- [ ] T019 [US4] `webapp/src/mutator.ts`에 잠금을 켜고 끄는 함수를 더한다. `enableOkrBoard`·`disableOkrBoard`와 같은 경로(보드 갱신)를 쓴다 — 되돌리기와 웹소켓 전달이 거기서 온다
-- [ ] T020 [US4] `webapp/src/components/shareBoard/adminOnlyPropertiesSection.tsx`를 만든다. `okrBoardSection.tsx`의 구조를 그대로 차용한다 — `Switch` 위젯 + `BoardPermissionGate`, `tabs-content` 클래스. **새 SCSS 파일을 만들지 않는다**(헌법 원칙 II). T017을 통과시킨다
-- [ ] T021 [US4] `webapp/src/components/shareBoard/shareBoard.tsx`에 섹션을 배치한다. `OkrBoardSection` 옆이다
-- [ ] T022 [P] [US4] `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 제목·설명 문자열을 **같은 변경으로** 더한다 (헌법 원칙 V). `OkrBoard.title`·`OkrBoard.description` 쌍이 선례다
+- [X] T018 [US4] `server/api/boards.go`에 잠금 설정 키를 건드리는 패치를 판정하는 헬퍼를 더하고 `handlePatchBoard`에서 Manage 등급을 요구한다 (FR-009). `patchTouchesOkrBoard`와 같은 모양이다. T016을 통과시킨다
+- [X] T019 [US4] `webapp/src/mutator.ts`에 잠금을 켜고 끄는 함수를 더한다. `enableOkrBoard`·`disableOkrBoard`와 같은 경로(보드 갱신)를 쓴다 — 되돌리기와 웹소켓 전달이 거기서 온다
+- [X] T020 [US4] `webapp/src/components/shareBoard/adminOnlyPropertiesSection.tsx`를 만든다. `okrBoardSection.tsx`의 구조를 그대로 차용한다 — `Switch` 위젯 + `BoardPermissionGate`, `tabs-content` 클래스. **새 SCSS 파일을 만들지 않는다**(헌법 원칙 II). T017을 통과시킨다
+- [X] T021 [US4] `webapp/src/components/shareBoard/shareBoard.tsx`에 섹션을 배치한다. `OkrBoardSection` 옆이다
+- [X] T022 [P] [US4] `webapp/i18n/en.json`과 `webapp/i18n/ko.json`에 제목·설명 문자열을 **같은 변경으로** 더한다 (헌법 원칙 V). `OkrBoard.title`·`OkrBoard.description` 쌍이 선례다
 
 **Checkpoint**: 관리자가 화면에서 잠금을 켜고 끌 수 있고, 에디터는 그 스위치에 닿지 못한다
 
@@ -159,8 +159,8 @@ description: "속성 편집 잠금 구현 과제 목록"
 - [X] T037 `make server-test` 실패 목록을 기준선과 대조한다 (CI 미집행이라 로컬 필수)
 - [X] T038 `cd webapp && npm run test`, `npm run check-types` 결과를 각각 기준선과 대조한다
 - [X] T039 `MM_DEBUG=1 make dist-linux` 후 배포하고 브라우저를 하드 리프레시한다
-- [ ] T040 [quickstart.md](./quickstart.md) 시나리오 1~6을 실제 계정으로 훑고 결과를 이 파일에 기록한다. **시나리오 1(잠그지 않은 보드)과 시나리오 4(요청 직접 보내기)를 빠뜨리지 않는다** — 전자는 회귀, 후자는 두 경로가 실제로 막혔는지다
-- [ ] T041 SC-001~SC-006을 하나씩 대조해 충족 여부를 기록한다
+- [X] T040 [quickstart.md](./quickstart.md) 시나리오 1~6을 실제 계정으로 훑고 결과를 이 파일에 기록한다. **시나리오 1(잠그지 않은 보드)과 시나리오 4(요청 직접 보내기)를 빠뜨리지 않는다** — 전자는 회귀, 후자는 두 경로가 실제로 막혔는지다
+- [X] T041 SC-001~SC-006을 하나씩 대조해 충족 여부를 기록한다
 
 ---
 
@@ -214,3 +214,54 @@ Phase 1 (기준선)
 - **묶음 경로(T012)를 빠뜨린다** → 속성 삭제·유형 변경이 통과하는데 겉보기엔 기능이 돈다. T009가 이것만 잡는다
 - **`readOnly`로 감춘다(T032)** → 값 고르기까지 막혀 카드 작성이 마비된다. T026의 U-08이 이것만 잡는다
 - **꺼진 보드를 막는다** → T002·T003·T013·T015가 이것만 잡는다
+
+---
+
+## 검증 결과 (2026-08-18)
+
+### 품질 게이트 — 기준선([baseline.md](./baseline.md)) 대비
+
+| 게이트 | 기준선 | 변경 후 | 판정 |
+|---|---|---|---|
+| `make server-lint` | 11건 | 11건 | 목록 diff 없음 |
+| `make server-test` | 12건 | 12건 | 목록 diff 없음 |
+| `npm run check-types` | 23건 | 23건 | 목록 diff 없음 |
+| `npm run test` (jest) | 58스위트 | 57스위트 | `sidebarBoardItem` 하나 줄었다. 기준선·현재 모두 단독 실행에서는 통과하는 산발 실패다 |
+
+### 종단 검증 — [quickstart.md](./quickstart.md)
+
+실계정으로 잼. 관리자 = `deukyeol.lee`(만든 보드의 admin), 에디터 = `kiyoon.kwon`.
+
+| 시나리오 | 확인 | 결과 |
+|---|---|---|
+| 1. 잠그지 않은 보드 | 에디터 속성 추가·삭제 (FY27 실보드) | 200 / 200 |
+| 2. 관리자가 잠근다 | 잠금 켜기, 보드에 남는지 | 200, `adminOnlyCardProperties: true` |
+| 4. 에디터·P1 경로 | 속성 추가 / 옵션 편집 | **403 / 403** |
+| 4. 에디터·P2 경로 | 속성 삭제(묶음) | **403** |
+| 4. 에디터·토글 | 잠금 끄기 | **403** |
+| 4. 에디터·그 밖 | 보드 제목 변경 (C-07) | 200 |
+| 5. 관리자·잠긴 보드 | 속성 추가 / 옵션 추가 / 속성 삭제 | 200 / 200 / 200 |
+| 6. 잠금 해제 후 | 에디터 속성 추가·삭제 | 200 / 200 |
+
+검증용 보드는 삭제했고 FY27 실보드에 흔적이 남지 않았음을 확인했다.
+
+### SC 대조
+
+| SC | 판정 | 근거 |
+|---|---|---|
+| SC-001 잠긴 보드 에디터의 속성 편집 100% 거절 | 충족 | 시나리오 4의 세 갈래 전부 403 |
+| SC-002 잠긴 보드 에디터의 값 편집 100% 성공 | 충족 | 화면 테스트 U-08 (select·multiselect). 서버는 값 편집 경로를 건드리지 않는다 |
+| SC-003 잠그지 않은 보드는 도입 전과 동일 | 충족 | 시나리오 1·6, 그리고 안전망 테스트 C-01·C-02가 구현 전후 모두 통과 |
+| SC-004 잠긴 조작의 진입점이 화면에 없다 | 충족 | U-01~U-07 테스트. 표·카드 상세·select·multiselect·칸반 |
+| SC-005 에디터는 토글을 못 만진다 | 충족 | 화면은 U-09 테스트, 요청은 시나리오 4에서 403 |
+| SC-006 관리자는 잠금과 무관 | 충족 | 시나리오 5 |
+
+### 종단에서 드러난 결함 하나
+
+설정을 한 번도 쓴 적 없는 보드에 첫 설정을 쓰면 서버가 패닉했다
+(`assignment to entry in nil map`, `model/board.go`). 잠금뿐 아니라 접근 규칙·OKR
+설정도 같은 자리를 지나므로 기존 결함이다. 재현 테스트를 남기고 고쳤다.
+
+품질 게이트만으로는 못 잡았다 — 기존 테스트가 모두 properties를 가진 보드로만
+패치했기 때문이다. 헌법 원칙 I이 "화면 동작이 바뀌는 변경은 게이트만으로 부족하다"고
+적은 이유가 이것이다.

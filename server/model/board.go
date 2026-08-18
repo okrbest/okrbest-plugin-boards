@@ -298,6 +298,13 @@ func (p *BoardPatch) Patch(board *Board) *Board {
 		board.ChannelID = *p.ChannelID
 	}
 
+	// A board that never stored a setting has no properties map at all, and
+	// writing the first one into nil panics. Creating a board through the API
+	// without properties is enough to get there.
+	if len(p.UpdatedProperties) > 0 && board.Properties == nil {
+		board.Properties = map[string]interface{}{}
+	}
+
 	for key, property := range p.UpdatedProperties {
 		board.Properties[key] = property
 	}
