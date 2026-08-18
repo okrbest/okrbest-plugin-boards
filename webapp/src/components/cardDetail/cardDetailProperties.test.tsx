@@ -271,4 +271,59 @@ describe('components/cardDetail/CardDetailProperties', () => {
 
          expect(container).toMatchSnapshot()
      })
+
+    // U-02·U-03 — 잠긴 보드에서 에디터에게는 속성을 더하는 자리도, 이름·유형을
+    // 바꾸고 지우는 메뉴도 없다. 속성 이름은 읽기 전용으로 보인다.
+    describe('속성 편집 잠금', () => {
+        const lockedStore = (membership: Record<string, unknown>) => {
+            const locked = {...board!, properties: {adminOnlyCardProperties: true}}
+            return configureStore([])({
+                users: {me: {id: 'user_id_1'}, boardUsers: {'user_id_1': {id: 'user_id_1'}}, myConfig: {}},
+                teams: {current: {id: 'team-id'}},
+                boards: {
+                    boards: {[locked.id]: locked},
+                    current: locked.id,
+                    myBoardMemberships: {[locked.id]: membership},
+                },
+                cards: {cards: {[card.id]: card}, current: card.id},
+                clientConfig: {value: {}},
+                comments: {comments: {}, commentsByCard: {}},
+                contents: {contents: {}, contentsByCard: {}},
+            })
+        }
+
+        const renderLocked = (membership: Record<string, unknown>) => {
+            const locked = {...board!, properties: {adminOnlyCardProperties: true}}
+            return render(wrapRBDNDContext(wrapIntl(
+                <ReduxProvider store={lockedStore(membership)}>
+                    <CardDetailProperties
+                        board={locked}
+                        card={card}
+                        cards={[card]}
+                        activeView={view}
+                        views={views}
+                        readonly={false}
+                    />
+                </ReduxProvider>,
+            )))
+        }
+
+        it('에디터는 속성 추가 자리를 못 본다', () => {
+            const {queryByText} = renderLocked({userId: 'user_id_1', schemeEditor: true})
+
+            expect(queryByText('+ Add a property')).toBeNull()
+        })
+
+        it('에디터는 속성 이름을 읽기 전용으로 본다', () => {
+            const {container} = renderLocked({userId: 'user_id_1', schemeEditor: true})
+
+            expect(container.querySelector('.octo-propertyname--readonly')).not.toBeNull()
+        })
+
+        it('보드 관리자는 속성 추가 자리를 본다', () => {
+            const {queryByText} = renderLocked({userId: 'user_id_1', schemeAdmin: true})
+
+            expect(queryByText('+ Add a property')).not.toBeNull()
+        })
+    })
 })
