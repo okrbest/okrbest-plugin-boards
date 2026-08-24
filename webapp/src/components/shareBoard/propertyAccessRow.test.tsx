@@ -418,6 +418,18 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         }))
     })
 
+    test('본인 관계도 부서 속성을 읽는다', async () => {
+        // 매트릭스가 오래 전부터 그렇게 판단해 왔다(accessMatrix.orgPropertyFor).
+        // "내 것"은 누구 카드인가와 어디 놓였는가를 함께 묻는다 — 조직을 빼면
+        // 만드는 순간 작성자라는 사실만으로 어느 팀 Task든 만들 수 있다.
+        const onChange = await pickRelation(bothOrgKinds(), '본인')
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            relation: 'mine',
+            orgPropertyId: 'prop-department',
+        }))
+    })
+
     test('관계를 쓰면 사람 쪽 조건이 있는 것으로 세어 유효해진다', async () => {
         const rule = {
             ...emptyRule,

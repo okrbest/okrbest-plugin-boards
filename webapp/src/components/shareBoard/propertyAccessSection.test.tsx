@@ -261,6 +261,44 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         expect(saved.rules).toHaveLength(1)
     })
 
+    // ---- 오래된 규칙이 나머지 편집을 막지 않게 한다 ----
+
+    test('볼 속성이 비어 있던 규칙은 저장할 때 채워 보낸다', async () => {
+        // 서버는 규칙 묶음을 통째로 검사한다. 볼 속성이 없는 관계 한 줄이 남아
+        // 있으면 그 보드의 다른 편집이 전부 400으로 되돌아온다 — 운영에서 실제로
+        // 그렇게 막혔다. 나갈 때 채워 주는 것이 그 교착을 푸는 자리다.
+        const board = buildBoard({
+            propertyAccess: {
+                enabled: false,
+                updatedBy: '',
+                updatedAt: 0,
+                rules: [{
+                    id: 'r1',
+                    propertyId: 'prop-clevel',
+                    propertyValueId: '',
+                    propertyValueIds: ['opt-strategy'],
+                    divisionId: '', departmentId: '', dutyId: '',
+                    relation: 'mine' as const,
+                    orgPropertyId: '',
+                    permission: 'editor' as const,
+                }],
+            },
+        })
+        board.cardProperties = [
+            ...board.cardProperties,
+            {id: 'prop-department', name: '부서', type: 'orgDepartment' as const, options: []},
+        ]
+        const {container} = await renderSection(board)
+
+        await act(async () => {
+            await userEvent.click(container.querySelector('.Switch')!)
+        })
+
+        const [newBoard] = mockedMutator.updateBoard.mock.calls[0]
+        const saved = newBoard.properties.propertyAccess as PropertyAccessSettings
+        expect(saved.rules[0].orgPropertyId).toBe('prop-department')
+    })
+
     // ---- 저장이 거부되면 화면에 남긴다 ----
 
     test('저장이 거부되면 조용히 넘어가지 않는다', async () => {
