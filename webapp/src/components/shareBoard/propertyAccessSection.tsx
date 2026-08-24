@@ -20,6 +20,7 @@ import {getClientConfig} from '../../store/clientConfig'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
+import {orgPropertyForRelation} from './orgProperty'
 import PropertyAccessRow from './propertyAccessRow'
 import DutyTierEditor from './dutyTierEditor'
 import AccessMatrixTable from './accessMatrixTable'
@@ -171,6 +172,19 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
         }
     }, [board.teamId, tiersLoaded])
 
+    // A row saved by an older build names a relation with no property to read.
+    // The server checks the whole rule set, so one such row fails every save the
+    // board makes afterwards — the admin edits something unrelated and watches it
+    // come back undone. Filling it in on the way out clears that without asking
+    // anyone to find the offending row first.
+    const withOrgProperty = (rule: PropertyAccessRule): PropertyAccessRule => {
+        if (!rule.relation) {
+            return rule
+        }
+        const orgPropertyId = orgPropertyForRelation(rule.relation, board.cardProperties, rule.orgPropertyId || '')
+        return orgPropertyId === (rule.orgPropertyId || '') ? rule : {...rule, orgPropertyId}
+    }
+
     // Half finished rows live in the editor only. Sending one would be rejected
     // by the server's validation, so the save drops them instead.
     //
@@ -187,7 +201,7 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                 enabled: nextEnabled,
                 updatedBy: settings.updatedBy,
                 updatedAt: settings.updatedAt,
-                rules: nextRules.filter(isComplete),
+                rules: nextRules.filter(isComplete).map(withOrgProperty),
             },
         }
         try {

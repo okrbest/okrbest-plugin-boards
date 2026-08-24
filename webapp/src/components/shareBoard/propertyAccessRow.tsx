@@ -18,12 +18,12 @@ import {
     PropertyAccessRule,
     cardValueIds,
     orgRelations,
-    orgRelationsNeedingProperty,
 } from '../../blocks/board'
 import {useAppSelector} from '../../store/hooks'
 import {getDivisions, getDepartments, getDuties, isOrgMasterLoaded} from '../../store/orgMaster'
 import {getDutyTiers} from '../../store/dutyTiers'
 
+import {orgPropertyForRelation} from './orgProperty'
 import {summarizeSelection} from './selectionSummary'
 
 type Props = {
@@ -236,22 +236,6 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
     const personPropertyChoices = board.cardProperties.filter((property) =>
         property.type === 'person' || property.type === 'multiPerson')
 
-    // Each relation reads one kind of property off the card: the division
-    // relations read a 본부 property, the department one a 부서 property. Counting
-    // both kinds as one pool left a board carrying one of each — the ordinary
-    // shape — with nothing to fall back on, and the server refuses a division
-    // relation that names no property. Picking by kind gives every such board an
-    // answer; a board with several of one kind still offers the choice, and
-    // whatever the row already names is kept when it is of the right kind.
-    const orgPropertyFor = (relation: OrgRelation, current: string): string => {
-        const wanted = relation === 'sameDepartment' ? 'orgDepartment' : 'orgDivision'
-        const matching = board.cardProperties.filter((property) => property.type === wanted)
-        if (matching.some((property) => property.id === current)) {
-            return current
-        }
-        return matching.length > 0 ? matching[0].id : ''
-    }
-
     const onPickOrgCondition = (id: string) => {
         if (!id.startsWith('relation:')) {
             // A named organisation. The relation goes, so the row keeps one answer.
@@ -265,7 +249,7 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
             relation: picked,
             divisionId: '',
             departmentId: '',
-            orgPropertyId: orgRelationsNeedingProperty.includes(picked) ? orgPropertyFor(picked, rule.orgPropertyId || '') : '',
+            orgPropertyId: orgPropertyForRelation(picked, board.cardProperties, rule.orgPropertyId || ''),
         })
     }
 
