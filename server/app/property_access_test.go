@@ -497,6 +497,19 @@ func TestValidateRelationRules(t *testing.T) {
 		require.Error(t, err, "모두에게 권한을 주는 줄은 실수다")
 	})
 
+	t.Run("직책 묶음만 가리켜도 사람 쪽 조건으로 센다", func(t *testing.T) {
+		// 판정은 이미 묶음으로 사람을 가린다(dutyMatches). 저장만 묶음을 못 본
+		// 채로 두면, 공유 화면이 정식으로 만들어 주는 줄을 서버가 400으로 되돌려
+		// 보낸다 — 화면에는 아무 표시도 없이.
+		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+			PropertyID: propType, PropertyValueID: valObjective,
+			TierIDs:    []string{"tier-lead"},
+			Permission: model.PropertyAccessEditor,
+		}))
+
+		require.NoError(t, err, "묶음은 직책을 여럿 묶은 것이다 — 하나를 직접 적은 줄과 다를 이유가 없다")
+	})
+
 	t.Run("값 목록만 있는 규칙을 거절하지 않는다", func(t *testing.T) {
 		err := validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
 			PropertyID:       propType,

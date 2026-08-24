@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react'
+import React, {useEffect, useRef} from 'react'
 import {useIntl} from 'react-intl'
 
 import Switch from '../../widgets/switch'
@@ -91,6 +91,7 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
 
     const settings = readSettings(board)
     const [rules, setRules] = React.useState<PropertyAccessRule[]>(settings.rules)
+    const [saveError, setSaveError] = React.useState('')
     const masterLoaded = useAppSelector(isOrgMasterLoaded(board.teamId))
     const tiersLoaded = useAppSelector(areDutyTiersLoaded(board.teamId))
     const tiers = useAppSelector(getDutyTiers(board.teamId))
@@ -130,8 +131,30 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
     const me = useAppSelector(getMe)
     const clientConfig = useAppSelector(getClientConfig)
 
+    // The board arrives again for reasons that have nothing to do with this
+    // editor: another admin's save, a websocket update, the response to this
+    // dialog's own save. A row that is not yet complete was never sent, so it
+    // lives here and nowhere else — taking the stored list wholesale would
+    // throw away whatever is half typed. Saved rules therefore come from the
+    // board, and rows still being filled in are kept as they are.
+    const shownBoardId = useRef(board.id)
     useEffect(() => {
-        setRules(readSettings(board).rules)
+        const stored = readSettings(board).rules
+
+        // Another board is another rule set. Nothing carries over.
+        if (shownBoardId.current !== board.id) {
+            shownBoardId.current = board.id
+            setRules(stored)
+            return
+        }
+
+        setRules((current) => {
+            const editing = current.filter((rule) => !isComplete(rule))
+            const editingById = new Map(editing.map((rule) => [rule.id, rule]))
+            const kept = stored.map((rule) => editingById.get(rule.id) || rule)
+            const added = editing.filter((rule) => !stored.some((saved) => saved.id === rule.id))
+            return [...kept, ...added]
+        })
     }, [board.id, board.properties])
 
     useEffect(() => {
@@ -150,7 +173,13 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
 
     // Half finished rows live in the editor only. Sending one would be rejected
     // by the server's validation, so the save drops them instead.
-    const save = (nextEnabled: boolean, nextRules: PropertyAccessRule[]) => {
+    //
+    // The server checks the whole rule set, so a single row it refuses fails the
+    // save for every other row too. That rejection used to reach nothing but the
+    // console: the editor kept showing the change, and it came back undone the
+    // next time the dialog opened. Holding the reason here is what turns that
+    // into something the admin can act on.
+    const save = async (nextEnabled: boolean, nextRules: PropertyAccessRule[]) => {
         const newBoard = createBoard(board)
         newBoard.properties = {
             ...board.properties,
@@ -161,7 +190,12 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                 rules: nextRules.filter(isComplete),
             },
         }
-        mutator.updateBoard(newBoard, board, 'update card access rules')
+        try {
+            await mutator.updateBoard(newBoard, board, 'update card access rules')
+            setSaveError('')
+        } catch (error) {
+            setSaveError(error instanceof Error ? error.message : String(error))
+        }
     }
 
     const onChangeRule = (updated: PropertyAccessRule) => {
@@ -221,6 +255,13 @@ const PropertyAccessSection = (props: Props): React.JSX.Element => {
                             />
                         </div>
                     </div>
+                    {saveError !== '' &&
+                        <div className='PropertyAccessSection__saveError'>
+                            {intl.formatMessage({
+                                id: 'PropertyAccess.saveFailed',
+                                defaultMessage: 'The server refused this change, so nothing was saved: {reason}',
+                            }, {reason: saveError})}
+                        </div>}
                     {settings.updatedAt > 0 &&
                         <div className='text-light PropertyAccessSection__updated'>
                             {intl.formatMessage(

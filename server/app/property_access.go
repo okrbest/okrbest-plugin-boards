@@ -244,10 +244,16 @@ func validatePropertyAccessSettings(settings *model.PropertyAccessSettings) erro
 			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: propertyId is required", i))
 		case len(rule.CardValueIDs()) == 0:
 			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: propertyValueId is required", i))
-		case !rule.HasOrgCondition() && rule.DutyID == "":
+		case !rule.HasOrgCondition() && rule.DutyID == "" && len(rule.TierIDs) == 0:
 			// A row with no subject condition would grant everyone the
 			// permission, which is never what an admin means to express.
-			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: at least one of divisionId, departmentId, dutyId or relation is required", i))
+			//
+			// A duty tier counts. It is a named set of duties, so a row that
+			// points at one constrains the subject exactly as a row naming a
+			// single duty does — and dutyMatches has always judged it that way.
+			// Leaving tiers out here refused rows the share dialog offers as a
+			// first-class choice.
+			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: at least one of divisionId, departmentId, dutyId, tierIds or relation is required", i))
 		case !model.IsOrgRelation(rule.Relation):
 			// A relation nobody recognizes would change a judgement without
 			// anyone seeing it, so it is refused rather than ignored.

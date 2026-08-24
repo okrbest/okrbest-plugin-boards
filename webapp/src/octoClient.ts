@@ -1030,9 +1030,13 @@ class OctoClient {
         }))
         
         if (response.status !== 200) {
-            const json = await this.getJson(response, {})
+            const json = await this.getJson<{error?: string}>(response, {})
             Utils.logError(`patchBoard failed with status ${response.status}: ${JSON.stringify(json)}`)
-            throw new Error(`patchBoard failed with status ${response.status}`)
+
+            // The server says which rule it refused and why. Throwing the status
+            // alone left the caller nothing to show, so the refusal reached the
+            // console and nowhere else.
+            throw new Error(json.error || `patchBoard failed with status ${response.status}`)
         }
         
         return response

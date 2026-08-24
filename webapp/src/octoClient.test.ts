@@ -158,3 +158,14 @@ test('OctoClient: GetFileInfo', async () => {
                 'X-Requested-With': 'XMLHttpRequest',
             }}))
 })
+
+test('OctoClient: patchBoard carries the server reason', async () => {
+    // The share dialog shows this text. Reducing it to the status code left an
+    // admin with a change that silently came back undone.
+    FetchMock.fn.mockReturnValueOnce(Promise.resolve(new Response(
+        JSON.stringify({error: 'propertyAccess rule 0: relation "sameDivision" needs orgPropertyId', errorCode: 400}),
+        {status: 400},
+    )))
+
+    await expect(octoClient.patchBoard('board-1', {})).rejects.toThrow('needs orgPropertyId')
+})

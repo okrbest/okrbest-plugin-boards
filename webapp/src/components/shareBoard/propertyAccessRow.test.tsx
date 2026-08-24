@@ -208,6 +208,30 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         expect(container.querySelector('.PropertyAccessRow--invalid')).not.toBeNull()
     })
 
+    test('a row missing its card condition says so', async () => {
+        const {container} = await renderRow(emptyRule)
+
+        const notice = container.querySelector('.PropertyAccessRow__pending')
+        expect(notice).not.toBeNull()
+        expect(notice!.textContent).toContain('not saved')
+    })
+
+    test('a row missing only its subject condition names that axis', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'}
+        const {container} = await renderRow(rule)
+
+        const notice = container.querySelector('.PropertyAccessRow__pending')
+        expect(notice).not.toBeNull()
+        expect(notice!.textContent).toContain('organisation')
+    })
+
+    test('a complete row carries no pending notice', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', dutyId: 'duty-lead'}
+        const {container} = await renderRow(rule)
+
+        expect(container.querySelector('.PropertyAccessRow__pending')).toBeNull()
+    })
+
     test('a row with a card condition and one subject axis is valid', async () => {
         const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', dutyId: 'duty-lead'}
         const {container} = await renderRow(rule)
@@ -342,6 +366,55 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
             relation: 'sameDivision',
             orgPropertyId: 'prop-division',
+        }))
+    })
+
+    // 실제 보드는 본부 속성과 부서 속성을 하나씩 가진다. 둘을 한 묶음으로 세면
+    // 개수가 둘이 되어 자동 채우기가 꺼졌고, 빈 채로 저장된 규칙을 서버가
+    // "relation needs orgPropertyId"로 되돌려 보냈다 — 화면에는 표시 없이.
+    const bothOrgKinds = () => ({
+        ...board,
+        cardProperties: [
+            ...board.cardProperties,
+            {id: 'prop-division', name: '본부', type: 'orgDivision' as const, options: []},
+            {id: 'prop-department', name: '부서', type: 'orgDepartment' as const, options: []},
+        ],
+    })
+
+    const pickRelation = async (boardOverride: typeof board, name: string) => {
+        const store = mockStateStore([thunk], state)
+        const onChange = jest.fn()
+        await act(async () => {
+            render(wrapDNDIntl(
+                <ReduxProvider store={store}>
+                    <PropertyAccessRow
+                        board={boardOverride}
+                        rule={{...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy'}}
+                        onChange={onChange}
+                        onDelete={jest.fn()}
+                    />
+                </ReduxProvider>))
+        })
+        await userEvent.click(document.querySelectorAll('.user-item__button')[2])
+        await userEvent.click(screen.getByText(name))
+        return onChange
+    }
+
+    test('본부 관계는 본부 속성을 골라 채운다', async () => {
+        const onChange = await pickRelation(bothOrgKinds(), '같은 본부')
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            relation: 'sameDivision',
+            orgPropertyId: 'prop-division',
+        }))
+    })
+
+    test('부서 관계는 부서 속성을 골라 채운다', async () => {
+        const onChange = await pickRelation(bothOrgKinds(), '같은 부서')
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            relation: 'sameDepartment',
+            orgPropertyId: 'prop-department',
         }))
     })
 

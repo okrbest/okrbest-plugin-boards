@@ -74,6 +74,7 @@ const buildState = (board: Board, schemeAdmin: boolean) => ({
 const renderSection = async (board: Board, schemeAdmin = true) => {
     const store = mockStateStore([thunk], buildState(board, schemeAdmin))
     let container: Element | undefined
+    let rerenderResult: ((ui: React.ReactElement) => void) | undefined
     await act(async () => {
         const result = render(
             wrapDNDIntl(
@@ -82,9 +83,26 @@ const renderSection = async (board: Board, schemeAdmin = true) => {
                 </ReduxProvider>),
         )
         container = result.container
+        rerenderResult = result.rerender
     })
-    return {container: container!, store}
+
+    // The board arrives again whenever anything on it changes — another admin's
+    // save, a websocket update, the response to this dialog's own save.
+    const rerender = async (next: Board) => {
+        await act(async () => {
+            rerenderResult!(
+                wrapDNDIntl(
+                    <ReduxProvider store={store}>
+                        <PropertyAccessSection board={next}/>
+                    </ReduxProvider>),
+            )
+        })
+    }
+
+    return {container: container!, store, rerender}
 }
+
+const RULES_ONE = [{id: 'r1', propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', divisionId: '', departmentId: '', dutyId: 'duty-lead', permission: 'viewer' as const}]
 
 describe('src/components/shareBoard/propertyAccessSection', () => {
     beforeEach(() => {
@@ -241,6 +259,105 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         const [newBoard] = mockedMutator.updateBoard.mock.calls[0]
         const saved = newBoard.properties.propertyAccess as PropertyAccessSettings
         expect(saved.rules).toHaveLength(1)
+    })
+
+    // ---- 저장이 거부되면 화면에 남긴다 ----
+
+    test('저장이 거부되면 조용히 넘어가지 않는다', async () => {
+        mockedMutator.updateBoard.mockRejectedValueOnce(
+            new Error('propertyAccess rule 0: relation "sameDivision" needs orgPropertyId'))
+        const {container} = await renderSection(buildBoard())
+
+        await act(async () => {
+            await userEvent.click(container.querySelector('.Switch')!)
+        })
+
+        const notice = container.querySelector('.PropertyAccessSection__saveError')
+        expect(notice).not.toBeNull()
+        expect(notice!.textContent).toContain('needs orgPropertyId')
+    })
+
+    test('다음 저장이 통하면 실패 표시를 거둔다', async () => {
+        mockedMutator.updateBoard.mockRejectedValueOnce(new Error('rejected'))
+        const {container} = await renderSection(buildBoard())
+
+        await act(async () => {
+            await userEvent.click(container.querySelector('.Switch')!)
+        })
+        expect(container.querySelector('.PropertyAccessSection__saveError')).not.toBeNull()
+
+        await act(async () => {
+            await userEvent.click(container.querySelector('.Switch')!)
+        })
+
+        expect(container.querySelector('.PropertyAccessSection__saveError')).toBeNull()
+    })
+
+    // ---- 편집 중인 행은 보드가 다시 도착해도 살아남는다 ----
+
+    test('a row still being filled in survives the board arriving again', async () => {
+        const {container, rerender} = await renderSection(buildBoard())
+
+        await act(async () => {
+            await userEvent.click(container.querySelector('.PropertyAccessSection__add')!)
+        })
+        expect(container.querySelectorAll('.PropertyAccessRow').length).toBe(1)
+
+        await rerender(buildBoard({trackingTemplateId: 'template-1'}))
+
+        expect(container.querySelectorAll('.PropertyAccessRow').length).toBe(1)
+    })
+
+    test('an edit that empties a rule is not undone by the board arriving again', async () => {
+        const stored = {enabled: true, updatedBy: '', updatedAt: 0, rules: RULES_ONE}
+        const {container, rerender} = await renderSection(buildBoard({propertyAccess: stored}))
+
+        // Choosing the property again clears the value, so the row can no
+        // longer be saved — exactly the edit that used to spring back.
+        await act(async () => {
+            await userEvent.click(container.querySelectorAll('.user-item__button')[0])
+        })
+        await act(async () => {
+            await userEvent.click(document.querySelector('.menu-name')!)
+        })
+        expect(container.querySelector('.PropertyAccessRow__pending')).not.toBeNull()
+
+        await rerender(buildBoard({propertyAccess: stored}))
+
+        expect(container.querySelector('.PropertyAccessRow__pending')).not.toBeNull()
+    })
+
+    test('a saved rule still takes its value from the board', async () => {
+        const {container, rerender} = await renderSection(buildBoard({
+            propertyAccess: {enabled: true, updatedBy: '', updatedAt: 0, rules: RULES_ONE},
+        }))
+
+        await rerender(buildBoard({
+            propertyAccess: {
+                enabled: true,
+                updatedBy: '',
+                updatedAt: 0,
+                rules: [{...RULES_ONE[0], permission: 'editor' as const}],
+            },
+        }))
+
+        const labels = container.querySelectorAll('.PropertyAccessRow__label')
+        expect(labels[labels.length - 1].textContent).toBe('Editor')
+    })
+
+    test('moving to another board drops the row being filled in', async () => {
+        const {container, rerender} = await renderSection(buildBoard())
+
+        await act(async () => {
+            await userEvent.click(container.querySelector('.PropertyAccessSection__add')!)
+        })
+        expect(container.querySelectorAll('.PropertyAccessRow').length).toBe(1)
+
+        const other = buildBoard()
+        other.id = 'board-2'
+        await rerender(other)
+
+        expect(container.querySelectorAll('.PropertyAccessRow').length).toBe(0)
     })
 
     // ---- 009 US3: 매트릭스 화면 ----

@@ -236,7 +236,21 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
     const personPropertyChoices = board.cardProperties.filter((property) =>
         property.type === 'person' || property.type === 'multiPerson')
 
-    const soleOrgPropertyId = orgPropertyChoices.length === 1 ? orgPropertyChoices[0].id : ''
+    // Each relation reads one kind of property off the card: the division
+    // relations read a 본부 property, the department one a 부서 property. Counting
+    // both kinds as one pool left a board carrying one of each — the ordinary
+    // shape — with nothing to fall back on, and the server refuses a division
+    // relation that names no property. Picking by kind gives every such board an
+    // answer; a board with several of one kind still offers the choice, and
+    // whatever the row already names is kept when it is of the right kind.
+    const orgPropertyFor = (relation: OrgRelation, current: string): string => {
+        const wanted = relation === 'sameDepartment' ? 'orgDepartment' : 'orgDivision'
+        const matching = board.cardProperties.filter((property) => property.type === wanted)
+        if (matching.some((property) => property.id === current)) {
+            return current
+        }
+        return matching.length > 0 ? matching[0].id : ''
+    }
 
     const onPickOrgCondition = (id: string) => {
         if (!id.startsWith('relation:')) {
@@ -251,7 +265,7 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
             relation: picked,
             divisionId: '',
             departmentId: '',
-            orgPropertyId: orgRelationsNeedingProperty.includes(picked) ? (rule.orgPropertyId || soleOrgPropertyId) : '',
+            orgPropertyId: orgRelationsNeedingProperty.includes(picked) ? orgPropertyFor(picked, rule.orgPropertyId || '') : '',
         })
     }
 
@@ -371,6 +385,24 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
                     broken={false}
                     onSelect={(id) => props.onChange({...rule, permission: id as PropertyAccessPermission})}
                 />
+                {/*
+                  * A row missing either half of its condition is never sent to
+                  * the server — the save drops it. Dimming the row said only
+                  * that something was off; this says what is missing and that
+                  * nothing has been stored yet.
+                  */}
+                {invalid &&
+                    <div className='PropertyAccessRow__pending'>
+                        {hasCardCondition ?
+                            intl.formatMessage({
+                                id: 'PropertyAccess.pendingSubject',
+                                defaultMessage: 'Pick an organisation or duty — this row is not saved yet.',
+                            }) :
+                            intl.formatMessage({
+                                id: 'PropertyAccess.pendingCard',
+                                defaultMessage: 'Pick a property and value — this row is not saved yet.',
+                            })}
+                    </div>}
             </div>
             <IconButton
                 className='PropertyAccessRow__delete'

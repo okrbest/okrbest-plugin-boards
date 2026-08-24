@@ -537,9 +537,29 @@
     }
 
     .PropertyAccessRow--invalid {
-        .PropertyAccessRow__axes {
+        // Dimming the axes rather than the whole row: the notice below them
+        // explains why the row is dimmed, so it has to stay legible.
+        .PropertyAccessRow__axis {
             opacity: 0.72;
         }
+    }
+
+    // The refusal has to read as a failure, not as another hint — the change it
+    // names is already gone.
+    .PropertyAccessSection__saveError {
+        margin: 8px 0;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background: rgba(var(--error-text-color-rgb), 0.08);
+        color: rgba(var(--error-text-color-rgb), 1);
+        font-size: 12px;
+    }
+
+    .PropertyAccessRow__pending {
+        grid-column: 1 / -1;
+        padding: 0 0 6px;
+        font-size: 12px;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
 }
