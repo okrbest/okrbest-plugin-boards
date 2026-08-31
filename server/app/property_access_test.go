@@ -1466,6 +1466,65 @@ func TestEvaluatorDefaultConditionValues(t *testing.T) {
 	})
 }
 
+// 013 — 값이 목록에 담긴 규칙도 기본값을 낸다.
+//
+// 값을 모으는 자리가 옛 단일 필드만 읽어, 목록으로 저장된 행은 빈 문자열을
+// 보탰다. 공유 대화상자는 값을 하나만 골라도 목록에 쓰므로(propertyValueIds),
+// 화면으로 만든 규칙에서는 자동 배치가 아예 동작하지 않았다. 픽스처가 전부 옛
+// 단수 필드라 테스트에도 걸리지 않았다.
+func TestEvaluatorDefaultsReadListValues(t *testing.T) {
+	const (
+		ladderType = "prop-type"
+		valueKR    = "opt-kr"
+		valueTask  = "opt-task"
+	)
+
+	build := func(rules ...model.PropertyAccessRule) *PropertyAccessEvaluator {
+		return NewPropertyAccessEvaluator(EvaluatorInput{
+			UserID:   "user-1",
+			Settings: &model.PropertyAccessSettings{Enabled: true, Rules: rules},
+			OrgUnits: testOrgUnits(), Duties: testDuties(),
+			Profile:         &model.UserOrgProfile{PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+			BoardPermission: model.EffectiveBoardPermissionEdit,
+		})
+	}
+
+	t.Run("목록에 값이 하나면 그 값이 기본값이다", func(t *testing.T) {
+		defaults := build(model.PropertyAccessRule{
+			ID: "duty", PropertyID: ladderType, PropertyValueIDs: []string{valueKR},
+			DutyID: dutyLead, Permission: model.PropertyAccessEditor,
+		}).DefaultConditionValues()
+
+		require.Equal(t, map[string]string{ladderType: valueKR}, defaults,
+			"화면이 값 하나를 고를 때 쓰는 모양이다")
+	})
+
+	t.Run("목록에 값이 여럿이면 고르지 않는다", func(t *testing.T) {
+		defaults := build(model.PropertyAccessRule{
+			ID: "duty", PropertyID: ladderType, PropertyValueIDs: []string{valueKR, valueTask},
+			DutyID: dutyLead, Permission: model.PropertyAccessEditor,
+		}).DefaultConditionValues()
+
+		require.Empty(t, defaults, "둘 중 하나를 고르는 것은 추측이다")
+	})
+
+	t.Run("목록형 행이 다른 행의 답을 지우지 않는다", func(t *testing.T) {
+		defaults := build(
+			model.PropertyAccessRule{
+				ID: "old", PropertyID: ladderType, PropertyValueID: valueKR,
+				DutyID: dutyLead, Permission: model.PropertyAccessEditor,
+			},
+			model.PropertyAccessRule{
+				ID: "new", PropertyID: ladderType, PropertyValueIDs: []string{valueKR},
+				DivisionID: divStrategy, Permission: model.PropertyAccessEditor,
+			},
+		).DefaultConditionValues()
+
+		require.Equal(t, map[string]string{ladderType: valueKR}, defaults,
+			"두 행이 같은 값을 가리키므로 모호하지 않다 — 빈 문자열이 섞이면 모호로 판정돼 답이 사라졌다")
+	})
+}
+
 // TestEvaluatorDefaultsSpanProperties is the case the OKR board actually has:
 // one property carries the organization gate and another carries the duty
 // ladder, and a usable card needs a value from each. Neither value alone reaches

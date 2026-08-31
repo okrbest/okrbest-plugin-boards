@@ -437,7 +437,14 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 		if evaluator.admitted[rule.PropertyID] == nil {
 			evaluator.admitted[rule.PropertyID] = map[string]bool{}
 		}
-		evaluator.admitted[rule.PropertyID][rule.PropertyValueID] = true
+		// CardValueIDs, not the single field: the share dialog writes the list
+		// form even for one value, and reading only the old field made every row
+		// it saves contribute an empty string. One such row filed a new card
+		// under no value at all; a second row on the property then read as two
+		// answers and the default was dropped as ambiguous.
+		for _, valueID := range rule.CardValueIDs() {
+			evaluator.admitted[rule.PropertyID][valueID] = true
+		}
 	}
 
 	return evaluator
