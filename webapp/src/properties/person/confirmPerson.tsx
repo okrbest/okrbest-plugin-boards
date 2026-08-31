@@ -14,7 +14,7 @@ import {getBoardUsers, getMe} from '../../store/users'
 import {BoardMember, BoardTypeOpen, MemberRole} from '../../blocks/board'
 
 import {getOrgUnits, getOrgProfiles} from '../../store/orgMaster'
-import {selectedUnitIds, allowedUserIds as computeAllowedUserIds, displayedIds} from '../../store/orgScope'
+import {selectedUnitIds, allowedUserIds as computeAllowedUserIds, displayedIds, isOrgScoped} from '../../store/orgScope'
 
 import {PropertyProps} from '../types'
 import {useHasPermissions} from '../../hooks/permissions'
@@ -51,23 +51,32 @@ const ConfirmPerson = (props: PropertyProps): React.JSX.Element => {
     // Anyone already on the card stays offered even when out of scope, which
     // covers the three ways that happens at once — no organisation on record,
     // a reassignment, and a retired unit (FR-015).
+    //
+    // A property may opt out of it entirely: the toggle on the property menu
+    // writes orgScoped, and null hands PersonSelector its unnarrowed path.
     const orgUnits = useAppSelector(getOrgUnits(board.teamId))
     const orgProfiles = useAppSelector(getOrgProfiles(board.teamId))
+    const orgScoped = isOrgScoped(propertyTemplate)
     const allowedUserIds = useMemo(
-        () => displayedIds(
-            computeAllowedUserIds(
-                selectedUnitIds(card, board, 'orgDivision'),
-                selectedUnitIds(card, board, 'orgDepartment'),
-                orgUnits,
-                orgProfiles,
-            ),
-            userIDs,
-        ),
+        () => {
+            if (!orgScoped) {
+                return null
+            }
+            return displayedIds(
+                computeAllowedUserIds(
+                    selectedUnitIds(card, board, 'orgDivision'),
+                    selectedUnitIds(card, board, 'orgDepartment'),
+                    orgUnits,
+                    orgProfiles,
+                ),
+                userIDs,
+            )
+        },
         // Keyed on the joined IDs rather than the array: userIDs is rebuilt on
         // every render, and an unstable Set here would rebuild loadOptions and
         // make the async selector refetch on each keystroke.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [card, board, orgUnits, orgProfiles, userIDs.join(',')],
+        [card, board, orgUnits, orgProfiles, orgScoped, userIDs.join(',')],
     )
 
     const onChange = (items: SingleValue<IUser> | MultiValue<IUser>, action: ActionMeta<IUser>) => {

@@ -281,6 +281,11 @@ interface IPropertyTemplate {
     options: IPropertyOption[]
     index?: number
     required?: boolean
+
+    // person·multiPerson only: narrow the picker to the 본부·부서 the card names.
+    // Absent means on, so boards written before the toggle keep the behaviour
+    // they already had.
+    orgScoped?: boolean
 }
 
 function createBoard(board?: Board): Board {
@@ -306,6 +311,7 @@ function createBoard(board?: Board): Board {
                 type: o.type,
                 options: o.options ? o.options.map((option) => ({...option})) : [],
                 required: o.required,
+                orgScoped: o.orgScoped,
             }
         })
     }
