@@ -261,6 +261,31 @@ describe('src/components/shareBoard/propertyAccessSection', () => {
         expect(saved.rules).toHaveLength(1)
     })
 
+    // 전체 행은 값을 하나도 나열하지 않는다. 미완성으로 세면 저장이 그 행을
+    // 조용히 버려, 관리자는 규칙을 만들었는데 사라지는 것만 보게 된다.
+    test('값을 나열하지 않은 전체 행도 저장한다', async () => {
+        const board = buildBoard({
+            propertyAccess: {
+                enabled: false,
+                updatedBy: '',
+                updatedAt: 0,
+                rules: [
+                    {id: 'r1', propertyId: 'prop-clevel', propertyValueId: '', allValues: true, divisionId: 'div-strategy', departmentId: '', dutyId: '', permission: 'viewer'},
+                ],
+            },
+        })
+        const {container} = await renderSection(board)
+
+        await act(async () => {
+            await userEvent.click(container.querySelector('.Switch')!)
+        })
+
+        const [newBoard] = mockedMutator.updateBoard.mock.calls[0]
+        const saved = newBoard.properties.propertyAccess as PropertyAccessSettings
+        expect(saved.rules).toHaveLength(1)
+        expect(saved.rules[0].allValues).toBe(true)
+    })
+
     // ---- 오래된 규칙이 나머지 편집을 막지 않게 한다 ----
 
     test('볼 속성이 비어 있던 규칙은 저장할 때 채워 보낸다', async () => {

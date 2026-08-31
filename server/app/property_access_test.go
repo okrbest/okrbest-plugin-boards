@@ -435,6 +435,81 @@ func TestEvaluatorCardValuesList(t *testing.T) {
 		"한 줄이 값 둘을 가리킨다 — Objective 또는 Key Result")
 }
 
+// 012 — 값 축의 "전체"는 규칙을 쓰던 순간의 값 목록이 아니라 의도다. 나열해서
+// 저장하면 나중에 추가된 값이 규칙 밖에 남아, 관리자가 값을 만들 때마다 규칙을
+// 손봐야 했다.
+func TestEvaluatorAllValues(t *testing.T) {
+	// editor를 준다 — 규칙에 걸리지 않은 카드는 viewer로 떨어지므로, viewer로
+	// 재면 매칭됐는지 아닌지가 구분되지 않는다.
+	rule := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, AllValues: true,
+		Relation: model.RelationSameDivision, OrgPropertyID: propDivision,
+		Permission: model.PropertyAccessEditor,
+	}
+
+	evaluator := relationEvaluator(rule, "u1", depPlanning, dutyLead)
+
+	require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(relationCard(valObjective, divStrategy)))
+	require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(relationCard("opt-added-later", divStrategy)),
+		"규칙을 쓴 뒤 추가된 값도 전체에 든다")
+	require.True(t, evaluator.Admits(relationCard("opt-added-later", divStrategy)),
+		"전체 규칙이 admit까지 해야 새 값 아래에 하위 카드를 만들 수 있다")
+}
+
+// 전체는 "그 속성에 값이 있는 카드"다. 값이 비어 있는 카드까지 쓸어담으면 규칙이
+// 말하지 않은 카드를 지배하게 된다.
+func TestEvaluatorAllValuesNeedsAValue(t *testing.T) {
+	rule := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, AllValues: true,
+		Relation: model.RelationSameDivision, OrgPropertyID: propDivision,
+		Permission: model.PropertyAccessViewer,
+	}
+
+	evaluator := relationEvaluator(rule, "u1", depPlanning, dutyLead)
+
+	require.True(t, evaluator.MatchesAnyCondition(relationCard(valObjective, divStrategy)))
+	require.False(t, evaluator.MatchesAnyCondition(relationCard("", divStrategy)),
+		"유형이 비어 있는 카드는 어느 값에도 들지 않는다")
+}
+
+// 전체 행 아래에서 값을 바꾸는 것도 조건 이동이다. 조건이 같다고 보면
+// requireConditionWrite가 통째로 건너뛰어, 팀원이 자기 카드를 아무 값으로나 옮길
+// 수 있다.
+func TestEvaluatorAllValuesSameConditions(t *testing.T) {
+	rule := model.PropertyAccessRule{
+		ID: "r1", PropertyID: propType, AllValues: true,
+		Relation: model.RelationSameDivision, OrgPropertyID: propDivision,
+		Permission: model.PropertyAccessEditor,
+	}
+
+	evaluator := relationEvaluator(rule, "u1", depPlanning, dutyLead)
+
+	before := relationCard(valObjective, divStrategy)
+	after := relationCard(valTask, divStrategy)
+
+	require.False(t, evaluator.SameConditions(before, after),
+		"전체 규칙 아래에서도 값이 바뀌면 조건이 바뀐 것이다")
+	require.True(t, evaluator.SameConditions(before, relationCard(valObjective, divStrategy)))
+}
+
+// 값을 하나도 나열하지 않은 행은 여전히 거절하되, 전체를 뜻하는 행은 통과해야
+// 한다. 여기서 막히면 화면이 만든 행이 저장 때마다 조용히 사라진다.
+func TestValidateAllValuesRule(t *testing.T) {
+	settingsWith := func(rule model.PropertyAccessRule) *model.PropertyAccessSettings {
+		return &model.PropertyAccessSettings{Enabled: true, Rules: []model.PropertyAccessRule{rule}}
+	}
+
+	require.NoError(t, validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+		PropertyID: propType, AllValues: true,
+		DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+	})), "전체 행은 값을 나열하지 않는다")
+
+	require.Error(t, validatePropertyAccessSettings(settingsWith(model.PropertyAccessRule{
+		PropertyID: propType,
+		DivisionID: divStrategy, Permission: model.PropertyAccessViewer,
+	})), "값도 전체도 없는 행은 어느 카드도 가리키지 못한다")
+}
+
 // 009 계약 4절 — 저장할 때 막는 것들. 화면이 만들 수 없는 상태만 막고, 마스터가 메인
 // 서버 소유라 우리가 보장할 수 없는 것은 통과시킨다.
 func TestValidateRelationRules(t *testing.T) {

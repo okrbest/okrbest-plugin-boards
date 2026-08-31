@@ -552,7 +552,9 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         expect(screen.queryByText('연구')).not.toBeNull()
     })
 
-    test('전체를 고르면 모든 옵션이 속성값에 담긴다', async () => {
+    // 전체는 그날의 옵션 목록이 아니라 의도다. 나열해서 담으면 나중에 추가된
+    // 값이 규칙 밖에 남아, 값을 만들 때마다 규칙을 손봐야 했다.
+    test('전체를 고르면 나열하지 않고 allValues로 담는다', async () => {
         const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', propertyValueIds: ['opt-strategy']}
         const {container, onChange} = await renderRow(rule)
 
@@ -560,8 +562,58 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         await userEvent.click(screen.getByText('전체'))
 
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
-            propertyValueIds: ['opt-strategy', 'opt-production', 'opt-research'],
+            allValues: true,
+            propertyValueIds: [],
             propertyValueId: '',
+        }))
+    })
+
+    test('allValues 규칙은 전체로 표시한다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', allValues: true}
+        const {container} = await renderRow(rule)
+
+        expect(valueLabel(container)).toBe('전체')
+    })
+
+    test('allValues에서는 모든 값에 체크가 켜져 있다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', allValues: true}
+        const {container} = await renderRow(rule)
+
+        await openSelector(container, 1)
+
+        // 전체 한 줄 + 값 세 줄 = 체크 넷.
+        expect(document.querySelectorAll('.CheckIcon').length).toBe(4)
+    })
+
+    // 화면에는 모든 값에 체크가 켜져 있다. 그중 하나를 누르면 그 하나가 꺼지는
+    // 것이 눈에 보이는 대로의 결과다 — 누른 값 하나만 남기면 나머지를 조용히
+    // 버리게 된다.
+    test('allValues에서 값 하나를 끄면 나머지가 전부 남는다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', allValues: true}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 1)
+        await userEvent.click(screen.getByText('생산'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            allValues: false,
+            propertyValueIds: ['opt-strategy', 'opt-research'],
+            propertyValueId: '',
+        }))
+    })
+
+    test('속성을 고르면 값 축이 비워지고 전체 선택도 풀린다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: '', allValues: true}
+        const {container, onChange} = await renderRow(rule)
+
+        // 닫힌 버튼에도 같은 이름이 찍혀 있으므로 메뉴 쪽 항목을 고른다.
+        await openSelector(container, 0)
+        const options = screen.getAllByText('C-Level')
+        await userEvent.click(options[options.length - 1])
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            allValues: false,
+            propertyValueIds: [],
         }))
     })
 })

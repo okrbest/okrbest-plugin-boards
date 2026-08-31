@@ -127,6 +127,11 @@ type PropertyAccessRule = {
     propertyValueIds?: string[]
     propertyValueId: string
 
+    // allValues is the value axis answered in full: every value of the property,
+    // including ones added after the row was written. It names no value of its
+    // own, so the two fields above are cleared when it is set.
+    allValues?: boolean
+
     divisionId: string
     departmentId: string
 

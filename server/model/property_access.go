@@ -108,6 +108,15 @@ type PropertyAccessRule struct {
 	PropertyValueIDs []string `json:"propertyValueIds,omitempty"`
 	PropertyValueID  string   `json:"propertyValueId"`
 
+	// AllValues is the value axis saying "every value of this property",
+	// including ones added after the row was written. Listing the values instead
+	// froze the row to the options that existed that day, so an admin adding a
+	// value had to reopen every rule and tick it again.
+	//
+	// It is exclusive with the two fields above: a row that means "all" names no
+	// value, the same way a relation clears the named organization.
+	AllValues bool `json:"allValues,omitempty"`
+
 	DivisionID   string `json:"divisionId"`
 	DepartmentID string `json:"departmentId"`
 
