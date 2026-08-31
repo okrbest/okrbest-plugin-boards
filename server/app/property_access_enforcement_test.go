@@ -46,13 +46,15 @@ const (
 func enforcementSettings() *model.PropertyAccessSettings {
 	return &model.PropertyAccessSettings{
 		Enabled: true,
+		// 값은 목록에 담는다 — 공유 대화상자가 값을 하나만 고를 때도 쓰는 모양이다.
+		// 픽스처가 옛 단수 필드만 쓰는 동안 카드 생성 경로의 결함이 가려져 있었다.
 		Rules: []model.PropertyAccessRule{
 			{
-				ID: "org", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+				ID: "org", PropertyID: propCLevel, PropertyValueIDs: []string{valueStrategy},
 				DivisionID: divStrategy, Permission: model.PropertyAccessCommenter,
 			},
 			{
-				ID: "head", PropertyID: propCLevel, PropertyValueID: valueStrategy,
+				ID: "head", PropertyID: propCLevel, PropertyValueIDs: []string{valueStrategy},
 				DutyID: dutyHead, Permission: model.PropertyAccessEditor,
 			},
 		},
