@@ -350,6 +350,7 @@
   "PropertyMenu.changeType": "Change property type",
   "PropertyMenu.selectType": "Select property type",
   "PropertyMenu.typeTitle": "Type",
+  "PropertyMenu.OrgScoped": "Link to organisation",
   "PropertyMenu.Required": "Required",
   "PropertyType.Card": "Card",
   "PropertyType.Checkbox": "Checkbox",

@@ -234,3 +234,119 @@ describe('properties/person', () => {
         }
     })
 })
+
+// The toggle of specs 011: person·multiPerson properties may opt out of the
+// 본부·부서 narrowing that spec 005 gave every board at once.
+describe('properties/person organisation narrowing', () => {
+    const mockStore = configureStore([])
+
+    const orgBoard = TestBlockFactory.createBoard()
+    orgBoard.teamId = 'team-id-1'
+    orgBoard.cardProperties = [
+        {id: 'prop-division', name: '본부', type: 'orgDivision', options: []},
+        {id: 'prop-person', name: '담당자', type: 'person', options: []},
+    ]
+    const orgCard = TestBlockFactory.createCard(orgBoard)
+    orgCard.fields.properties['prop-division'] = ['div-production']
+
+    const boardUser = (id: string, username: string) => ({
+        id,
+        username,
+        email: `${username}@example.com`,
+        nickname: '',
+        firstname: '',
+        lastname: '',
+        props: {},
+        create_at: 1621315184,
+        update_at: 1621315184,
+        delete_at: 0,
+        is_bot: false,
+        is_guest: false,
+        roles: 'system_user',
+    })
+
+    // The board lets its admin add people, so the picker searches the team and
+    // narrows what comes back — the branch a real assignment goes through.
+    beforeEach(() => {
+        mockedOctoClient.searchTeamUsers.mockResolvedValue([
+            boardUser('user-id-2', 'username-2'),
+            boardUser('user-id-3', 'username-3'),
+        ])
+    })
+
+    const orgState = {
+        boards: {
+            boards: {[orgBoard.id]: orgBoard},
+            current: orgBoard.id,
+            myBoardMemberships: {
+                [orgBoard.id]: {userId: 'user-id-1', schemeAdmin: true},
+            },
+        },
+        users: {
+            me: {id: 'user-id-1', username: 'username-1', roles: 'system_user'},
+            boardUsers: {
+                'user-id-1': boardUser('user-id-1', 'username-1'),
+                'user-id-2': boardUser('user-id-2', 'username-2'),
+                'user-id-3': boardUser('user-id-3', 'username-3'),
+            },
+        },
+        clientConfig: {
+            value: {teammateNameDisplay: 'username'},
+        },
+        orgMaster: {
+            orgUnitsByTeamId: {
+                'team-id-1': [{id: 'div-production', name: '생산본부', type: 'division', parentId: ''}],
+            },
+            // username-2 sits in the 본부 the card names; username-3 sits nowhere.
+            orgProfilesByTeamId: {
+                'team-id-1': [{userId: 'user-id-2', orgUnitId: 'div-production'}],
+            },
+            dutiesByTeamId: {},
+            loadedTeamIds: ['team-id-1'],
+        },
+    }
+
+    const openPicker = async (orgScoped?: boolean) => {
+        const template = {
+            id: 'prop-person',
+            name: '담당자',
+            type: 'person',
+            options: [],
+            orgScoped,
+        } as IPropertyTemplate
+
+        const {container} = render(wrapIntl(
+            <ReduxProvider store={mockStore(orgState)}>
+                <ConfirmPerson
+                    property={new PersonProperty()}
+                    propertyValue={''}
+                    readOnly={false}
+                    showEmptyPlaceholder={false}
+                    propertyTemplate={template}
+                    board={orgBoard}
+                    card={orgCard}
+                />
+            </ReduxProvider>,
+        ))
+
+        const input = container.querySelector('input')
+        await act(async () => {
+            await userEvent.click(input!)
+        })
+        return container
+    }
+
+    test('narrows to the organisation the card names when the flag is unset', async () => {
+        const container = await openPicker(undefined)
+
+        expect(container.textContent).toContain('username-2')
+        expect(container.textContent).not.toContain('username-3')
+    })
+
+    test('offers everyone when the flag is off', async () => {
+        const container = await openPicker(false)
+
+        expect(container.textContent).toContain('username-2')
+        expect(container.textContent).toContain('username-3')
+    })
+})

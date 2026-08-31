@@ -157,6 +157,40 @@ describe('board tests', () => {
             expect(sanitizeBoardsAndBlocksPatches(result)).toMatchSnapshot()
         })
     })
+
+    // createBoard clones card properties field by field, so a flag it does not
+    // name is dropped on every save. mutator.updateBoard clones before it
+    // patches, which is how the toggle would silently reset itself.
+    describe('createBoard org scope flag', () => {
+        it('should keep orgScoped false through a clone', () => {
+            const board = TestBlockFactory.createBoard()
+            board.cardProperties = [{
+                id: 'property-person',
+                name: 'Owner',
+                type: 'person',
+                options: [],
+                orgScoped: false,
+            }]
+
+            const clone = createBoard(board)
+
+            expect(clone.cardProperties[0].orgScoped).toBe(false)
+        })
+
+        it('should leave orgScoped unset when the property never had one', () => {
+            const board = TestBlockFactory.createBoard()
+            board.cardProperties = [{
+                id: 'property-person',
+                name: 'Owner',
+                type: 'person',
+                options: [],
+            }]
+
+            const clone = createBoard(board)
+
+            expect(clone.cardProperties[0].orgScoped).toBeUndefined()
+        })
+    })
 })
 
 /* eslint-enable @typescript-eslint/no-explicit-any */

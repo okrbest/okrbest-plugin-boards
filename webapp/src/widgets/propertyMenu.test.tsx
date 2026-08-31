@@ -152,4 +152,55 @@ describe('widgets/PropertyMenu', () => {
         fireEvent.click(menuOpen)
         expect(container).toMatchSnapshot()
     })
+
+    // The narrowing only makes sense where a person is chosen, so the switch
+    // stays off every other property type.
+    describe('organisation link switch', () => {
+        const renderMenu = (type: string, orgScoped?: boolean, onOrgScopedChanged = jest.fn()) => {
+            const component = wrapIntl(
+                <Provider store={mockStore}>
+                    <PropertyMenu
+                        {...baseProps}
+                        propertyType={propsRegistry.get(type as never)}
+                        orgScoped={orgScoped}
+                        onOrgScopedChanged={onOrgScopedChanged}
+                    />
+                </Provider>,
+            )
+            return render(component)
+        }
+
+        test('offers the switch on a person property', () => {
+            const {queryByText} = renderMenu('person')
+            expect(queryByText('Link to organisation')).not.toBeNull()
+        })
+
+        test('offers the switch on a multiPerson property', () => {
+            const {queryByText} = renderMenu('multiPerson')
+            expect(queryByText('Link to organisation')).not.toBeNull()
+        })
+
+        test('hides the switch on other property types', () => {
+            const {queryByText} = renderMenu('email')
+            expect(queryByText('Link to organisation')).toBeNull()
+        })
+
+        test('reports the flag turning off', () => {
+            const callback = jest.fn()
+            const {getByText} = renderMenu('person', undefined, callback)
+
+            fireEvent.click(getByText('Link to organisation'))
+
+            expect(callback).toHaveBeenCalledWith(false)
+        })
+
+        test('reports the flag turning on', () => {
+            const callback = jest.fn()
+            const {getByText} = renderMenu('person', false, callback)
+
+            fireEvent.click(getByText('Link to organisation'))
+
+            expect(callback).toHaveBeenCalledWith(true)
+        })
+    })
 })

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Board, OrgUnit, PropertyTypeEnum, UserOrgMembership} from '../blocks/board'
+import {Board, IPropertyTemplate, OrgUnit, PropertyTypeEnum, UserOrgMembership} from '../blocks/board'
 import {Card} from '../blocks/card'
 
 // Narrowing the organisation choices on a card, as pure functions.
@@ -110,4 +110,13 @@ export function displayedIds(allowed: Set<string> | null, current: string[]): Se
         }
     })
     return shown
+}
+
+// Whether one person·multiPerson property narrows its picker by organisation.
+//
+// The flag is absent on every property written before the toggle existed, and
+// those boards were narrowed, so absent reads as on. Only an explicit false
+// turns the narrowing off.
+export function isOrgScoped(template: IPropertyTemplate): boolean {
+    return template.orgScoped !== false
 }

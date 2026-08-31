@@ -397,9 +397,13 @@ const CardDetailProperties = (props: Props) => {
                                                             propertyName={propertyTemplate.name}
                                                             propertyType={propRegistry.get(propertyTemplate.type)}
                                                             required={propertyTemplate.required}
+                                                            orgScoped={propertyTemplate.orgScoped}
                                                             onTypeAndNameChanged={(newType: PropertyType, newName: string) => onPropertyChangeSetAndOpenConfirmationDialog(newType, newName, propertyTemplate)}
                                                             onRequiredChanged={(required: boolean) => {
                                                                 mutator.changePropertyRequired(board, propertyTemplate, required)
+                                                            }}
+                                                            onOrgScopedChanged={(orgScoped: boolean) => {
+                                                                mutator.changePropertyOrgScoped(board, propertyTemplate, orgScoped)
                                                             }}
                                                             onDelete={() => onPropertyDeleteSetAndOpenConfirmationDialog(propertyTemplate)}
                                                             onBoardSelected={(selectedBoard: Board) => {

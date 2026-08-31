@@ -26,13 +26,21 @@ export const NON_REQUIRED_PROPERTY_TYPES: PropertyTypeEnum[] = [
     'checkbox',
 ]
 
+// 사람을 고르는 속성만 조직(본부·부서) 연동을 켜고 끌 수 있다
+export const ORG_SCOPED_PROPERTY_TYPES: PropertyTypeEnum[] = [
+    'person',
+    'multiPerson',
+]
+
 type Props = {
     propertyId: string
     propertyName: string
     propertyType: PropertyType
     required?: boolean
+    orgScoped?: boolean
     onTypeAndNameChanged: (newType: PropertyType, newName: string) => void
     onRequiredChanged?: (required: boolean) => void
+    onOrgScopedChanged?: (orgScoped: boolean) => void
     onDelete: (id: string) => void
     onBoardSelected?: (selectedBoard: Board) => void
 }
@@ -123,6 +131,12 @@ const PropertyMenu = (props: Props) => {
         id: 'PropertyMenu.Required',
         defaultMessage: 'Required',
     })
+    const orgScopedText = intl.formatMessage({
+        id: 'PropertyMenu.OrgScoped',
+        defaultMessage: 'Link to organisation',
+    })
+    // 저장된 값이 없으면 켜짐 — 토글이 생기기 전 보드는 이미 좁혀져 있었다
+    const orgScopedOn = props.orgScoped !== false
     // 선택된 보드 확인 (propertyTemplate.options[0].id에 보드 ID 저장)
     const selectedBoardId = propertyTemplate?.options?.[0]?.id
     const selectedBoard = selectedBoardId ? boards.find((b) => b.id === selectedBoardId) : null
@@ -230,6 +244,14 @@ const PropertyMenu = (props: Props) => {
                         </>
                     )}
                 </Menu.SubMenu>
+            )}
+            {props.onOrgScopedChanged && ORG_SCOPED_PROPERTY_TYPES.includes(props.propertyType.type) && (
+                <Menu.Switch
+                    id='orgScoped'
+                    name={orgScopedText}
+                    isOn={orgScopedOn}
+                    onClick={() => props.onOrgScopedChanged?.(!orgScopedOn)}
+                />
             )}
             {props.onRequiredChanged && !NON_REQUIRED_PROPERTY_TYPES.includes(props.propertyType.type) && (
                 <Menu.Switch

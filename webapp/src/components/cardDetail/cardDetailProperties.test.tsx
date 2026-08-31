@@ -327,3 +327,76 @@ describe('components/cardDetail/CardDetailProperties', () => {
         })
     })
 })
+
+// The switch has to reach the mutator, otherwise it flips on screen and the
+// board is saved without it.
+describe('components/cardDetail/CardDetailProperties org scope switch', () => {
+    const personBoard = TestBlockFactory.createBoard()
+    personBoard.cardProperties = [
+        {id: 'property_person', name: '담당자', type: 'person', options: []},
+    ]
+
+    const personView = TestBlockFactory.createBoardView(personBoard)
+    personView.fields.sortOptions = []
+    personView.fields.groupById = undefined
+    personView.fields.hiddenOptionIds = []
+
+    const personCard = TestBlockFactory.createCard(personBoard)
+
+    const personState = {
+        users: {
+            me: {id: 'user_id_1'},
+            boardUsers: {},
+            myConfig: {
+                onboardingTourStarted: {value: true},
+                tourCategory: {value: 'card'},
+                onboardingTourStep: {value: '1'},
+            },
+        },
+        teams: {current: {id: 'team-id'}},
+        boards: {
+            boards: {[personBoard.id]: personBoard},
+            current: personBoard.id,
+            myBoardMemberships: {
+                [personBoard.id]: {userId: 'user_id_1', schemeAdmin: true},
+            },
+        },
+        cards: {
+            cards: {[personCard.id]: personCard},
+            current: personCard.id,
+        },
+        clientConfig: {value: {teammateNameDisplay: 'username'}},
+    }
+
+    const mockStore = configureStore([])
+
+    beforeEach(() => {
+        mockedMutator.changePropertyOrgScoped.mockClear()
+    })
+
+    it('turns the flag off through the mutator', async () => {
+        const user = userEvent.setup()
+        const {container} = render(wrapRBDNDContext(
+            wrapIntl(
+                <ReduxProvider store={mockStore(personState)}>
+                    <CardDetailProperties
+                        board={personBoard}
+                        card={personCard}
+                        cards={[personCard]}
+                        activeView={personView}
+                        views={[personView]}
+                        readonly={false}
+                    />
+                </ReduxProvider>,
+            ),
+        ))
+
+        const propertyLabel = container.querySelector('.MenuWrapper')
+        await user.click(propertyLabel!)
+
+        const orgScopedSwitch = await screen.findByText('Link to organisation')
+        await user.click(orgScopedSwitch)
+
+        expect(mockedMutator.changePropertyOrgScoped).toHaveBeenCalledWith(personBoard, personBoard.cardProperties[0], false)
+    })
+})

@@ -458,3 +458,49 @@ describe('Mutator OKR board mode', () => {
         expect(boardPatch().body.deletedProperties ?? []).not.toContain('propertyAccess')
     })
 })
+
+describe('Mutator person property org scope toggle', () => {
+    // The store freezes what it holds, so the flag has to be on the property
+    // before the board is dispatched.
+    const setupBoard = (orgScoped?: boolean) => {
+        const board = TestBlockFactory.createBoard()
+        board.cardProperties = [
+            {id: 'p-person', name: '담당자', type: 'person', options: [], orgScoped},
+        ] as IPropertyTemplate[]
+        store.dispatch(updateBoards([board]))
+
+        // patchBoard reads the response it gets back; the default mock resolves
+        // to nothing, which throws before the assertion can run.
+        FetchMock.fn.mockReturnValue(FetchMock.jsonResponse(JSON.stringify(board)))
+        return board
+    }
+
+    const patchBody = () => {
+        const calls = (FetchMock.fn.mock.calls as unknown as Array<[string, RequestInit]>).
+            map(([, init]) => init).
+            filter((init) => init?.method === 'PATCH')
+        if (calls.length === 0) {
+            throw new Error('no PATCH request was made')
+        }
+        return JSON.parse(calls[0].body as string)
+    }
+
+    test('writes the flag off onto the property', async () => {
+        const board = setupBoard()
+
+        await mutator.changePropertyOrgScoped(board, board.cardProperties[0], false)
+
+        const updated = patchBody().updatedCardProperties
+        expect(updated).toHaveLength(1)
+        expect(updated[0].id).toBe('p-person')
+        expect(updated[0].orgScoped).toBe(false)
+    })
+
+    test('writes the flag back on', async () => {
+        const board = setupBoard(false)
+
+        await mutator.changePropertyOrgScoped(board, board.cardProperties[0], true)
+
+        expect(patchBody().updatedCardProperties[0].orgScoped).toBe(true)
+    })
+})

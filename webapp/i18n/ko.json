@@ -350,6 +350,7 @@
   "PropertyMenu.changeType": "속성 유형 변경",
   "PropertyMenu.selectType": "속성 유형 선택",
   "PropertyMenu.typeTitle": "유형",
+  "PropertyMenu.OrgScoped": "조직 연동",
   "PropertyMenu.Required": "필수",
   "PropertyType.Card": "카드",
   "PropertyType.Checkbox": "체크박스",

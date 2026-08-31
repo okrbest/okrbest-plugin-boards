@@ -4,7 +4,7 @@
 import {Board, IPropertyTemplate, OrgUnit} from '../blocks/board'
 import {Card} from '../blocks/card'
 
-import {selectedUnitIds, allowedDepartments, displayedIds, allowedUserIds} from './orgScope'
+import {selectedUnitIds, allowedDepartments, displayedIds, allowedUserIds, isOrgScoped} from './orgScope'
 
 // The four derived sets of specs/005-org-scoped-properties/data-model.md §3.
 describe('store/orgScope', () => {
@@ -191,6 +191,31 @@ describe('store/orgScope', () => {
             )
 
             expect(allowed).toEqual(new Set(['u-prod-head', 'u-prod-lead', 'u-quality', 'u-admin-head']))
+        })
+    })
+
+    // Boards written before the toggle carry no flag at all, and they must keep
+    // narrowing — reading a missing flag as off would widen every picker on the
+    // boards already in use.
+    describe('isOrgScoped', () => {
+        const template = (orgScoped?: boolean): IPropertyTemplate => ({
+            id: 'property-person',
+            name: 'Owner',
+            type: 'person',
+            options: [],
+            orgScoped,
+        })
+
+        it('narrows when the flag is missing', () => {
+            expect(isOrgScoped(template())).toBe(true)
+        })
+
+        it('narrows when the flag is on', () => {
+            expect(isOrgScoped(template(true))).toBe(true)
+        })
+
+        it('does not narrow when the flag is off', () => {
+            expect(isOrgScoped(template(false))).toBe(false)
         })
     })
 })

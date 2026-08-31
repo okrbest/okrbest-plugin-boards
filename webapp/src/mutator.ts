@@ -694,6 +694,20 @@ class Mutator {
         await this.updateBoard(newBoard, board, required ? 'set property required' : 'set property optional')
     }
 
+    // person·multiPerson only: whether the picker narrows to the 본부·부서 the
+    // card names. Mirrors changePropertyRequired — one flag on one template.
+    async changePropertyOrgScoped(board: Board, template: IPropertyTemplate, orgScoped: boolean) {
+        const newBoard = createBoard(board)
+        const newTemplate = newBoard.cardProperties.find((o: IPropertyTemplate) => o.id === template.id)
+        if (!newTemplate) {
+            Utils.assertFailure(`changePropertyOrgScoped: template not found: ${template.id}`)
+            return
+        }
+        newTemplate.orgScoped = orgScoped
+
+        await this.updateBoard(newBoard, board, orgScoped ? 'link property to organisation' : 'unlink property from organisation')
+    }
+
     // Properties
 
     async updateBoardCardProperties(boardId: string, oldProperties: IPropertyTemplate[], newProperties: IPropertyTemplate[], description = 'update card properties') {
