@@ -95,13 +95,18 @@ const MultiSelector = (props: {
     label: string
     allLabel: string
     selectedIds: string[]
+    allSelected: boolean
     choices: Choice[]
     broken: boolean
     onToggle: (id: string) => void
     onSelectAll: () => void
 }): React.JSX.Element => {
     const intl = useIntl()
-    const summary = summarizeSelection(props.selectedIds, props.choices)
+
+    // "전체" is stored as an intent rather than as the list of values that
+    // existed when it was chosen, so it cannot be read back off the selection.
+    const summary = props.allSelected ? {kind: 'all'} as const : summarizeSelection(props.selectedIds, props.choices)
+    const isChecked = (id: string) => props.allSelected || props.selectedIds.includes(id)
 
     let labelText = props.label
     switch (summary.kind) {
@@ -151,7 +156,7 @@ const MultiSelector = (props: {
                             key={choice.id}
                             id={choice.id}
                             check={true}
-                            icon={props.selectedIds.includes(choice.id) ? <CheckIcon/> : <div className='empty-icon'/>}
+                            icon={isChecked(choice.id) ? <CheckIcon/> : <div className='empty-icon'/>}
                             name={choice.name}
                             suppressItemClicked={true}
                             onClick={() => props.onToggle(choice.id)}
@@ -166,7 +171,19 @@ const MultiSelector = (props: {
 // toggleCardValues adds or removes one value from the rule's value set, always
 // writing the list form and clearing the legacy single field so the two never
 // disagree about what the rule restricts.
-const toggleCardValues = (rule: PropertyAccessRule, valueId: string): PropertyAccessRule => {
+const toggleCardValues = (rule: PropertyAccessRule, valueId: string, allOptionIds: string[]): PropertyAccessRule => {
+    // Every value showed a check while the row meant "all", so switching off one
+    // of them leaves the other values on. Keeping only the clicked value would
+    // throw away the rest without the screen ever saying so.
+    if (rule.allValues) {
+        return {
+            ...rule,
+            allValues: false,
+            propertyValueIds: allOptionIds.filter((id) => id !== valueId),
+            propertyValueId: '',
+        }
+    }
+
     const current = cardValueIds(rule)
     const next = current.includes(valueId) ?
         current.filter((id) => id !== valueId) :
@@ -203,7 +220,8 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
     // row stops matching any card, and saying so on the row is the only way an
     // admin finds out (FR-036).
     const brokenProperty = rule.propertyId !== '' && !selectedProperty
-    const brokenValue = cardValueIds(rule).some((valueId) => !propertyValues.some((option) => option.id === valueId))
+    const brokenValue = !rule.allValues &&
+        cardValueIds(rule).some((valueId) => !propertyValues.some((option) => option.id === valueId))
     const brokenDivision = orgMasterLoaded && rule.divisionId !== '' && !divisions.some((unit) => unit.id === rule.divisionId)
     const brokenDepartment = orgMasterLoaded && rule.departmentId !== '' && !departments.some((unit) => unit.id === rule.departmentId)
     const brokenDuty = orgMasterLoaded && rule.dutyId !== '' && !duties.some((duty) => duty.id === rule.dutyId)
@@ -268,7 +286,8 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
     // admin finds out (FR-024).
     const brokenTier = usesTiers && !tiers.some((tier) => tier.id === rule.tierIds![0])
 
-    const hasCardCondition = rule.propertyId !== '' && (rule.propertyValueId !== '' || (rule.propertyValueIds || []).length > 0)
+    const hasCardCondition = rule.propertyId !== '' &&
+        (Boolean(rule.allValues) || rule.propertyValueId !== '' || (rule.propertyValueIds || []).length > 0)
     const hasSubjectCondition = usesRelation || usesTiers ||
         rule.divisionId !== '' || rule.departmentId !== '' || rule.dutyId !== ''
     const invalid = !hasCardCondition || !hasSubjectCondition
@@ -283,16 +302,17 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
                     selectedId={rule.propertyId}
                     choices={selectableProperties.map((property) => ({id: property.id, name: property.name}))}
                     broken={brokenProperty}
-                    onSelect={(id) => props.onChange({...rule, propertyId: id, propertyValueId: '', propertyValueIds: []})}
+                    onSelect={(id) => props.onChange({...rule, propertyId: id, propertyValueId: '', propertyValueIds: [], allValues: false})}
                 />
                 <MultiSelector
                     label={intl.formatMessage({id: 'PropertyAccess.selectValue', defaultMessage: 'Value'})}
                     allLabel={intl.formatMessage({id: 'PropertyAccess.allValues', defaultMessage: '전체'})}
                     selectedIds={cardValueIds(rule)}
+                    allSelected={Boolean(rule.allValues)}
                     choices={propertyValues.map((option) => ({id: option.id, name: option.value}))}
                     broken={brokenValue}
-                    onToggle={(id) => props.onChange(toggleCardValues(rule, id))}
-                    onSelectAll={() => props.onChange({...rule, propertyValueIds: propertyValues.map((option) => option.id), propertyValueId: ''})}
+                    onToggle={(id) => props.onChange(toggleCardValues(rule, id, propertyValues.map((option) => option.id)))}
+                    onSelectAll={() => props.onChange({...rule, allValues: true, propertyValueIds: [], propertyValueId: ''})}
                 />
                 <Selector
                     label={intl.formatMessage({id: 'PropertyAccess.selectOrgCondition', defaultMessage: 'Organisation'})}

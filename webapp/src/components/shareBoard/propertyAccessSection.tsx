@@ -78,7 +78,7 @@ const columnLabels = [
 // show up as a validation message — the save silently drops the row.
 const isComplete = (rule: PropertyAccessRule): boolean =>
     rule.propertyId !== '' &&
-    cardValueIds(rule).length > 0 &&
+    (Boolean(rule.allValues) || cardValueIds(rule).length > 0) &&
     (Boolean(rule.relation) ||
         (rule.tierIds || []).length > 0 ||
         rule.divisionId !== '' ||

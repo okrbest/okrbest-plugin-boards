@@ -242,7 +242,9 @@ func validatePropertyAccessSettings(settings *model.PropertyAccessSettings) erro
 		switch {
 		case rule.PropertyID == "":
 			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: propertyId is required", i))
-		case len(rule.CardValueIDs()) == 0:
+		case !rule.AllValues && len(rule.CardValueIDs()) == 0:
+			// AllValues is the value axis answered in full. It names no value on
+			// purpose, so the row it produces is complete without one.
 			return model.NewErrBadRequest(fmt.Sprintf("propertyAccess rule %d: propertyValueId is required", i))
 		case !rule.HasOrgCondition() && rule.DutyID == "" && len(rule.TierIDs) == 0:
 			// A row with no subject condition would grant everyone the
@@ -345,10 +347,20 @@ type PropertyAccessEvaluator struct {
 	// rule set (FR-015).
 	mentioned map[cardCondition]bool
 
+	// mentionedAll holds the properties a rule names in full. Such a row cannot
+	// be expanded into conditions here — the values it covers are whatever the
+	// property offers when a card is judged, not when the evaluator was built.
+	mentionedAll map[string]bool
+
 	// admitted records, per property, the values whose rules admit this user.
 	// A new card is filled from it, so the card starts life in the one place
 	// the rules let its author work.
 	admitted map[string]map[string]bool
+
+	// admittedAll marks the properties an all-values row admits this user on.
+	// Such a property has no one place to file a new card under, so it is left
+	// for the author to answer.
+	admittedAll map[string]bool
 }
 
 // NewPropertyAccessEvaluator precomputes everything that does not depend on the
@@ -363,6 +375,7 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 		floor:           model.EffectiveBoardPermissionNone,
 		units:           map[string]bool{},
 		mentioned:       map[cardCondition]bool{},
+		mentionedAll:    map[string]bool{},
 	}
 
 	if input.Settings == nil {
@@ -394,6 +407,9 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 	}
 
 	for _, rule := range input.Settings.Rules {
+		if rule.AllValues {
+			evaluator.mentionedAll[rule.PropertyID] = true
+		}
 		for _, valueID := range rule.CardValueIDs() {
 			evaluator.mentioned[cardCondition{propertyID: rule.PropertyID, valueID: valueID}] = true
 		}
@@ -408,6 +424,15 @@ func NewPropertyAccessEvaluator(input EvaluatorInput) *PropertyAccessEvaluator {
 		// one a new card belongs under.
 		if evaluator.admitted == nil {
 			evaluator.admitted = map[string]map[string]bool{}
+		}
+		if rule.AllValues {
+			// The row names no single value, so there is nothing to file a new
+			// card under — choosing one of everything would be a guess.
+			if evaluator.admittedAll == nil {
+				evaluator.admittedAll = map[string]bool{}
+			}
+			evaluator.admittedAll[rule.PropertyID] = true
+			continue
 		}
 		if evaluator.admitted[rule.PropertyID] == nil {
 			evaluator.admitted[rule.PropertyID] = map[string]bool{}
@@ -593,6 +618,19 @@ func cardValues(card *model.Block, propertyID string) []string {
 // side names. A multiSelect property contributes one value per selection, and a
 // rule may name several values, so one overlap is enough (FR-023, FR-008).
 func ruleMentionsCard(rule model.PropertyAccessRule, card *model.Block) bool {
+	if rule.AllValues {
+		// Every value of the property, including ones added after the row was
+		// written. A card carrying no value for it is still outside: the row
+		// names values, and a card that names none is not one of them.
+		found := false
+		eachCardCondition(card, func(condition cardCondition) {
+			if condition.propertyID == rule.PropertyID && condition.valueID != "" {
+				found = true
+			}
+		})
+		return found
+	}
+
 	wanted := rule.CardValueIDs()
 	if len(wanted) == 0 {
 		return false
@@ -848,7 +886,7 @@ func (e *PropertyAccessEvaluator) conditionsOf(card *model.Block) map[cardCondit
 
 	var matched map[cardCondition]bool
 	eachCardCondition(card, func(condition cardCondition) {
-		if !e.mentioned[condition] {
+		if !e.mentioned[condition] && !e.mentionedAll[condition.propertyID] {
 			return
 		}
 		if matched == nil {
@@ -987,7 +1025,7 @@ func (e *PropertyAccessEvaluator) DefaultConditionValues() map[string]string {
 
 	defaults := map[string]string{}
 	for propertyID, values := range e.admitted {
-		if len(values) != 1 {
+		if len(values) != 1 || e.admittedAll[propertyID] {
 			continue
 		}
 		for valueID := range values {
