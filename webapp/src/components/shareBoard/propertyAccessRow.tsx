@@ -168,6 +168,130 @@ const MultiSelector = (props: {
     )
 }
 
+// DutySelector is the duty axis, which holds a set rather than a single answer.
+//
+// A row may name several duty groups — `팀장 또는 팀원` is one row, not two
+// (009 FR-011) — and the matrix editor writes exactly such rows. Reading only
+// the first one made those rows lie: the screen said 팀장 while the server was
+// letting 팀원 through as well, and any edit to the row saved the single group
+// the screen was showing, dropping the rest without a word.
+//
+// It is not MultiSelector because "Any" is not "every group". Any places no duty
+// condition at all, and a team can hold duties no group lists — the dialog says
+// as much under the group editor. Naming all four groups is a narrower rule than
+// naming none, so the two must not read back as the same thing.
+const DutySelector = (props: {
+    label: string
+    anyLabel: string
+    tierIds: string[]
+    dutyId: string
+    tiers: Choice[]
+    duties: Choice[]
+    broken: boolean
+    onToggleTier: (tierId: string) => void
+    onPickDuty: (dutyId: string) => void
+    onClear: () => void
+}): React.JSX.Element => {
+    const intl = useIntl()
+
+    const usesTiers = props.tierIds.length > 0
+    const selectedDuty = props.duties.find((duty) => duty.id === props.dutyId)
+    const countLabel = (count: number) => intl.formatMessage(
+        {id: 'PropertyAccess.valuesSelected', defaultMessage: '{count}개 선택'},
+        {count},
+    )
+
+    let labelText = props.anyLabel
+    if (usesTiers) {
+        const summary = summarizeSelection(props.tierIds, props.tiers)
+        switch (summary.kind) {
+        case 'single':
+            labelText = summary.name
+            break
+
+        // Every group named is still a count, not "Any". The two mean different
+        // things and the label has to keep them apart.
+        case 'all':
+            labelText = countLabel(props.tiers.length)
+            break
+        case 'count':
+            labelText = countLabel(summary.count)
+            break
+
+        // Every group it names is gone. The row matches nobody, and reading the
+        // axis as unset would hide that.
+        default:
+            labelText = props.label
+        }
+    } else if (selectedDuty) {
+        labelText = selectedDuty.name
+    }
+
+    const className = props.broken ? 'user-item__button PropertyAccessRow__broken' : 'user-item__button'
+
+    return (
+        <div className='PropertyAccessRow__axis'>
+            <MenuWrapper
+                usePortal={true}
+                menuPosition='bottom'
+            >
+                <button className={className}>
+                    <span className='PropertyAccessRow__label'>{labelText}</span>
+                    <CompassIcon
+                        icon='chevron-down'
+                        className='CompassIcon'
+                    />
+                </button>
+                <Menu position='bottom'>
+                    <Menu.Text
+                        key='any'
+                        id='any'
+                        check={true}
+                        icon={!usesTiers && props.dutyId === '' ? <CheckIcon/> : <div className='empty-icon'/>}
+                        name={props.anyLabel}
+                        suppressItemClicked={true}
+                        onClick={() => props.onClear()}
+                    />
+                    {props.tiers.map((tier) => (
+                        <Menu.Text
+                            key={tier.id}
+                            id={tier.id}
+                            check={true}
+                            icon={props.tierIds.includes(tier.id) ? <CheckIcon/> : <div className='empty-icon'/>}
+                            name={tier.name}
+                            suppressItemClicked={true}
+                            onClick={() => props.onToggleTier(tier.id)}
+                        />
+                    ))}
+
+                    {/*
+                      * The single duty an older row may still name. One duty is
+                      * one answer rather than a set, so picking one replaces
+                      * whatever the axis held.
+                      */}
+                    {props.duties.map((duty) => (
+                        <Menu.Text
+                            key={duty.id}
+                            id={duty.id}
+                            check={true}
+                            icon={props.dutyId === duty.id ? <CheckIcon/> : <div className='empty-icon'/>}
+                            name={duty.name}
+                            suppressItemClicked={true}
+                            onClick={() => props.onPickDuty(duty.id)}
+                        />
+                    ))}
+                </Menu>
+            </MenuWrapper>
+        </div>
+    )
+}
+
+// toggleTier adds or removes one duty group, keeping the rest. Replacing the
+// list is what silently narrowed a `팀장 또는 팀원` row to whichever group the
+// screen happened to be showing.
+const toggleTier = (tierIds: string[], tierId: string): string[] =>
+    (tierIds.includes(tierId) ? tierIds.filter((id) => id !== tierId) : [...tierIds, tierId])
+
 // toggleCardValues adds or removes one value from the rule's value set, always
 // writing the list form and clearing the legacy single field so the two never
 // disagree about what the rule restricts.
@@ -273,18 +397,23 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
 
     const selectedOrgId = usesRelation ? `relation:${relation}` : rule.divisionId
 
-    // The duty axis: a team duty group, or the single duty an older rule names.
+    // The duty axis: the team's duty groups, or the single duty an older rule
+    // names. The two are offered in one control and stored in separate fields,
+    // so they are kept as separate lists here rather than flattened behind a
+    // prefix — the control has to know which kind it is toggling.
     const usesTiers = (rule.tierIds || []).length > 0
-    const dutyChoices: Choice[] = [
-        ...withAny([]),
-        ...tiers.map((tier) => ({id: `tier:${tier.id}`, name: tier.name})),
-        ...duties.map((duty) => ({id: duty.id, name: duty.name})),
-    ]
+    const tierChoices: Choice[] = tiers.map((tier) => ({id: tier.id, name: tier.name}))
+    const dutyChoices: Choice[] = duties.map((duty) => ({id: duty.id, name: duty.name}))
 
     // A rule can outlive a tier: tiers belong to the team, rules to the board.
     // Such a row matches nobody, and saying so on the row is the only way an
     // admin finds out (FR-024).
-    const brokenTier = usesTiers && !tiers.some((tier) => tier.id === rule.tierIds![0])
+    //
+    // Every group the row names is checked, not just the first. A row reading
+    // `팀장 또는 팀원` whose second group was deleted still stops matching half
+    // of who it says it covers.
+    const brokenTier = usesTiers && (rule.tierIds || []).some(
+        (tierId) => !tiers.some((tier) => tier.id === tierId))
 
     const hasCardCondition = rule.propertyId !== '' &&
         (Boolean(rule.allValues) || rule.propertyValueId !== '' || (rule.propertyValueIds || []).length > 0)
@@ -365,22 +494,30 @@ const PropertyAccessRow = (props: Props): React.JSX.Element => {
                 )}
                 {/*
                   * Duty groups first, then the individual duties an older rule
-                  * may still name. Picking either one clears the other — the row
-                  * has one duty axis, and two answers to it would leave the row
-                  * unable to say which it means.
+                  * may still name. Groups accumulate — one row can cover several
+                  * — while a single duty replaces whatever the axis held: the row
+                  * has one duty axis, and two kinds of answer to it would leave
+                  * the row unable to say which it means.
                   */}
-                <Selector
+                <DutySelector
                     label={intl.formatMessage({id: 'PropertyAccess.selectDuty', defaultMessage: 'Duty'})}
-                    selectedId={usesTiers ? `tier:${rule.tierIds![0]}` : rule.dutyId}
-                    choices={dutyChoices}
+                    anyLabel={anyLabel}
+                    tierIds={rule.tierIds || []}
+                    dutyId={rule.dutyId}
+                    tiers={tierChoices}
+                    duties={dutyChoices}
                     broken={brokenDuty || brokenTier}
-                    onSelect={(id) => {
-                        if (id.startsWith('tier:')) {
-                            props.onChange({...rule, tierIds: [id.slice('tier:'.length)], dutyId: ''})
-                            return
-                        }
-                        props.onChange({...rule, tierIds: [], dutyId: id})
-                    }}
+                    onToggleTier={(tierId) => props.onChange({
+                        ...rule,
+                        tierIds: toggleTier(rule.tierIds || [], tierId),
+                        dutyId: '',
+                    })}
+                    onPickDuty={(dutyId) => props.onChange({
+                        ...rule,
+                        tierIds: [],
+                        dutyId: rule.dutyId === dutyId ? '' : dutyId,
+                    })}
+                    onClear={() => props.onChange({...rule, tierIds: [], dutyId: ''})}
                 />
                 <Selector
                     label={intl.formatMessage({id: 'PropertyAccess.selectPermission', defaultMessage: 'Permission'})}

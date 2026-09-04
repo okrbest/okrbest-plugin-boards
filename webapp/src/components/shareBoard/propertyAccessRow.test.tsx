@@ -493,6 +493,100 @@ describe('src/components/shareBoard/propertyAccessRow', () => {
         expect(container.querySelectorAll('.PropertyAccessRow__broken').length).toBeGreaterThan(0)
     })
 
+    // 009 FR-011은 한 줄이 묶음을 여럿 가리킬 수 있다고 못박는다. 표 편집기는
+    // 실제로 그런 줄을 만드는데(팀장+팀원 한 줄), 규칙 목록은 첫 묶음만 읽어
+    // 나머지를 감췄다 — 화면은 "팀장"이라 말하고 서버는 팀원까지 통과시켰다.
+    const dutyLabel = (container: Element): string | null =>
+        container.querySelectorAll('.user-item__button')[4].querySelector('.PropertyAccessRow__label')!.textContent
+
+    test('묶음을 둘 가리키는 줄은 둘을 다 세어 보여준다', async () => {
+        const rule = {
+            ...emptyRule,
+            propertyId: 'prop-clevel',
+            propertyValueId: 'opt-strategy',
+            tierIds: ['tier-clevel', 'tier-lead'],
+        }
+        const {container} = await renderRow(rule)
+
+        expect(dutyLabel(container)).toBe('2개 선택')
+    })
+
+    test('묶음을 더 고르면 이미 고른 묶음이 남는다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', tierIds: ['tier-lead']}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 4)
+        await userEvent.click(screen.getByText('임원진'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            tierIds: ['tier-lead', 'tier-clevel'],
+            dutyId: '',
+        }))
+    })
+
+    test('이미 고른 묶음을 다시 누르면 그 묶음만 빠진다', async () => {
+        const rule = {
+            ...emptyRule,
+            propertyId: 'prop-clevel',
+            propertyValueId: 'opt-strategy',
+            tierIds: ['tier-clevel', 'tier-lead'],
+        }
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 4)
+        await userEvent.click(screen.getByText('리더'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            tierIds: ['tier-clevel'],
+        }))
+    })
+
+    test('Any를 고르면 묶음이 모두 빠진다', async () => {
+        const rule = {
+            ...emptyRule,
+            propertyId: 'prop-clevel',
+            propertyValueId: 'opt-strategy',
+            tierIds: ['tier-clevel', 'tier-lead'],
+        }
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 4)
+
+        // 다른 축의 닫힌 버튼도 'Any'를 달고 있어서 메뉴 항목으로 좁힌다.
+        const anyItem = screen.getAllByText('Any').find((node) => node.className === 'menu-name')
+        await userEvent.click(anyItem!)
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            tierIds: [],
+            dutyId: '',
+        }))
+    })
+
+    test('가리키는 묶음 중 하나만 없어져도 깨진 규칙으로 표시한다', async () => {
+        const rule = {
+            ...emptyRule,
+            propertyId: 'prop-clevel',
+            propertyValueId: 'opt-strategy',
+            tierIds: ['tier-clevel', 'tier-gone'],
+        }
+        const {container} = await renderRow(rule)
+
+        expect(container.querySelectorAll('.PropertyAccessRow__broken').length).toBeGreaterThan(0)
+    })
+
+    test('묶음을 고르면 옛 단수 직책은 물러난다', async () => {
+        const rule = {...emptyRule, propertyId: 'prop-clevel', propertyValueId: 'opt-strategy', dutyId: 'duty-head'}
+        const {container, onChange} = await renderRow(rule)
+
+        await openSelector(container, 4)
+        await userEvent.click(screen.getByText('리더'))
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+            tierIds: ['tier-lead'],
+            dutyId: '',
+        }))
+    })
+
     test('the delete button reports the row', async () => {
         const {container, onDelete} = await renderRow(emptyRule)
 
