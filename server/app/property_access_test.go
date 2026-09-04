@@ -1346,11 +1346,11 @@ func TestEvaluatorOwnerFloorDoesNotCrossOrgGate(t *testing.T) {
 	})
 }
 
-// TestEvaluatorForByRulesOnly covers the evaluation the condition-property write
+// TestEvaluatorForConditionWrite covers the evaluation the condition-property write
 // check runs on. It answers "would the rules alone let me edit this card", which
 // is deliberately blind to authorship: otherwise an author could walk their own
 // card into any state by creating it empty first.
-func TestEvaluatorForByRulesOnly(t *testing.T) {
+func TestEvaluatorForConditionWrite(t *testing.T) {
 	const author = "author-1"
 
 	strategyCard := ownedCard(propCLevel, valueStrategy, author)
@@ -1359,20 +1359,20 @@ func TestEvaluatorForByRulesOnly(t *testing.T) {
 		evaluator := evaluatorForUser(author, depPlanning, dutyLead, model.EffectiveBoardPermissionEdit)
 
 		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.For(strategyCard))
-		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.ForByRulesOnly(strategyCard),
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.ForConditionWrite(strategyCard),
 			"the write check must not be satisfied by the card being yours")
 	})
 
 	t.Run("a rule granting editor still reads as editor", func(t *testing.T) {
 		evaluator := evaluatorForUser(author, depPlanning, dutyHead, model.EffectiveBoardPermissionEdit)
 
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForByRulesOnly(strategyCard))
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForConditionWrite(strategyCard))
 	})
 
 	t.Run("full visibility is kept, since it cannot reach editor anyway", func(t *testing.T) {
 		evaluator := evaluatorForUser(author, depFactory, dutyHead, model.EffectiveBoardPermissionEdit)
 
-		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.ForByRulesOnly(strategyCard))
+		require.Equal(t, model.EffectiveBoardPermissionView, evaluator.ForConditionWrite(strategyCard))
 	})
 }
 
@@ -1572,7 +1572,7 @@ func TestEvaluatorDefaultsSpanProperties(t *testing.T) {
 		}
 		card := &model.Block{ID: "card-new", Type: model.TypeCard, Fields: map[string]interface{}{"properties": properties}}
 
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForByRulesOnly(card))
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForConditionWrite(card))
 	})
 
 	t.Run("a 팀장 of another division gets only the half that admits them", func(t *testing.T) {
@@ -1721,13 +1721,13 @@ func TestRelationMineIsScopedToTheDepartment(t *testing.T) {
 
 	t.Run("authoring a card in another team grants nothing", func(t *testing.T) {
 		require.Equal(t, model.EffectiveBoardPermissionNone,
-			evaluator.ForByRulesOnly(taskCard(depFactory, "user-1")),
+			evaluator.ForConditionWrite(taskCard(depFactory, "user-1")),
 			"being the author is not a license to file the card under someone else's team")
 	})
 
 	t.Run("authoring a card in their own team still grants editing", func(t *testing.T) {
 		require.Equal(t, model.EffectiveBoardPermissionEdit,
-			evaluator.ForByRulesOnly(taskCard(depPlanning, "user-1")),
+			evaluator.ForConditionWrite(taskCard(depPlanning, "user-1")),
 			"the new card carries no assignee yet, so authorship is what has to carry it")
 	})
 
@@ -1736,12 +1736,12 @@ func TestRelationMineIsScopedToTheDepartment(t *testing.T) {
 		props := card.Fields["properties"].(map[string]interface{})
 		props[propPerson] = "user-1"
 
-		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForByRulesOnly(card))
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForConditionWrite(card))
 	})
 
 	t.Run("a card in their own team belonging to someone else grants nothing", func(t *testing.T) {
 		require.Equal(t, model.EffectiveBoardPermissionNone,
-			evaluator.ForByRulesOnly(taskCard(depPlanning, "someone-else")))
+			evaluator.ForConditionWrite(taskCard(depPlanning, "someone-else")))
 	})
 
 	t.Run("a rule with no organization property to read grants nothing", func(t *testing.T) {
@@ -1763,7 +1763,7 @@ func TestRelationMineIsScopedToTheDepartment(t *testing.T) {
 		})
 
 		require.Equal(t, model.EffectiveBoardPermissionNone,
-			blindEvaluator.ForByRulesOnly(taskCard(depPlanning, "user-1")))
+			blindEvaluator.ForConditionWrite(taskCard(depPlanning, "user-1")))
 	})
 }
 
@@ -1777,4 +1777,82 @@ func TestValidateRejectsMineWithoutOrgProperty(t *testing.T) {
 	})
 
 	require.Error(t, err, "a mine row with nothing to read cannot be judged")
+}
+
+// TestConditionWriteUnfiledCard covers the card the 생성 버튼 makes: it carries
+// the value the view's filter or grouping put on it and nothing else.
+//
+// A relation reads the organization off the card, and a card being born names
+// none — it is filed nowhere yet. Judging that as a failed relation refused
+// every 팀장 and 팀원 on the 수행업무 board the moment they pressed 생성, while
+// the same card created blank went through. The relation is not failed there,
+// it is unanswered, and an unanswered relation is not a reason to refuse.
+func TestConditionWriteUnfiledCard(t *testing.T) {
+	const me = "user-me"
+
+	departmentRule := model.PropertyAccessRule{
+		ID: "lead", PropertyID: propType, PropertyValueIDs: []string{valTask},
+		Relation: model.RelationSameDepartment, OrgPropertyID: propDivision,
+		Permission: model.PropertyAccessEditor,
+	}
+	mineRule := model.PropertyAccessRule{
+		ID: "member", PropertyID: propType, PropertyValueIDs: []string{valTask},
+		Relation: model.RelationMine, OrgPropertyID: propDivision,
+		AssigneePropertyID: propPerson, Permission: model.PropertyAccessEditor,
+	}
+
+	t.Run("같은 부서 규칙 — 부서가 비어 있으면 만들 수 있다", func(t *testing.T) {
+		evaluator := relationEvaluator(departmentRule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit,
+			evaluator.ForConditionWrite(relationCard(valTask, "")),
+			"부서를 아직 안 채운 카드는 남의 부서 카드가 아니다")
+	})
+
+	t.Run("같은 부서 규칙 — 남의 부서로 지정하면 여전히 거부한다", func(t *testing.T) {
+		evaluator := relationEvaluator(departmentRule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone,
+			evaluator.ForConditionWrite(relationCard(valTask, depFactory)),
+			"값이 있으면 판정할 수 있고, 판정 결과는 거부다")
+	})
+
+	t.Run("본인 규칙 — 조직이 비어도 작성자면 만들 수 있다", func(t *testing.T) {
+		card := relationCard(valTask, "")
+		card.CreatedBy = me
+		evaluator := relationEvaluator(mineRule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionEdit, evaluator.ForConditionWrite(card))
+	})
+
+	t.Run("본인 규칙 — 남의 카드는 조직이 비어도 거부한다", func(t *testing.T) {
+		card := relationCard(valTask, "")
+		card.CreatedBy = "someone-else"
+		evaluator := relationEvaluator(mineRule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.ForConditionWrite(card),
+			"작성자도 담당자도 아닌 사람에게는 물을 것이 남아 있지 않다")
+	})
+
+	t.Run("읽을 속성을 안 정한 규칙은 여전히 아무것도 주지 않는다", func(t *testing.T) {
+		blind := model.PropertyAccessRule{
+			ID: "blind", PropertyID: propType, PropertyValueIDs: []string{valTask},
+			Relation: model.RelationMine, AssigneePropertyID: propPerson,
+			Permission: model.PropertyAccessEditor,
+		}
+		card := relationCard(valTask, "")
+		card.CreatedBy = me
+		evaluator := relationEvaluator(blind, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone, evaluator.ForConditionWrite(card),
+			"빈 값이라 못 묻는 것과 물을 자리를 안 정한 것은 다르다")
+	})
+
+	t.Run("읽기 판정은 그대로 엄격하다", func(t *testing.T) {
+		evaluator := relationEvaluator(departmentRule, me, depPlanning, dutyLead)
+
+		require.Equal(t, model.EffectiveBoardPermissionNone,
+			evaluator.For(relationCard(valTask, "")),
+			"만들 수 있다는 것과 남의 미분류 카드를 편집할 수 있다는 것은 다르다")
+	})
 }

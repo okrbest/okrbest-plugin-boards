@@ -492,10 +492,21 @@ func (e *PropertyAccessEvaluator) dutyMatches(rule model.PropertyAccessRule) boo
 // A rule that names a division or a department is judged as it always was. A
 // rule that sets a relation is judged against the card, which is the whole point
 // of the relation (009 R3).
-func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card *model.Block) bool {
+//
+// unfiledPasses separates "the card answers no" from "the card cannot answer
+// yet". A relation reads the organization off the card, so a card that names
+// none leaves the question open rather than answered — see the type comment on
+// ForConditionWrite for why only that one check treats it as open.
+func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card *model.Block, unfiledPasses bool) bool {
 	if !rule.UsesRelation() {
 		return ruleOrgMatches(rule, e.units)
 	}
+
+	// A row that names no property to read is not unanswered, it is unanswerable:
+	// there is no value to wait for. Saving such a row is refused, so it can only
+	// arrive as older data, and granting on it is what an unscoped 본인 row did
+	// before it was scoped.
+	unfiled := rule.OrgPropertyID != "" && len(cardValues(card, rule.OrgPropertyID)) == 0
 
 	switch rule.Relation {
 	case model.RelationAny:
@@ -508,7 +519,7 @@ func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card
 	//
 	// A card may name several units, so one overlap is enough.
 	case model.RelationSameDivision, model.RelationSameDepartment:
-		return e.unitMatches(card, rule.OrgPropertyID)
+		return (unfiled && unfiledPasses) || e.unitMatches(card, rule.OrgPropertyID)
 
 	// Not the negation of same division. A card with no value is neither, and a
 	// viewer with no assignment is neither — otherwise every blank card would
@@ -518,7 +529,10 @@ func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card
 	// filed under both 영업 and 개발 is not "another division" to either of them.
 	case model.RelationOtherDivision:
 		units := cardValues(card, rule.OrgPropertyID)
-		if len(units) == 0 || len(e.units) == 0 {
+		if len(units) == 0 {
+			return unfiled && unfiledPasses
+		}
+		if len(e.units) == 0 {
 			return false
 		}
 		for _, unit := range units {
@@ -537,7 +551,8 @@ func (e *PropertyAccessEvaluator) orgMatches(rule model.PropertyAccessRule, card
 	// every team's Key Results in their division. The 팀장 row beside it asks
 	// sameDepartment and reads the card, which is why only that half held.
 	case model.RelationMine:
-		return e.isMine(rule, card) && e.unitMatches(card, rule.OrgPropertyID)
+		return e.isMine(rule, card) &&
+			((unfiled && unfiledPasses) || e.unitMatches(card, rule.OrgPropertyID))
 
 	default:
 		// A relation this build does not know grants nothing. Saving refuses it,
@@ -698,23 +713,38 @@ func (e *PropertyAccessEvaluator) Enforces() bool {
 
 // For returns the permission the user has on one card.
 func (e *PropertyAccessEvaluator) For(card *model.Block) model.EffectiveBoardPermission {
-	return e.evaluate(card, e.ownerFloor(card))
+	return e.evaluate(card, e.ownerFloor(card), false)
 }
 
-// ForByRulesOnly answers "what would the rules alone allow", ignoring the fact
-// that the user may have authored the card.
+// ForConditionWrite answers "would the rules have let this user put a card into
+// this state" — the question the condition-property write check asks, and the
+// only place two liberties are taken with the normal judgement.
 //
-// The condition-property write check is built on this rather than on For: an
-// author who could satisfy the check by authorship would be able to walk their
-// own card into any state simply by creating it blank first, which is exactly
-// the escalation the check exists to stop.
-func (e *PropertyAccessEvaluator) ForByRulesOnly(card *model.Block) model.EffectiveBoardPermission {
-	return e.evaluate(card, model.EffectiveBoardPermissionNone)
+// Authorship is ignored. An author who could satisfy the check by authorship
+// would be able to walk their own card into any state simply by creating it
+// blank first, which is exactly the escalation the check exists to stop.
+//
+// A relation the card cannot answer yet is not counted against the user. The
+// organization axis of a relation is read off the card, and a card being created
+// names no organization: the 생성 버튼 on a view that filters or groups by a rule
+// property hands the server a card wearing that value and nothing else. Reading
+// the missing value as a failed relation refused every 팀장 and 팀원 on such a
+// board, while the same card created blank and labeled afterwards went through
+// — so it protected nothing and blocked the ordinary way of working. What the
+// check still enforces is the axis a new card can answer: which 직책 묶음 may put
+// a card in which 유형. The organization is judged once the card names one, on
+// every read and every write after that.
+func (e *PropertyAccessEvaluator) ForConditionWrite(card *model.Block) model.EffectiveBoardPermission {
+	return e.evaluate(card, model.EffectiveBoardPermissionNone, true)
 }
 
-// evaluate is For with the creator floor supplied by the caller, so the two
-// public entry points cannot drift apart.
-func (e *PropertyAccessEvaluator) evaluate(card *model.Block, ownerFloor model.EffectiveBoardPermission) model.EffectiveBoardPermission {
+// evaluate is For with the creator floor and the reading of an unfiled card
+// supplied by the caller, so the two public entry points cannot drift apart.
+func (e *PropertyAccessEvaluator) evaluate(
+	card *model.Block,
+	ownerFloor model.EffectiveBoardPermission,
+	unfiledPasses bool,
+) model.EffectiveBoardPermission {
 	if e.isAdmin {
 		return model.EffectiveBoardPermissionManage
 	}
@@ -744,7 +774,7 @@ func (e *PropertyAccessEvaluator) evaluate(card *model.Block, ownerFloor model.E
 		}
 		matched = true
 
-		orgOK := e.orgMatches(rule, card)
+		orgOK := e.orgMatches(rule, card, unfiledPasses)
 		if rule.HasOrgCondition() {
 			gated = true
 			gatePassed = gatePassed || orgOK
@@ -829,7 +859,7 @@ func (e *PropertyAccessEvaluator) Admits(card *model.Block) bool {
 		}
 		matched = true
 
-		orgOK := e.orgMatches(rule, card)
+		orgOK := e.orgMatches(rule, card, false)
 		if rule.HasOrgCondition() {
 			gated = true
 			gatePassed = gatePassed || orgOK

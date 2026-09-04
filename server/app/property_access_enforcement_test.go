@@ -712,3 +712,208 @@ func TestCreateSubCardRequiresParentAccess(t *testing.T) {
 		require.True(t, model.IsErrForbidden(err), "expected a permission error, got %v", err)
 	})
 }
+
+// TestInsertBlocksRelationMatrixCreation is the 수행업무 board report, end to
+// end: 팀장 and 팀원 pressed 생성 and got "이 카드를 편집할 권한이 없습니다".
+//
+// The view they were on filters by 유형, so the card the screen sends arrives
+// wearing that value and nothing else — no 본부, no 부서, no 담당자. Every row of
+// that board's matrix is a relation, and a relation reads the organization off
+// the card, so the creation check was answering a question the card could not
+// yet be asked. Creating the same card blank and labeling it afterwards went
+// straight through, which is what showed the refusal protected nothing.
+//
+// The duty axis is the half a new card can answer, and these cases hold it: a
+// 팀장 still may not create a card in a 유형 only 본부장 may put a card in.
+func TestInsertBlocksRelationMatrixCreation(t *testing.T) {
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{
+			{
+				ID: "lead", PropertyID: propType, PropertyValueIDs: []string{valTask},
+				Relation: model.RelationSameDepartment, OrgPropertyID: propDivision,
+				DutyID: dutyLead, Permission: model.PropertyAccessEditor,
+			},
+			{
+				ID: "head", PropertyID: propType, PropertyValueIDs: []string{valObjective},
+				Relation: model.RelationSameDivision, OrgPropertyID: propDivision,
+				DutyID: dutyHead, Permission: model.PropertyAccessEditor,
+			},
+		},
+	}
+
+	setup := func(t *testing.T) (*TestHelper, func()) {
+		t.Helper()
+		th, tearDown := SetupTestHelper(t)
+
+		value, err := settings.AsProperty()
+		require.NoError(t, err)
+		board := &model.Board{ID: ruleBoardID, TeamID: ruleTeamID, Properties: map[string]interface{}{model.PropertyAccessKey: value}}
+
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetBoard(ruleBoardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetMemberForBoard(ruleBoardID, gomock.Any()).
+			Return(&model.BoardMember{BoardID: ruleBoardID, SchemeEditor: true}, nil).AnyTimes()
+		th.API.EXPECT().HasPermissionToTeam(gomock.Any(), ruleTeamID, gomock.Any()).
+			DoAndReturn(func(_, _ string, permission *mmModel.Permission) bool {
+				return permission == model.PermissionViewTeam
+			}).AnyTimes()
+		th.Store.EXPECT().GetOrgUnitsForTeam(ruleTeamID).Return(testOrgUnits(), nil).AnyTimes()
+		th.Store.EXPECT().GetDutiesForTeam(ruleTeamID).Return(testDuties(), nil).AnyTimes()
+		th.Store.EXPECT().GetUserOrgProfiles(ruleTeamID, gomock.Any()).
+			DoAndReturn(func(_ string, userIDs []string) ([]*model.UserOrgProfile, error) {
+				all := map[string]*model.UserOrgProfile{
+					userLead: {TeamID: ruleTeamID, UserID: userLead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead},
+					userHead: {TeamID: ruleTeamID, UserID: userHead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyHead},
+				}
+				out := make([]*model.UserOrgProfile, 0, len(userIDs))
+				for _, id := range userIDs {
+					if profile, ok := all[id]; ok {
+						out = append(out, profile)
+					}
+				}
+				return out, nil
+			}).AnyTimes()
+
+		return th, tearDown
+	}
+
+	cases := []struct {
+		name    string
+		userID  string
+		typeVal string
+		orgUnit string
+		allowed bool
+	}{
+		{"a 팀장 may create the card the view's filter labeled for them", userLead, valTask, "", true},
+		{"a 팀장 may not file that card under another department", userLead, valTask, depFactory, false},
+		{"a 팀장 may not create a card in a 유형 only a 본부장 may reach", userLead, valObjective, "", false},
+		{"a 본부장 may create their own 유형 the same way", userHead, valObjective, "", true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			th, tearDown := setup(t)
+			defer tearDown()
+
+			properties := map[string]interface{}{propType: tc.typeVal}
+			if tc.orgUnit != "" {
+				properties[propDivision] = []interface{}{tc.orgUnit}
+			}
+			newCard := &model.Block{
+				ID: "card-new", BoardID: ruleBoardID, ParentID: ruleBoardID,
+				Type: model.TypeCard, CreatedBy: tc.userID,
+				Fields: map[string]interface{}{"properties": properties},
+			}
+
+			th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+			if tc.allowed {
+				th.Store.EXPECT().InsertBlock(newCard, tc.userID).Return(nil).Times(1)
+				th.Store.EXPECT().GetMembersForBoard(gomock.Any()).AnyTimes()
+			} else {
+				th.Store.EXPECT().InsertBlock(gomock.Any(), gomock.Any()).Times(0)
+			}
+
+			_, err := th.App.InsertBlocks([]*model.Block{newCard}, tc.userID)
+
+			if tc.allowed {
+				require.NoError(t, err)
+			} else {
+				require.True(t, model.IsErrForbidden(err), "expected a permission error, got %v", err)
+			}
+		})
+	}
+}
+
+// TestInsertBlocksJudgesAuthorAsStored is the 팀원 half of the same report.
+//
+// 본인 holds when the viewer authored the card (FR-005), and a card being
+// created is authored by whoever is creating it — but not yet. The store stamps
+// created_by while inserting, which is after this check, and the screen sends
+// the field empty. So the one relation written to cover a 팀원's own work was
+// false on every card they made.
+//
+// The stamp is what the check has to read, not the field the client sent: a
+// block that does not exist yet belongs to the requester whatever it claims, and
+// one that does keeps the author the store recorded.
+func TestInsertBlocksJudgesAuthorAsStored(t *testing.T) {
+	settings := &model.PropertyAccessSettings{
+		Enabled: true,
+		Rules: []model.PropertyAccessRule{{
+			ID: "member", PropertyID: propType, PropertyValueIDs: []string{valTask},
+			Relation: model.RelationMine, OrgPropertyID: propDivision,
+			AssigneePropertyID: propPerson, DutyID: dutyLead,
+			Permission: model.PropertyAccessEditor,
+		}},
+	}
+
+	setup := func(t *testing.T) (*TestHelper, func()) {
+		t.Helper()
+		th, tearDown := SetupTestHelper(t)
+
+		value, err := settings.AsProperty()
+		require.NoError(t, err)
+		board := &model.Board{ID: ruleBoardID, TeamID: ruleTeamID, Properties: map[string]interface{}{model.PropertyAccessKey: value}}
+
+		th.Store.EXPECT().GetBoard(ruleBoardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetBoard(ruleBoardID).Return(board, nil).AnyTimes()
+		th.PermissionsStore.EXPECT().GetMemberForBoard(ruleBoardID, gomock.Any()).
+			Return(&model.BoardMember{BoardID: ruleBoardID, SchemeEditor: true}, nil).AnyTimes()
+		th.API.EXPECT().HasPermissionToTeam(gomock.Any(), ruleTeamID, gomock.Any()).
+			DoAndReturn(func(_, _ string, permission *mmModel.Permission) bool {
+				return permission == model.PermissionViewTeam
+			}).AnyTimes()
+		th.Store.EXPECT().GetOrgUnitsForTeam(ruleTeamID).Return(testOrgUnits(), nil).AnyTimes()
+		th.Store.EXPECT().GetDutiesForTeam(ruleTeamID).Return(testDuties(), nil).AnyTimes()
+		th.Store.EXPECT().GetUserOrgProfiles(ruleTeamID, gomock.Any()).
+			DoAndReturn(func(_ string, userIDs []string) ([]*model.UserOrgProfile, error) {
+				out := make([]*model.UserOrgProfile, 0, len(userIDs))
+				for _, id := range userIDs {
+					if id == userLead {
+						out = append(out, &model.UserOrgProfile{TeamID: ruleTeamID, UserID: userLead, PrimaryOrgUnitID: depPlanning, PrimaryDutyID: dutyLead})
+					}
+				}
+				return out, nil
+			}).AnyTimes()
+
+		return th, tearDown
+	}
+
+	newCard := func(createdBy string) *model.Block {
+		return &model.Block{
+			ID: "card-new", BoardID: ruleBoardID, ParentID: ruleBoardID,
+			Type: model.TypeCard, CreatedBy: createdBy,
+			Fields: map[string]interface{}{"properties": map[string]interface{}{propType: valTask}},
+		}
+	}
+
+	t.Run("the screen sends no author, and the requester is the author", func(t *testing.T) {
+		th, tearDown := setup(t)
+		defer tearDown()
+
+		card := newCard("")
+		th.Store.EXPECT().GetBlock(gomock.Any()).Return(nil, model.NewErrNotFound("block")).AnyTimes()
+		th.Store.EXPECT().InsertBlock(card, userLead).Return(nil).Times(1)
+		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).AnyTimes()
+
+		_, err := th.App.InsertBlocks([]*model.Block{card}, userLead)
+
+		require.NoError(t, err)
+	})
+
+	t.Run("a card the store already holds keeps the author the store recorded", func(t *testing.T) {
+		th, tearDown := setup(t)
+		defer tearDown()
+
+		stored := newCard("someone-else")
+		stored.Fields = map[string]interface{}{"properties": map[string]interface{}{}}
+
+		th.Store.EXPECT().GetBlock("card-new").Return(stored, nil).AnyTimes()
+		th.Store.EXPECT().InsertBlock(gomock.Any(), gomock.Any()).Times(0)
+
+		_, err := th.App.InsertBlocks([]*model.Block{newCard("")}, userLead)
+
+		require.True(t, model.IsErrForbidden(err),
+			"claiming a 유형 on someone else's card is what the check is for")
+	})
+}
