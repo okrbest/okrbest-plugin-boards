@@ -27,7 +27,7 @@ import {
 } from '../onboardingTour'
 import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
 import AddViewTourStep from '../onboardingTour/addView/add_view'
-import {getCurrentCard} from '../../store/cards'
+import {getCurrentCard, getCurrentViewCardsWithSubCards} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import ViewTabs from './viewTabs'
@@ -85,6 +85,10 @@ const ViewHeader = (props: Props) => {
 
     const currentCard = useAppSelector(getCurrentCard)
     const noCardOpen = !currentCard
+
+    // Everything the table would show once every row is expanded. Only the
+    // export uses it — the header's other menus work on the top level rows.
+    const cardsWithSubCards = useAppSelector(getCurrentViewCardsWithSubCards)
 
     const showTourBaseCondition = isOnboardingBoard &&
         onboardingTourStarted &&
@@ -289,10 +293,16 @@ const ViewHeader = (props: Props) => {
 
                 {!props.readonly &&
                 <>
+                    {/*
+                      * The export takes the table fully expanded, not the top
+                      * level rows the header otherwise works with: a CSV of an
+                      * OKR board that dropped every Key Result and Task is the
+                      * whole board minus its work.
+                      */}
                     <ViewHeaderActionsMenu
                         board={board}
                         activeView={activeView}
-                        cards={cards}
+                        cards={cardsWithSubCards}
                     />
 
                     {/* New card button */}

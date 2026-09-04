@@ -628,6 +628,50 @@ export const getCurrentBoardViewCardsSortedFilteredAndGrouped = createSelector(
     (cards) => cards.filter((c) => !c.limited),
 )
 
+// flattenWithSubCards walks a list of top level cards into the order the table
+// nests them: each card followed by its descendants, depth first.
+//
+// seen guards against a parent chain that loops back on itself. The selectors
+// cannot build one — a card in the sub-card map always has a parentCardId, and a
+// top level card never does — but damaged data must not turn an export into a
+// hang.
+export function flattenWithSubCards(cards: Card[], subCardsByParent: {[parentCardId: string]: Card[]}): Card[] {
+    const seen = new Set<string>()
+    const flattened: Card[] = []
+
+    const visit = (card: Card) => {
+        if (seen.has(card.id)) {
+            return
+        }
+        seen.add(card.id)
+        flattened.push(card)
+
+        for (const subCard of subCardsByParent[card.id] || []) {
+            visit(subCard)
+        }
+    }
+
+    cards.forEach(visit)
+    return flattened
+}
+
+// getCurrentViewCardsWithSubCards is the view's cards including everything
+// hanging under them — the table fully expanded, as one list.
+//
+// The table draws sub-cards as their own rows from a separate selector, so the
+// list of top level cards is the whole of what CSV export used to see: every Key
+// Result and Task of an OKR board was missing from the file, and only the
+// Objectives came out.
+//
+// Sub-cards are not put through the view's filter or search. The table does not
+// filter them either — a row is shown because its parent is — so following the
+// same rule is what makes the export match what the screen shows.
+export const getCurrentViewCardsWithSubCards = createSelector(
+    getCurrentViewCardsSortedFilteredAndGrouped,
+    getCurrentBoardSubCardsByParent,
+    (cards, subCardsByParent) => flattenWithSubCards(cards, subCardsByParent),
+)
+
 export const getCurrentBoardHiddenCardsCount = createSelector(
     getCurrentBoardCards,
     (cards) => Object.values(cards).filter((c) => c.limited).length,

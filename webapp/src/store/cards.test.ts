@@ -7,6 +7,8 @@ import {
     getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit,
     getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit,
     getCurrentBoardSubCardsByParent,
+    getCurrentViewCardsWithSubCards,
+    flattenWithSubCards,
 } from './cards'
 import {RootState} from './index'
 
@@ -135,6 +137,90 @@ describe('store/cards selectors', () => {
         const byParent = getCurrentBoardSubCardsByParent(ordered as unknown as RootState)
 
         expect(byParent[parentCard.id].map((card) => card.id)).toEqual(['sub-b', 'sub-a'])
+    })
+
+    // CSV 내보내기가 최상위 카드만 받아서 OKR 보드의 Key Result와 Task가 통째로
+    // 빠졌다. 표는 하위 카드를 부모 밑에 따로 그리는데(별도 셀렉터), 내보내기는
+    // 그 갈래를 갖고 있지 않았다.
+    describe('하위 카드까지 펼친 목록', () => {
+        // 3단계 트리를 만든다 — Objective → Key Result → Task.
+        const setupLadder = () => {
+            const {state, parentCard} = setupState()
+
+            const keyResult = {
+                ...state.cards.cards['sub-card'],
+                id: 'key-result',
+                title: 'Key result',
+                fields: {...state.cards.cards['sub-card'].fields, parentCardId: parentCard.id},
+            }
+            const task = {
+                ...state.cards.cards['sub-card'],
+                id: 'task',
+                title: 'Task',
+                fields: {...state.cards.cards['sub-card'].fields, parentCardId: 'key-result'},
+            }
+
+            const withLadder = {
+                ...state,
+                cards: {cards: {[parentCard.id]: parentCard, 'key-result': keyResult, task}},
+            }
+
+            return {state: withLadder, parentCard}
+        }
+
+        test('여러 단계 하위 카드가 부모 바로 뒤에 깊이 우선으로 붙는다', () => {
+            const {state, parentCard} = setupLadder()
+
+            const result = getCurrentViewCardsWithSubCards(state as unknown as RootState)
+
+            expect(result.map((card) => card.id)).toEqual([parentCard.id, 'key-result', 'task'])
+        })
+
+        test('형제는 뷰의 카드 순서를 따른다', () => {
+            const {state, parentCard} = setupLadder()
+
+            const second = {...state.cards.cards['key-result'], id: 'key-result-2', title: 'Key result 2'}
+            const view = state.views.views[state.views.current]
+            const ordered = {
+                ...state,
+                cards: {cards: {...state.cards.cards, 'key-result-2': second}},
+                views: {
+                    ...state.views,
+                    views: {
+                        [view.id]: {
+                            ...view,
+                            fields: {...view.fields, cardOrder: [parentCard.id, 'key-result-2', 'key-result']},
+                        },
+                    },
+                },
+            }
+
+            const result = getCurrentViewCardsWithSubCards(ordered as unknown as RootState)
+
+            expect(result.map((card) => card.id)).toEqual([parentCard.id, 'key-result-2', 'key-result', 'task'])
+        })
+
+        // 표도 부모 행이 없으면 그 밑을 그리지 않는다. 내보내기는 "표를 전부 펼친
+        // 모습"이어야 하므로 같은 규칙을 따른다.
+        test('검색에 걸러진 부모의 하위 카드는 함께 빠진다', () => {
+            const {state} = setupLadder()
+            const searched = {...state, searchText: {value: 'no such card'}}
+
+            const result = getCurrentViewCardsWithSubCards(searched as unknown as RootState)
+
+            expect(result).toEqual([])
+        })
+
+        // 부모를 거슬러 올라가면 자기 자신이 나오는 자료는 셀렉터가 만들지 않지만,
+        // 손상된 데이터가 그런 지도를 넘겨도 내보내기가 멈춰서는 안 된다.
+        test('부모 관계가 순환해도 카드를 한 번씩만 낸다', () => {
+            const a = {id: 'a', fields: {}} as never
+            const b = {id: 'b', fields: {}} as never
+
+            const result = flattenWithSubCards([a], {a: [b], b: [a]})
+
+            expect(result.map((card) => (card as {id: string}).id)).toEqual(['a', 'b'])
+        })
     })
 
     test('kanban selector includes subcards and applies search text', () => {
