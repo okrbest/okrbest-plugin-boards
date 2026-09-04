@@ -218,7 +218,7 @@ func (a *App) requireConditionWrite(userID string, before, after *model.Block, b
 		return nil
 	}
 
-	if model.EffectivePermissionRank(evaluator.ForByRulesOnly(after)) <
+	if model.EffectivePermissionRank(evaluator.ForConditionWrite(after)) <
 		model.EffectivePermissionRank(model.EffectiveBoardPermissionEdit) {
 		return model.NewErrPermission("access denied: no permission to give a card these property values")
 	}
@@ -242,18 +242,29 @@ func (a *App) requireInsertPermission(blocks []*model.Block, userID string, boar
 		return nil
 	}
 
-	batch := make(map[string]*model.Block, len(blocks))
-	for _, block := range blocks {
-		if block != nil {
-			batch[block.ID] = block
-		}
+	// Asked once for the whole batch. Resolving authorship below costs a store
+	// read per block, and a board with no rules — which is nearly every board —
+	// must not pay for a judgement that would grant everything anyway.
+	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
+	if err != nil {
+		return err
+	}
+	if !evaluator.Enforces() {
+		return nil
 	}
 
+	judged := make([]*model.Block, 0, len(blocks))
+	batch := make(map[string]*model.Block, len(blocks))
 	for _, block := range blocks {
 		if block == nil {
 			continue
 		}
+		authored := a.asAuthorStored(block, userID)
+		judged = append(judged, authored)
+		batch[authored.ID] = authored
+	}
 
+	for _, block := range judged {
 		if block.Type == model.TypeCard {
 			// A new card answers for the values it arrives carrying (FR-032 as
 			// revised). Its own content and comments are judged below like any
@@ -275,6 +286,34 @@ func (a *App) requireInsertPermission(blocks []*model.Block, userID string, boar
 	}
 
 	return nil
+}
+
+// asAuthorStored returns the block with the author the store will hold, which is
+// the only field of it this judgement may not take from the request.
+//
+// 본인 holds for the card's author (009 FR-005), and a card being created is
+// authored by whoever is creating it — but not yet at this point. created_by is
+// stamped inside the insert, which happens after the check, and the screen sends
+// the field empty. So the relation written to cover a 팀원's own work read as
+// false on every card they made, and 생성 came back refused.
+//
+// The claim on the request is never the answer. A block the store does not hold
+// is about to be inserted and will belong to the requester whatever it says it
+// is; one the store does hold keeps the author already recorded, so re-posting a
+// card is not a way to take it over.
+func (a *App) asAuthorStored(block *model.Block, userID string) *model.Block {
+	author := userID
+	if stored, err := a.store.GetBlock(block.ID); err == nil && stored != nil {
+		author = stored.CreatedBy
+	}
+
+	if block.CreatedBy == author {
+		return block
+	}
+
+	authored := *block
+	authored.CreatedBy = author
+	return &authored
 }
 
 // requireDuplicatePermission judges a copy request against both halves of the
