@@ -23,7 +23,7 @@ import undoManager from './undomanager'
 import {Utils, IDType} from './utils'
 import {UserSettings} from './userSettings'
 import TelemetryClient, {TelemetryCategory, TelemetryActions} from './telemetry/telemetryClient'
-import {Category} from './store/sidebar'
+import {Category, updateBoardCategories} from './store/sidebar'
 
 /* eslint-disable max-lines */
 import {IUser, UserConfigPatch, UserPreference} from './user'
@@ -413,6 +413,22 @@ class Mutator {
     // that broadcast is skipped whenever the server no longer has this client
     // registered as a listener. Applying the server response to the store keeps
     // the dialog correct even when the broadcast never arrives.
+    // 숨긴 보드를 내 사이드바에 되돌린다. 서버가 거절하거나 요청이 실패하면 스토어를 건드리지 않고 false를 돌려준다.
+    async unhideBoard(categoryID: string, boardID: string): Promise<boolean> {
+        try {
+            const response = await octoClient.unhideBoard(categoryID, boardID)
+            if (!response.ok) {
+                return false
+            }
+        } catch (error) {
+            Utils.logError(`unhideBoard failed. categoryID: ${categoryID}, boardID: ${boardID}, error: ${error}`)
+            return false
+        }
+
+        store.dispatch(updateBoardCategories([{boardID, categoryID, hidden: false}]))
+        return true
+    }
+
     async createBoardMember(member: BoardMember, user?: IUser, description = 'create board member'): Promise<BoardMember|undefined> {
         let createdMember: BoardMember|undefined
 

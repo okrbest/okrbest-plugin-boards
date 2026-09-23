@@ -47,7 +47,8 @@ import ManageCategoriesTourStep from '../../components/onboardingTour/manageCate
 
 import DeleteBoardDialog from './deleteBoardDialog'
 import SidebarBoardItem from './sidebarBoardItem'
-import {getVisibleCategoryBoards} from './categoryBoards'
+import HiddenBoardsRow from './hiddenBoardsRow'
+import {getHiddenCategoryBoards, getVisibleCategoryBoards} from './categoryBoards'
 
 type Props = {
     activeCategoryId?: string
@@ -143,6 +144,9 @@ const SidebarCategory = (props: Props) => {
 
     const sidebarBoardMetadata = props.categoryBoards.boardMetadata || []
     const visibleBlocks = props.categoryBoards.boardMetadata.filter((boardMetadata) => isBoardVisible(boardMetadata.boardID, boardMetadata))
+
+    // 보이는 보드가 없어도 숨긴 보드가 있으면 "보드가 존재하지 않음" 대신 숨긴 보드 행이 상태를 설명한다 (U-06)
+    const hiddenBoardsCount = getHiddenCategoryBoards(props.categoryBoards, props.boards).length
 
     const handleCreateNewCategory = () => {
         setShowCreateCategoryModal(true)
@@ -356,7 +360,7 @@ const SidebarCategory = (props: Props) => {
                                         {!(collapsed || props.forceCollapse || snapshot.isDragging || props.draggedItemID === props.categoryBoards.id) && visibleBlocks.length === 0 &&
                                             (
                                                 <div>
-                                                    {!props.categoryBoards.isNew && (
+                                                    {!props.categoryBoards.isNew && hiddenBoardsCount === 0 && (
                                                         <div className='octo-sidebar-item subitem no-views'>
                                                             <FormattedMessage
                                                                 id='Sidebar.no-boards-in-category'
@@ -408,6 +412,14 @@ const SidebarCategory = (props: Props) => {
                                 )
                             }}
                         </Droppable>
+
+                        {/* 숨긴 보드 행은 끌어 옮기는 대상이 아니라 Droppable 바깥에 둔다. 보드 목록과 같은 조건으로 보인다 */}
+                        {!(collapsed || props.forceCollapse || snapshot.isDragging || props.draggedItemID === props.categoryBoards.id) && (
+                            <HiddenBoardsRow
+                                categoryBoards={props.categoryBoards}
+                                boards={props.boards}
+                            />
+                        )}
 
                         {
                             showCreateCategoryModal && (

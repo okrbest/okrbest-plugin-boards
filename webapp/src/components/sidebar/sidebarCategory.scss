@@ -210,6 +210,85 @@
         }
     }
 
+    // 016: 숨긴 보드 접힘 행. 보이는 보드 항목보다 한 단계 더 흐리고, 되찾기 버튼은 올렸을 때만 보인다.
+    .HiddenBoardsRow {
+        &__header {
+            color: rgba(var(--sidebar-text-rgb), 0.56);
+            cursor: default;
+
+            .ChevronDownIcon,
+            .ChevronRightIcon {
+                flex-shrink: 0;
+                font-size: 16px;
+                line-height: 16px;
+                color: rgba(var(--sidebar-text-rgb), 0.56);
+            }
+        }
+
+        &__toggle {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            min-width: 0;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        &__showAll {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        &__item {
+            padding-left: 36px;
+            color: rgba(var(--sidebar-text-rgb), 0.4);
+            cursor: default;
+
+            .octo-sidebar-icon {
+                display: flex;
+                align-items: center;
+                margin-right: 8px;
+                opacity: 0.6;
+            }
+
+            .octo-sidebar-title {
+                flex-grow: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            > .HideIcon {
+                width: 16px;
+                height: 16px;
+                margin-right: 4px;
+                flex-shrink: 0;
+                fill: rgba(var(--sidebar-text-rgb), 0.4);
+            }
+
+            // sidebarBoardItem의 .MenuWrapper처럼 올렸을 때만 드러낸다. 자리는 유지해 목록이 흔들리지 않게 한다.
+            .HiddenBoardsRow__show {
+                visibility: hidden;
+            }
+
+            &:hover,
+            &:focus-within {
+                color: rgba(var(--sidebar-text-rgb), 0.64);
+
+                .HiddenBoardsRow__show {
+                    visibility: visible;
+                }
+            }
+
+            // 터치 화면에는 hover가 없다. 항상 보인다.
+            @media (hover: none) {
+                .HiddenBoardsRow__show {
+                    visibility: visible;
+                }
+            }
+        }
+    }
+
     .newCategoryDragArea {
         display: flex;
         align-items: center;

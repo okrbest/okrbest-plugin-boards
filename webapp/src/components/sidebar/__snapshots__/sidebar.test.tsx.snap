@@ -163,11 +163,28 @@ exports[`components/sidebarSidebar dont show hidden boards 1`] = `
                 </div>
               </div>
             </div>
-            <div>
+            <div />
+          </div>
+          <div
+            class="HiddenBoardsRow"
+          >
+            <div
+              class="octo-sidebar-item subitem HiddenBoardsRow__header"
+            >
               <div
-                class="octo-sidebar-item subitem no-views"
+                aria-expanded="false"
+                class="HiddenBoardsRow__toggle"
+                role="button"
+                tabindex="0"
               >
-                No boards inside
+                <i
+                  class="CompassIcon icon-chevron-right ChevronRightIcon"
+                />
+                <span
+                  class="octo-sidebar-title"
+                >
+                  1 hidden board
+                </span>
               </div>
             </div>
           </div>

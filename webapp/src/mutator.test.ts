@@ -6,6 +6,8 @@ import mutator from './mutator'
 import store from './store'
 import {removeBoardUsersById} from './store/users'
 import {updateBoards} from './store/boards'
+import {updateBoardCategories, updateCategories} from './store/sidebar'
+import {Utils} from './utils'
 import {fetchOrgMaster} from './store/orgMaster'
 import {Board, BoardMember, IPropertyOption, IPropertyTemplate, OrgUnit} from './blocks/board'
 import {IUser} from './user'
@@ -502,5 +504,74 @@ describe('Mutator person property org scope toggle', () => {
         await mutator.changePropertyOrgScoped(board, board.cardProperties[0], true)
 
         expect(patchBody().updatedCardProperties[0].orgScoped).toBe(true)
+    })
+})
+
+// --- 016: 숨김 해제 (contracts/unhide-flow.md F-01·F-02) ---
+describe('Mutator.unhideBoard', () => {
+    const categoryID = 'cat-unhide'
+
+    // updateBoardCategories는 새 보드를 앞에 끼워 넣으므로 뒤에서부터 넣어 [b1, b2(hidden), b3] 순서를 만든다.
+    const seedCategory = () => {
+        store.dispatch(updateCategories([{
+            id: categoryID,
+            name: 'Boards',
+            userID: 'user-1',
+            teamID: 'team-1',
+            createAt: 0,
+            updateAt: 0,
+            deleteAt: 0,
+            collapsed: false,
+            sortOrder: 0,
+            type: 'system',
+            isNew: false,
+        }]))
+        store.dispatch(updateBoardCategories([{boardID: 'b3', categoryID, hidden: false}]))
+        store.dispatch(updateBoardCategories([{boardID: 'b2', categoryID, hidden: true}]))
+        store.dispatch(updateBoardCategories([{boardID: 'b1', categoryID, hidden: false}]))
+    }
+
+    const metadataOf = () => store.getState().sidebar.categoryAttributes.find((c) => c.id === categoryID)?.boardMetadata
+
+    test('flips hidden off in place and returns true when the server accepts', async () => {
+        seedCategory()
+        FetchMock.fn.mockReturnValueOnce(FetchMock.jsonResponse('{}'))
+
+        const ok = await mutator.unhideBoard(categoryID, 'b2')
+
+        expect(ok).toBe(true)
+        expect(metadataOf()).toEqual([
+            {boardID: 'b1', hidden: false},
+            {boardID: 'b2', hidden: false},
+            {boardID: 'b3', hidden: false},
+        ])
+        expect(store.getState().sidebar.hiddenBoardIDs).not.toContain('b2')
+    })
+
+    test('leaves the store alone and returns false when the server rejects', async () => {
+        seedCategory()
+        FetchMock.fn.mockReturnValueOnce(Promise.resolve(new Response('', {status: 403})))
+
+        const ok = await mutator.unhideBoard(categoryID, 'b2')
+
+        expect(ok).toBe(false)
+        expect(metadataOf()).toEqual([
+            {boardID: 'b1', hidden: false},
+            {boardID: 'b2', hidden: true},
+            {boardID: 'b3', hidden: false},
+        ])
+    })
+
+    test('returns false and logs when the request throws', async () => {
+        seedCategory()
+        const logError = jest.spyOn(Utils, 'logError').mockImplementation(() => {})
+        FetchMock.fn.mockRejectedValueOnce(new Error('network down'))
+
+        const ok = await mutator.unhideBoard(categoryID, 'b2')
+
+        expect(ok).toBe(false)
+        expect(logError).toHaveBeenCalled()
+        expect(metadataOf()?.find((m) => m.boardID === 'b2')?.hidden).toBe(true)
+        logError.mockRestore()
     })
 })

@@ -6,6 +6,7 @@ import {Board} from '../../blocks/board'
 import {CategoryBoards} from '../../store/sidebar'
 
 import {
+    getHiddenCategoryBoards,
     getSortedCategoryBoards,
     getVisibleCategoryBoards,
     insertVisibleBoard,
@@ -126,6 +127,26 @@ describe('components/sidebar/categoryBoards', () => {
                 {boardID: b.id, hidden: false},
                 {boardID: a.id, hidden: true},
             ])
+        })
+    })
+    describe('getHiddenCategoryBoards', () => {
+        test('lists hidden boards in category order, skipping unknown boards and templates', () => {
+            const category = makeCategory('cat', 'Boards', [
+                {boardID: c.id, hidden: true},
+                {boardID: 'deleted', hidden: true},
+                {boardID: b.id, hidden: false},
+                {boardID: tpl.id, hidden: true},
+                {boardID: a.id, hidden: true},
+            ])
+            expect(getHiddenCategoryBoards(category, boards).map((board) => board.id)).toEqual([c.id, a.id])
+        })
+
+        test('returns an empty list when nothing is hidden', () => {
+            const category = makeCategory('cat', 'Boards', [
+                {boardID: a.id, hidden: false},
+                {boardID: b.id, hidden: false},
+            ])
+            expect(getHiddenCategoryBoards(category, boards)).toEqual([])
         })
     })
 })
