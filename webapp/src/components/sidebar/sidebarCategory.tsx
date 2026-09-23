@@ -47,6 +47,7 @@ import ManageCategoriesTourStep from '../../components/onboardingTour/manageCate
 
 import DeleteBoardDialog from './deleteBoardDialog'
 import SidebarBoardItem from './sidebarBoardItem'
+import {getVisibleCategoryBoards} from './categoryBoards'
 
 type Props = {
     activeCategoryId?: string
@@ -386,7 +387,7 @@ const SidebarCategory = (props: Props) => {
                                                 />
                                             )
                                         })}
-                                        {!(collapsed || props.forceCollapse || snapshot.isDragging || props.draggedItemID === props.categoryBoards.id) && props.boards.filter((board) => isBoardVisible(board.id) && !board.isTemplate).map((board: Board, zzz) => {
+                                        {!(collapsed || props.forceCollapse || snapshot.isDragging || props.draggedItemID === props.categoryBoards.id) && getVisibleCategoryBoards(props.categoryBoards, props.boards).map((board: Board, zzz) => {
                                             return (
                                                 <SidebarBoardItem
                                                     index={zzz}

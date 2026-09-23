@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useRef, useState} from 'react'
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {FormattedMessage} from 'react-intl'
 import {DragDropContext, Droppable, DropResult} from '@hello-pangea/dnd'
 
@@ -45,9 +45,9 @@ import octoClient from '../../octoClient'
 
 import {useWebsockets} from '../../hooks/websockets'
 
-import {Board} from '../../blocks/board'
 
 import SidebarCategory from './sidebarCategory'
+import {getSortedCategoryBoards, insertVisibleBoard, moveVisibleBoard, withRecoveredBoards} from './categoryBoards'
 import SidebarSettingsMenu from './sidebarSettingsMenu'
 import SidebarUserMenu from './sidebarUserMenu'
 
@@ -55,6 +55,24 @@ type Props = {
     activeBoardId?: string
     onBoardTemplateSelectorOpen: () => void
     onBoardTemplateSelectorClose?: () => void
+}
+
+// 화면에서만 복구된 보드(서버 카테고리에 없는 보드)를 먼저 카테고리에 넣어야
+// 서버의 reorder 검증(보드 개수·집합 일치)을 통과한다. 하나라도 실패하면 빈 배열을 돌려 호출부가 되돌리게 한다.
+async function persistCategoryBoardsOrder(teamID: string, categoryID: string, knownBoardIDs: Set<string>, boardsMetadata: CategoryBoardMetadata[]): Promise<string[]> {
+    for (const metadata of boardsMetadata) {
+        if (knownBoardIDs.has(metadata.boardID)) {
+            continue
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const response = await octoClient.moveBoardToCategory(teamID, metadata.boardID, categoryID, '')
+        if (!response.ok) {
+            Utils.logError(`failed to add board to category before reorder. boardID: ${metadata.boardID}, categoryID: ${categoryID}`)
+            return []
+        }
+    }
+
+    return octoClient.reorderSidebarCategoryBoards(teamID, categoryID, boardsMetadata.map((m) => m.boardID))
 }
 
 function getWindowDimensions() {
@@ -77,6 +95,12 @@ const Sidebar = (props: Props) => {
     const currentBoard = useAppSelector(getCurrentBoard)
     const [initialized, setInitialized] = useState(false)
     const checkedBoardKeysRef = useRef<Set<string>>(new Set())
+
+    // 화면과 드래그 앤 드롭이 같은 목록을 보도록 여기서 한 번만 만든다.
+    const resolvedCategories = useMemo(
+        () => sidebarCategories.map((category) => withRecoveredBoards(category, sidebarCategories, boards)),
+        [sidebarCategories, boards],
+    )
 
     useEffect(() => {
         const categoryOnChangeHandler = (_: WSClient, categories: Category[]) => {
@@ -239,108 +263,107 @@ const Sidebar = (props: Props) => {
         const toCategoryID = destination.droppableId
         const boardID = draggableId
 
-        const toSidebarCategory = sidebarCategories.find((category) => category.id === toCategoryID)
+        // 드롭 인덱스는 화면이 그린 목록(복구된 보드 포함, 숨김·템플릿 제외) 기준이다.
+        // 스토어의 카테고리 목록으로 해석하면 인덱스가 어긋나 빈 항목이 들어간다.
+        const toSidebarCategory = resolvedCategories.find((category) => category.id === toCategoryID)
         if (!toSidebarCategory) {
             Utils.logError(`toCategoryID not found in list of sidebar categories. toCategoryID: ${toCategoryID}`)
             return
         }
-        const previousToBoardsMetadata = [...toSidebarCategory.boardMetadata]
+
+        // 서버가 아는 보드 집합. 실패하면 이 상태로 되돌린다.
+        const storedToCategory = sidebarCategories.find((category) => category.id === toCategoryID)
+        const previousToBoardsMetadata = [...(storedToCategory?.boardMetadata || [])]
+        const knownBoardIDs = new Set(previousToBoardsMetadata.map((m) => m.boardID))
 
         if (fromCategoryID === toCategoryID) {
-            // 활성 보드만 필터링 (화면에 보이는 것)
-            const existingBoardIDs = new Set(boards.map(b => b.id))
-            const activeBoardsMetadata = toSidebarCategory.boardMetadata.filter(m => existingBoardIDs.has(m.boardID))
-            
-            // 활성 보드 배열에서 드래그앤드롭 (source/destination은 활성 보드 기준 인덱스)
-            const [movedItem] = activeBoardsMetadata.splice(source.index, 1)
-            
-            activeBoardsMetadata.splice(destination.index, 0, movedItem)
-            
-            // 전체 배열 재구성: 활성 보드 + 삭제된 보드(맨 뒤)
-            const deletedBoards = toSidebarCategory.boardMetadata.filter(m => !existingBoardIDs.has(m.boardID))
-            const categoryBoardMetadata = [...activeBoardsMetadata, ...deletedBoards]
+            const categoryBoardMetadata = moveVisibleBoard(toSidebarCategory, boards, boardID, destination.index)
+            if (!categoryBoardMetadata) {
+                Utils.logError(`dragged board is not visible in category. boardID: ${boardID}, categoryID: ${toCategoryID}`)
+                return
+            }
 
+            // optimistically updating the store to produce a lag-free UI
             dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: categoryBoardMetadata}))
 
-            const reorderedBoardIDs = categoryBoardMetadata.map((m) => m.boardID)
             try {
-                const updatedOrder = await octoClient.reorderSidebarCategoryBoards(team.id, toCategoryID, reorderedBoardIDs)
-                // if the request failed, rollback the pre updated state
-                if (reorderedBoardIDs.length > 0 && updatedOrder.length === 0) {
-                    // 최신 상태 가져오기
-                    const result = await dispatch(fetchSidebarCategories(team.id))
-                    
-                    // 최신 상태로 다시 드래그앤드롭 처리
-                    if (result.payload) {
-                        const latestCategories = result.payload as CategoryBoards[]
-                        const latestCategory = latestCategories.find((c) => c.id === toCategoryID)
-                        
-                        if (latestCategory) {
-                            const existingBoardIDs = new Set(boards.map(b => b.id))
-                            const latestActiveBoards = latestCategory.boardMetadata.filter(m => existingBoardIDs.has(m.boardID))
-                            
-                            const [retryMovedItem] = latestActiveBoards.splice(source.index, 1)
-                            latestActiveBoards.splice(destination.index, 0, retryMovedItem)
-                            
-                            const latestDeletedBoards = latestCategory.boardMetadata.filter(m => !existingBoardIDs.has(m.boardID))
-                            const retryBoardMetadata = [...latestActiveBoards, ...latestDeletedBoards]
-                            
-                            dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: retryBoardMetadata}))
-                            
-                            const retryBoardIDs = retryBoardMetadata.map((m) => m.boardID)
-                            await octoClient.reorderSidebarCategoryBoards(team.id, toCategoryID, retryBoardIDs)
-                        }
-                    }
+                const updatedOrder = await persistCategoryBoardsOrder(team.id, toCategoryID, knownBoardIDs, categoryBoardMetadata)
+                if (updatedOrder.length > 0) {
+                    return
+                }
+
+                // 서버가 거부했다. 대개 로컬 상태가 낡은 경우라 최신 상태 위에서 같은 이동을 한 번 더 시도한다.
+                const latestCategories = ((await dispatch(fetchSidebarCategories(team.id))).payload || []) as CategoryBoards[]
+                const latestCategory = latestCategories.find((category) => category.id === toCategoryID)
+                if (!latestCategory) {
+                    return
+                }
+
+                const retryBoardMetadata = moveVisibleBoard(withRecoveredBoards(latestCategory, latestCategories, boards), boards, boardID, destination.index)
+                if (!retryBoardMetadata) {
+                    return
+                }
+
+                dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: retryBoardMetadata}))
+                const latestKnownBoardIDs = new Set(latestCategory.boardMetadata.map((m) => m.boardID))
+                const retriedOrder = await persistCategoryBoardsOrder(team.id, toCategoryID, latestKnownBoardIDs, retryBoardMetadata)
+                if (retriedOrder.length === 0) {
+                    await dispatch(fetchSidebarCategories(team.id))
                 }
             } catch (error) {
-                console.error('[DND] 에러:', error)
-                // 서버 요청 실패 시 롤백하고 최신 상태 다시 가져오기
+                Utils.logError(`failed to reorder category boards: ${error}`)
                 dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: previousToBoardsMetadata}))
-                // 최신 카테고리 상태를 다시 가져와서 동기화
                 await dispatch(fetchSidebarCategories(team.id))
             }
-        } else {
-            // board moved to a different category
-            const fromSidebarCategory = sidebarCategories.find((category) => category.id === fromCategoryID)
-
-            if (!fromSidebarCategory) {
-                Utils.logError(`fromCategoryID not found in list of sidebar categories. fromCategoryID: ${fromCategoryID}`)
-                return
-            }
-
-            const categoryBoardMetadata = [...toSidebarCategory.boardMetadata]
-            const fromCategoryBoardMetadata = fromSidebarCategory.boardMetadata[source.index]
-            categoryBoardMetadata.splice(destination.index, 0, fromCategoryBoardMetadata)
-
-            await dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: categoryBoardMetadata}))
-            dispatch(updateBoardCategories([{...fromCategoryBoardMetadata, categoryID: toCategoryID}]))
-
-            // Persist the move; if request fails or server rejects, rollback silently
-            const moveResp = await octoClient
-                .moveBoardToCategory(team.id, boardID, toCategoryID, fromCategoryID)
-                .catch(() => Utils.logError('Failed to move board to category'))
-
-            if (!moveResp || !moveResp.ok) {
-                dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: previousToBoardsMetadata}))
-                dispatch(updateBoardCategories([{...fromCategoryBoardMetadata, categoryID: fromCategoryID}]))
-                return
-            }
-
-            const reorderedBoardIDs = categoryBoardMetadata.map((m) => m.boardID)
-            try {
-                const updatedOrder = await octoClient.reorderSidebarCategoryBoards(team.id, toCategoryID, reorderedBoardIDs)
-                if (reorderedBoardIDs.length > 0 && updatedOrder.length === 0) {
-                    dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: previousToBoardsMetadata}))
-                }
-            } catch (error) {
-                // 서버 요청 실패 시 롤백하고 최신 상태 다시 가져오기
-                dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: previousToBoardsMetadata}))
-                dispatch(updateBoardCategories([{...fromCategoryBoardMetadata, categoryID: fromCategoryID}]))
-                // 최신 카테고리 상태를 다시 가져와서 동기화
-                dispatch(fetchSidebarCategories(team.id))
-            }
+            return
         }
-    }, [team, sidebarCategories, boards])
+
+        // board moved to a different category
+        const fromSidebarCategory = resolvedCategories.find((category) => category.id === fromCategoryID)
+        if (!fromSidebarCategory) {
+            Utils.logError(`fromCategoryID not found in list of sidebar categories. fromCategoryID: ${fromCategoryID}`)
+            return
+        }
+
+        // 원본 카테고리에도 복구된 보드가 섞여 있을 수 있으니 인덱스가 아니라 보드 ID로 찾는다.
+        const movedBoardMetadata = fromSidebarCategory.boardMetadata.find((m) => m.boardID === boardID)
+        if (!movedBoardMetadata) {
+            Utils.logError(`dragged board not found in source category. boardID: ${boardID}, fromCategoryID: ${fromCategoryID}`)
+            return
+        }
+
+        const categoryBoardMetadata = insertVisibleBoard(toSidebarCategory, boards, movedBoardMetadata, destination.index)
+
+        dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: categoryBoardMetadata}))
+        dispatch(updateBoardCategories([{...movedBoardMetadata, categoryID: toCategoryID}]))
+
+        const rollback = () => {
+            dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: previousToBoardsMetadata}))
+            dispatch(updateBoardCategories([{...movedBoardMetadata, categoryID: fromCategoryID}]))
+        }
+
+        // Persist the move; if request fails or server rejects, rollback silently
+        const moveResp = await octoClient.
+            moveBoardToCategory(team.id, boardID, toCategoryID, fromCategoryID).
+            catch(() => Utils.logError('Failed to move board to category'))
+
+        if (!moveResp || !moveResp.ok) {
+            rollback()
+            return
+        }
+        knownBoardIDs.add(boardID)
+
+        try {
+            const updatedOrder = await persistCategoryBoardsOrder(team.id, toCategoryID, knownBoardIDs, categoryBoardMetadata)
+            if (updatedOrder.length === 0) {
+                rollback()
+            }
+        } catch (error) {
+            Utils.logError(`failed to reorder category boards after move: ${error}`)
+            rollback()
+            dispatch(fetchSidebarCategories(team.id))
+        }
+    }, [team, resolvedCategories, sidebarCategories, boards, dispatch])
 
     const onDragEnd = useCallback(async (result: DropResult) => {
         const {destination, source, type} = result
@@ -407,50 +430,6 @@ const Sidebar = (props: Props) => {
         )
     }
 
-    const getCategoryWithRecoveredBoards = (category: CategoryBoards): CategoryBoards => {
-        if (category.name !== 'Boards') {
-            return category
-        }
-
-        const mappedBoardIDs = new Set(
-            sidebarCategories.flatMap((sidebarCategory) =>
-                sidebarCategory.boardMetadata.map((metadata) => metadata.boardID),
-            ),
-        )
-        const missingBoardMetadata: CategoryBoardMetadata[] = boards.
-            filter((board) => !mappedBoardIDs.has(board.id)).
-            map((board) => ({boardID: board.id, hidden: false}))
-
-        if (missingBoardMetadata.length === 0) {
-            return category
-        }
-
-        return {
-            ...category,
-            boardMetadata: [...category.boardMetadata, ...missingBoardMetadata],
-        }
-    }
-
-    const getSortedCategoryBoards = (category: CategoryBoards): Board[] => {
-        const categoryBoardsByID = new Map<string, Board>()
-        boards.forEach((board) => {
-            if (!category.boardMetadata.find((m) => m.boardID === board.id)) {
-                return
-            }
-
-            categoryBoardsByID.set(board.id, board)
-        })
-
-        const sortedBoards: Board[] = []
-        category.boardMetadata.forEach((boardMetadata) => {
-            const b = categoryBoardsByID.get(boardMetadata.boardID)
-            if (b) {
-                sortedBoards.push(b)
-            }
-        })
-        return sortedBoards
-    }
-
     return (
         <div className='Sidebar octo-sidebar'>
             {!Utils.isFocalboardPlugin() &&
@@ -510,15 +489,14 @@ const Sidebar = (props: Props) => {
                             className='octo-sidebar-list'
                         >
                             {
-                                sidebarCategories.map((category, index) => {
-                                    const resolvedCategory = getCategoryWithRecoveredBoards(category)
+                                resolvedCategories.map((category, index) => {
                                     return <SidebarCategory
                                         hideSidebar={hideSidebar}
                                         key={category.id}
                                         activeBoardID={props.activeBoardId}
                                         activeViewID={activeViewID}
-                                        categoryBoards={resolvedCategory}
-                                        boards={getSortedCategoryBoards(resolvedCategory)}
+                                        categoryBoards={category}
+                                        boards={getSortedCategoryBoards(category, boards)}
                                         allCategories={sidebarCategories}
                                         index={index}
                                         onBoardTemplateSelectorClose={props.onBoardTemplateSelectorClose}
