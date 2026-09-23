@@ -239,8 +239,9 @@ describe('components/sidebarSidebar', () => {
         // be no boards visible in sidebar
         expect(sidebarBoards.length).toBe(0)
 
-        const noBoardsText = await screen.findAllByText('No boards inside')
-        expect(noBoardsText.length).toBe(1)
+        // 016: 숨긴 보드가 있으면 "No boards inside" 대신 숨긴 보드 행이 보인다 (U-06)
+        expect(screen.queryByText('No boards inside')).toBeNull()
+        expect(container.querySelector('.HiddenBoardsRow')?.textContent).toContain('1 hidden board')
     })
 
     test('some categories hidden', () => {

@@ -43,6 +43,7 @@ import {getCurrentBoardId} from '../../store/boards'
 import {UserSettings} from '../../userSettings'
 import {Archiver} from '../../archiver'
 import EmojiIcon from '../emojiIcon'
+import {sendFlashMessage} from '../flashMessages'
 
 const iconForViewType = (viewType: IViewType): React.JSX.Element => {
     switch (viewType) {
@@ -193,6 +194,26 @@ const SidebarBoardItem = (props: Props) => {
                 props.showBoard(nextValidBoardID)
             }
         }
+
+        // 잘못 숨겼으면 바로 되돌릴 수 있게 알린다. 화면을 그 보드로 다시 옮기지는 않는다.
+        const hiddenTitle = board.title || intl.formatMessage({id: 'Sidebar.untitled-board', defaultMessage: '(Untitled Board)'})
+        sendFlashMessage({
+            content: intl.formatMessage({id: 'HideBoard.hiddenNotice', defaultMessage: '“{title}” was hidden'}, {title: hiddenTitle}),
+            severity: 'low',
+            durationMs: 5200,
+            action: {
+                label: intl.formatMessage({id: 'HideBoard.undo', defaultMessage: 'Undo'}),
+                onClick: async () => {
+                    const ok = await mutator.unhideBoard(props.categoryBoards.id, board.id)
+                    if (!ok) {
+                        sendFlashMessage({
+                            content: intl.formatMessage({id: 'HiddenBoards.showFailed', defaultMessage: 'Couldn\'t show the board'}),
+                            severity: 'high',
+                        })
+                    }
+                },
+            },
+        })
     }
 
     const boardItemRef = useRef<HTMLDivElement>(null)

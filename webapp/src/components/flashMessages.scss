@@ -29,4 +29,21 @@
         opacity: 0;
         transition: visibility 0s linear 200ms, opacity ease-in 200ms;
     }
+
+    &__action {
+        margin-left: 16px;
+        padding: 4px 10px;
+        border: 0;
+        border-radius: 4px;
+        background-color: rgba(var(--center-channel-bg-rgb), 0.16);
+        color: rgba(var(--center-channel-bg-rgb), 1);
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(var(--center-channel-bg-rgb), 0.24);
+        }
+    }
 }

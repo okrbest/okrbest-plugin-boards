@@ -53,6 +53,12 @@ export function getVisibleCategoryBoards(category: CategoryBoards, boards: Board
     return getSortedCategoryBoards(category, boards).filter((board) => !hiddenBoardIDs.has(board.id) && !board.isTemplate)
 }
 
+/** 내가 숨긴 보드. 스토어에 없는 보드(지워짐·권한 상실)와 템플릿은 세지 않는다. 순서는 카테고리 순서다. */
+export function getHiddenCategoryBoards(category: CategoryBoards, boards: Board[]): Board[] {
+    const hiddenBoardIDs = new Set(category.boardMetadata.filter((m) => m.hidden).map((m) => m.boardID))
+    return getSortedCategoryBoards(category, boards).filter((board) => hiddenBoardIDs.has(board.id) && !board.isTemplate)
+}
+
 // 보이는 보드의 메타데이터를 화면 순서대로 돌려준다. 메타데이터 순서가 곧 화면 순서다.
 function getVisibleMetadata(category: CategoryBoards, boards: Board[]): CategoryBoardMetadata[] {
     const visibleBoardIDs = new Set(getVisibleCategoryBoards(category, boards).map((board) => board.id))
