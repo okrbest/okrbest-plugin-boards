@@ -21,6 +21,7 @@ func (a *API) registerBlockSuiteRoutes(r *mux.Router) {
 	// BlockSuite Document APIs
 	r.HandleFunc("/cards/{cardID}/blocksuite/content", a.sessionRequired(a.handleGetCardBlockSuiteContent)).Methods("GET")
 	r.HandleFunc("/cards/{cardID}/blocksuite/content", a.sessionRequired(a.handleSaveCardBlockSuiteContent)).Methods("PUT")
+	r.HandleFunc("/cards/{cardID}/blocksuite/markdown", a.sessionRequired(a.handleSaveCardBlockSuiteMarkdown)).Methods("PUT")
 	r.HandleFunc("/cards/{cardID}/blocksuite/info", a.sessionRequired(a.handleGetCardBlockSuiteInfo)).Methods("GET")
 	r.HandleFunc("/cards/{cardID}/blocksuite", a.sessionRequired(a.handleDeleteCardBlockSuiteDoc)).Methods("DELETE")
 }
@@ -191,6 +192,123 @@ func (a *API) handleSaveCardBlockSuiteContent(w http.ResponseWriter, r *http.Req
 	)
 
 	// Return document info
+	info := doc.ToInfo()
+	data, err := json.Marshal(info)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+	auditRec.Success()
+}
+
+func (a *API) handleSaveCardBlockSuiteMarkdown(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation PUT /cards/{cardID}/blocksuite/markdown saveCardBlockSuiteMarkdown
+	//
+	// Replaces the BlockSuite document content of a card with the given
+	// plain/markdown body text, converted server-side to a DocSnapshot.
+	//
+	// ---
+	// consumes:
+	// - application/json
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: cardID
+	//   in: path
+	//   description: Card ID
+	//   required: true
+	//   type: string
+	// - name: Body
+	//   in: body
+	//   description: Body text to convert
+	//   required: true
+	//   schema:
+	//     type: object
+	//     properties:
+	//       markdown:
+	//         type: string
+	// security:
+	// - BearerAuth: []
+	// responses:
+	//   '200':
+	//     description: success
+	//     schema:
+	//       "$ref": "#/definitions/BlockSuiteDocInfo"
+	//   default:
+	//     description: internal error
+	//     schema:
+	//       "$ref": "#/definitions/ErrorResponse"
+
+	userID := getUserID(r)
+	cardID := mux.Vars(r)["cardID"]
+
+	auditRec := a.makeAuditRecord(r, "saveCardBlockSuiteMarkdown", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelModify, auditRec)
+	auditRec.AddMeta("cardID", cardID)
+
+	card, err := a.app.GetCardByID(cardID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	// Same permission gate as saving raw BlockSuite content.
+	hasBoardPermission := a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionManageBoardCards)
+	isSystemAdmin := a.permissions.HasPermissionTo(userID, mmModel.PermissionGetAnalytics)
+
+	if !hasBoardPermission && !isSystemAdmin {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to modify card"))
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest("failed to read request body"))
+		return
+	}
+
+	var req struct {
+		Markdown string `json:"markdown"`
+	}
+	if err = json.Unmarshal(bodyBytes, &req); err != nil {
+		a.errorResponse(w, r, model.NewErrBadRequest("invalid request body"))
+		return
+	}
+
+	snapshot, err := a.app.ConvertMarkdownToDocSnapshot(cardID, req.Markdown)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	now := utils.GetMillis()
+	doc := &model.BlockSuiteDoc{
+		DocID:       cardID,
+		CardID:      cardID,
+		BoardID:     card.BoardID,
+		Snapshot:    snapshot,
+		ContentText: req.Markdown,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		CreatedBy:   userID,
+		UpdatedBy:   userID,
+	}
+
+	if err = a.app.UpsertBlockSuiteDoc(doc); err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	// The body text itself is never logged — only its size.
+	a.logger.Debug("SaveCardBlockSuiteMarkdown",
+		mlog.String("cardID", cardID),
+		mlog.String("userID", userID),
+		mlog.Int("markdownSize", len(req.Markdown)),
+		mlog.Int("snapshotSize", len(snapshot)),
+	)
+
 	info := doc.ToInfo()
 	data, err := json.Marshal(info)
 	if err != nil {

@@ -4,6 +4,7 @@
 package app
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-boards/server/model"
@@ -20,6 +21,26 @@ func (a *App) GetBlockSuiteDocByCardID(cardID string) (*model.BlockSuiteDoc, err
 // GetBlockSuiteDocInfoByCardID retrieves metadata (without snapshot) by card_id.
 func (a *App) GetBlockSuiteDocInfoByCardID(cardID string) (*model.BlockSuiteDocInfo, error) {
 	return a.store.GetBlockSuiteDocInfoByCardID(cardID)
+}
+
+// ConvertMarkdownToDocSnapshot builds a BlockSuite document snapshot (JSON) for
+// a card from plain/markdown body text. It reuses the same converters as the
+// legacy block migration (parseMultilineMarkdown + buildDocSnapshot) so that a
+// body written through the API is indistinguishable from one written in the
+// editor. The body text itself is never logged.
+func (a *App) ConvertMarkdownToDocSnapshot(cardID, markdown string) ([]byte, error) {
+	cardBlock, err := a.GetBlockByID(cardID)
+	if err != nil {
+		return nil, err
+	}
+	if cardBlock == nil {
+		return nil, model.NewErrNotFound("card " + cardID)
+	}
+
+	children := parseMultilineMarkdown(markdown, utils.NewID(utils.IDTypeNone))
+	snapshot := buildDocSnapshot(cardBlock, children, nil)
+
+	return json.Marshal(snapshot)
 }
 
 func (a *App) UpsertBlockSuiteDoc(doc *model.BlockSuiteDoc) error {

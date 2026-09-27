@@ -141,10 +141,6 @@ type BlockSuiteText struct {
 func convertLegacyBlocksToDocSnapshot(card *model.Block, contentBlocks []*model.Block) *DocSnapshot {
 	sortedBlocks := sortBlocksByContentOrder(contentBlocks, card.Fields)
 
-	pageID := "page:" + card.ID
-	surfaceID := utils.NewID(utils.IDTypeNone)
-	noteID := utils.NewID(utils.IDTypeNone)
-
 	blobMap := make(map[string]string)
 	contentChildren := make([]BlockSnapshot, 0, len(sortedBlocks))
 	for _, block := range sortedBlocks {
@@ -154,6 +150,18 @@ func convertLegacyBlocksToDocSnapshot(card *model.Block, contentBlocks []*model.
 			blobMap[fileId] = fileId
 		}
 	}
+
+	return buildDocSnapshot(card, contentChildren, blobMap)
+}
+
+// buildDocSnapshot assembles the BlockSuite document shell (page → surface,
+// note → content) around already-converted content children. Split out of
+// convertLegacyBlocksToDocSnapshot so that other producers of content
+// children — e.g. markdown body registration — share the exact same shell.
+func buildDocSnapshot(card *model.Block, contentChildren []BlockSnapshot, blobMap map[string]string) *DocSnapshot {
+	pageID := "page:" + card.ID
+	surfaceID := utils.NewID(utils.IDTypeNone)
+	noteID := utils.NewID(utils.IDTypeNone)
 
 	if len(contentChildren) == 0 {
 		contentChildren = append(contentChildren, BlockSnapshot{
