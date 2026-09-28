@@ -13,6 +13,7 @@ import {wrapDNDIntl} from '../../testUtils'
 
 import 'isomorphic-fetch'
 
+import {IPropertyTemplate} from '../../blocks/board'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {Constants} from '../../constants'
 
@@ -294,6 +295,51 @@ describe('components/table/TableRow', () => {
         )
 
         expect(container.querySelector('.TableRow')).toHaveClass('hidden')
+    })
+
+    // 하위 카드는 부모의 그룹 아래에 그려진다. 자기 그룹 값이 접힌 그룹을
+    // 가리켜도 부모가 펼쳐진 그룹에 있으면 보여야 한다. 대표 그룹의 Objective
+    // 아래에 "CEO - 품질" Key Result가 달린 OKR 보드에서, 품질 그룹을 접으면
+    // 그 KR과 Task가 통째로 사라지던 버그다.
+    test('does not hide a sub-card whose own group key is collapsed', async () => {
+        const groupedBoard = TestBlockFactory.createBoard()
+        const selectProperty: IPropertyTemplate = {
+            id: 'division-property-id',
+            name: 'Division',
+            type: 'select',
+            options: [
+                {id: 'opt-ceo', value: '대표', color: 'propColorGray'},
+                {id: 'opt-quality', value: 'CEO - 품질', color: 'propColorGray'},
+            ],
+        }
+        groupedBoard.cardProperties.push(selectProperty)
+
+        const subCard = TestBlockFactory.createCard(groupedBoard)
+        subCard.fields.properties[selectProperty.id] = 'opt-quality'
+
+        const {container} = render(
+            <Wrapper>
+                <TableRow
+                    board={groupedBoard}
+                    card={subCard}
+                    columnWidths={view.fields.columnWidths}
+                    addCard={jest.fn()}
+                    visiblePropertyIds={view.fields.visiblePropertyIds}
+                    isManualSort={view.fields.sortOptions.length === 0}
+                    groupById={selectProperty.id}
+                    isLastCard={false}
+                    collapsedOptionIds={['opt-quality']}
+                    isSelected={false}
+                    focusOnMount={false}
+                    showCard={jest.fn()}
+                    readonly={false}
+                    onDrop={jest.fn()}
+                    isSubCard={true}
+                />
+            </Wrapper>,
+        )
+
+        expect(container.querySelector('.TableRow')).not.toHaveClass('hidden')
     })
 })
 

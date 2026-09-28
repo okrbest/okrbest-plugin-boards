@@ -181,7 +181,10 @@ const TableRow = (props: Props) => {
     ), [board.cardProperties, visiblePropertyIds])
 
     let className = props.isSelected ? 'TableRow octo-table-row selected' : 'TableRow octo-table-row'
-    if (isGrouped) {
+    // 접힌 그룹은 최상위 카드에만 해당한다. 하위 카드는 부모의 그룹 아래에
+    // 그려지므로 보일지는 부모를 따른다. 자기 그룹 값으로 숨기면 펼쳐진
+    // 부모 아래에서 행만 사라지고 "+ 새 하위 카드" 줄만 남는다.
+    if (isGrouped && !props.isSubCard) {
         const groupTemplate = board.cardProperties.find((p) => p.id === groupById)
         const groupOptionID = getGroupOptionIDForCard(card, groupTemplate)
         const collapsedGroupKey = groupOptionID || 'undefined'
