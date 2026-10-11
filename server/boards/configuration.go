@@ -95,7 +95,10 @@ func (b *BoardsApp) OnConfigurationChange() error {
 		enableBoardsDeletion = true
 	}
 	b.server.Config().EnableDataRetention = enableBoardsDeletion
-	b.server.Config().DataRetentionDays = *mmconfig.DataRetentionSettings.BoardsRetentionDays
+	// okrbest: BoardsRetentionDays는 upstream 서버 모델에서 제거돼 nil로 온다
+	if mmconfig.DataRetentionSettings.BoardsRetentionDays != nil {
+		b.server.Config().DataRetentionDays = *mmconfig.DataRetentionSettings.BoardsRetentionDays
+	}
 	b.server.Config().TeammateNameDisplay = *mmconfig.TeamSettings.TeammateNameDisplay
 	showEmailAddress := false
 	if mmconfig.PrivacySettings.ShowEmailAddress != nil {
