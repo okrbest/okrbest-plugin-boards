@@ -80,6 +80,14 @@ func createBoardsConfig(mmconfig mm_model.Config, baseURL string, serverID strin
 		showFullName = *mmconfig.PrivacySettings.ShowFullName
 	}
 
+	// okrbest: upstream Mattermost 서버가 DataRetentionSettings에서
+	// BoardsRetentionDays를 제거해 런타임 config에 nil로 온다 — 무가드
+	// 역참조가 OnActivate SIGSEGV를 일으키므로 기본값 365로 가드한다.
+	boardsRetentionDays := 365
+	if mmconfig.DataRetentionSettings.BoardsRetentionDays != nil {
+		boardsRetentionDays = int(*mmconfig.DataRetentionSettings.BoardsRetentionDays)
+	}
+
 	serverRoot := baseURL + "/boards"
 
 	return &config.Configuration{
@@ -109,7 +117,7 @@ func createBoardsConfig(mmconfig mm_model.Config, baseURL string, serverID strin
 		NotifyFreqCardSeconds:    getPluginSettingInt(mmconfig, notifyFreqCardSecondsKey, 120),
 		NotifyFreqBoardSeconds:   getPluginSettingInt(mmconfig, notifyFreqBoardSecondsKey, 86400),
 		EnableDataRetention:      enableBoardsDeletion,
-		DataRetentionDays:        *mmconfig.DataRetentionSettings.BoardsRetentionDays,
+		DataRetentionDays:        boardsRetentionDays,
 		TeammateNameDisplay:      *mmconfig.TeamSettings.TeammateNameDisplay,
 		ShowEmailAddress:         showEmailAddress,
 		ShowFullName:             showFullName,
