@@ -4,17 +4,16 @@
 
 import React from 'react'
 
+import CompassIcon from './compassIcon'
+
 import './hideSidebar.scss'
 
 export default function HideSidebarIcon(): React.JSX.Element {
+    // 018: 채널 사이드바 토글과 같은 dock 글리프를 쓴다
     return (
-        <svg
-            xmlns='http://www.w3.org/2000/svg'
+        <CompassIcon
+            icon='dock-left'
             className='HideSidebarIcon Icon'
-            viewBox='0 0 100 100'
-        >
-            <polyline points='80,20 50,50 80,80'/>
-            <polyline points='50,20 20,50, 50,80'/>
-        </svg>
+        />
     )
 }
