@@ -26,11 +26,15 @@ import {Constants} from '../../constants'
 import {TOUR_SIDEBAR, SidebarTourSteps} from '../../components/onboardingTour'
 
 import IconButton from '../../widgets/buttons/iconButton'
+import HideSidebarIcon from '../../widgets/icons/hideSidebar'
 import SearchForBoardsTourStep from '../../components/onboardingTour/searchForBoards/searchForBoards'
 
 type Props = {
     onBoardTemplateSelectorOpen: () => void
     userIsGuest?: boolean
+
+    // 018: 채널 헤더처럼 + 버튼 옆에 사이드바 숨기기 토글을 한 쌍으로 둔다
+    onHideSidebar?: () => void
 }
 
 const BoardsSwitcher = (props: Props): React.JSX.Element => {
@@ -130,6 +134,17 @@ const BoardsSwitcher = (props: Props): React.JSX.Element => {
                         />
                     </Menu>
                 </MenuWrapper>
+            }
+
+            {
+                props.onHideSidebar &&
+                <IconButton
+                    size='small'
+                    className='hide-sidebar-icon'
+                    icon={<HideSidebarIcon/>}
+                    title={intl.formatMessage({id: 'Sidebar.hide-sidebar', defaultMessage: 'Hide sidebar'})}
+                    onClick={props.onHideSidebar}
+                />
             }
 
             {

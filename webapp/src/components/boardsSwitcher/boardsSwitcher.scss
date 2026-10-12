@@ -41,4 +41,23 @@
             color: var(--sidebar-text);
         }
     }
+
+    // 018: 채널 ChannelSidebarToggle 문법 — 투명 배경, hover만 배경,
+    // radius 6px(--okr-radius-ms), + 버튼과 한 쌍. 행 규격(28px)에 맞춘다.
+    .hide-sidebar-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+        margin-left: 4px;
+        border-radius: 6px;
+        color: rgba(var(--sidebar-text-rgb), 0.72);
+
+        &:hover {
+            background: rgba(var(--sidebar-text-rgb), 0.08);
+            color: var(--sidebar-text);
+        }
+    }
 }

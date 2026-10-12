@@ -503,6 +503,17 @@ describe('components/sidebarSidebar — 018 toggle persistence', () => {
         expect(screen.getByRole('button', {name: 'Hide sidebar'})).toBeDefined()
     })
 
+    test('U-01b: 플러그인 모드에서 토글은 보드 찾기 행 안에 + 버튼과 나란히 있다', () => {
+        jest.spyOn(Utils, 'isFocalboardPlugin').mockReturnValue(true)
+
+        const {container} = renderSidebar()
+
+        const toggle = screen.getByRole('button', {name: 'Hide sidebar'})
+        const switcherRow = container.querySelector('.BoardsSwitcherWrapper')
+        expect(switcherRow).not.toBeNull()
+        expect(switcherRow!.contains(toggle)).toBe(true)
+    })
+
     test('U-02: 숨기기 클릭이 사용자별 키로 저장된다', async () => {
         renderSidebar()
 

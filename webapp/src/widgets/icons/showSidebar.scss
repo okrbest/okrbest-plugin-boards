@@ -2,7 +2,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    // 채널 토글 비율(아이콘/버튼 0.625)을 28px 행 규격에 적용
     font-size: 18px;
-    // 숨김 스트립은 본문 영역 위에 뜬다 — 본문 색 기준
-    color: rgba(var(--center-channel-color-rgb), 0.56);
+
+    // 색은 담는 버튼이 정한다 (숨김 스트립은 본문 색 기준)
+    color: inherit;
 }

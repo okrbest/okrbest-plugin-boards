@@ -31,6 +31,19 @@
             padding: 0;
             margin: auto;
         }
+
+        // 018: 보이기 버튼도 토글과 같은 규격 (28px, radius 6, hover만 배경)
+        .IconButton {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+
+            &:hover {
+                background: rgba(var(--center-channel-color-rgb), 0.08);
+                color: rgb(var(--center-channel-color-rgb));
+            }
+        }
     }
 
     > * {
