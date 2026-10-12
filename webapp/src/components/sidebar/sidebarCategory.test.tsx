@@ -110,6 +110,35 @@ describe('components/sidebarCategory', () => {
         expect(container).toMatchSnapshot()
     })
 
+    // 020: 채널 카테고리 헤더처럼 셰브론은 chevron-down 하나를 CSS 회전으로 쓴다 (스왑 금지)
+    test('V-08: 접힌 카테고리도 ChevronDown 하나를 유지한다 — 아이콘 교체가 아니라 회전', async () => {
+        const mockStore = configureStore([])
+        const store = mockStore(state)
+
+        const component = wrapRBDNDDroppable(wrapIntl(
+            <ReduxProvider store={store}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
+                    <SidebarCategory
+                        hideSidebar={() => {}}
+                        categoryBoards={categoryBoards1}
+                        boards={boards}
+                        allCategories={allCategoryBoards}
+                        index={0}
+                    />
+                </MemoryRouter>
+            </ReduxProvider>,
+        ))
+        const {container} = render(component)
+
+        expect(container.querySelector('.category .ChevronDownIcon')).not.toBeNull()
+
+        await userEvent.click(container.querySelector('.category-title') as Element)
+
+        expect(container.querySelector('.category.collapsed')).not.toBeNull()
+        expect(container.querySelector('.category .ChevronDownIcon')).not.toBeNull()
+        expect(container.querySelector('.category .ChevronRightIcon')).toBeNull()
+    })
+
     test('sidebar collapsed without active board', async () => {
         const mockStore = configureStore([])
         const store = mockStore(state)

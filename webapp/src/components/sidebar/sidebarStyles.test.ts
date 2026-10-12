@@ -50,4 +50,14 @@ describe('018 sidebar visual contract (SCSS source)', () => {
         expect(boardItem()).toMatch(/&\.active[\s\S]{0,600}\.IconButton[\s\S]{0,120}color: inherit/)
         expect(category()).toMatch(/&\.active[\s\S]{0,600}\.IconButton[\s\S]{0,120}color: inherit/)
     })
+
+    it('V-08: 카테고리 셰브론은 채널처럼 -90° 회전 규칙을 쓴다 (0.15s ease-out)', () => {
+        expect(category()).toMatch(/\.ChevronDownIcon[\s\S]{0,300}transition: transform 0\.15s ease-out/)
+        expect(category()).toMatch(/collapsed[\s\S]{0,300}rotate\(-90deg\)/)
+    })
+
+    it('V-09: 카테고리 명칭은 채널 헤더처럼 불투명 글자·명시 폰트를 쓴다', () => {
+        expect(category()).toMatch(/&\.category-title[\s\S]{0,400}color: rgb\(var\(--sidebar-text-rgb\)\)/)
+        expect(category()).toMatch(/&\.category-title[\s\S]{0,400}'Open Sans', 'Noto Sans KR'/)
+    })
 })

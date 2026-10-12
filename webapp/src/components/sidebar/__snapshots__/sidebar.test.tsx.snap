@@ -1535,7 +1535,7 @@ exports[`components/sidebarSidebar some categories hidden 1`] = `
                 title="Category 2"
               >
                 <i
-                  class="CompassIcon icon-chevron-right ChevronRightIcon"
+                  class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
                 Category 2
                 <div
