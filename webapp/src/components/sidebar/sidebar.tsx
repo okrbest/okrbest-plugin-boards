@@ -36,7 +36,6 @@ import wsClient, {WSClient} from '../../wsclient'
 
 import {getCurrentTeam, getCurrentTeamId} from '../../store/teams'
 
-import {Constants} from '../../constants'
 
 import {getMe} from '../../store/users'
 import {getCurrentViewId} from '../../store/views'
@@ -468,26 +467,10 @@ const Sidebar = (props: Props) => {
                     </div>
                 </div>}
 
-            {team && team.id !== Constants.globalTeamId &&
-                <div className='WorkspaceTitle'>
-                    {Utils.isFocalboardPlugin() &&
-                    <>
-                        <div className='octo-spacer'/>
-                        <div className='sidebarSwitcher'>
-                            <IconButton
-                                onClick={hideSidebarByUser}
-                                title={intl.formatMessage({id: 'Sidebar.hide-sidebar', defaultMessage: 'Hide sidebar'})}
-                                icon={<HideSidebarIcon/>}
-                            />
-                        </div>
-                    </>
-                    }
-                </div>
-            }
-
             <BoardsSwitcher
                 onBoardTemplateSelectorOpen={props.onBoardTemplateSelectorOpen}
                 userIsGuest={me?.is_guest}
+                onHideSidebar={Utils.isFocalboardPlugin() ? hideSidebarByUser : undefined}
             />
 
             <DragDropContext

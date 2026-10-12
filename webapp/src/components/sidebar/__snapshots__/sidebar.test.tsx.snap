@@ -81,9 +81,6 @@ exports[`components/sidebarSidebar dont show hidden boards 1`] = `
       </div>
     </div>
     <div
-      class="WorkspaceTitle"
-    />
-    <div
       class="BoardsSwitcherWrapper"
     >
       <div
@@ -291,9 +288,6 @@ exports[`components/sidebarSidebar should assign default category if current boa
         </button>
       </div>
     </div>
-    <div
-      class="WorkspaceTitle"
-    />
     <div
       class="BoardsSwitcherWrapper"
     >
@@ -575,9 +569,6 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
         </button>
       </div>
     </div>
-    <div
-      class="WorkspaceTitle"
-    />
     <div
       class="BoardsSwitcherWrapper"
     >
@@ -949,9 +940,6 @@ exports[`components/sidebarSidebar sidebar hidden 1`] = `
       </div>
     </div>
     <div
-      class="WorkspaceTitle"
-    />
-    <div
       class="BoardsSwitcherWrapper"
     >
       <div
@@ -1178,9 +1166,6 @@ exports[`components/sidebarSidebar sidebar hidden 2`] = `
       </div>
     </div>
     <div
-      class="WorkspaceTitle"
-    />
-    <div
       class="BoardsSwitcherWrapper"
     >
       <div
@@ -1406,9 +1391,6 @@ exports[`components/sidebarSidebar some categories hidden 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="WorkspaceTitle"
-    />
     <div
       class="BoardsSwitcherWrapper"
     >

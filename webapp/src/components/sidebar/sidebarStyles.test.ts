@@ -38,4 +38,10 @@ describe('018 sidebar visual contract (SCSS source)', () => {
         expect(boardItem()).not.toContain('calc(64px + 240px - 50px)')
         expect(category()).not.toContain('calc(64px + 240px - 50px)')
     })
+
+    it('V-06: 토글 버튼은 채널 토글 문법을 따른다 — 행 규격 28px, radius 6px, hover만 배경', () => {
+        const switcher = fs.readFileSync(path.join(__dirname, '../boardsSwitcher/boardsSwitcher.scss'), 'utf8')
+        expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,400}width: 28px/)
+        expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,400}border-radius: 6px/)
+    })
 })

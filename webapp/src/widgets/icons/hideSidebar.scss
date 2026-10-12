@@ -2,6 +2,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    // 채널 토글 비율(아이콘/버튼 0.625)을 28px 행 규격에 적용
     font-size: 18px;
-    color: rgba(var(--sidebar-text-rgb), 0.56);
+
+    // 색은 담는 버튼이 정한다 (hover 전이 포함)
+    color: inherit;
 }
