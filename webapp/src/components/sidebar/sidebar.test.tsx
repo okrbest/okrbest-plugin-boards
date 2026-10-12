@@ -7,7 +7,7 @@ import configureStore from 'redux-mock-store'
 import {Provider as ReduxProvider} from 'react-redux'
 import {MemoryRouter} from 'react-router-dom'
 
-import {render, waitFor, screen} from '@testing-library/react'
+import {fireEvent, render, waitFor, screen} from '@testing-library/react'
 
 import {thunk} from 'redux-thunk'
 
@@ -16,6 +16,7 @@ import {mocked} from 'jest-mock'
 import userEvent from '@testing-library/user-event'
 
 import {mockMatchMedia, wrapIntl} from '../../testUtils'
+import {Utils} from '../../utils'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import octoClient from '../../../../webapp/src/octoClient'
@@ -425,4 +426,133 @@ describe('components/sidebarSidebar', () => {
         expect(mockedOctoClient.moveBoardToCategory).toBeCalledTimes(0)
     })
 
+})
+
+// 018: 숨기기/보이기 토글 보존 계약 (contracts/ui-surfaces.md U-01~U-07)
+describe('components/sidebarSidebar — 018 toggle persistence', () => {
+    const mockStore = configureStore([thunk])
+
+    const board = TestBlockFactory.createBoard()
+    board.id = 'board1'
+
+    const categoryAttribute1 = TestBlockFactory.createCategoryBoards()
+    categoryAttribute1.id = 'category1'
+    categoryAttribute1.name = 'Category 1'
+    categoryAttribute1.boardMetadata = [{boardID: board.id, hidden: false}]
+
+    const makeStore = () => mockStore({
+        teams: {
+            current: {id: 'team-id'},
+        },
+        boards: {
+            current: board.id,
+            boards: {
+                [board.id]: board,
+            },
+            myBoardMemberships: {
+                [board.id]: board,
+            },
+        },
+        cards: {
+            cards: {
+                card_id_1: {title: 'Card'},
+            },
+            current: 'card_id_1',
+        },
+        views: {
+            views: [],
+        },
+        users: {
+            me: {
+                id: 'user_id_1',
+                props: {},
+            },
+        },
+        sidebar: {
+            categoryAttributes: [
+                categoryAttribute1,
+            ],
+            hiddenBoardIDs: [],
+        },
+    })
+
+    const renderSidebar = () => {
+        const component = wrapIntl(
+            <ReduxProvider store={makeStore()}>
+                <MemoryRouter initialEntries={['/team/team-id']}>
+                    <Sidebar onBoardTemplateSelectorOpen={jest.fn()}/>
+                </MemoryRouter>
+            </ReduxProvider>,
+        )
+        return render(component)
+    }
+
+    beforeEach(() => {
+        jest.clearAllMocks()
+        jest.restoreAllMocks()
+        localStorage.clear()
+        const customGlobal = global as any
+        customGlobal.innerWidth = 1024
+    })
+
+    test('U-01: 플러그인 모드 데스크톱에서 접근 가능한 이름이 있는 숨기기 버튼을 그린다', () => {
+        jest.spyOn(Utils, 'isFocalboardPlugin').mockReturnValue(true)
+
+        renderSidebar()
+
+        expect(screen.getByRole('button', {name: 'Hide sidebar'})).toBeDefined()
+    })
+
+    test('U-02: 숨기기 클릭이 사용자별 키로 저장된다', async () => {
+        renderSidebar()
+
+        await userEvent.click(screen.getByRole('button', {name: 'Hide sidebar'}))
+
+        expect(localStorage.getItem('sidebarHidden_user_id_1')).toBe('true')
+    })
+
+    test('U-03: 보이기 클릭이 복원하고 저장 키를 지운다', async () => {
+        const {container} = renderSidebar()
+
+        await userEvent.click(screen.getByRole('button', {name: 'Hide sidebar'}))
+        expect(container.querySelector('.Sidebar.hidden')).not.toBeNull()
+
+        await userEvent.click(screen.getByRole('button', {name: 'Show sidebar'}))
+
+        expect(container.querySelector('.Sidebar.hidden')).toBeNull()
+        expect(localStorage.getItem('sidebarHidden_user_id_1')).toBeNull()
+    })
+
+    test('U-04: 저장값이 true면 처음부터 숨김으로 마운트된다', () => {
+        localStorage.setItem('sidebarHidden_user_id_1', 'true')
+
+        const {container} = renderSidebar()
+
+        expect(container.querySelector('.Sidebar.hidden')).not.toBeNull()
+    })
+
+    test('U-06: 저장된 숨김은 창 폭이 바뀌어도 유지된다', () => {
+        localStorage.setItem('sidebarHidden_user_id_1', 'true')
+        const customGlobal = global as any
+
+        const {container} = renderSidebar()
+
+        customGlobal.innerWidth = 500
+        fireEvent(window, new Event('resize'))
+        customGlobal.innerWidth = 1024
+        fireEvent(window, new Event('resize'))
+
+        expect(container.querySelector('.Sidebar.hidden')).not.toBeNull()
+    })
+
+    test('U-07: 좁은 폭 자동 숨김은 저장 키를 만들지 않는다', () => {
+        const customGlobal = global as any
+        customGlobal.innerWidth = 500
+
+        const {container} = renderSidebar()
+        fireEvent(window, new Event('resize'))
+
+        expect(container.querySelector('.Sidebar.hidden')).not.toBeNull()
+        expect(localStorage.getItem('sidebarHidden_user_id_1')).toBeNull()
+    })
 })

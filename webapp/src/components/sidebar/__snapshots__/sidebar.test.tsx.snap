@@ -69,21 +69,14 @@ exports[`components/sidebarSidebar dont show hidden boards 1`] = `
         class="sidebarSwitcher"
       >
         <button
+          aria-label="Hide sidebar"
           class="IconButton"
+          title="Hide sidebar"
           type="button"
         >
-          <svg
-            class="HideSidebarIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="80,20 50,50 80,80"
-            />
-            <polyline
-              points="50,20 20,50, 50,80"
-            />
-          </svg>
+          <i
+            class="CompassIcon icon-dock-left HideSidebarIcon Icon"
+          />
         </button>
       </div>
     </div>
@@ -287,21 +280,14 @@ exports[`components/sidebarSidebar should assign default category if current boa
         class="sidebarSwitcher"
       >
         <button
+          aria-label="Hide sidebar"
           class="IconButton"
+          title="Hide sidebar"
           type="button"
         >
-          <svg
-            class="HideSidebarIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="80,20 50,50 80,80"
-            />
-            <polyline
-              points="50,20 20,50, 50,80"
-            />
-          </svg>
+          <i
+            class="CompassIcon icon-dock-left HideSidebarIcon Icon"
+          />
         </button>
       </div>
     </div>
@@ -436,11 +422,46 @@ exports[`components/sidebarSidebar should assign default category if current boa
                 </div>
               </div>
             </div>
-            <div>
+            <div
+              data-rfd-draggable-context-id="_r_p_"
+              data-rfd-draggable-id="board2"
+            >
               <div
-                class="octo-sidebar-item subitem no-views"
+                aria-describedby="rfd-hidden-text-_r_p_-hidden-text-_r_q_"
+                class="SidebarBoardItem subitem "
+                data-rfd-drag-handle-context-id="_r_p_"
+                data-rfd-drag-handle-draggable-id="board2"
+                draggable="false"
+                role="button"
+                tabindex="0"
               >
-                No boards inside
+                <div
+                  class="octo-sidebar-icon"
+                >
+                  i
+                </div>
+                <div
+                  class="octo-sidebar-title"
+                  title="board title"
+                >
+                  board title
+                </div>
+                <div>
+                  <div
+                    aria-label="menuwrapper"
+                    class="MenuWrapper x"
+                    role="button"
+                  >
+                    <button
+                      class="IconButton"
+                      type="button"
+                    >
+                      <i
+                        class="CompassIcon icon-dots-horizontal OptionsIcon"
+                      />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -543,21 +564,14 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
         class="sidebarSwitcher"
       >
         <button
+          aria-label="Hide sidebar"
           class="IconButton"
+          title="Hide sidebar"
           type="button"
         >
-          <svg
-            class="HideSidebarIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="80,20 50,50 80,80"
-            />
-            <polyline
-              points="50,20 20,50, 50,80"
-            />
-          </svg>
+          <i
+            class="CompassIcon icon-dock-left HideSidebarIcon Icon"
+          />
         </button>
       </div>
     </div>
@@ -582,11 +596,11 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
     </div>
     <div
       class="octo-sidebar-list"
-      data-rfd-droppable-context-id="_r_10_"
+      data-rfd-droppable-context-id="_r_11_"
       data-rfd-droppable-id="lhs-categories"
     >
       <div
-        data-rfd-draggable-context-id="_r_10_"
+        data-rfd-draggable-context-id="_r_11_"
         data-rfd-draggable-id="category1"
       >
         <div
@@ -594,16 +608,16 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
         >
           <div
             class="categoryBoardsDroppableArea"
-            data-rfd-droppable-context-id="_r_10_"
+            data-rfd-droppable-context-id="_r_11_"
             data-rfd-droppable-id="category1"
           >
             <div
               class="octo-sidebar-item category expanded "
             >
               <div
-                aria-describedby="rfd-hidden-text-_r_10_-hidden-text-_r_11_"
+                aria-describedby="rfd-hidden-text-_r_11_-hidden-text-_r_12_"
                 class="octo-sidebar-title category-title"
-                data-rfd-drag-handle-context-id="_r_10_"
+                data-rfd-drag-handle-context-id="_r_11_"
                 data-rfd-drag-handle-draggable-id="category1"
                 draggable="false"
                 role="button"
@@ -641,7 +655,7 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
         </div>
       </div>
       <div
-        data-rfd-draggable-context-id="_r_10_"
+        data-rfd-draggable-context-id="_r_11_"
         data-rfd-draggable-id="category2"
       >
         <div
@@ -649,16 +663,16 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
         >
           <div
             class="categoryBoardsDroppableArea"
-            data-rfd-droppable-context-id="_r_10_"
+            data-rfd-droppable-context-id="_r_11_"
             data-rfd-droppable-id="category2"
           >
             <div
               class="octo-sidebar-item category expanded "
             >
               <div
-                aria-describedby="rfd-hidden-text-_r_10_-hidden-text-_r_11_"
+                aria-describedby="rfd-hidden-text-_r_11_-hidden-text-_r_12_"
                 class="octo-sidebar-title category-title"
-                data-rfd-drag-handle-context-id="_r_10_"
+                data-rfd-drag-handle-context-id="_r_11_"
                 data-rfd-drag-handle-draggable-id="category2"
                 draggable="false"
                 role="button"
@@ -693,13 +707,13 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
               </div>
             </div>
             <div
-              data-rfd-draggable-context-id="_r_10_"
+              data-rfd-draggable-context-id="_r_11_"
               data-rfd-draggable-id="board2"
             >
               <div
-                aria-describedby="rfd-hidden-text-_r_10_-hidden-text-_r_11_"
+                aria-describedby="rfd-hidden-text-_r_11_-hidden-text-_r_12_"
                 class="SidebarBoardItem subitem "
-                data-rfd-drag-handle-context-id="_r_10_"
+                data-rfd-drag-handle-context-id="_r_11_"
                 data-rfd-drag-handle-draggable-id="board2"
                 draggable="false"
                 role="button"
@@ -738,7 +752,7 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
         </div>
       </div>
       <div
-        data-rfd-draggable-context-id="_r_10_"
+        data-rfd-draggable-context-id="_r_11_"
         data-rfd-draggable-id="default_category"
       >
         <div
@@ -746,16 +760,16 @@ exports[`components/sidebarSidebar shouldnt do any category assignment is board 
         >
           <div
             class="categoryBoardsDroppableArea"
-            data-rfd-droppable-context-id="_r_10_"
+            data-rfd-droppable-context-id="_r_11_"
             data-rfd-droppable-id="default_category"
           >
             <div
               class="octo-sidebar-item category expanded "
             >
               <div
-                aria-describedby="rfd-hidden-text-_r_10_-hidden-text-_r_11_"
+                aria-describedby="rfd-hidden-text-_r_11_-hidden-text-_r_12_"
                 class="octo-sidebar-title category-title"
-                data-rfd-drag-handle-context-id="_r_10_"
+                data-rfd-drag-handle-context-id="_r_11_"
                 data-rfd-drag-handle-draggable-id="default_category"
                 draggable="false"
                 role="button"
@@ -836,48 +850,17 @@ exports[`components/sidebarSidebar sidebar expect hidden 1`] = `
       class="octo-sidebar-header show-button"
     >
       <div
-        class="hamburger-icon"
-      >
-        <button
-          class="IconButton"
-          type="button"
-        >
-          <svg
-            class="HamburgerIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="20,25 80,25"
-            />
-            <polyline
-              points="20,50 80,50"
-            />
-            <polyline
-              points="20,75 80,75"
-            />
-          </svg>
-        </button>
-      </div>
-      <div
         class="show-icon"
       >
         <button
+          aria-label="Show sidebar"
           class="IconButton"
+          title="Show sidebar"
           type="button"
         >
-          <svg
-            class="ShowSidebarIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="20,20 50,50 20,80"
-            />
-            <polyline
-              points="50,20 80,50, 50,80"
-            />
-          </svg>
+          <i
+            class="CompassIcon icon-dock-left ShowSidebarIcon Icon"
+          />
         </button>
       </div>
     </div>
@@ -954,21 +937,14 @@ exports[`components/sidebarSidebar sidebar hidden 1`] = `
         class="sidebarSwitcher"
       >
         <button
+          aria-label="Hide sidebar"
           class="IconButton"
+          title="Hide sidebar"
           type="button"
         >
-          <svg
-            class="HideSidebarIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="80,20 50,50 80,80"
-            />
-            <polyline
-              points="50,20 20,50, 50,80"
-            />
-          </svg>
+          <i
+            class="CompassIcon icon-dock-left HideSidebarIcon Icon"
+          />
         </button>
       </div>
     </div>
@@ -1190,21 +1166,14 @@ exports[`components/sidebarSidebar sidebar hidden 2`] = `
         class="sidebarSwitcher"
       >
         <button
+          aria-label="Hide sidebar"
           class="IconButton"
+          title="Hide sidebar"
           type="button"
         >
-          <svg
-            class="HideSidebarIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="80,20 50,50 80,80"
-            />
-            <polyline
-              points="50,20 20,50, 50,80"
-            />
-          </svg>
+          <i
+            class="CompassIcon icon-dock-left HideSidebarIcon Icon"
+          />
         </button>
       </div>
     </div>
@@ -1426,21 +1395,14 @@ exports[`components/sidebarSidebar some categories hidden 1`] = `
         class="sidebarSwitcher"
       >
         <button
+          aria-label="Hide sidebar"
           class="IconButton"
+          title="Hide sidebar"
           type="button"
         >
-          <svg
-            class="HideSidebarIcon Icon"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polyline
-              points="80,20 50,50 80,80"
-            />
-            <polyline
-              points="50,20 20,50, 50,80"
-            />
-          </svg>
+          <i
+            class="CompassIcon icon-dock-left HideSidebarIcon Icon"
+          />
         </button>
       </div>
     </div>

@@ -156,6 +156,28 @@ export class UserSettings {
     static set nameFormat(newValue: string | null) {
         UserSettings.set(UserSettingKey.NameFormat, newValue)
     }
+
+    // 018: 사이드바 숨김 상태. 사용자별 키라 UserSettingKey enum을 거치지 않는다.
+    // 저장소가 막혀 있으면(시크릿 모드 등) 기본값 "보임"으로 동작한다.
+    static getSidebarHidden(userID: string): boolean {
+        try {
+            return localStorage.getItem(`sidebarHidden_${userID}`) === 'true'
+        } catch {
+            return false
+        }
+    }
+
+    static setSidebarHidden(userID: string, hidden: boolean): void {
+        try {
+            if (hidden) {
+                localStorage.setItem(`sidebarHidden_${userID}`, 'true')
+            } else {
+                localStorage.removeItem(`sidebarHidden_${userID}`)
+            }
+        } catch {
+            Utils.logWarn('failed to persist sidebar hidden state')
+        }
+    }
 }
 
 export function exportUserSettingsBlob(): string {

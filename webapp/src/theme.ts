@@ -149,6 +149,11 @@ export function setTheme(theme: Theme | null): Theme {
         style.setProperty('--sidebar-text-rgb', style.getPropertyValue('--sidebar-text-rgb') || consolidatedTheme.mainBg)
         style.setProperty('--link-color-rgb', style.getPropertyValue('--link-color-rgb') || consolidatedTheme.mainBg)
         style.setProperty('--sidebar-text-active-border-rgb', style.getPropertyValue('--sidebar-text-active-border-rgb') || consolidatedTheme.mainBg)
+
+        // 018: 사이드바 활성·hover가 참조하는 MM 전역 변수. 플러그인 모드에서는 MM webapp이
+        // 먼저 설정하지만 Jest에는 없으므로 여기서 기본값을 보장한다.
+        style.setProperty('--sidebar-text-active-color', style.getPropertyValue('--sidebar-text-active-color') || `rgb(${consolidatedTheme.mainBg})`)
+        style.setProperty('--sidebar-text-hover-bg', style.getPropertyValue('--sidebar-text-hover-bg') || `rgba(${consolidatedTheme.mainBg}, 0.08)`)
     }
 
     document.documentElement.style.setProperty('--sidebar-white-logo', consolidatedTheme.sidebarWhiteLogo)

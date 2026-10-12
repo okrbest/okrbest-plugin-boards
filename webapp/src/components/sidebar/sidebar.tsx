@@ -2,16 +2,16 @@
 // See LICENSE.txt for license information.
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
-import {FormattedMessage} from 'react-intl'
+import {FormattedMessage, useIntl} from 'react-intl'
 import {DragDropContext, Droppable, DropResult} from '@hello-pangea/dnd'
 
 import {getActiveThemeName, loadTheme} from '../../theme'
 import IconButton from '../../widgets/buttons/iconButton'
-import HamburgerIcon from '../../widgets/icons/hamburger'
 import HideSidebarIcon from '../../widgets/icons/hideSidebar'
 import ShowSidebarIcon from '../../widgets/icons/showSidebar'
 import {getCurrentBoard, getMySortedBoards} from '../../store/boards'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
+import {UserSettings} from '../../userSettings'
 import {Utils} from '../../utils'
 import {IUser} from '../../user'
 
@@ -84,13 +84,17 @@ function getWindowDimensions() {
 }
 
 const Sidebar = (props: Props) => {
-    const [isHidden, setHidden] = useState(false)
-    const [userHidden, setUserHidden] = useState(false)
+    const intl = useIntl()
+    const me = useAppSelector<IUser|null>(getMe)
+
+    // 018: 사용자가 직접 숨긴 상태는 사용자별로 보존된다 (data-model.md).
+    // 좁은 폭 자동 숨김은 저장하지 않는다.
+    const [isHidden, setHidden] = useState(() => Boolean(me && UserSettings.getSidebarHidden(me.id)))
+    const [userHidden, setUserHidden] = useState(() => Boolean(me && UserSettings.getSidebarHidden(me.id)))
     const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions())
     const boards = useAppSelector(getMySortedBoards)
     const dispatch = useAppDispatch()
     const sidebarCategories = useAppSelector<CategoryBoards[]>(getSidebarCategories)
-    const me = useAppSelector<IUser|null>(getMe)
     const activeViewID = useAppSelector(getCurrentViewId)
     const currentBoard = useAppSelector(getCurrentBoard)
     const [initialized, setInitialized] = useState(false)
@@ -218,6 +222,16 @@ const Sidebar = (props: Props) => {
         }
     }, [teamId])
 
+    // 018: 로그인 사용자가 바뀌면 그 사용자의 저장값으로 되돌린다
+    useEffect(() => {
+        if (!me) {
+            return
+        }
+        const storedHidden = UserSettings.getSidebarHidden(me.id)
+        setUserHidden(storedHidden)
+        setHidden(storedHidden || getWindowDimensions().width < 768)
+    }, [me?.id])
+
     const hideSidebar = () => {
         if (!userHidden) {
             if (windowDimensions.width < 768) {
@@ -227,6 +241,23 @@ const Sidebar = (props: Props) => {
             }
         }
     }
+
+    // 018: 명시적 토글만 저장한다 — 자동 숨김(hideSidebar)은 저장하지 않는다 (research R6)
+    const hideSidebarByUser = useCallback(() => {
+        setUserHidden(true)
+        setHidden(true)
+        if (me) {
+            UserSettings.setSidebarHidden(me.id, true)
+        }
+    }, [me])
+
+    const showSidebarByUser = useCallback(() => {
+        setUserHidden(false)
+        setHidden(false)
+        if (me) {
+            UserSettings.setSidebarHidden(me.id, false)
+        }
+    }, [me])
 
     const handleCategoryDND = useCallback(async (result: DropResult) => {
         const {destination, source} = result
@@ -407,22 +438,11 @@ const Sidebar = (props: Props) => {
         return (
             <div className='Sidebar octo-sidebar hidden'>
                 <div className='octo-sidebar-header show-button'>
-                    <div className='hamburger-icon'>
-                        <IconButton
-                            icon={<HamburgerIcon/>}
-                            onClick={() => {
-                                setUserHidden(false)
-                                setHidden(false)
-                            }}
-                        />
-                    </div>
                     <div className='show-icon'>
                         <IconButton
                             icon={<ShowSidebarIcon/>}
-                            onClick={() => {
-                                setUserHidden(false)
-                                setHidden(false)
-                            }}
+                            title={intl.formatMessage({id: 'Sidebar.show-sidebar', defaultMessage: 'Show sidebar'})}
+                            onClick={showSidebarByUser}
                         />
                     </div>
                 </div>
@@ -441,10 +461,8 @@ const Sidebar = (props: Props) => {
                     <div className='octo-spacer'/>
                     <div className='sidebarSwitcher'>
                         <IconButton
-                            onClick={() => {
-                                setUserHidden(true)
-                                setHidden(true)
-                            }}
+                            onClick={hideSidebarByUser}
+                            title={intl.formatMessage({id: 'Sidebar.hide-sidebar', defaultMessage: 'Hide sidebar'})}
                             icon={<HideSidebarIcon/>}
                         />
                     </div>
@@ -457,10 +475,8 @@ const Sidebar = (props: Props) => {
                         <div className='octo-spacer'/>
                         <div className='sidebarSwitcher'>
                             <IconButton
-                                onClick={() => {
-                                    setUserHidden(true)
-                                    setHidden(true)
-                                }}
+                                onClick={hideSidebarByUser}
+                                title={intl.formatMessage({id: 'Sidebar.hide-sidebar', defaultMessage: 'Hide sidebar'})}
                                 icon={<HideSidebarIcon/>}
                             />
                         </div>

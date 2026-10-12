@@ -1,8 +1,11 @@
 @use '../../styles/z-index' as *;
 
 .Sidebar {
-    flex: 0 0 240px;
-    max-width: 240px;
+    // 018 V-04: 채널 사이드바와 같은 가변 폭 규칙. 고정 메뉴 오프셋(V-05)이 이 변수를 참조한다.
+    --octo-sidebar-width: clamp(180px, 19vw, 440px);
+
+    flex: 0 0 var(--octo-sidebar-width);
+    max-width: var(--octo-sidebar-width);
     display: flex;
     flex-direction: column;
 
@@ -105,22 +108,8 @@
         }
 
         &.show-button {
-            .hamburger-icon {
-                display: block;
-            }
-
             .show-icon {
-                display: none;
-            }
-
-            &:hover {
-                .hamburger-icon {
-                    display: none;
-                }
-
-                .show-icon {
-                    display: block;
-                }
+                display: block;
             }
         }
     }
@@ -143,10 +132,6 @@
         color: unset;
     }
 
-    .HideSidebarIcon {
-        stroke: rgba(var(--sidebar-text-rgb), 0.5);
-        stroke-width: 6px;
-    }
 
     .add-board {
         display: flex;
@@ -161,9 +146,4 @@
         }
     }
 
-    @media screen and (min-width: 768px) {
-        .WorkspaceTitle .sidebarSwitcher {
-            display: none;
-        }
-    }
 }

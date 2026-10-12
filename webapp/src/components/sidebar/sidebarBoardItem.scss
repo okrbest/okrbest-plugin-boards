@@ -2,8 +2,12 @@
     display: flex;
     flex-direction: row;
     font-weight: 500;
+
+    // 018 V-03: 채널 리스트와 같은 행 규격
+    font-size: 15px;
+    line-height: 18px;
     padding: 0 12px 0 20px;
-    height: 36px;
+    height: 32px;
     align-items: center;
     gap: 8px;
 
@@ -12,7 +16,8 @@
     }
 
     &:hover {
-        background-color: rgba(var(--sidebar-text-rgb), 0.08);
+        // 018 V-02: 채널 리스트와 같은 hover 토큰 (standalone·Jest 폴백 포함)
+        background-color: var(--sidebar-text-hover-bg, rgba(var(--sidebar-text-rgb), 0.08));
         display: flex;
     }
 
@@ -28,25 +33,15 @@
         font-weight: 400;
     }
 
+    // 018 V-01: 채널 리스트의 활성 채널과 같은 완전 반전 (spec 014 이식).
+    // 기존 좌측 2px 세로선 + 옅은 배경 방식은 제거했다.
     &.active {
-        background: rgba(var(--sidebar-text-rgb), 0.1);
+        background: rgb(var(--sidebar-text-active-border-rgb));
         position: relative;
-        color: rgb(var(--sidebar-text-rgb));
+        color: var(--sidebar-text-active-color, rgb(var(--sidebar-bg-rgb)));
 
         .octo-sidebar-title {
             color: inherit;
-        }
-
-        &:not(.subitem) {
-            &::before {
-                content: '';
-                background: rgb(var(--sidebar-text-active-border-rgb));
-                width: 2px;
-                height: 100%;
-                position: absolute;
-                left: 0;
-                top: 0;
-            }
         }
     }
 
@@ -178,8 +173,9 @@
 .team-sidebar + .product-wrapper {
     .SidebarBoardItem {
         .Menu.noselect.left {
+            // 018 V-05: 폭이 가변(clamp)이라 240px 하드코딩 대신 사이드바 폭 변수를 쓴다
             right: calc(100% - 480px - 64px + 50px);
-            left: calc(64px + 240px - 50px);
+            left: calc(64px + var(--octo-sidebar-width, 240px) - 50px);
         }
     }
 }

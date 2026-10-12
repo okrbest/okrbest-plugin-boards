@@ -14,6 +14,10 @@
         display: flex;
         flex-direction: row;
         font-weight: 500;
+
+        // 018 V-03: 채널 리스트와 같은 글자 규격 (카테고리 헤더는 category-title이 12px로 덮는다)
+        font-size: 15px;
+        line-height: 18px;
         padding: 0 16px 0 8px;
         height: 32px;
         align-items: center;
@@ -35,23 +39,21 @@
             padding-left: 20px;
             color: rgba(var(--sidebar-text-rgb), 0.64);
             font-weight: 400;
+
+            // 018 V-02: 채널 리스트와 같은 hover 토큰
+            &:hover {
+                background: var(--sidebar-text-hover-bg, rgba(var(--sidebar-text-rgb), 0.08));
+            }
         }
 
+        // 018 V-01: 채널 리스트의 활성 채널과 같은 완전 반전. 좌측 세로선은 제거했다.
         &.active {
-            background: rgba(var(--sidebar-text-rgb), 0.1);
+            background: rgb(var(--sidebar-text-active-border-rgb));
             position: relative;
-            color: rgb(var(--sidebar-text-rgb));
+            color: var(--sidebar-text-active-color, rgb(var(--sidebar-bg-rgb)));
 
-            &:not(.subitem) {
-                &::before {
-                    content: '';
-                    background: rgb(var(--sidebar-text-active-border-rgb));
-                    width: 2px;
-                    height: 100%;
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                }
+            .octo-sidebar-title {
+                color: inherit;
             }
         }
 
@@ -159,9 +161,11 @@
         color: rgba(var(--sidebar-text-rgb), 0.72);
 
         &.category-title {
+            // 018 V-03: 채널 카테고리 헤더와 같은 수치
             font-size: 12px;
             text-transform: uppercase;
             font-weight: 600;
+            letter-spacing: 0.05em;
         }
 
         .octo-icon {
@@ -180,8 +184,9 @@
         position: fixed;
 
         > .left {
+            // 018 V-05: 240px 하드코딩 대신 사이드바 폭 변수를 쓴다
             right: calc(100% - 480px - 64px + 50px);
-            left: calc(64px + 240px - 50px);
+            left: calc(64px + var(--octo-sidebar-width, 240px) - 50px);
         }
     }
 
