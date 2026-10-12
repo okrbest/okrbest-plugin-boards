@@ -1,6 +1,9 @@
 .BoardsSwitcherWrapper {
     display: flex;
     flex-direction: row;
+
+    // 020: 48px 토글 옆에서 검색 pill(28px)·+ 버튼이 늘어나지 않게 세로 중앙 정렬
+    align-items: center;
     padding: 0 16px;
 
     .BoardsSwitcher {
@@ -42,18 +45,25 @@
         }
     }
 
-    // 018: 채널 ChannelSidebarToggle 문법 — 투명 배경, hover만 배경,
-    // radius 6px(--okr-radius-ms), + 버튼과 한 쌍. 행 규격(28px)에 맞춘다.
+    // 018·020: 채널 ChannelSidebarToggle 라이브 실측 — 버튼 48×48, 아이콘 30px
+    // (글리프 박스 42×43), 투명 배경에 hover만 배경, radius 6px, + 버튼과 한 쌍.
     .hide-sidebar-icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 28px;
-        height: 28px;
-        flex: 0 0 28px;
-        margin-left: 4px;
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        margin-left: 2px;
         border-radius: 6px;
         color: rgba(var(--sidebar-text-rgb), 0.72);
+
+        .HideSidebarIcon {
+            // 전역 .Sidebar .IconButton .Icon(24px) 박스를 풀어 채널 글리프 박스(42×43)대로 그린다
+            width: auto;
+            height: auto;
+            font-size: 30px;
+        }
 
         &:hover {
             background: rgba(var(--sidebar-text-rgb), 0.08);

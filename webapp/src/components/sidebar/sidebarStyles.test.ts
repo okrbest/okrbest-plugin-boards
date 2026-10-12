@@ -39,10 +39,12 @@ describe('018 sidebar visual contract (SCSS source)', () => {
         expect(category()).not.toContain('calc(64px + 240px - 50px)')
     })
 
-    it('V-06: 토글 버튼은 채널 토글 문법을 따른다 — 행 규격 28px, radius 6px, hover만 배경', () => {
+    it('V-06: 토글 버튼은 채널 토글 라이브 실측을 따른다 — 버튼 48px, 아이콘 30px, radius 6px', () => {
+        // 채널 ChannelSidebarToggle 실측(2026-10-12): 버튼 48×48, 아이콘 font-size 30px(글리프 42×43)
         const switcher = fs.readFileSync(path.join(__dirname, '../boardsSwitcher/boardsSwitcher.scss'), 'utf8')
-        expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,400}width: 28px/)
-        expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,400}border-radius: 6px/)
+        expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,500}width: 48px/)
+        expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,500}border-radius: 6px/)
+        expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,500}font-size: 30px/)
     })
 
     it('V-07: 활성(반전) 행의 메뉴 버튼은 행 글자색을 상속한다', () => {
