@@ -1,5 +1,16 @@
 <!--
 Sync Impact Report
+- Version change: 1.3.0 → 1.4.0 (MINOR — 원칙 VIII 마감 절차에 사용자 확인 게이트 추가)
+- Modified principles: VIII (마감 넷 → 다섯: 구현·검증 완료 후 사용자의 최종 완료
+  확인을 기다린 뒤에만 push + PR. 사용자 테스트에서 나온 교정은 같은 브랜치에 쌓는다)
+- Templates requiring updates:
+  - ✅ .claude/skills/speckit-implement/SKILL.md (세션 마감 절 동기화)
+  - ✅ CLAUDE.md (마감 한 줄 요약 갱신)
+- 개정 계기: 018·019에서 구현 완료 직후 PR을 열었는데, 사용자 테스트에서 사소한
+  수정이 이어져 PR에 교정 커밋이 뒤따랐다. 테스트가 끝나기 전의 PR은 리뷰 대상이
+  움직이는 과녁이 된다.
+
+이전 개정 (1.2.0 → 1.3.0):
 - Version change: 1.2.0 → 1.3.0 (MINOR — 새 절 추가)
 - Modified principles: 없음 (원칙 본문 변경 없음)
 - Added sections: 개발 워크플로 > 한국어 문체
@@ -154,12 +165,15 @@ PR이 유일한 경로다.
 전에, 바로 `/speckit-specify`로 가는 기능이면 그 직전에. `main`에서 설계를 시작하면
 되돌릴 지점이 없다.
 
-마감은 넷을 지킨다.
+마감은 다섯을 지킨다.
 
 1. 품질 게이트 + 종단 검증 증거 제시 (원칙 I)
-2. `git push -u origin <브랜치>` → `gh pr create --base main`
-3. 사용자 확인 후 `gh pr merge --rebase --delete-branch`
-4. `git switch main && git pull --ff-only`
+2. **사용자의 최종 완료 확인을 기다린다** — 구현·검증을 마쳐도 PR을 바로 열지
+   않는다. 사용자가 직접 테스트하면 사소한 수정·추가가 따라오기 마련이고, 그
+   교정은 같은 브랜치에 커밋으로 쌓는다. PR은 확인 뒤에만 연다.
+3. `git push -u origin <브랜치>` → `gh pr create --base main`
+4. 사용자 병합 승인 후 `gh pr merge --rebase --delete-branch`
+5. `git switch main && git pull --ff-only`
 
 병합은 **rebase 고정**. 저장소 설정이 squash·merge commit을 막아 선형 이력을
 구조적으로 보장한다. 커밋 메시지는 Conventional Commits 접두사
@@ -269,4 +283,4 @@ FR/SC 식별자·BDD 키워드(Given/When/Then)는 원형을 유지한다.
 plan의 Complexity Tracking에 문서화한다. `/speckit-plan`·`/speckit-analyze`가
 Constitution Check 게이트로 자동 참조한다.
 
-**Version**: 1.3.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-08-10
+**Version**: 1.4.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-10-12

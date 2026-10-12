@@ -34,7 +34,10 @@ git switch -c <NNN>-<기능-슬러그>    # NNN은 specs/ 의 다음 순번
 ```
 
 `/speckit-specify`는 현재 브랜치가 `main`이 아니면 그 브랜치를 그대로 쓴다 —
-새 브랜치를 만들지 않는다. 마감은 PR → `gh pr merge --rebase` → `git pull --ff-only`.
+새 브랜치를 만들지 않는다. 마감은 **사용자의 최종 완료 확인 → PR** →
+`gh pr merge --rebase` → `git pull --ff-only`. 구현·검증이 끝나도 PR을 바로 열지
+않는다 — 사용자 테스트에서 나오는 사소한 수정을 같은 브랜치에 쌓은 뒤, 확인을
+받고 push + PR 한다 (constitution 원칙 VIII).
 
 - **단순/명확**: 브레인스토밍 없이 바로 `/speckit-specify`.
 - **복잡**: superpowers `brainstorming`으로 의도·요구사항·설계를 정리한 뒤 `/speckit-specify`로 넘긴다.
