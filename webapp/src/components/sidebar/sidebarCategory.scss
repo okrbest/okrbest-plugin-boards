@@ -1,11 +1,7 @@
 .SidebarCategory {
-    // 020 V-10: 채널 그룹 간격(다음 그룹 margin-top 24px) 실측값
-    margin-top: 24px;
+    // 간격 규칙은 sidebar.scss의 .octo-sidebar-list에 있다 — 카테고리는 draggable
+    // 래퍼에 싸여 항상 :first-child라, 여기서 margin-top을 주면 리셋과 상쇄된다 (020 V-10)
     width: calc(100% - 4px);
-
-    &:first-child {
-        margin-top: 0;
-    }
 
     .dialog {
         color: rgba(var(--center-channel-color-rgb));

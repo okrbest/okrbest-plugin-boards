@@ -68,7 +68,10 @@ describe('018 sidebar visual contract (SCSS source)', () => {
         expect(category()).toMatch(/&\.category-title[\s\S]{0,500}font-weight: 500/)
         expect(category()).not.toMatch(/&\.category-title[\s\S]{0,500}text-transform: uppercase/)
         expect(category()).toMatch(/&\.category[\s\S]{0,400}height: 28px/)
-        expect(category()).toMatch(/\.SidebarCategory[\s\S]{0,200}margin-top: 24px/)
+
+        // 카테고리는 draggable 래퍼에 싸여 항상 :first-child다 — 간격은 래퍼 형제 기준으로만 성립한다
+        expect(sidebar()).toMatch(/> div \+ div \.SidebarCategory[\s\S]{0,100}margin-top: 24px/)
+        expect(category()).not.toMatch(/\.SidebarCategory[\s\S]{0,200}margin-top: 24px/)
     })
 
     it('V-11: 카테고리→보드→뷰가 단계별로 들여쓰기된다 — 보드 42px(아이콘 x40), 뷰 66px(x64)', () => {

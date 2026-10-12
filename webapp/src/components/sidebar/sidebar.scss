@@ -84,6 +84,12 @@
         max-width: 100%;
         margin-top: 12px;
 
+        // 020 V-10: 채널 그룹 간격(다음 그룹 margin-top 24px). 카테고리가 draggable
+        // 래퍼에 싸여 있어 래퍼 형제 기준으로만 간격이 성립한다
+        > div + div .SidebarCategory {
+            margin-top: 24px;
+        }
+
         &::-webkit-scrollbar-thumb {
             background: rgba(var(--sidebar-text-rgb), 0.24);
         }
