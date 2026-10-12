@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-[specs/018-sidebar-channel-style/plan.md](specs/018-sidebar-channel-style/plan.md)
+[specs/019-me-filter/plan.md](specs/019-me-filter/plan.md)
 <!-- SPECKIT END -->
 
 ## Workflow
