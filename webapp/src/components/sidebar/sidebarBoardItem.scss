@@ -3,10 +3,10 @@
     flex-direction: row;
     font-weight: 500;
 
-    // 018 V-03: 채널 리스트와 같은 행 규격
+    // 018 V-03 · 020 V-10b: 채널 행 규격 — padding-left 19px (채널 SidebarLink 7px 16px 7px 19px)
     font-size: 15px;
     line-height: 18px;
-    padding: 0 12px 0 20px;
+    padding: 0 16px 0 19px;
     height: 32px;
     align-items: center;
     gap: 8px;
@@ -155,9 +155,11 @@
     }
 
     .octo-sidebar-icon {
+        // 020 V-10b: 채널 행 아이콘 규칙(margin: 0 6px 0 -2px) — 아이콘 x=17 (19 - 2)
+        margin: 0 6px 0 -2px;
+
         .CompassIcon {
             font-size: 18px;
-            margin: 0 -2px 0 -1px;
 
             &::before {
                 margin: 0;
