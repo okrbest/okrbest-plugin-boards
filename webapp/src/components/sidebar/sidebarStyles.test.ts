@@ -71,8 +71,13 @@ describe('018 sidebar visual contract (SCSS source)', () => {
         expect(category()).toMatch(/\.SidebarCategory[\s\S]{0,200}margin-top: 24px/)
     })
 
-    it('V-10b: 행 들여쓰기는 채널 행과 같다 — padding-left 19px, 아이콘 margin-left -2px', () => {
-        expect(boardItem()).toMatch(/padding: 0 16px 0 19px/)
+    it('V-11: 카테고리→보드→뷰가 단계별로 들여쓰기된다 — 보드 42px(아이콘 x40), 뷰 66px(x64)', () => {
+        // 계단: 카테고리 명칭 x40 → 보드 아이콘 x40(42-2) → 보드 라벨 x64 → 뷰 x64.
+        // 아이콘 마진은 채널 행 규칙(0 6px 0 -2px)을 유지한다.
+        expect(boardItem()).toMatch(/&\.subitem[\s\S]{0,300}padding-left: 42px/)
+        expect(boardItem()).toMatch(/&\.sidebar-view-item[\s\S]{0,300}padding-left: 66px/)
         expect(boardItem()).toMatch(/\.octo-sidebar-icon[\s\S]{0,300}margin: 0 6px 0 -2px/)
+        expect(category()).toMatch(/&\.subitem[\s\S]{0,300}padding-left: 42px/)
+        expect(category()).toMatch(/HiddenBoardsRow[\s\S]{0,900}&__item[\s\S]{0,200}padding-left: 66px/)
     })
 })

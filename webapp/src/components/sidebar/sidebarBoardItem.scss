@@ -21,14 +21,15 @@
         display: flex;
     }
 
-    .subitem {
-        padding-left: 20px;
-        color: rgba(var(--sidebar-text-rgb), 0.64);
-        font-weight: 400;
+    // 020 V-11: 단계별 들여쓰기 — 보드 아이콘이 카테고리 명칭 라인(x40)에 선다.
+    // (색·굵기는 기존 행 규칙 유지 — 여기선 들여쓰기만)
+    &.subitem {
+        padding-left: 42px;
     }
 
+    // 뷰는 보드 라벨 라인(x64)에 선다
     &.sidebar-view-item {
-        padding-left: 42px;
+        padding-left: 66px;
         color: rgba(var(--sidebar-text-rgb), 0.64);
         font-weight: 400;
     }

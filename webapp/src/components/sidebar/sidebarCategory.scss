@@ -40,7 +40,8 @@
         }
 
         &.subitem {
-            padding-left: 20px;
+            // 020 V-11: 보드 레벨 들여쓰기 (카테고리 명칭 라인 x40)
+            padding-left: 42px;
             color: rgba(var(--sidebar-text-rgb), 0.64);
             font-weight: 400;
 
@@ -290,7 +291,8 @@
         }
 
         &__item {
-            padding-left: 36px;
+            // 020 V-11: 숨긴 보드 항목은 뷰 레벨(x64)
+            padding-left: 66px;
             color: rgba(var(--sidebar-text-rgb), 0.4);
             cursor: default;
 
