@@ -93,7 +93,32 @@ function parseCardFilterValues(values: string[]): FilterCardRef[] {
     return cards
 }
 
+// 019: 사용자 선택형 속성 필터의 "본인" 예약 토큰. 뷰에는 이 값이 저장되고,
+// 카드 목록을 그리기 직전에 보는 사람의 ID로 풀린다 (specs/019-me-filter/data-model.md).
+// Mattermost user ID는 26자 영숫자라 충돌하지 않는다.
+export const ME_FILTER_VALUE = 'me'
+
 class CardFilter {
+    // 019: 필터 값의 'me'를 로그인 사용자 ID로 치환한 사본을 돌려준다. 원본(뷰 데이터)은 불변.
+    // meID가 없으면(비로그인) 치환하지 않는다 — 'me'는 어떤 실제 ID와도 일치하지 않는다.
+    static resolveMe(filterGroup: FilterGroup, meID: string | undefined): FilterGroup {
+        if (!meID) {
+            return filterGroup
+        }
+        return {
+            ...filterGroup,
+            filters: filterGroup.filters.map((filter) => {
+                if (isAFilterGroupInstance(filter)) {
+                    return this.resolveMe(filter, meID)
+                }
+                return {
+                    ...filter,
+                    values: filter.values.map((value) => (value === ME_FILTER_VALUE ? meID : value)),
+                }
+            }),
+        }
+    }
+
     static createDatePropertyFromString(initialValue: string): DateProperty {
         let dateProperty: DateProperty = {}
         if (initialValue) {

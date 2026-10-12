@@ -11,6 +11,7 @@ import {FilterClause, FilterCondition, createFilterClause} from '../../../blocks
 import {createFilterGroup, isAFilterGroupInstance} from '../../../blocks/filterGroup'
 import {Card} from '../../../blocks/card'
 import mutator from '../../../mutator'
+import {ME_FILTER_VALUE} from '../../../cardFilter'
 import propsRegistry from '../../../properties'
 import {getBoardUsersList} from '../../../store/users'
 import {getDivisions, getDepartments, getDuties} from '../../../store/orgMaster'
@@ -261,6 +262,16 @@ const PersonFilterPanel = (props: PersonFilterPanelProps): React.JSX.Element => 
         )
     }, [boardUsers, searchText])
 
+    // 019: "본인" 항목. 로케일과 무관하게 '본인'·'me' 어느 표기로 검색해도 남는다 (U-04)
+    const meLabel = intl.formatMessage({id: 'PersonProperty.me', defaultMessage: 'Me'})
+    const showMeOption = useMemo(() => {
+        if (!searchText) {
+            return true
+        }
+        const lower = searchText.toLowerCase()
+        return meLabel.toLowerCase().includes(lower) || '본인'.includes(searchText) || 'me'.includes(lower)
+    }, [searchText, meLabel])
+
     const handleToggleUser = useCallback((userId: string) => {
         toggleFilterValue(board.id, activeView, propertyTemplate.id, userId, selectedValues, 'includes')
     }, [board.id, activeView, propertyTemplate.id, selectedValues])
@@ -279,6 +290,27 @@ const PersonFilterPanel = (props: PersonFilterPanelProps): React.JSX.Element => 
                 />
             </div>
             <div className='FilterValuePanel__list'>
+                {showMeOption && (
+                    <div
+                        key={ME_FILTER_VALUE}
+                        className='FilterValuePanel__option'
+                        onClick={() => handleToggleUser(ME_FILTER_VALUE)}
+                        role='checkbox'
+                        aria-checked={selectedValues.includes(ME_FILTER_VALUE)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleToggleUser(ME_FILTER_VALUE)
+                            }
+                        }}
+                    >
+                        <div className={`FilterValuePanel__checkbox${selectedValues.includes(ME_FILTER_VALUE) ? ' FilterValuePanel__checkbox--checked' : ''}`}/>
+                        <span className='FilterValuePanel__option-label'>
+                            {meLabel}
+                        </span>
+                    </div>
+                )}
                 {filteredUsers.map((user) => {
                     const displayName = user.nickname || `${user.firstname} ${user.lastname}`.trim() || user.username
                     return (
@@ -303,7 +335,7 @@ const PersonFilterPanel = (props: PersonFilterPanelProps): React.JSX.Element => 
                         </div>
                     )
                 })}
-                {filteredUsers.length === 0 && (
+                {filteredUsers.length === 0 && !showMeOption && (
                     <div className='FilterValuePanel__empty'>
                         {intl.formatMessage({
                             id: 'FilterPanel.no-matching-users',

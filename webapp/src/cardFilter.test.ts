@@ -3,9 +3,9 @@
 
 import {mocked} from 'jest-mock'
 
-import {createFilterClause} from './blocks/filterClause'
+import {createFilterClause, FilterClause} from './blocks/filterClause'
 
-import {createFilterGroup} from './blocks/filterGroup'
+import {createFilterGroup, FilterGroup} from './blocks/filterGroup'
 import {CardFilter} from './cardFilter'
 import {TestBlockFactory} from './test/testBlockFactory'
 import {Utils} from './utils'
@@ -728,6 +728,93 @@ describe('src/cardFilter', () => {
             })
             const result = CardFilter.applyFilterGroup(filterGroup, [], [card1])
             expect(result.length).toEqual(0)
+        })
+    })
+
+    // 019: "본인" 토큰 풀이 계약 (specs/019-me-filter/contracts/ui-surfaces.md F-01~F-06)
+    describe('verify resolveMe method (019 me filter)', () => {
+        const personTemplate = {id: 'personPropertyID', name: 'person', type: 'person', options: []} as IPropertyTemplate
+
+        const cardA = TestBlockFactory.createCard(board)
+        cardA.id = 'card-a'
+        cardA.fields.properties.personPropertyID = 'user-a'
+
+        const cardB = TestBlockFactory.createCard(board)
+        cardB.id = 'card-b'
+        cardB.fields.properties.personPropertyID = 'user-b'
+
+        const cardMulti = TestBlockFactory.createCard(board)
+        cardMulti.id = 'card-multi'
+        cardMulti.fields.properties.personPropertyID = ['user-b', 'user-a']
+
+        const cardEmpty = TestBlockFactory.createCard(board)
+        cardEmpty.id = 'card-empty'
+
+        const allCards = [cardA, cardB, cardMulti, cardEmpty]
+
+        const makeMeGroup = (condition: 'includes' | 'notIncludes', values: string[]) => createFilterGroup({
+            operation: 'and',
+            filters: [
+                createFilterClause({propertyId: 'personPropertyID', condition, values}),
+            ],
+        })
+
+        test('F-01: values의 me가 meId로 치환된 사본을 돌려주고 원본은 불변이다', () => {
+            const group = makeMeGroup('includes', ['me'])
+
+            const resolved = CardFilter.resolveMe(group, 'user-a')
+
+            expect((resolved.filters[0] as FilterClause).values).toEqual(['user-a'])
+            expect((group.filters[0] as FilterClause).values).toEqual(['me'])
+        })
+
+        test('F-02: 중첩 그룹 안의 me도 재귀 치환된다', () => {
+            const inner = makeMeGroup('includes', ['me'])
+            const outer = createFilterGroup({operation: 'or', filters: [inner]})
+
+            const resolved = CardFilter.resolveMe(outer, 'user-a')
+
+            const resolvedInner = resolved.filters[0] as FilterGroup
+            expect((resolvedInner.filters[0] as FilterClause).values).toEqual(['user-a'])
+            expect((inner.filters[0] as FilterClause).values).toEqual(['me'])
+        })
+
+        test('F-03: me와 실제 ID가 섞여 있으면 me만 치환된다', () => {
+            const group = makeMeGroup('includes', ['me', 'user-b'])
+
+            const resolved = CardFilter.resolveMe(group, 'user-a')
+
+            expect((resolved.filters[0] as FilterClause).values).toEqual(['user-a', 'user-b'])
+        })
+
+        test('F-04: 치환된 필터의 includes는 내 카드만(단일·배열 값), notIncludes는 내 카드만 제외한다', () => {
+            const includesGroup = CardFilter.resolveMe(makeMeGroup('includes', ['me']), 'user-a')
+            const includesResult = CardFilter.applyFilterGroup(includesGroup, [personTemplate], allCards)
+            expect(includesResult.map((c) => c.id)).toEqual(['card-a', 'card-multi'])
+
+            const notIncludesGroup = CardFilter.resolveMe(makeMeGroup('notIncludes', ['me']), 'user-a')
+            const notIncludesResult = CardFilter.applyFilterGroup(notIncludesGroup, [personTemplate], allCards)
+            expect(notIncludesResult.map((c) => c.id)).toEqual(['card-b', 'card-empty'])
+        })
+
+        test('F-05: meId가 없으면 치환하지 않는다 — includes는 전부 제외, notIncludes는 전부 통과, 오류 없음', () => {
+            const includesGroup = CardFilter.resolveMe(makeMeGroup('includes', ['me']), undefined)
+            expect((includesGroup.filters[0] as FilterClause).values).toEqual(['me'])
+            expect(CardFilter.applyFilterGroup(includesGroup, [personTemplate], allCards)).toEqual([])
+
+            const notIncludesGroup = CardFilter.resolveMe(makeMeGroup('notIncludes', ['me']), undefined)
+            expect(CardFilter.applyFilterGroup(notIncludesGroup, [personTemplate], allCards).length).toEqual(allCards.length)
+        })
+
+        test('F-06: 같은 필터를 meId만 바꿔 풀면 각자 자기 카드만 통과하고 원본은 두 번 모두 불변이다', () => {
+            const group = makeMeGroup('includes', ['me'])
+
+            const asUserA = CardFilter.applyFilterGroup(CardFilter.resolveMe(group, 'user-a'), [personTemplate], allCards)
+            const asUserB = CardFilter.applyFilterGroup(CardFilter.resolveMe(group, 'user-b'), [personTemplate], allCards)
+
+            expect(asUserA.map((c) => c.id)).toEqual(['card-a', 'card-multi'])
+            expect(asUserB.map((c) => c.id)).toEqual(['card-b', 'card-multi'])
+            expect((group.filters[0] as FilterClause).values).toEqual(['me'])
         })
     })
 })
