@@ -256,13 +256,21 @@ Check if `.specify/extensions.yml` exists in the project root.
 과제가 남았으면 마감하지 않는다 — implement는 여러 세션으로 나뉠 수 있다.
 게이트·종단 검증을 통과하지 못한 상태로 PR을 열지 않는다.
 
+**PR은 사용자가 기능 완료를 확인한 뒤에만 연다.** 구현·검증을 마치면 완료
+보고와 함께 브랜치에 커밋해 두고 멈춘다 — 사용자가 직접 테스트하면 사소한
+수정·추가가 따라오기 마련이고, 그 교정은 같은 브랜치에 커밋으로 쌓는다.
+사용자가 "최종 완료"를 확인하면 그때 push + PR로 넘어간다.
+
 `main`은 브랜치 보호로 직접 push가 막혀 있다. PR이 유일한 경로다.
 
 ```bash
+# 1) 구현·검증 완료 → 브랜치에 커밋 + 완료 보고, 여기서 멈춘다
+# 2) 사용자 테스트 → 교정 커밋 반복
+# 3) 사용자가 최종 완료를 확인한 뒤에만:
 git push -u origin "$(git branch --show-current)"
 gh pr create --base main --title "<타입>: <기능 요약> (NNN)" \
   --body "$(git log main..HEAD --reverse --pretty='- %s')"
-# 사용자 확인 후
+# 4) 사용자 병합 승인 후
 gh pr merge --rebase --delete-branch
 git switch main && git pull --ff-only
 ```
