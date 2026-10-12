@@ -1,5 +1,6 @@
 .SidebarCategory {
-    margin-top: 12px;
+    // 020 V-10: 채널 그룹 간격(다음 그룹 margin-top 24px) 실측값
+    margin-top: 24px;
     width: calc(100% - 4px);
 
     &:first-child {
@@ -15,7 +16,7 @@
         flex-direction: row;
         font-weight: 500;
 
-        // 018 V-03: 채널 리스트와 같은 글자 규격 (카테고리 헤더는 category-title이 12px로 덮는다)
+        // 018 V-03: 채널 리스트와 같은 글자 규격
         font-size: 15px;
         line-height: 18px;
         padding: 0 16px 0 8px;
@@ -24,7 +25,10 @@
         gap: 4px;
 
         &.category {
-            padding-left: 0;
+            // 020 V-10: 채널 헤더 라이브 실측 — 높이 28px, 셰브론 x=16, 텍스트 x=40 (16+16+8)
+            padding-left: 16px;
+            height: 28px;
+            gap: 8px;
         }
 
         &:hover {
@@ -198,13 +202,15 @@
         color: rgba(var(--sidebar-text-rgb), 0.72);
 
         &.category-title {
-            // 018 V-03 · 020 V-09: 채널 카테고리 헤더와 같은 수치·색·폰트
-            font-size: 12px;
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.05em;
+            // 020 V-09·V-10: 채널 카테고리 헤더의 **라이브 실측값**(포크 Slack 시각층)과 맞춘다.
+            // upstream 소스(12px/600/uppercase)가 아니라 실제 렌더 기준 — 15px/500, 대문자 없음.
+            font-size: 15px;
+            font-weight: 500;
             color: rgb(var(--sidebar-text-rgb));
             font-family: 'Open Sans', 'Noto Sans KR', sans-serif;
+
+            // 셰브론(16px)과 명칭 사이 — 채널 텍스트 x=40 (16+16+8)
+            gap: 8px;
         }
 
         .octo-icon {

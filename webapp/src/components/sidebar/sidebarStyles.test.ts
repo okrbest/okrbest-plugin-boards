@@ -60,4 +60,19 @@ describe('018 sidebar visual contract (SCSS source)', () => {
         expect(category()).toMatch(/&\.category-title[\s\S]{0,400}color: rgb\(var\(--sidebar-text-rgb\)\)/)
         expect(category()).toMatch(/&\.category-title[\s\S]{0,400}'Open Sans', 'Noto Sans KR'/)
     })
+
+    it('V-10: 카테고리 명칭·간격은 채널 라이브 실측값을 따른다 — 15px/500, 대문자 없음, 헤더 28px, 카테고리 간 24px', () => {
+        // 채널 사이드바 라이브 실측(2026-10-12): 헤더 텍스트 15px/500/none, 버튼 28px,
+        // 다음 그룹 margin-top 24px. upstream 소스(12px/uppercase)가 아니라 포크 라이브가 기준이다.
+        expect(category()).toMatch(/&\.category-title[\s\S]{0,500}font-size: 15px/)
+        expect(category()).toMatch(/&\.category-title[\s\S]{0,500}font-weight: 500/)
+        expect(category()).not.toMatch(/&\.category-title[\s\S]{0,500}text-transform: uppercase/)
+        expect(category()).toMatch(/&\.category[\s\S]{0,400}height: 28px/)
+        expect(category()).toMatch(/\.SidebarCategory[\s\S]{0,200}margin-top: 24px/)
+    })
+
+    it('V-10b: 행 들여쓰기는 채널 행과 같다 — padding-left 19px, 아이콘 margin-left -2px', () => {
+        expect(boardItem()).toMatch(/padding: 0 16px 0 19px/)
+        expect(boardItem()).toMatch(/\.octo-sidebar-icon[\s\S]{0,300}margin: 0 6px 0 -2px/)
+    })
 })
