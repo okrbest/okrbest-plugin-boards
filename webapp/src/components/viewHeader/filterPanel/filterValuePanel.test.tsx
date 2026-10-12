@@ -3,16 +3,22 @@
 
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {render, screen} from '@testing-library/react'
+import {fireEvent, render, screen} from '@testing-library/react'
 import configureStore from 'redux-mock-store'
+import {mocked} from 'jest-mock'
 
 import {wrapIntl} from '../../../testUtils'
 import {Board, IPropertyTemplate} from '../../../blocks/board'
 import {BoardView} from '../../../blocks/boardView'
 
 import {orgColorForId} from '../../../properties/orgLabels'
+import {FilterClause} from '../../../blocks/filterClause'
+import mutator from '../../../mutator'
 
 import FilterValuePanel from './filterValuePanel'
+
+jest.mock('../../../mutator')
+const mockedMutator = mocked(mutator, true)
 
 // The organisation branch of the filter panel. It cannot reuse the options
 // branch because an organisation property's options array is always empty — the
@@ -139,5 +145,120 @@ describe('components/viewHeader/filterPanel/filterValuePanel — organisation', 
         const {container} = renderPanel('orgDuty')
 
         expect(filterColorOf(container, '팀장')).toBe(orgColorForId('duty-lead', [{id: 'duty-lead', name: '팀장'}]))
+    })
+})
+
+// 019: 사용자 선택형 필터의 "본인" 항목 계약 (specs/019-me-filter/contracts/ui-surfaces.md U-01~U-05)
+describe('components/viewHeader/filterPanel/filterValuePanel — person "본인" (019)', () => {
+    const mockStore = configureStore([])
+
+    const makeUser = (id: string, username: string) => ({
+        id,
+        username,
+        email: '',
+        nickname: '',
+        firstname: '',
+        lastname: '',
+        props: {},
+        create_at: 0,
+        update_at: 0,
+        is_bot: false,
+        is_guest: false,
+        roles: 'system_user',
+    })
+
+    const state = {
+        users: {
+            boardUsers: {
+                'user-1': makeUser('user-1', 'alice'),
+                'user-2': makeUser('user-2', 'bob'),
+            },
+        },
+        orgMaster: {orgUnitsByTeamId: {}, dutiesByTeamId: {}, orgProfilesByTeamId: {}, loadedTeamIds: []},
+        cards: {cards: {}, current: ''},
+    }
+
+    const board = {id: 'board-1', teamId: 'team-1', cardProperties: []} as unknown as Board
+
+    const makeView = (values?: string[]) => ({
+        id: 'view-1',
+        boardId: 'board-1',
+        fields: {
+            filter: {
+                operation: 'and',
+                filters: values ? [{propertyId: 'p-1', condition: 'includes', values}] : [],
+            },
+        },
+    } as unknown as BoardView)
+
+    const renderPanel = (type: string, view: BoardView = makeView()) => render(wrapIntl(
+        <ReduxProvider store={mockStore(state)}>
+            <FilterValuePanel
+                board={board}
+                activeView={view}
+                propertyTemplate={{id: 'p-1', name: '담당자', type, options: []} as IPropertyTemplate}
+            />
+        </ReduxProvider>,
+    ))
+
+    beforeEach(() => {
+        jest.clearAllMocks()
+    })
+
+    test.each(['person', 'multiPerson', 'createdBy', 'updatedBy'])(
+        'U-01: %s 속성 값 목록의 맨 위에 "본인" 항목이 있다', (type) => {
+            renderPanel(type)
+
+            const rows = screen.getAllByRole('checkbox')
+            expect(rows[0].textContent).toBe('Me')
+            expect(screen.getByText('alice')).toBeDefined()
+        })
+
+    test('U-02: "본인" 클릭은 values에 me를 저장하고, 재클릭은 제거한다', () => {
+        const first = renderPanel('person')
+        fireEvent.click(screen.getAllByRole('checkbox')[0])
+
+        const firstCall = mockedMutator.changeViewFilter.mock.calls[0]
+        expect((firstCall[3].filters[0] as FilterClause).values).toEqual(['me'])
+        first.unmount()
+
+        // 이미 me가 저장된 뷰에서 재클릭 → 절이 제거된다
+        renderPanel('person', makeView(['me']))
+        fireEvent.click(screen.getAllByRole('checkbox')[0])
+
+        const secondCall = mockedMutator.changeViewFilter.mock.calls[1]
+        expect(secondCall[3].filters).toEqual([])
+    })
+
+    test('U-03: me가 저장된 뷰를 열면 "본인"이 체크 상태다 — 사용자 이름이 아니다', () => {
+        renderPanel('person', makeView(['me']))
+
+        const meRow = screen.getAllByRole('checkbox')[0]
+        expect(meRow.textContent).toBe('Me')
+        expect(meRow.getAttribute('aria-checked')).toBe('true')
+    })
+
+    test('U-04: 검색어 "me"·"본인" 둘 다 본인 항목이 남고, 다른 검색어면 사라진다', () => {
+        renderPanel('person')
+        const input = screen.getByPlaceholderText('Search users...')
+
+        fireEvent.change(input, {target: {value: 'me'}})
+        expect(screen.getAllByRole('checkbox')[0].textContent).toBe('Me')
+
+        fireEvent.change(input, {target: {value: '본인'}})
+        expect(screen.getAllByRole('checkbox')[0].textContent).toBe('Me')
+        expect(screen.queryByText('alice')).toBeNull()
+
+        fireEvent.change(input, {target: {value: 'alice'}})
+        expect(screen.queryByText('Me')).toBeNull()
+        expect(screen.getByText('alice')).toBeDefined()
+    })
+
+    test('U-05: "본인"과 실제 사용자를 함께 선택할 수 있다', () => {
+        renderPanel('person', makeView(['me']))
+        fireEvent.click(screen.getByText('alice'))
+
+        const call = mockedMutator.changeViewFilter.mock.calls[0]
+        expect((call[3].filters[0] as FilterClause).values).toEqual(['me', 'user-1'])
     })
 })

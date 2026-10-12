@@ -17,7 +17,7 @@ import {default as client} from '../octoClient'
 
 import {loadBoardData, initialReadOnlyLoad, initialLoad} from './initialLoad'
 import {getCurrentBoard} from './boards'
-import {getBoardUsers} from './users'
+import {getBoardUsers, getMe} from './users'
 import {getLastCommentByCard} from './comments'
 import {getCurrentView} from './views'
 import {getSearchText} from './searchText'
@@ -568,10 +568,13 @@ function searchFilterCards(cards: Card[], board: Board, searchTextRaw: string): 
     })
 }
 
-function applyViewCardFilterSearchAndSort(cards: Card[], lastCommentByCard: {[key: string]: CommentBlock}, board: Board, view: BoardView, searchText: string, users: {[key: string]: IUser}): Card[] {
+function applyViewCardFilterSearchAndSort(cards: Card[], lastCommentByCard: {[key: string]: CommentBlock}, board: Board, view: BoardView, searchText: string, users: {[key: string]: IUser}, meID?: string): Card[] {
     let result = cards.filter((c) => !c.limited)
     if (view.fields.filter) {
-        result = CardFilter.applyFilterGroup(view.fields.filter, board.cardProperties, result)
+        // 019: 필터의 '본인' 토큰을 보는 사람의 ID로 풀어 평가한다. 뷰 데이터는 불변이라
+        // 같은 뷰를 열어도 사용자마다 각자 기준으로 걸러진다 (specs/019-me-filter).
+        const resolvedFilter = CardFilter.resolveMe(view.fields.filter, meID)
+        result = CardFilter.applyFilterGroup(resolvedFilter, board.cardProperties, result)
     }
 
     if (searchText) {
@@ -587,7 +590,8 @@ export const getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit = createSel
     getCurrentView,
     getSearchText,
     getBoardUsers,
-    (cards, lastCommentByCard, board, view, searchText, users) => {
+    getMe,
+    (cards, lastCommentByCard, board, view, searchText, users, me) => {
         if (!view || !board || !users || !cards) {
             return EMPTY_CARDS
         }
@@ -595,7 +599,7 @@ export const getCurrentViewCardsSortedFilteredAndGroupedWithoutLimit = createSel
         if (view.boardId !== board.id) {
             return EMPTY_CARDS
         }
-        return applyViewCardFilterSearchAndSort(cards, lastCommentByCard, board, view, searchText, users)
+        return applyViewCardFilterSearchAndSort(cards, lastCommentByCard, board, view, searchText, users, me?.id)
     },
 )
 
@@ -606,7 +610,8 @@ export const getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit = crea
     getCurrentView,
     getSearchText,
     getBoardUsers,
-    (cards, lastCommentByCard, board, view, searchText, users) => {
+    getMe,
+    (cards, lastCommentByCard, board, view, searchText, users, me) => {
         if (!view || !board || !users || !cards) {
             return EMPTY_CARDS
         }
@@ -614,7 +619,7 @@ export const getCurrentBoardViewCardsSortedFilteredAndGroupedWithoutLimit = crea
         if (view.boardId !== board.id) {
             return EMPTY_CARDS
         }
-        return applyViewCardFilterSearchAndSort(cards, lastCommentByCard, board, view, searchText, users)
+        return applyViewCardFilterSearchAndSort(cards, lastCommentByCard, board, view, searchText, users, me?.id)
     },
 )
 
