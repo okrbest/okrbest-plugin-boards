@@ -23,7 +23,6 @@ import MenuWrapper from '../../widgets/menuWrapper'
 import './sidebarCategory.scss'
 import {Category, CategoryBoardMetadata, CategoryBoards} from '../../store/sidebar'
 import ChevronDown from '../../widgets/icons/chevronDown'
-import ChevronRight from '../../widgets/icons/chevronRight'
 import CreateNewFolder from '../../widgets/icons/newFolder'
 import CreateCategory from '../createCategory/createCategory'
 import {useAppSelector} from '../../store/hooks'
@@ -306,7 +305,8 @@ const SidebarCategory = (props: Props) => {
                                                 onClick={toggleCollapse}
                                                 {...provided.dragHandleProps}
                                             >
-                                                {collapsed || snapshot.isDragging || props.forceCollapse ? <ChevronRight/> : <ChevronDown/>}
+                                                {/* 020: 채널 헤더처럼 chevron-down 하나를 쓰고 접힘은 CSS 회전으로 표현한다 */}
+                                                <ChevronDown/>
                                                 {props.categoryBoards.name}
                                                 <div className='sidebarCategoriesTour'>
                                                     {props.index === 0 && shouldViewSidebarTour && <SidebarCategoriesTourStep/>}

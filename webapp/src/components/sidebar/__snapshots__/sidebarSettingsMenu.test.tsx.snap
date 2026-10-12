@@ -41,8 +41,9 @@ exports[`components/sidebar/SidebarSettingsMenu imports menu open should match s
                   class="CompassIcon icon-chevron-right"
                 />
                 <div
-                  class="SubMenu Menu noselect top"
+                  class="SubMenu Menu noselect"
                   data-submenu-id="import"
+                  style="position: fixed; z-index: 1000; left: 0px; bottom: 768px; right: auto; top: auto;"
                 >
                   <div
                     class="menu-contents"
@@ -449,8 +450,9 @@ exports[`components/sidebar/SidebarSettingsMenu languages menu open should match
                   class="CompassIcon icon-chevron-right"
                 />
                 <div
-                  class="SubMenu Menu noselect top"
+                  class="SubMenu Menu noselect"
                   data-submenu-id="lang"
+                  style="position: fixed; z-index: 1000; left: 0px; bottom: 768px; right: auto; top: auto;"
                 >
                   <div
                     class="menu-contents"
@@ -1324,8 +1326,9 @@ exports[`components/sidebar/SidebarSettingsMenu theme menu open should match sna
                   class="CompassIcon icon-chevron-right"
                 />
                 <div
-                  class="SubMenu Menu noselect top"
+                  class="SubMenu Menu noselect"
                   data-submenu-id="theme"
+                  style="position: fixed; z-index: 1000; left: 0px; bottom: 768px; right: auto; top: auto;"
                 >
                   <div
                     class="menu-contents"

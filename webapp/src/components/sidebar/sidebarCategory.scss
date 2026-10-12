@@ -127,8 +127,25 @@
         }
 
         &.category {
+            // 020 V-08: 채널 헤더처럼 chevron-down 하나를 접힘 시 -90° 회전한다
+            .ChevronDownIcon {
+                max-width: 16px;
+                font-size: 16px;
+                transition: transform 0.15s ease-out;
+            }
+
+            &.collapsed .ChevronDownIcon {
+                transform: rotate(-90deg);
+            }
+
             .MenuWrapper {
                 display: none;
+
+                // 채널 헤더 보조 버튼과 같은 28px 터치 영역
+                .IconButton {
+                    width: 28px;
+                    height: 28px;
+                }
 
                 &.menuOpen {
                     display: block;
@@ -181,11 +198,13 @@
         color: rgba(var(--sidebar-text-rgb), 0.72);
 
         &.category-title {
-            // 018 V-03: 채널 카테고리 헤더와 같은 수치
+            // 018 V-03 · 020 V-09: 채널 카테고리 헤더와 같은 수치·색·폰트
             font-size: 12px;
             text-transform: uppercase;
             font-weight: 600;
             letter-spacing: 0.05em;
+            color: rgb(var(--sidebar-text-rgb));
+            font-family: 'Open Sans', 'Noto Sans KR', sans-serif;
         }
 
         .octo-icon {
