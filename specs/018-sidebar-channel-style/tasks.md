@@ -167,3 +167,16 @@
 - 실측: 토글·+ 같은 행(top 69 동일), 28×28/6px/투명/18px/간격 4px,
   스트립 버튼 28×28/6px, 보존 동작 유지. `shots/05-toggle-in-switcher-row.png`
 - 게이트 재실행: 실패 스위트 목록 baseline과 동일, 테스트 1325개 중 143 실패(2건 개선 유지)
+
+### 후속 교정 2 (2026-10-12, 사용자 피드백)
+
+활성(반전) 행에서 ⋯ 메뉴 아이콘이 보이지 않았다. 반전은 행 배경·글자만 바꿨고,
+그 안의 버튼은 전역 `.Sidebar .IconButton` 색(어두운 글자)을 그대로 받아
+반전 배경에 묻혔다.
+
+- `.active` 안의 `.IconButton`이 행 글자색(`color: inherit`)을 상속하고,
+  hover 배경은 `rgba(var(--sidebar-bg-rgb), 0.16)` — 반전 배경과 양 테마 모두 대비
+- 셰브론·점 아이콘(SVG)은 `fill: currentColor`
+- 계약 V-07 추가 (RED→GREEN), stylelint 0
+- 실측: 활성 행 hover 시 ⋯ 색 = 행 글자색(#f8f8f8) 상속 확인,
+  `shots/06-active-row-menu-visible.png`

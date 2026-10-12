@@ -55,6 +55,26 @@
             .octo-sidebar-title {
                 color: inherit;
             }
+
+            // V-07: 반전 배경 위에서 ⋯ 메뉴·버튼이 묻히지 않게 행 글자색을 상속한다
+            .IconButton {
+                background: transparent;
+                color: inherit;
+
+                &:hover {
+                    background: rgba(var(--sidebar-bg-rgb), 0.16);
+                    color: inherit;
+                }
+            }
+
+            .MenuWrapper:hover {
+                background: rgba(var(--sidebar-bg-rgb), 0.16);
+            }
+
+            .DisclosureTriangleIcon,
+            .DotIcon {
+                fill: currentColor;
+            }
         }
 
         &.no-views {

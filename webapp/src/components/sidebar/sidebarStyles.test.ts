@@ -44,4 +44,10 @@ describe('018 sidebar visual contract (SCSS source)', () => {
         expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,400}width: 28px/)
         expect(switcher).toMatch(/\.hide-sidebar-icon[\s\S]{0,400}border-radius: 6px/)
     })
+
+    it('V-07: 활성(반전) 행의 메뉴 버튼은 행 글자색을 상속한다', () => {
+        // 반전 배경 위에서 전역 .IconButton 색(어두운 글자)이 그대로면 ⋯가 묻힌다
+        expect(boardItem()).toMatch(/&\.active[\s\S]{0,600}\.IconButton[\s\S]{0,120}color: inherit/)
+        expect(category()).toMatch(/&\.active[\s\S]{0,600}\.IconButton[\s\S]{0,120}color: inherit/)
+    })
 })
