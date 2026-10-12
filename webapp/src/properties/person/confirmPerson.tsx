@@ -83,14 +83,23 @@ const ConfirmPerson = (props: PropertyProps): React.JSX.Element => {
         if (Array.isArray(items)) {
             if (action.action === 'select-option') {
                 const confirmedIds: string[] = []
+                let pendingUser: IUser|null = null
                 items.forEach((item) => {
                     if (boardUsersById[item.id]) {
                         confirmedIds.push(item.id)
                     } else {
-                        setConfirmAddUser(item)
+                        pendingUser = item
                     }
                 })
-                changePropertyValue(confirmedIds)
+                if (pendingUser) {
+                    // 비멤버는 "보드에 추가" 확인 뒤에만 저장한다. 여기서 즉시 패치하면
+                    // card.updateAt이 바뀌어 표 행(key = card.id + updateAt)이 재마운트되고,
+                    // 행 안에 렌더된 이 다이얼로그가 로컬 state와 함께 사라진다.
+                    // 비멤버 선택의 저장 차이는 그 비멤버뿐이라, 패치를 미뤄도 잃는 값이 없다.
+                    setConfirmAddUser(pendingUser)
+                } else {
+                    changePropertyValue(confirmedIds)
+                }
             } else if (action.action === 'clear') {
                 changePropertyValue([])
             } else if (action.action === 'remove-value') {
