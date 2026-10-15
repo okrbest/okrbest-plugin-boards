@@ -17,7 +17,8 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## 목적
 
 okrbest-plugin-boards는 mattermost/mattermost-plugin-boards의 포크다. 자체 기능(BlockSuite 에디터,
-한국어 로케일, 알림·공유 확장 등)으로 분기가 커서 upstream 커밋을 그대로 merge할 수 없다.
+한국어 로케일, 알림·공유 확장, 채널 양식으로 통일한 사이드바·카테고리 UI, 조직 속성 기반 접근 규칙 등)으로
+분기가 커서 upstream 커밋을 그대로 merge할 수 없다.
 이 스킬은 **오래된 순으로 한 커밋씩** LLM 정밀 분석을 거쳐 다음 넷 중 하나로 처리한다:
 
 | 처리 | 조건 | 결과 |
@@ -74,7 +75,7 @@ git branch upstream-main upstream/main   # 로컬 추적 브랜치
 
 1. **upstream 커밋의 의도** 파악: 무엇을 왜 바꾸는가 (버그픽스/기능/리팩터/문서/번역).
 2. **우리 포크의 자체 변경과 대조**: signals의 FORK HISTORY에 나온 커밋들을 `git show`로 확인하고, 필요시 `git log -p main -- <경로>`와 `spec-docs/`·`conductor/`·`.cursor/rules/features/`를 조사한다. 질문: *우리가 이 영역을 의도적으로 바꿨거나 제거했는가?*
-3. **의미 충돌 검토**: merge-tree가 CLEAN이어도 BlockSuite 마이그레이션으로 대체된 레거시 Block 경로, 우리가 제거·개조한 기능 참조, 한국어 문자열, 플러그인/서버 버전 의존을 확인한다. 텍스트가 안 겹쳐도 의미가 깨질 수 있다.
+3. **의미 충돌 검토**: merge-tree가 CLEAN이어도 BlockSuite 마이그레이션으로 대체된 레거시 Block 경로, 우리가 제거·개조한 기능 참조, 한국어 문자열, 플러그인/서버 버전 의존을 확인한다. 특히 자주 개조된 영역: 사이드바·카테고리 UI(채널 양식으로 통일 — spec 016·018·020), 조직 속성 기반 접근 규칙(본부·부서·직책 데이터는 메인 서버 소유, 플러그인은 읽기 전용), 서버 모델에서 제거된 필드의 nil 가드(BoardsRetentionDays 사례), 사용자 속성 필터(spec 019). 텍스트가 안 겹쳐도 의미가 깨질 수 있다.
 4. **미반영 의존 검토**: 이 커밋이 exclude·건너뜀·아직 미반영인 upstream 커밋(선행 리팩터, feature flag, config 기본값, DB 스키마)에 의존하는지 확인한다. ledger 부록과 `git log upstream-main`으로 선행 커밋 문맥을 조사한다.
 5. 근거와 함께 **권고 결정**: cherry-pick / adapt / exclude / spec.
 
@@ -126,7 +127,8 @@ git branch upstream-main upstream/main   # 로컬 추적 브랜치
 - server 접촉 시: `cd server && go test ./<접촉 패키지>/...`
 - webapp 접촉 시: `cd webapp && npm run test -- <관련 경로>`
 - docs·i18n·주석만 건드린 커밋은 생략 가능.
-- 실패 시 즉시 해결(systematic-debugging) 또는 해당 커밋 revert 후 사용자 보고 — 실패를 안고 다음 커밋으로 넘어가지 않는다.
+- **baseline 기준 판정**: 이 저장소는 깨끗한 상태에서도 기존 실패가 있다 (2026-10 기준 server/app 7~8건, webapp 145건 수준 — 통합 테스트는 기본 게이트 제외). 세션에서 처음 접촉하는 패키지는 반영 전 상태의 실패 스위트 목록을 먼저 채록하고, 회귀는 실패 개수가 아니라 **실패 스위트 목록의 diff**로 판정한다.
+- 새로 실패한 스위트는 즉시 해결(systematic-debugging) 또는 해당 커밋 revert 후 사용자 보고 — 신규 실패를 안고 다음 커밋으로 넘어가지 않는다. baseline에 이미 있던 실패는 이 세션의 해결 대상이 아니다.
 
 #### 2-5. 목록 갱신
 
@@ -139,7 +141,9 @@ git branch upstream-main upstream/main   # 로컬 추적 브랜치
 1. **품질 게이트** (constitution 원칙 I — 변경된 패키지만):
    - `server/` 변경 시: `make server-lint` + `make server-test` (또는 영향 패키지 한정 `go test`)
    - `webapp/` 변경 시: `make webapp-ci` (또는 `cd webapp && npm run check && npm run check-types && npm run test`)
+   - 테스트 판정은 커밋 직후 검증과 같은 기준 — 기존 실패(baseline)는 통과로 치고, 실패 스위트 목록에 신규 항목이 없어야 한다.
    - DB 마이그레이션 접촉 시: `.down.sql`이 `SELECT 1;` 한 줄인지 확인 (constitution 원칙 VII).
+   - (선택·권장) webapp을 접촉한 세션은 배포 상태 스모크 확인 — 이 플러그인은 소스 수정만으로는 반영되지 않으므로, `npm run debug:watch`(또는 `MM_DEBUG=true make dist` 후 배포)로 로컬 Mattermost에 올린 뒤 보드 로딩을 확인한다.
    - 통과 증거를 보인 후에만 완료 선언 (verification-before-completion).
 2. **ledger 커밋 (sync 브랜치 위에서)**:
    ```bash
@@ -168,9 +172,10 @@ git branch upstream-main upstream/main   # 로컬 추적 브랜치
 
 - 절대 `main`에서 직접 작업하지 않는다 (sync 브랜치에서만). 병합은 반드시 PR 경유.
 - PR 병합은 항상 `gh pr merge --rebase`. squash·merge commit 금지 (`Upstream:` 참조 보존 목적).
+- `upstream-main`은 upstream 미러 전용 브랜치다 — 체크아웃하지 않는다. `$SYNC update`가 체크아웃 없이 `update-ref`로 fast-forward하므로, 체크아웃된 상태에서 실행하면 워킹트리와 ref가 어긋난다.
 - 오래된 순서를 건너뛰어 최신 커밋을 먼저 반영하지 않는다 (의존성 붕괴). "건너뜀"은 예외적·일시적이어야 한다.
 - 대량 자동 처리 금지 — 커밋마다 분석·승인. 시간이 걸려도 정밀 분석이 우선.
 - Translations update 커밋은 우리 i18n 변경(`webapp/i18n/ko.json`)과 상시 충돌 — adapt 시 우리 ko.json 문자열을 보존한다 (constitution 원칙 V).
-- upstream 커밋이 `webapp/i18n/en.json`에 문자열을 추가·변경하면 같은 세션에서 `ko.json` 번역을 동반한다 (constitution 원칙 V — cherry-pick이면 직후 adapt 커밋으로 보충 가능).
+- upstream 커밋이 `webapp/i18n/en.json`에 문자열을 추가·변경하면 같은 세션에서 `ko.json` 번역을 동반한다 (constitution 원칙 V — cherry-pick이면 직후 adapt 커밋으로 보충 가능). 우리 쪽 i18n 키 추가·제거는 손으로 한다 — `i18n-extract`는 en.json을 통째로 재생성하므로 돌리지 않고, ICU 메시지의 곧은따옴표(')는 이스케이프 대신 굽은따옴표(’)로 쓴다.
 - 라이선스 충실성 (constitution 원칙 VI): copyright 헤더·NOTICE.txt 관련 upstream 변경은 그대로 반영하고, 플러그인 ID(`focalboard`)와 우리 표시 문자열은 보존한다.
 - BlockSuite 에디터로 대체된 레거시 Block 경로를 건드리는 upstream 커밋은 exclude 후보다 — 반영 전에 `webapp/src/components/blockSuite/` 현재 구현과 대조한다.
