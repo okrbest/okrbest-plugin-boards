@@ -6,7 +6,7 @@ import React, {useCallback, useMemo} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
 
 import {IPropertyTemplate, Board} from '../../blocks/board'
-import {createBoardView, BoardView, ISortOption} from '../../blocks/boardView'
+import {BoardView, ISortOption} from '../../blocks/boardView'
 import {Card} from '../../blocks/card'
 import {Constants} from '../../constants'
 import mutator from '../../mutator'
@@ -82,12 +82,10 @@ const TableHeaders = (props: Props): React.JSX.Element => {
             }
         })
 
-        const columnWidths = {...activeView.fields.columnWidths}
-        columnWidths[columnID] = longestSize
-        const newView = createBoardView(activeView)
-        newView.fields.columnWidths = columnWidths
-        mutator.updateBlock(board.id, newView, activeView, 'autosize column')
-    }, [activeView, board, cards])
+        // 021: 자동 너비도 개인 화면 제어 — Table의 resizeColumn(개인 상태 기록)으로
+        // 합류한다. 전체 블록 쓰기는 병합 사본의 개인 값을 공유 뷰로 역류시킨다.
+        columnResize.updateWidth(columnID, longestSize)
+    }, [activeView, board, cards, columnResize])
 
     const visiblePropertyTemplates = useMemo(() => (
         activeView.fields.visiblePropertyIds.map((id) => board.cardProperties.find((t) => t.id === id)).filter((i) => i) as IPropertyTemplate[]

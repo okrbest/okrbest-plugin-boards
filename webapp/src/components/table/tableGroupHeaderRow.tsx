@@ -76,8 +76,8 @@ const TableGroupHeaderRow = (props: Props): React.JSX.Element => {
                         <CompassIcon
                             icon='menu-right'
                         />}
-                    onClick={() => (props.readonly ? {} : props.hideGroup(group.option.id || 'undefined'))}
-                    className={`octo-table-cell__expand ${props.readonly ? 'readonly' : ''}`}
+                    onClick={() => props.hideGroup(group.option.id || 'undefined')}
+                    className='octo-table-cell__expand'
                 />
 
                 {!group.option.id &&
