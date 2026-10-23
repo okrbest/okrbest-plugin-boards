@@ -18,7 +18,8 @@ export enum UserSettingKey {
     RandomIcons = 'randomIcons',
     MobileWarningClosed = 'mobileWarningClosed',
     WelcomePageViewed = 'welcomePageViewed',
-    NameFormat = 'nameFormat'
+    NameFormat = 'nameFormat',
+    ViewLocalState = 'viewLocalState'
 }
 
 export class UserSettings {
@@ -155,6 +156,24 @@ export class UserSettings {
 
     static set nameFormat(newValue: string | null) {
         UserSettings.set(UserSettingKey.NameFormat, newValue)
+    }
+
+    // 021: 사용자×뷰별 화면 조정 상태(접힌 그룹·열 너비)의 JSON 맵.
+    // 저장소가 막혀 있으면(시크릿 모드 등) 메모리 상태로만 동작한다.
+    static get viewLocalState(): string | null {
+        try {
+            return UserSettings.get(UserSettingKey.ViewLocalState)
+        } catch {
+            return null
+        }
+    }
+
+    static set viewLocalState(newValue: string | null) {
+        try {
+            UserSettings.set(UserSettingKey.ViewLocalState, newValue)
+        } catch {
+            Utils.logWarn('failed to persist view local state')
+        }
     }
 
     // 018: 사이드바 숨김 상태. 사용자별 키라 UserSettingKey enum을 거치지 않는다.

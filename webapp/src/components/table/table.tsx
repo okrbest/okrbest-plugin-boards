@@ -12,8 +12,9 @@ import {Constants, Permission} from '../../constants'
 import mutator from '../../mutator'
 import {Utils} from '../../utils'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
-import {updateView} from '../../store/views'
 import {getCurrentBoardCards, getCurrentBoardSubCardsByParent} from '../../store/cards'
+import {getMe} from '../../store/users'
+import {getViewLocalState, setColumnWidth, toggleCollapsedOption, viewLocalStateKey} from '../../store/viewLocalState'
 import {useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
@@ -78,7 +79,30 @@ const ConnectedDropIndicator = (): React.JSX.Element | null => {
 }
 
 const Table = (props: Props): React.JSX.Element => {
-    const {board, cards, activeView, visibleGroups, groupByProperty, views, hiddenCardsCount} = props
+    const {board, cards, activeView: sharedView, visibleGroups, groupByProperty, views, hiddenCardsCount} = props
+
+    // 021: 그룹 접힘은 개인 화면 제어다. 공유 뷰에 개인 상태를 덮어쓴 사본을
+    // 하위에 내려보낸다. 이 사본을 공유 저장 경로(전체 블록 쓰기)에 넘기면
+    // 개인 값이 모두에게 저장되는 역류가 되므로, 서버 쓰기는 sharedView 기준.
+    const me = useAppSelector(getMe)
+    const localStateKey = viewLocalStateKey(me?.id || '', sharedView.id)
+    const localState = useAppSelector((state) => getViewLocalState(state, localStateKey))
+    const activeView = useMemo(() => {
+        if (!localState?.collapsedOptionIds && !localState?.columnWidths) {
+            return sharedView
+        }
+        const merged = createBoardView(sharedView)
+        if (localState.collapsedOptionIds) {
+            // 접힘은 전체 대체 — 첫 토글 때 공유 값을 복사해 만든 스냅샷이다
+            merged.fields.collapsedOptionIds = localState.collapsedOptionIds
+        }
+        if (localState.columnWidths) {
+            // 너비는 열 단위 덮어쓰기 — 조절한 열만 개인 값을 쓴다
+            merged.fields.columnWidths = {...sharedView.fields.columnWidths, ...localState.columnWidths}
+        }
+        return merged
+    }, [sharedView, localState])
+
     const isManualSort = activeView.fields.sortOptions?.length === 0
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
     const canEditCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
@@ -107,46 +131,27 @@ const Table = (props: Props): React.JSX.Element => {
         return min
     }, [board.cardProperties, activeView.fields.visiblePropertyIds])
 
-    const resizeColumn = useCallback(async (columnId: string, width: number) => {
-        const columnWidths = {...activeView.fields.columnWidths}
+    // 개인 상태로만 기록한다 — 서버 저장·방송·undo 스택에 들어가지 않는다 (FR-003)
+    const resizeColumn = useCallback((columnId: string, width: number) => {
         const minW = columnMinWidths[columnId] ?? Constants.minColumnWidth
         const newWidth = Math.max(minW, width)
-        if (newWidth !== columnWidths[columnId]) {
-            Utils.log(`Resize of column finished: prev=${columnWidths[columnId]}, new=${newWidth}`)
-
-            columnWidths[columnId] = newWidth
-
-            const newView = createBoardView(activeView)
-            newView.fields.columnWidths = columnWidths
-            try {
-                dispatch(updateView(newView))
-                await mutator.updateBlock(board.id, newView, activeView, 'resize column')
-            } catch {
-                dispatch(updateView(activeView))
-            }
+        if (newWidth !== activeView.fields.columnWidths[columnId]) {
+            Utils.log(`Resize of column finished: prev=${activeView.fields.columnWidths[columnId]}, new=${newWidth}`)
+            dispatch(setColumnWidth({key: localStateKey, columnId, width: newWidth}))
         }
-    }, [activeView, columnMinWidths])
+    }, [activeView.fields.columnWidths, columnMinWidths, localStateKey, dispatch])
 
+    // 개인 상태로만 토글한다 — 서버 저장·방송·undo 스택에 들어가지 않는다 (FR-003)
     const hideGroup = useCallback((groupById: string): void => {
-        const index: number = activeView.fields.collapsedOptionIds.indexOf(groupById)
-        const newValue: string[] = [...activeView.fields.collapsedOptionIds]
-        if (index > -1) {
-            newValue.splice(index, 1)
-        } else if (groupById !== '') {
-            newValue.push(groupById)
+        if (groupById === '') {
+            return
         }
-
-        const newView = createBoardView(activeView)
-        newView.fields.collapsedOptionIds = newValue
-        dispatch(updateView(newView))
-        mutator.performAsUndoGroup(async () => {
-            try {
-                await mutator.updateBlock(board.id, newView, activeView, 'hide group')
-            } catch {
-                dispatch(updateView(activeView))
-            }
-        })
-    }, [activeView, board.id, dispatch])
+        dispatch(toggleCollapsedOption({
+            key: localStateKey,
+            optionId: groupById,
+            seed: sharedView.fields.collapsedOptionIds,
+        }))
+    }, [localStateKey, sharedView.fields.collapsedOptionIds, dispatch])
 
     const onDropToGroupHeader = useCallback(async (option: IPropertyOption, dstOption?: IPropertyOption) => {
         if (dstOption) {

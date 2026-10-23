@@ -195,3 +195,29 @@ test('should match snapshot, edit title', async () => {
 
     expect(container).toMatchSnapshot()
 })
+
+// specs/021-per-user-view-state US3 — 접기는 보드 데이터를 바꾸지 않으므로
+// 읽기 전용 사용자에게도 허용한다 (FR-006).
+test('읽기 전용이어도 접기 버튼이 동작한다 (FR-006)', async () => {
+    const hideGroup = jest.fn()
+    const {container} = render(
+        <Wrapper>
+            <TableGroupHeaderRowElement
+                board={board}
+                activeView={view}
+                group={boardTreeGroup}
+                readonly={true}
+                hideGroup={hideGroup}
+                addCard={jest.fn()}
+                propertyNameChanged={jest.fn()}
+                onDrop={jest.fn()}
+            />
+        </Wrapper>,
+    )
+
+    const toggle = container.querySelector('.octo-table-cell__expand')
+    expect(toggle).not.toBeNull()
+    await userEvent.click(toggle!)
+
+    expect(hideGroup).toHaveBeenCalledWith(boardTreeGroup.option.id)
+})

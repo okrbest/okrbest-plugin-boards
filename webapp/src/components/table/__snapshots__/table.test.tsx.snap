@@ -490,6 +490,9 @@ exports[`components/table/Table extended should match snapshot with CreatedAt 1`
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -521,6 +524,9 @@ exports[`components/table/Table extended should match snapshot with CreatedAt 1`
           </div>
           <div
             class="octo-spacer"
+          />
+          <div
+            class="HorizontalGrip"
           />
         </div>
         <div
@@ -554,6 +560,9 @@ exports[`components/table/Table extended should match snapshot with CreatedAt 1`
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -573,6 +582,9 @@ exports[`components/table/Table extended should match snapshot with CreatedAt 1`
           </div>
           <div
             class="octo-spacer"
+          />
+          <div
+            class="HorizontalGrip"
           />
         </div>
       </div>
@@ -2262,6 +2274,9 @@ exports[`components/table/Table limited card in table view 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2294,6 +2309,9 @@ exports[`components/table/Table limited card in table view 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2325,6 +2343,9 @@ exports[`components/table/Table limited card in table view 1`] = `
           </div>
           <div
             class="octo-spacer"
+          />
+          <div
+            class="HorizontalGrip"
           />
         </div>
       </div>
@@ -2601,6 +2622,9 @@ exports[`components/table/Table should match snapshot 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2633,6 +2657,9 @@ exports[`components/table/Table should match snapshot 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2664,6 +2691,9 @@ exports[`components/table/Table should match snapshot 1`] = `
           </div>
           <div
             class="octo-spacer"
+          />
+          <div
+            class="HorizontalGrip"
           />
         </div>
       </div>
@@ -2840,6 +2870,9 @@ exports[`components/table/Table should match snapshot with GroupBy 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2872,6 +2905,9 @@ exports[`components/table/Table should match snapshot with GroupBy 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2903,6 +2939,9 @@ exports[`components/table/Table should match snapshot with GroupBy 1`] = `
           </div>
           <div
             class="octo-spacer"
+          />
+          <div
+            class="HorizontalGrip"
           />
         </div>
       </div>
@@ -3031,6 +3070,9 @@ exports[`components/table/Table should match snapshot without permissions 1`] = 
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -3063,6 +3105,9 @@ exports[`components/table/Table should match snapshot without permissions 1`] = 
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -3094,6 +3139,9 @@ exports[`components/table/Table should match snapshot without permissions 1`] = 
           </div>
           <div
             class="octo-spacer"
+          />
+          <div
+            class="HorizontalGrip"
           />
         </div>
       </div>
@@ -3270,6 +3318,9 @@ exports[`components/table/Table should match snapshot, read-only 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -3302,6 +3353,9 @@ exports[`components/table/Table should match snapshot, read-only 1`] = `
           <div
             class="octo-spacer"
           />
+          <div
+            class="HorizontalGrip"
+          />
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -3333,6 +3387,9 @@ exports[`components/table/Table should match snapshot, read-only 1`] = `
           </div>
           <div
             class="octo-spacer"
+          />
+          <div
+            class="HorizontalGrip"
           />
         </div>
       </div>

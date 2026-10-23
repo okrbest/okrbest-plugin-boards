@@ -87,13 +87,13 @@ const TableHeader = (props: Props): React.JSX.Element => {
 
             <div className='octo-spacer'/>
 
-            {!props.readonly &&
-                <HorizontalGrip
-                    templateId={templateId}
-                    columnWidth={props.activeView.fields.columnWidths[templateId] || 0}
-                    onAutoSizeColumn={onAutoSizeColumn}
-                />
-            }
+            {/* 021: 열 너비는 개인 화면 제어라 readonly와 무관하게 조절할 수 있다.
+                정렬 메뉴·열 재정렬(useSortable) 등 공유 구성 게이트는 그대로다. */}
+            <HorizontalGrip
+                templateId={templateId}
+                columnWidth={props.activeView.fields.columnWidths[templateId] || 0}
+                onAutoSizeColumn={onAutoSizeColumn}
+            />
         </div>
     )
 }

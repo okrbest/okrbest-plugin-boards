@@ -23,6 +23,7 @@ import {reducer as attachmentsReducer} from './attachments'
 import {reducer as boardPermissionsReducer} from './boardPermissions'
 import {reducer as orgMasterReducer} from './orgMaster'
 import {reducer as dutyTiersReducer} from './dutyTiers'
+import {reducer as viewLocalStateReducer} from './viewLocalState'
 import rhsReducer from './rhs'
 
 const store = configureStore({
@@ -46,6 +47,7 @@ const store = configureStore({
         boardPermissions: boardPermissionsReducer,
         orgMaster: orgMasterReducer,
         dutyTiers: dutyTiersReducer,
+        viewLocalState: viewLocalStateReducer,
         rhs: rhsReducer,
     },
 })

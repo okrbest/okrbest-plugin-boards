@@ -47,3 +47,37 @@ describe('components/table/TableHeaderMenu', () => {
         expect(container).toMatchSnapshot()
     })
 })
+
+// specs/021-per-user-view-state US3 — 열 너비는 개인 화면 제어이므로 읽기
+// 전용이어도 그립을 렌더한다. 정렬 메뉴 등 공유 구성 게이트는 유지한다 (FR-006·FR-007).
+describe('components/table/TableHeader - 읽기 전용 (021 US3)', () => {
+    const board = TestBlockFactory.createBoard()
+    const view = TestBlockFactory.createBoardView(board)
+
+    test('읽기 전용이어도 열 너비 그립은 렌더된다 (FR-006)', () => {
+        const {container} = render(wrapDNDIntl(
+            <ColumnResizeProvider
+                columnWidths={{}}
+                onResizeColumn={jest.fn()}
+            >
+                <TableHeader
+                    readonly={true}
+                    sorted={'none'}
+                    name={'my Name'}
+                    board={board}
+                    activeView={view}
+                    cards={[]}
+                    views={[view]}
+                    template={board.cardProperties[0]}
+                    onDrop={jest.fn()}
+                    onAutoSizeColumn={jest.fn()}
+                />
+            </ColumnResizeProvider>,
+        ))
+
+        expect(container.querySelector('.HorizontalGrip')).not.toBeNull()
+
+        // 공유 구성(정렬 메뉴)은 여전히 잠겨 있다
+        expect(container.querySelector('.MenuWrapper.disabled')).not.toBeNull()
+    })
+})

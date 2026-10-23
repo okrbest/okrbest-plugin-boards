@@ -4,7 +4,7 @@
 
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {render, screen} from '@testing-library/react'
+import {render, screen, fireEvent} from '@testing-library/react'
 import configureStore from 'redux-mock-store'
 import '@testing-library/jest-dom'
 import userEvents from '@testing-library/user-event'
@@ -19,6 +19,8 @@ import {BoardView} from '../../blocks/boardView'
 import {IUser} from '../../user'
 
 import {Utils, IDType} from '../../utils'
+import {Constants} from '../../constants'
+import {IPropertyTemplate} from '../../blocks/board'
 
 import {wrapDNDIntl} from '../../testUtils'
 
@@ -309,69 +311,74 @@ describe('components/table/Table', () => {
         expect(screen.queryByText('collapsed-row-card')).not.toBeInTheDocument()
     })
 
-     test('limited card in table view', async () => {
-         const callback = jest.fn()
-         const addCard = jest.fn()
-         const boardTest = TestBlockFactory.createBoard()
-         const card1 = TestBlockFactory.createCard(boardTest)
-         const card2 = TestBlockFactory.createCard(boardTest)
-         const mockStore = configureStore([])
+    test('limited card in table view', async () => {
+        const callback = jest.fn()
+        const addCard = jest.fn()
+        const boardTest = TestBlockFactory.createBoard()
+        const card1 = TestBlockFactory.createCard(boardTest)
+        const card2 = TestBlockFactory.createCard(boardTest)
+        const mockStore = configureStore([])
 
-         const stateTest = {
-             comments: {
-                 comments: {},
-             },
-             contents: {
-                 contents: {},
-             },
-             cards: {
-                 cards: {
-                     [card1.id]: card1,
-                     [card2.id]: card2,
-                 },
-             },
-             teams: {
-                 current: {id: 'team-id'},
-             },
-             boards: {
-                 current: boardTest.id,
-                 boards: {
-                     [boardTest.id]: boardTest,
-                 },
-                 myBoardMemberships: {
-                     [boardTest.id]: {userId: 'user_id_1', schemeAdmin: true},
-                 },
-             },
-         }
+        const stateTest = {
+            // 021: Table이 개인 뷰 상태 키 계산에 현재 사용자를 읽는다
+            users: {
+                me: {id: 'user_id_1'} as IUser,
+                boardUsers: {},
+            },
+            comments: {
+                comments: {},
+            },
+            contents: {
+                contents: {},
+            },
+            cards: {
+                cards: {
+                    [card1.id]: card1,
+                    [card2.id]: card2,
+                },
+            },
+            teams: {
+                current: {id: 'team-id'},
+            },
+            boards: {
+                current: boardTest.id,
+                boards: {
+                    [boardTest.id]: boardTest,
+                },
+                myBoardMemberships: {
+                    [boardTest.id]: {userId: 'user_id_1', schemeAdmin: true},
+                },
+            },
+        }
 
-         const storeTest = mockStore(stateTest)
-         card.limited = true
+        const storeTest = mockStore(stateTest)
+        card.limited = true
 
-         const component = wrapDNDIntl(
-             <ReduxProvider store={storeTest}>
-                 <Table
-                     board={boardTest}
-                     activeView={view}
-                     visibleGroups={[]}
-                     cards={[card1, card2]}
-                     views={[view, view2]}
-                     selectedCardIds={[]}
-                     readonly={true}
-                     cardIdToFocusOnRender=''
-                     showCard={callback}
-                     addCard={addCard}
-                    addSubCard={jest.fn()}
-                     onCardClicked={jest.fn()}
-                     hiddenCardsCount={2}
-                     showHiddenCardCountNotification={jest.fn()}
-                 />
-             </ReduxProvider>,
-         )
-         const {container} = render(component)
-         const hiddenCardElement = await screen.findByTitle('hidden-card-count')
-         expect(hiddenCardElement).toHaveTextContent('2')
-         expect(container).toMatchSnapshot()
-     })
+        const component = wrapDNDIntl(
+            <ReduxProvider store={storeTest}>
+                <Table
+                    board={boardTest}
+                    activeView={view}
+                    visibleGroups={[]}
+                    cards={[card1, card2]}
+                    views={[view, view2]}
+                    selectedCardIds={[]}
+                    readonly={true}
+                    cardIdToFocusOnRender=''
+                    showCard={callback}
+                    addCard={addCard}
+                   addSubCard={jest.fn()}
+                    onCardClicked={jest.fn()}
+                    hiddenCardsCount={2}
+                    showHiddenCardCountNotification={jest.fn()}
+                />
+            </ReduxProvider>,
+        )
+        const {container} = render(component)
+        const hiddenCardElement = await screen.findByTitle('hidden-card-count')
+        expect(hiddenCardElement).toHaveTextContent('2')
+        expect(container).toMatchSnapshot()
+    })
 })
 
 describe('components/table/Table extended', () => {
@@ -850,4 +857,229 @@ describe('components/table/Table extended', () => {
          expect(mockedMutator.duplicateCard).toBeCalledTimes(1)
          expect(container).toMatchSnapshot()
      })
+})
+
+// specs/021-per-user-view-state — 그룹 접기·열 너비는 개인 화면 제어다.
+// 공유 뷰 블록을 저장하지 않고(mutator 미호출), 개인 상태가 있으면 그것이
+// 뷰 저장값보다 우선한다.
+describe('components/table/Table - 개인 화면 제어 (021)', () => {
+    // Utils가 모킹되어 createGuid가 비므로 id를 직접 박는다 — 비어 있으면
+    // boards.current가 ''가 되어 권한 훅이 전부 false(=readonly)로 떨어진다
+    const board = TestBlockFactory.createBoard()
+    board.id = 'board-021'
+    const view = TestBlockFactory.createBoardView(board)
+    view.id = 'view-021'
+    view.boardId = board.id
+    view.fields.viewType = 'table'
+    view.fields.visiblePropertyIds = ['property1']
+
+    const groupedCard = TestBlockFactory.createCard(board)
+    groupedCard.id = 'card-021'
+    groupedCard.boardId = board.id
+    groupedCard.title = 'grouped-row-card'
+    groupedCard.fields.properties.property1 = 'value1'
+
+    const groupByProperty: IPropertyTemplate = {
+        id: 'property1',
+        name: 'Property 1',
+        type: 'text',
+        options: [{id: 'value1', value: 'Value 1', color: ''}],
+    }
+
+    const makeState = (byKey: Record<string, {collapsedOptionIds?: string[], columnWidths?: Record<string, number>}>) => ({
+        users: {
+            me: {id: 'user-id-1'} as IUser,
+            boardUsers: {'user-id-1': {username: 'username_1'} as IUser},
+        },
+        comments: {comments: {}, commentsByCard: {}},
+        contents: {contents: {}, contentsByCard: {}},
+        cards: {cards: {[groupedCard.id]: groupedCard}},
+        teams: {current: {id: 'team-id'}},
+        boards: {
+            current: board.id,
+            boards: {[board.id]: board},
+            myBoardMemberships: {[board.id]: {userId: 'user-id-1', schemeAdmin: true}},
+        },
+        viewLocalState: {byKey},
+    })
+
+    const renderTable = (activeView: BoardView, byKey: Record<string, {collapsedOptionIds?: string[], columnWidths?: Record<string, number>}>) => {
+        const mockStore = configureStore([])
+        const store = mockStore(makeState(byKey))
+        const utils = render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <Table
+                    board={board}
+                    activeView={activeView}
+                    visibleGroups={[{option: {id: 'value1', value: 'Value 1', color: ''}, cards: [groupedCard]}]}
+                    groupByProperty={groupByProperty}
+                    cards={[groupedCard]}
+                    views={[view]}
+                    selectedCardIds={[]}
+                    readonly={false}
+                    cardIdToFocusOnRender=''
+                    showCard={jest.fn()}
+                    addCard={jest.fn()}
+                    addSubCard={jest.fn()}
+                    onCardClicked={jest.fn()}
+                    hiddenCardsCount={0}
+                    showHiddenCardCountNotification={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+        return {store, ...utils}
+    }
+
+    const groupedView = (collapsedOptionIds: string[]): BoardView => ({
+        ...view,
+        fields: {...view.fields, groupById: 'property1', collapsedOptionIds},
+    } as BoardView)
+
+    test('그룹 접기 토글이 공유 뷰를 저장하지 않는다 (FR-001·FR-003)', async () => {
+        const {store, container} = renderTable(groupedView([]), {})
+
+        // Utils가 모킹되어 generateClassName이 비므로, 평문 클래스로 좁혀
+        // 그룹 헤더의 첫 버튼(= 펼치기 토글)을 집는다
+        const toggle = container.querySelector('.octo-group-header-cell button')
+        expect(toggle).not.toBeNull()
+        await userEvents.click(toggle!)
+
+        expect(mockedMutator.updateBlock).not.toHaveBeenCalled()
+        expect(mockedMutator.performAsUndoGroup).not.toHaveBeenCalled()
+
+        const toggleActions = store.getActions().filter((a: {type: string}) => a.type === 'viewLocalState/toggleCollapsedOption')
+        expect(toggleActions).toHaveLength(1)
+        expect(toggleActions[0].payload).toEqual({
+            key: `user-id-1:${view.id}`,
+            optionId: 'value1',
+            seed: [],
+        })
+    })
+
+    test('개인 상태가 없으면 뷰 저장값이 시드로 쓰인다 (FR-005)', () => {
+        const {container} = renderTable(groupedView(['value1']), {})
+
+        expect(container.querySelectorAll('.TableRow.octo-table-row')).toHaveLength(0)
+    })
+
+    test('개인 상태가 있으면 뷰 저장값보다 우선한다 (FR-001)', () => {
+        const {container} = renderTable(groupedView(['value1']), {
+            [`user-id-1:${view.id}`]: {collapsedOptionIds: []},
+        })
+
+        expect(container.querySelectorAll('.TableRow.octo-table-row')).toHaveLength(1)
+    })
+})
+
+// specs/021-per-user-view-state US2 — 열 너비도 개인 화면 제어다.
+describe('components/table/Table - 열 너비 개인화 (021 US2)', () => {
+    const board = TestBlockFactory.createBoard()
+    board.id = 'board-021w'
+    const view = TestBlockFactory.createBoardView(board)
+    view.id = 'view-021w'
+    view.boardId = board.id
+    view.fields.viewType = 'table'
+    view.fields.visiblePropertyIds = ['property1']
+
+    const card = TestBlockFactory.createCard(board)
+    card.id = 'card-021w'
+    card.boardId = board.id
+
+    const makeState = (byKey: Record<string, {collapsedOptionIds?: string[], columnWidths?: Record<string, number>}>) => ({
+        users: {
+            me: {id: 'user-id-1'} as IUser,
+            boardUsers: {'user-id-1': {username: 'username_1'} as IUser},
+        },
+        comments: {comments: {}, commentsByCard: {}},
+        contents: {contents: {}, contentsByCard: {}},
+        cards: {cards: {[card.id]: card}},
+        teams: {current: {id: 'team-id'}},
+        boards: {
+            current: board.id,
+            boards: {[board.id]: board},
+            myBoardMemberships: {[board.id]: {userId: 'user-id-1', schemeAdmin: true}},
+        },
+        viewLocalState: {byKey},
+    })
+
+    const renderTable = (activeView: BoardView, byKey: Record<string, {collapsedOptionIds?: string[], columnWidths?: Record<string, number>}>) => {
+        const mockStore = configureStore([])
+        const store = mockStore(makeState(byKey))
+        const utils = render(wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <Table
+                    board={board}
+                    activeView={activeView}
+                    visibleGroups={[]}
+                    cards={[card]}
+                    views={[view]}
+                    selectedCardIds={[]}
+                    readonly={false}
+                    cardIdToFocusOnRender=''
+                    showCard={jest.fn()}
+                    addCard={jest.fn()}
+                    addSubCard={jest.fn()}
+                    onCardClicked={jest.fn()}
+                    hiddenCardsCount={0}
+                    showHiddenCardCountNotification={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+        return {store, ...utils}
+    }
+
+    test('열 너비 드래그가 공유 뷰를 저장하지 않는다 (FR-002·FR-003)', () => {
+        const {store, container} = renderTable(view, {})
+
+        const grip = container.querySelector('.HorizontalGrip')
+        expect(grip).not.toBeNull()
+        fireEvent.mouseDown(grip!, {clientX: 100})
+        fireEvent.mouseMove(document, {clientX: 150})
+        fireEvent.mouseUp(document)
+
+        expect(mockedMutator.updateBlock).not.toHaveBeenCalled()
+
+        const widthActions = store.getActions().filter((a: {type: string}) => a.type === 'viewLocalState/setColumnWidth')
+        expect(widthActions).toHaveLength(1)
+        expect(widthActions[0].payload).toEqual({
+            key: `user-id-1:${view.id}`,
+            columnId: Constants.titleColumnId,
+            width: Constants.minColumnWidth + 50,
+        })
+    })
+
+    test('개인 너비가 있는 열만 개인 값을 쓰고 나머지는 공유 값을 따른다 (FR-005)', () => {
+        const viewWithWidths = {
+            ...view,
+            fields: {...view.fields, columnWidths: {[Constants.titleColumnId]: 300, property1: 150}},
+        } as BoardView
+
+        const {container} = renderTable(viewWithWidths, {
+            [`user-id-1:${view.id}`]: {columnWidths: {property1: 222}},
+        })
+
+        const headers = container.querySelectorAll<HTMLElement>('.header-cell')
+        expect(headers).toHaveLength(2)
+        expect(headers[0].style.width).toBe('300px')
+        expect(headers[1].style.width).toBe('222px')
+    })
+
+    test('열 자동 너비(그립 더블클릭)도 공유 뷰를 저장하지 않는다 (FR-002·FR-003)', () => {
+        // Utils가 모킹되어 autosize의 글꼴 계산이 undefined로 죽으므로 경로를 살린다
+        mocked(Utils.getFontAndPaddingFromCell).mockReturnValue({fontDescriptor: '', padding: 10})
+        mocked(Utils.getTextWidth).mockReturnValue(50)
+
+        const {store, container} = renderTable(view, {})
+
+        const grip = container.querySelector('.HorizontalGrip')
+        expect(grip).not.toBeNull()
+        fireEvent.doubleClick(grip!)
+
+        expect(mockedMutator.updateBlock).not.toHaveBeenCalled()
+
+        const widthActions = store.getActions().filter((a: {type: string}) => a.type === 'viewLocalState/setColumnWidth')
+        expect(widthActions).toHaveLength(1)
+        expect(widthActions[0].payload.key).toBe(`user-id-1:${view.id}`)
+        expect(widthActions[0].payload.columnId).toBe(Constants.titleColumnId)
+    })
 })
