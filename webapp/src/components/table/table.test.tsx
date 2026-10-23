@@ -1107,4 +1107,26 @@ describe('components/table/Table - 열 너비 개인화 (021 US2)', () => {
         expect(passedView.fields.collapsedOptionIds).toEqual([])
         expect(passedView.fields.columnWidths).toEqual({[Constants.titleColumnId]: 300})
     })
+
+    test('속성 열 자동 너비가 내용 길이를 반영한다', () => {
+        mocked(Utils.getFontAndPaddingFromCell).mockReturnValue({fontDescriptor: '', padding: 10})
+        // 첫 호출(헤더 라벨 폭)은 좁게, 이후(셀 내용 폭)는 넓게 측정되게 한다
+        mocked(Utils.getTextWidth).mockReturnValueOnce(50).mockReturnValue(400)
+
+        const {store, container} = renderTable(view, {})
+
+        // jsdom은 innerText를 구현하지 않으므로 헤더 폭 측정 경로를 살린다
+        const headerCells = container.querySelectorAll<HTMLElement>('.header-cell')
+        Object.defineProperty(headerCells[1], 'innerText', {value: 'Property 1', configurable: true})
+
+        const grips = container.querySelectorAll('.HorizontalGrip')
+        expect(grips.length).toBeGreaterThan(1)
+        fireEvent.doubleClick(grips[1])
+
+        const widthActions = store.getActions().filter((a: {type: string}) => a.type === 'viewLocalState/setColumnWidth')
+        expect(widthActions).toHaveLength(1)
+        expect(widthActions[0].payload.columnId).toBe('property1')
+        // 내용 400 + 패딩 10 = 410. 내용 길이를 버리면 패딩만 남아 최소폭 100으로 떨어진다
+        expect(widthActions[0].payload.width).toBe(410)
+    })
 })
