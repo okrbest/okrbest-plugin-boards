@@ -101,6 +101,36 @@ describe('store/viewLocalState', () => {
             }
         })
 
+        test('디스크에 있는 다른 키를 지우지 않는다 — 다른 탭의 저장분 보존', () => {
+            const otherTabKey = viewLocalStateKey('user-9', 'view-9')
+            localStorage.setItem(UserSettingKey.ViewLocalState, JSON.stringify({
+                [otherTabKey]: {columnWidths: {'col-x': 80}},
+            }))
+
+            // 이 탭(리듀서 메모리)은 otherTabKey를 모른 채 자기 키만 쓴다
+            reducer(undefined, setColumnWidth({key, columnId: 'col-1', width: 120}))
+
+            const saved = JSON.parse(localStorage.getItem(UserSettingKey.ViewLocalState)!)
+            expect(saved[key].columnWidths).toEqual({'col-1': 120})
+            expect(saved[otherTabKey].columnWidths).toEqual({'col-x': 80})
+        })
+
+        test('저장 값이 객체가 아니거나 엔트리가 비객체면 걸러낸다', () => {
+            localStorage.setItem(UserSettingKey.ViewLocalState, 'null')
+            expect(loadViewLocalState()).toEqual({})
+
+            localStorage.setItem(UserSettingKey.ViewLocalState, '[1,2]')
+            expect(loadViewLocalState()).toEqual({})
+
+            localStorage.setItem(UserSettingKey.ViewLocalState, JSON.stringify({
+                [key]: 'not-an-object',
+                [viewLocalStateKey('u2', 'v2')]: {collapsedOptionIds: ['a']},
+            }))
+            expect(loadViewLocalState()).toEqual({
+                [viewLocalStateKey('u2', 'v2')]: {collapsedOptionIds: ['a']},
+            })
+        })
+
         test('비로그인 사용자(userId 없음)의 상태는 지속하지 않는다', () => {
             const anonymousKey = viewLocalStateKey('', 'view-1')
             const state = reducer(undefined, toggleCollapsedOption({key: anonymousKey, optionId: 'opt-a', seed: []}))
