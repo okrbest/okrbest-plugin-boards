@@ -1082,4 +1082,29 @@ describe('components/table/Table - 열 너비 개인화 (021 US2)', () => {
         expect(widthActions[0].payload.key).toBe(`user-id-1:${view.id}`)
         expect(widthActions[0].payload.columnId).toBe(Constants.titleColumnId)
     })
+
+    test('열 삽입 메뉴는 공유 뷰 기준으로 호출된다 — 개인 값 역류 금지 (FR-003)', async () => {
+        // insertPropertyTemplate은 전 필드 diff(createPatchesFromBlocks, 참조 비교)로
+        // 뷰를 저장하므로, 병합 사본이 넘어가면 개인 접힘·너비가 공유 뷰로 역류한다
+        const viewWithWidths = {
+            ...view,
+            fields: {...view.fields, columnWidths: {[Constants.titleColumnId]: 300}},
+        } as BoardView
+
+        const {container} = renderTable(viewWithWidths, {
+            [`user-id-1:${view.id}`]: {collapsedOptionIds: ['value1'], columnWidths: {[Constants.titleColumnId]: 500}},
+        })
+
+        const headers = container.querySelectorAll<HTMLElement>('.header-cell')
+        const menuLabel = headers[1].querySelector('.Label')
+        expect(menuLabel).not.toBeNull()
+        await userEvents.click(menuLabel!)
+        const insertLeft = await screen.findByText('Insert left')
+        await userEvents.click(insertLeft)
+
+        expect(mockedMutator.insertPropertyTemplate).toHaveBeenCalledTimes(1)
+        const passedView = mockedMutator.insertPropertyTemplate.mock.calls[0][1] as BoardView
+        expect(passedView.fields.collapsedOptionIds).toEqual([])
+        expect(passedView.fields.columnWidths).toEqual({[Constants.titleColumnId]: 300})
+    })
 })

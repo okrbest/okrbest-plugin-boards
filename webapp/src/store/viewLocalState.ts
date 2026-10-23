@@ -22,9 +22,23 @@ export const viewLocalStateKey = (userId: string, viewId: string): string => `${
 // 비로그인(공유 링크) 사용자의 키 — 메모리로만 동작하고 지속하지 않는다
 const isAnonymousKey = (key: string): boolean => key.startsWith(':')
 
+const isPlainObject = (value: unknown): boolean =>
+    Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+
 export function loadViewLocalState(): ViewLocalStateMap {
     try {
-        return JSON.parse(UserSettings.viewLocalState || '{}')
+        const parsed = JSON.parse(UserSettings.viewLocalState || '{}')
+        if (!isPlainObject(parsed)) {
+            return {}
+        }
+        // 설정 가져오기 등으로 형태가 깨진 엔트리는 걸러낸다
+        const map: ViewLocalStateMap = {}
+        for (const [key, value] of Object.entries(parsed)) {
+            if (isPlainObject(value)) {
+                map[key] = value as ViewLocalState
+            }
+        }
+        return map
     } catch {
         Utils.logWarn('loadViewLocalState: stored value is corrupt, starting empty')
         return {}
@@ -35,7 +49,9 @@ const persist = (byKey: ViewLocalStateMap, changedKey: string): void => {
     if (isAnonymousKey(changedKey)) {
         return
     }
-    const persistable: ViewLocalStateMap = {}
+    // 디스크의 최신 값 위에 이 탭의 메모리 상태를 병합한다 — 다른 탭이
+    // 같은 키 공간에 저장한 엔트리를 모듈 로드 시점 스냅샷으로 덮지 않기 위함
+    const persistable: ViewLocalStateMap = loadViewLocalState()
     for (const [key, value] of Object.entries(byKey)) {
         if (!isAnonymousKey(key)) {
             persistable[key] = value

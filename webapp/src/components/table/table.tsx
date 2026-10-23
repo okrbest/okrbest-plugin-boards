@@ -352,10 +352,13 @@ const Table = (props: Props): React.JSX.Element => {
                     onResizeColumn={resizeColumn}
                 >
                     <div className='octo-table-body'>
+                        {/* 헤더 메뉴(열 삽입·복제)는 전 필드 diff로 뷰를 저장하므로
+                            병합 사본이 아니라 공유 뷰를 넘긴다 — 개인 값 역류 방지.
+                            열 너비 표시는 ColumnResizeProvider(병합 값)가 담당한다. */}
                         <TableHeaders
                             board={board}
                             cards={cards}
-                            activeView={activeView}
+                            activeView={sharedView}
                             views={views}
                             readonly={props.readonly || !(canEditBoardProperties || canManageBoardByCapability)}
                         />
