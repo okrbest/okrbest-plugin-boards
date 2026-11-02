@@ -54,6 +54,7 @@ import UserPermissionsRow from './userPermissionsRow'
 import PropertyAccessSection from './propertyAccessSection'
 import OkrBoardSection from './okrBoardSection'
 import AdminOnlyPropertiesSection from './adminOnlyPropertiesSection'
+import PrivateViewsSection from './privateViewsSection'
 
 import './shareBoard.scss'
 
@@ -467,6 +468,8 @@ export default function ShareBoardDialog(props: Props): React.JSX.Element {
             <OkrBoardSection board={board}/>
 
             <AdminOnlyPropertiesSection board={board}/>
+
+            <PrivateViewsSection board={board}/>
 
             <PropertyAccessSection board={board}/>
 

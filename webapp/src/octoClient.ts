@@ -9,6 +9,7 @@ import {ISharing} from './blocks/sharing'
 import {OctoUtils} from './octoUtils'
 import {IUser, UserConfigPatch, UserPreference} from './user'
 import {Utils} from './utils'
+import {PrivateViewSummary} from './viewAccess'
 import {ClientConfig} from './config/clientConfig'
 import {UserSettings} from './userSettings'
 import {Category, CategoryBoards} from './store/sidebar'
@@ -461,6 +462,27 @@ class OctoClient {
             body,
         }))
         return response
+    }
+
+    // The board admin's list of private views (022): id, title, creator and
+    // creation time, never the configuration. 200 or an empty list.
+    async getPrivateViews(boardId: string): Promise<PrivateViewSummary[]> {
+        const path = `/api/v2/boards/${boardId}/views/private`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as PrivateViewSummary[]
+    }
+
+    // Deletes a private view on a board admin's behalf — the one way an admin
+    // reaches another person's private view.
+    async deletePrivateView(boardId: string, viewId: string): Promise<Response> {
+        Utils.log(`deletePrivateView: ${viewId} on board ${boardId}`)
+        return fetch(`${this.getBaseURL()}/api/v2/boards/${boardId}/views/private/${encodeURIComponent(viewId)}`, Client4.getOptions({
+            method: 'DELETE',
+            headers: this.headers(),
+        }))
     }
 
     async deleteBlock(boardId: string, blockId: string): Promise<Response> {

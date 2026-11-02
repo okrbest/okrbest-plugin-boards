@@ -16,6 +16,7 @@ import CheckIcon from '../../widgets/icons/check'
 import mutator from '../../mutator'
 import {useAppSelector} from '../../store/hooks'
 import {getCurrentView} from '../../store/views'
+import {useViewAccess} from '../../hooks/viewAccess'
 import {getCurrentBoardId} from '../../store/boards'
 
 type Props = {
@@ -25,6 +26,9 @@ type Props = {
 const EmptyCardButton = (props: Props) => {
     const currentView = useAppSelector(getCurrentView)
     const boardId = useAppSelector(getCurrentBoardId)
+
+    // The default template is view configuration: locked on an admin-only view (022).
+    const {locked} = useViewAccess(currentView, 1)
     const intl = useIntl()
 
     return (
@@ -47,6 +51,7 @@ const EmptyCardButton = (props: Props) => {
                                 id: 'ViewHeader.set-default-template',
                                 defaultMessage: 'Set as default',
                             })}
+                            disabled={locked}
                             onClick={async () => {
                                 await mutator.clearDefaultTemplate(boardId, currentView.id, currentView.fields.defaultTemplateId)
                             }}

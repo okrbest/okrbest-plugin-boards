@@ -7,6 +7,8 @@ import {useNavigate, useParams, useLocation} from 'react-router-dom'
 
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {BoardView, createBoardView, IViewType} from '../../blocks/boardView'
+import {useViewAccess} from '../../hooks/viewAccess'
+import {viewAccessMode} from '../../viewAccess'
 import {Block} from '../../blocks/block'
 import {Constants, Permission} from '../../constants'
 import mutator from '../../mutator'
@@ -40,6 +42,14 @@ const ViewTabs = (props: Props): React.JSX.Element => {
     const params = useParams()
     const location = useLocation()
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
+
+    // Who may do what to the active view (022). A private view of mine is
+    // never the board's last shared view, so it is always deletable; a shared
+    // view is deletable only while another shared view remains.
+    const sharedViewCount = views.filter((v) => viewAccessMode(v) !== 'private').length
+    const access = useViewAccess(activeView, sharedViewCount)
+    const canRenameView = !access.locked
+    const canDeleteView = !access.locked && (access.mode === 'private' || sharedViewCount > 1)
 
     const [menuOpen, setMenuOpen] = useState(false)
     const [addMenuOpen, setAddMenuOpen] = useState(false)
@@ -180,6 +190,10 @@ const ViewTabs = (props: Props): React.JSX.Element => {
         const newView = createBoardView(activeView)
         newView.title = `${activeView.title} copy`
         newView.id = Utils.createGuid(IDType.View)
+
+        // A copy is the copier's new view and starts as everyone's, whatever
+        // the source was (022 FR-026).
+        delete newView.fields.accessMode
         mutator.insertBlock(
             newView.boardId,
             newView,
@@ -301,7 +315,8 @@ const ViewTabs = (props: Props): React.JSX.Element => {
                             onDuplicate={handleDuplicate}
                             onDelete={handleDelete}
                             onClose={() => setMenuOpen(false)}
-                            canDelete={views.length > 1}
+                            canDelete={canDeleteView}
+                            canRename={canRenameView}
                         />
                     </div>
                 </RootPortal>

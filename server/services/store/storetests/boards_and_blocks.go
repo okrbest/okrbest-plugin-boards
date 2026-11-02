@@ -697,4 +697,44 @@ func testDuplicateBoard(t *testing.T, store store.Store) {
 		require.Nil(t, members)
 		require.Nil(t, bab)
 	})
+
+	// 022 F-10 · F-12: a copy carries the shared views with their modes and the
+	// copier's own private views, but never another person's private view.
+	t.Run("duplicate leaves other people's private views behind", func(t *testing.T) {
+		viewFields := func(mode string) map[string]interface{} {
+			fields := map[string]interface{}{"viewType": "table"}
+			if mode != "" {
+				fields[model.ViewAccessModeKey] = mode
+			}
+			return fields
+		}
+		_, err := store.CreateBoardsAndBlocks(&model.BoardsAndBlocks{
+			Boards: []*model.Board{{ID: "board-id-4", TeamID: teamID, Type: model.BoardTypeOpen}},
+			Blocks: []*model.Block{
+				{ID: "view-mine-private", BoardID: "board-id-4", ParentID: "board-id-4", Type: model.TypeView, Title: "mine private", Fields: viewFields("private")},
+				{ID: "view-admin", BoardID: "board-id-4", ParentID: "board-id-4", Type: model.TypeView, Title: "admin view", Fields: viewFields("admin")},
+				{ID: "view-public", BoardID: "board-id-4", ParentID: "board-id-4", Type: model.TypeView, Title: "public view", Fields: viewFields("")},
+			},
+		}, userID)
+		require.NoError(t, err)
+		// Inserted by someone else, so the store stamps them as the creator.
+		require.NoError(t, store.InsertBlock(&model.Block{
+			ID: "view-alice-private", BoardID: "board-id-4", ParentID: "board-id-4", Type: model.TypeView,
+			Title: "alice private", Fields: viewFields("private"),
+		}, "alice"))
+
+		bab, _, _, err := store.DuplicateBoard("board-id-4", userID, teamID, false)
+		require.NoError(t, err)
+		require.Len(t, bab.Boards, 1)
+
+		modesByTitle := map[string]model.ViewAccessMode{}
+		for _, block := range bab.Blocks {
+			modesByTitle[block.Title] = model.ViewAccessModeOf(block)
+		}
+		require.Equal(t, map[string]model.ViewAccessMode{
+			"mine private": model.ViewAccessPrivate,
+			"admin view":   model.ViewAccessAdmin,
+			"public view":  model.ViewAccessEveryone,
+		}, modesByTitle)
+	})
 }

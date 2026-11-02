@@ -18,6 +18,7 @@ import {Utils, IDType} from '../../utils'
 import Button from '../../widgets/buttons/button'
 import {Constants, Permission} from '../../constants'
 import {useCanEditCardProperties, useHasCapabilities, useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {useViewAccess} from '../../hooks/viewAccess'
 
 import {dragAndDropRearrange} from '../cardDetail/cardDetailContentsUtility'
 
@@ -62,6 +63,10 @@ const Kanban = (props: Props) => {
 
     // 열을 더하는 일은 select 옵션을 더하는 일이다 (spec U-06).
     const canEditProperties = useCanEditCardProperties(props.board)
+
+    // Column order and the hidden-column "show" are view configuration: on an
+    // admin-only view only a board admin has them (022 U-10).
+    const {locked: viewLocked} = useViewAccess(props.activeView, 1)
     const canEditCardsByCapability = useHasCapabilities(props.board.id, ['canEditCard'])
     const {board, activeView, cards, groupByProperty, visibleGroups, hiddenGroups, hiddenCardsCount} = props
     const [defaultTemplateID, setDefaultTemplateID] = useState<string>()
@@ -193,6 +198,9 @@ const Kanban = (props: Props) => {
                 await Promise.all(awaits)
             })
         } else if (dstOption) {
+            if (viewLocked) {
+                return
+            }
             Utils.log(`ondrop. Header option: ${dstOption.value}, column: ${option?.value}`)
 
             const visibleOptionIds = visibleGroups.map((o) => o.option.id)
@@ -390,7 +398,7 @@ const Kanban = (props: Props) => {
                                 group={group}
                                 activeView={activeView}
                                 intl={props.intl}
-                                readonly={props.readonly}
+                                readonly={props.readonly || viewLocked}
                                 onDrop={(card: Card) => onDropToColumn(group.option, card)}
                             />
                         ))}

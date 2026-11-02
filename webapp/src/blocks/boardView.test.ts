@@ -4,7 +4,7 @@
 
 import {TestBlockFactory} from '../test/testBlockFactory'
 
-import {sortBoardViewsAlphabetically} from './boardView'
+import {createBoardView, sortBoardViewsAlphabetically} from './boardView'
 
 test('boardView: sort with ASCII', async () => {
     const view1 = TestBlockFactory.createBoardView()
@@ -37,4 +37,15 @@ test('boardView: sort with non-latin characters', async () => {
     const views = [view1, view2]
     const sorted = sortBoardViewsAlphabetically(views)
     expect(sorted).toEqual([view2, view1])
+})
+
+test('boardView: createBoardView preserves accessMode', () => {
+    const source = TestBlockFactory.createBoardView()
+    source.fields.accessMode = 'admin'
+
+    const copy = createBoardView(source)
+    expect(copy.fields.accessMode).toBe('admin')
+
+    const fresh = createBoardView()
+    expect(fresh.fields.accessMode).toBeUndefined()
 })

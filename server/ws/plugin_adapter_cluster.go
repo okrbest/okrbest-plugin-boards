@@ -16,6 +16,9 @@ type ClusterMessage struct {
 	UserID      string
 	Payload     map[string]interface{}
 	EnsureUsers []string
+	// ExcludeUsers are left out of a board message on every node, the way
+	// EnsureUsers are added on every node.
+	ExcludeUsers []string
 }
 
 func (pa *PluginAdapter) sendMessageToCluster(clusterMessage *ClusterMessage) {
@@ -55,7 +58,7 @@ func (pa *PluginAdapter) HandleClusterEvent(ev mmModel.PluginClusterEvent) {
 	}
 
 	if clusterMessage.BoardID != "" {
-		pa.sendBoardMessageSkipCluster(clusterMessage.TeamID, clusterMessage.BoardID, clusterMessage.Payload, clusterMessage.EnsureUsers...)
+		pa.deliverBoardMessage(clusterMessage.TeamID, clusterMessage.BoardID, clusterMessage.Payload, clusterMessage.EnsureUsers, clusterMessage.ExcludeUsers)
 		return
 	}
 

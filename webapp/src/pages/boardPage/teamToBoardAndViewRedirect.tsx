@@ -80,21 +80,22 @@ const TeamToBoardAndViewRedirect = (): null => {
 
         let viewID = params.viewId
 
-        if ((!viewID || viewID === '0') && boardId && boardId === params.boardId && boardViews && boardViews.length > 0) {
-            viewID = UserSettings.lastViewId[boardID || '']
-            if (viewID) {
-                UserSettings.setLastViewId(boardID || '', viewID)
-                dispatch(setCurrentView(viewID))
-            } else if (boardViews.length > 0) {
-                viewID = boardViews[0].id
-                UserSettings.setLastViewId(boardID || '', viewID)
-                dispatch(setCurrentView(viewID))
-            }
+        // The views this person can see are the only ones worth landing on. A
+        // remembered last view or an address that names a view outside that
+        // list — another person's private view, a view that just turned
+        // private under us — falls back to the first visible one (022 FR-014).
+        // Before this check an unknown view address rendered an empty board.
+        const viewsLoaded = boardId && boardId === params.boardId && boardViews && boardViews.length > 0
+        const isVisible = (id: string | undefined) => Boolean(id && boardViews.some((v) => v.id === id))
 
-            if (viewID) {
-                const newPath = Utils.buildBoardPath(location.pathname, {...params, viewId: viewID})
-                navigate(newPath, {replace: true})
-            }
+        if (viewsLoaded && (!viewID || viewID === '0' || !isVisible(viewID))) {
+            const remembered = UserSettings.lastViewId[boardID || '']
+            viewID = isVisible(remembered) ? remembered : boardViews[0].id
+            UserSettings.setLastViewId(boardID || '', viewID)
+            dispatch(setCurrentView(viewID))
+
+            const newPath = Utils.buildBoardPath(location.pathname, {...params, viewId: viewID})
+            navigate(newPath, {replace: true})
         }
     }, [teamId, params.boardId, params.viewId, categories.length, boardViews.length, boardId, boards, dispatch, location.pathname, navigate, params])
 

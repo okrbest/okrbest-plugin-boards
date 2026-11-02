@@ -29,6 +29,8 @@ import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
 import AddViewTourStep from '../onboardingTour/addView/add_view'
 import {getCurrentCard, getCurrentViewCardsWithSubCards} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
+import {viewAccessMode} from '../../viewAccess'
+import {useViewAccess} from '../../hooks/viewAccess'
 
 import ViewTabs from './viewTabs'
 import NewCardButton from './newCardButton'
@@ -36,6 +38,7 @@ import ViewHeaderPropertiesMenu from './viewHeaderPropertiesMenu'
 import ViewHeaderGroupByMenu from './viewHeaderGroupByMenu'
 import ViewHeaderDisplayByMenu from './viewHeaderDisplayByMenu'
 import ViewHeaderSortMenu from './viewHeaderSortMenu'
+import ViewHeaderAccessMenu from './viewHeaderAccessMenu'
 import ViewHeaderActionsMenu from './viewHeaderActionsMenu'
 import ViewHeaderSearch from './viewHeaderSearch'
 import FilterPanel from './filterPanel'
@@ -70,8 +73,18 @@ const ViewHeader = (props: Props) => {
     const withGroupBy = activeView.fields.viewType === 'board' || activeView.fields.viewType === 'table'
     const withDisplayBy = activeView.fields.viewType === 'calendar'
     const withSortBy = activeView.fields.viewType !== 'calendar'
-    const canManageViewOptions = canEditBoardProperties || canManageBoard
-    const noPermissionMessage = intl.formatMessage({
+    // Views the others can see. The access menu needs it to know whether the
+    // current view is the last one that is not somebody's private view (022).
+    const sharedViewCount = views.filter((v) => viewAccessMode(v) !== 'private').length
+
+    // An admin-only view keeps its configuration for board admins (022). The
+    // menus stay visible but disabled, and the notice says why.
+    const {locked: viewLocked} = useViewAccess(activeView, sharedViewCount)
+    const canManageViewOptions = (canEditBoardProperties || canManageBoard) && !viewLocked
+    const noPermissionMessage = viewLocked ? intl.formatMessage({
+        id: 'ViewHeader.admin-only-view',
+        defaultMessage: 'Only board admins can change this view.',
+    }) : intl.formatMessage({
         id: 'ViewHeader.permission-required',
         defaultMessage: 'Insufficient permissions. Ask a board admin for edit access.',
     })
@@ -282,6 +295,14 @@ const ViewHeader = (props: Props) => {
                         disabledReason={noPermissionMessage}
                     />
                     }
+
+                    {/* Access — who sees the view and who may change it (022) */}
+
+                    <ViewHeaderAccessMenu
+                        activeView={activeView}
+                        sharedViewCount={sharedViewCount}
+                        readonly={props.readonly}
+                    />
                 </>
                 }
 

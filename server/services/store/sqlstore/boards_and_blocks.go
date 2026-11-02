@@ -169,11 +169,15 @@ func (s *SQLStore) duplicateBoard(db sq.BaseRunner, boardID string, userID strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	// Comments are not copied, and neither is another person's private view
+	// (022 FR-027): the copy would hand them its configuration as their own.
+	// Shared views keep their access mode.
 	newBlocks := []*model.Block{}
 	for _, b := range blocks {
-		if b.Type != model.TypeComment {
-			newBlocks = append(newBlocks, b)
+		if b.Type == model.TypeComment || model.ViewHiddenFrom(b, userID) {
+			continue
 		}
+		newBlocks = append(newBlocks, b)
 	}
 	bab.Blocks = newBlocks
 

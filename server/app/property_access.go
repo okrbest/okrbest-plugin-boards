@@ -162,6 +162,17 @@ func (a *App) FilterBlockRecipients(userIDs []string, block *model.Block) []stri
 		return userIDs
 	}
 
+	// A private view is heard about by its creator alone, whether or not the
+	// board has card rules (022). Judged here, before the rules' early return.
+	if block.Type == model.TypeView && model.ViewAccessModeOf(block) == model.ViewAccessPrivate {
+		for _, userID := range dedupeStrings(userIDs) {
+			if userID == block.CreatedBy {
+				return []string{userID}
+			}
+		}
+		return []string{}
+	}
+
 	settings, err := model.PropertyAccessSettingsFromProperties(board.Properties)
 	if err != nil || settings == nil || !settings.Enabled {
 		return userIDs

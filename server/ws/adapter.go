@@ -48,6 +48,11 @@ type BlockAccessFilter interface {
 type Adapter interface {
 	BroadcastBlockChange(teamID string, block *model.Block)
 	BroadcastBlockDelete(teamID, blockID, boardID string)
+	// BroadcastBlockDeleteExcept is BroadcastBlockDelete that leaves the named
+	// users out. A shared view that turned private is announced this way: the
+	// creator keeps the view and gets the real update, everyone else gets a
+	// tombstone that carries nothing but the ID (022).
+	BroadcastBlockDeleteExcept(teamID, blockID, boardID string, exceptUserIDs ...string)
 	BroadcastBoardChange(teamID string, board *model.Board)
 	BroadcastBoardDelete(teamID, boardID string)
 	BroadcastMemberChange(teamID, boardID string, member *model.BoardMember)

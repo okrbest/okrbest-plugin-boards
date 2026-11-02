@@ -357,3 +357,162 @@ func TestFullVisibilityDoesNotGrantBoardEntry(t *testing.T) {
 	require.Equal(t, http.StatusForbidden, rec.Code,
 		"the board bar is checked before any card is judged")
 }
+
+// View access modes (022): the write gate is the app's, but the API is the path
+// every client takes, so the two outcomes a client sees are pinned here —
+// specs/022-view-permission/contracts/view-write-gate.md G-03 and G-06.
+const (
+	viewAccessBoardID = "board-view-access"
+	viewAccessViewID  = "view-admin-only"
+)
+
+func adminOnlyView() *model.Block {
+	return &model.Block{
+		ID: viewAccessViewID, BoardID: viewAccessBoardID, ParentID: viewAccessBoardID, Type: model.TypeView,
+		CreatedBy: "creator",
+		Fields: map[string]interface{}{
+			"viewType":              "table",
+			model.ViewAccessModeKey: "admin",
+			"cardOrder":             []interface{}{"card-1"},
+		},
+	}
+}
+
+func TestPatchBlockAdminOnlyView(t *testing.T) {
+	vars := map[string]string{"boardID": viewAccessBoardID, "blockID": viewAccessViewID}
+	path := "/boards/" + viewAccessBoardID + "/blocks/" + viewAccessViewID
+
+	t.Run("G-03 an editor's filter change is refused", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", viewAccessBoardID)
+		th.Permissions.denyBoardPermission("editor", viewAccessBoardID, model.PermissionManageBoardRoles)
+
+		th.Store.EXPECT().GetBoard(viewAccessBoardID).Return(&model.Board{ID: viewAccessBoardID, TeamID: ruleTeamID}, nil).AnyTimes()
+		th.Store.EXPECT().GetBlock(viewAccessViewID).Return(adminOnlyView(), nil).AnyTimes()
+
+		body := []byte(`{"updatedFields":{"sortOptions":[]}}`)
+		rec := th.callHandlerWithBody(th.API.handlePatchBlock, http.MethodPatch, path, "editor", vars, body)
+
+		require.Equal(t, http.StatusForbidden, rec.Code, rec.Body.String())
+	})
+
+	t.Run("G-06 an editor's card order change goes through", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("editor", viewAccessBoardID)
+		th.Permissions.denyBoardPermission("editor", viewAccessBoardID, model.PermissionManageBoardRoles)
+
+		th.Store.EXPECT().GetBoard(viewAccessBoardID).Return(&model.Board{ID: viewAccessBoardID, TeamID: ruleTeamID}, nil).AnyTimes()
+		th.Store.EXPECT().GetBlock(viewAccessViewID).Return(adminOnlyView(), nil).AnyTimes()
+		th.Store.EXPECT().PatchBlock(viewAccessViewID, gomock.Any(), "editor").Return(nil)
+
+		body := []byte(`{"updatedFields":{"cardOrder":["card-2","card-1"]}}`)
+		rec := th.callHandlerWithBody(th.API.handlePatchBlock, http.MethodPatch, path, "editor", vars, body)
+
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	})
+}
+
+// Private views (022): another person's private view never leaves the server
+// and cannot be written by anyone but its creator —
+// specs/022-view-permission/contracts/private-view-filter.md F-01 · F-02 and
+// view-write-gate.md G-18, seen from the API.
+func privateViewOf() *model.Block {
+	return &model.Block{
+		ID: "view-private", BoardID: viewAccessBoardID, ParentID: viewAccessBoardID, Type: model.TypeView,
+		Title: "alice's own", CreatedBy: "alice",
+		Fields: map[string]interface{}{"viewType": "table", model.ViewAccessModeKey: "private"},
+	}
+}
+
+func sharedViewOnBoard() *model.Block {
+	return &model.Block{
+		ID: "view-shared", BoardID: viewAccessBoardID, ParentID: viewAccessBoardID, Type: model.TypeView,
+		Title: "shared", CreatedBy: "alice", Fields: map[string]interface{}{"viewType": "board"},
+	}
+}
+
+func decodeBlockIDs(t *testing.T, body []byte) []string {
+	t.Helper()
+	var blocks []*model.Block
+	require.NoError(t, json.Unmarshal(body, &blocks))
+	ids := make([]string, 0, len(blocks))
+	for _, block := range blocks {
+		ids = append(ids, block.ID)
+	}
+	return ids
+}
+
+func TestGetBlocksHidesOthersPrivateViews(t *testing.T) {
+	card := &model.Block{ID: "card-1", BoardID: viewAccessBoardID, ParentID: viewAccessBoardID, Type: model.TypeCard, Fields: map[string]interface{}{}}
+	vars := map[string]string{"boardID": viewAccessBoardID}
+
+	t.Run("F-01 the whole board leaves out another person's private view", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("bob", viewAccessBoardID)
+		th.Store.EXPECT().GetBoard(viewAccessBoardID).Return(&model.Board{ID: viewAccessBoardID, TeamID: ruleTeamID}, nil).AnyTimes()
+		th.Store.EXPECT().GetBlocksForBoard(viewAccessBoardID).Return([]*model.Block{privateViewOf(), sharedViewOnBoard(), card}, nil)
+
+		rec := th.callHandler(th.API.handleGetBlocks, "/boards/"+viewAccessBoardID+"/blocks?all=true", "bob", vars)
+
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		require.Equal(t, []string{"view-shared", "card-1"}, decodeBlockIDs(t, rec.Body.Bytes()))
+	})
+
+	t.Run("F-02 asking for it by ID returns nothing", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("bob", viewAccessBoardID)
+		th.Store.EXPECT().GetBoard(viewAccessBoardID).Return(&model.Board{ID: viewAccessBoardID, TeamID: ruleTeamID}, nil).AnyTimes()
+		th.Store.EXPECT().GetBlock("view-private").Return(privateViewOf(), nil).AnyTimes()
+
+		rec := th.callHandler(th.API.handleGetBlocks, "/boards/"+viewAccessBoardID+"/blocks?block_id=view-private", "bob", vars)
+
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		require.Empty(t, decodeBlockIDs(t, rec.Body.Bytes()))
+	})
+
+	t.Run("F-03 the creator receives it", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("alice", viewAccessBoardID)
+		th.Store.EXPECT().GetBoard(viewAccessBoardID).Return(&model.Board{ID: viewAccessBoardID, TeamID: ruleTeamID}, nil).AnyTimes()
+		th.Store.EXPECT().GetBlocksForBoard(viewAccessBoardID).Return([]*model.Block{privateViewOf(), sharedViewOnBoard(), card}, nil)
+
+		rec := th.callHandler(th.API.handleGetBlocks, "/boards/"+viewAccessBoardID+"/blocks?all=true", "alice", vars)
+
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		require.Equal(t, []string{"view-private", "view-shared", "card-1"}, decodeBlockIDs(t, rec.Body.Bytes()))
+	})
+}
+
+func TestPrivateViewWritesAreRefusedThroughTheAPI(t *testing.T) {
+	vars := map[string]string{"boardID": viewAccessBoardID, "blockID": "view-private"}
+	path := "/boards/" + viewAccessBoardID + "/blocks/view-private"
+
+	t.Run("G-18 patch by another editor", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("bob", viewAccessBoardID)
+		th.Store.EXPECT().GetBoard(viewAccessBoardID).Return(&model.Board{ID: viewAccessBoardID, TeamID: ruleTeamID}, nil).AnyTimes()
+		th.Store.EXPECT().GetBlock("view-private").Return(privateViewOf(), nil).AnyTimes()
+
+		rec := th.callHandlerWithBody(th.API.handlePatchBlock, http.MethodPatch, path, "bob", vars, []byte(`{"updatedFields":{"sortOptions":[]}}`))
+
+		require.Equal(t, http.StatusForbidden, rec.Code, rec.Body.String())
+	})
+
+	t.Run("G-18 delete by another editor", func(t *testing.T) {
+		th, tearDown := setupAPITestHelper(t)
+		defer tearDown()
+		th.Permissions.allowBoard("bob", viewAccessBoardID)
+		th.Store.EXPECT().GetBoard(viewAccessBoardID).Return(&model.Board{ID: viewAccessBoardID, TeamID: ruleTeamID}, nil).AnyTimes()
+		th.Store.EXPECT().GetBlock("view-private").Return(privateViewOf(), nil).AnyTimes()
+
+		rec := th.callHandlerWithBody(th.API.handleDeleteBlock, http.MethodDelete, path, "bob", vars, nil)
+
+		require.Equal(t, http.StatusForbidden, rec.Code, rec.Body.String())
+	})
+}
