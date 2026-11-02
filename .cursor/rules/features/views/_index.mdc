@@ -49,9 +49,25 @@ globs: ["webapp/src/components/kanban/**", "webapp/src/components/table/**", "we
     cardOrder: string[]          // 수동 카드 순서
     columnWidths: Record<string, number> // 컬럼 너비 (Table용)
     dateDisplayPropertyId: string // 날짜 프로퍼티 (Calendar용)
+    accessMode?: 'everyone' | 'admin' | 'private' // 뷰 권한 모드 (022). 없으면 everyone
   }
 }
 ```
+
+## 뷰 권한 모드 (022)
+
+뷰마다 `fields.accessMode`로 누가 보고 누가 구성을 바꾸는지 정한다. 값이 없으면 `everyone`이다.
+
+| 모드 | 누가 보는가 | 누가 구성(속성·그룹화·필터·정렬·열 숨김·계산식·기본 템플릿·이름·삭제)을 바꾸는가 |
+|---|---|---|
+| `everyone` | 보드 접근자 모두 | 보드 편집 권한자 모두 |
+| `admin` | 보드 접근자 모두 | 관리자(`PermissionManageBoardRoles`)만. `cardOrder`만 바꾸는 patch는 편집 권한자에게 연다 |
+| `private` | 만든 사람(`createdBy`)만 | 만든 사람만. 다른 사용자에게는 조회·websocket에서 걸러진다 |
+
+- 서버 판정: `server/app/view_access.go`의 `requireViewWritePermission`(patch · delete · duplicate · undelete · upsert 여섯 경로), 필터는 `FilterBlocksForUser` · `FilterBlockRecipients` 앞단.
+- 관리자용 개인 뷰 목록: `GET/DELETE /api/v2/boards/{boardID}/views/private[/{viewID}]` (`server/api/views.go`).
+- webapp: `webapp/src/viewAccess.ts`(Go와 쌍), `hooks/viewAccess.ts`의 `useViewAccess`, 권한 메뉴 `viewHeader/viewHeaderAccessMenu.tsx`, 공유 위젯 `shareBoard/privateViewsSection.tsx`.
+- 명세: `specs/022-view-permission/`.
 
 ## 필터링
 
