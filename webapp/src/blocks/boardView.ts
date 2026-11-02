@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 
 
+import type {ViewAccessMode} from '../viewAccess'
+
 import {Block, createBlock} from './block'
 import {FilterGroup, createFilterGroup} from './filterGroup'
 
@@ -28,6 +30,8 @@ type BoardViewFields = {
     columnCalculations: Record<string, string>
     kanbanCalculations: Record<string, KanbanCalculationFields>
     defaultTemplateId: string
+    // 누가 보고 누가 구성을 바꾸는가. 없으면 공용 (viewAccess.ts).
+    accessMode?: ViewAccessMode
 }
 
 type BoardView = Block & {
@@ -53,6 +57,7 @@ function createBoardView(block?: Block): BoardView {
             columnCalculations: {...(block?.fields.columnCalculations) || {}},
             kanbanCalculations: {...(block?.fields.kanbanCalculations) || {}},
             defaultTemplateId: block?.fields.defaultTemplateId || '',
+            ...(block?.fields.accessMode === undefined ? {} : {accessMode: block.fields.accessMode}),
         },
     }
 }

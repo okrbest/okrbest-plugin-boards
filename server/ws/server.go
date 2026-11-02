@@ -501,6 +501,43 @@ func (ws *Server) BroadcastBlockDelete(teamID, blockID, boardID string) {
 	ws.BroadcastBlockChange(teamID, block)
 }
 
+// BroadcastBlockDeleteExcept broadcasts an ID-only delete message to every
+// listener but the excluded users (022).
+func (ws *Server) BroadcastBlockDeleteExcept(teamID, blockID, boardID string, exceptUserIDs ...string) {
+	now := utils.GetMillis()
+	block := &model.Block{}
+	block.ID = blockID
+	block.BoardID = boardID
+	block.UpdateAt = now
+	block.DeleteAt = now
+
+	excluded := make(map[string]bool, len(exceptUserIDs))
+	for _, userID := range exceptUserIDs {
+		excluded[userID] = true
+	}
+
+	message := UpdateBlockMsg{
+		Action: websocketActionUpdateBlock,
+		TeamID: teamID,
+		Block:  block,
+	}
+
+	for _, listener := range ws.getListenersForTeamAndBoard(teamID, boardID) {
+		if excluded[listener.userID] {
+			continue
+		}
+		ws.logger.Debug("Broadcast block delete except",
+			mlog.String("teamID", teamID),
+			mlog.String("blockID", blockID),
+			mlog.Stringer("remoteAddr", listener.conn.RemoteAddr()),
+		)
+		if err := listener.WriteJSON(message); err != nil {
+			ws.logger.Error("broadcast error", mlog.Err(err))
+			listener.conn.Close()
+		}
+	}
+}
+
 // BroadcastBlockChange broadcasts update messages to clients.
 func (ws *Server) BroadcastBlockChange(teamID string, block *model.Block) {
 	blockIDsToNotify := []string{block.ID, block.ParentID}

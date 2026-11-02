@@ -20,6 +20,7 @@ import MenuWrapper from '../../widgets/menuWrapper'
 import Editable from '../../widgets/editable'
 import Label from '../../widgets/label'
 import {useCanEditCardProperties} from '../../hooks/permissions'
+import {useViewAccess} from '../../hooks/viewAccess'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
@@ -57,6 +58,12 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
     // 바꾸는 일이라 아래 메뉴에 그대로 남는다.
     const canEditProperties = useCanEditCardProperties(board)
     const canEditOption = groupByProperty?.type === 'select' && group.option.id && canEditProperties
+
+    // Column order and column hiding are view configuration: on an admin-only
+    // view only a board admin has them (022 U-10). Name, colour and delete
+    // stay with the 010 lock above.
+    const {locked: viewLocked} = useViewAccess(props.activeView, 1)
+    const canArrangeColumns = canEditProperties && !viewLocked
     const isPersonGroup = Boolean(groupByProperty && propsRegistry.get(groupByProperty.type).isPersonLike)
 
     const headerRef = useRef<HTMLDivElement>(null)
@@ -82,7 +89,7 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
         setGroupTitle(group.option.value)
     }, [group.option.value])
 
-    if (canEditProperties) {
+    if (canArrangeColumns) {
         drop(drag(headerRef))
     }
 
@@ -100,7 +107,7 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
             ref={headerRef}
             style={{opacity: isDragging ? 0.5 : 1}}
             className={className}
-            draggable={!props.readonly && canEditProperties}
+            draggable={!props.readonly && canArrangeColumns}
         >
             {!group.option.id &&
                 <Label
@@ -176,12 +183,14 @@ export default function KanbanColumnHeader(props: Props): React.JSX.Element {
                         <MenuWrapper>
                             <IconButton icon={<OptionsIcon/>}/>
                             <Menu>
-                                <Menu.Text
-                                    id='hide'
-                                    icon={<HideIcon/>}
-                                    name={intl.formatMessage({id: 'BoardComponent.hide', defaultMessage: 'Hide'})}
-                                    onClick={() => mutator.hideViewColumn(board.id, activeView, group.option.id || '')}
-                                />
+                                {!viewLocked &&
+                                    <Menu.Text
+                                        id='hide'
+                                        icon={<HideIcon/>}
+                                        name={intl.formatMessage({id: 'BoardComponent.hide', defaultMessage: 'Hide'})}
+                                        onClick={() => mutator.hideViewColumn(board.id, activeView, group.option.id || '')}
+                                    />
+                                }
                                 {canEditOption &&
                                     <>
                                         <Menu.Text

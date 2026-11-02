@@ -68,6 +68,11 @@ func (a *App) FilterBlocksForUser(userID, boardID string, blocks []*model.Block)
 		return nil, err
 	}
 
+	// Another person's private view is kept from everyone whatever the card
+	// rules say (022), so it goes before the evaluator's early return: most
+	// boards have no card rules at all.
+	blocks = withoutHiddenViews(blocks, userID)
+
 	evaluator, err := a.newPropertyAccessEvaluator(userID, board)
 	if err != nil {
 		return nil, err
@@ -379,6 +384,19 @@ func projectPatch(block *model.Block, patch *model.BlockPatch) *model.Block {
 	return patch.Patch(&projected)
 }
 
+// withoutHiddenViews drops the private views userID did not create. The rest
+// of the list — cards, content, shared views — is returned untouched, in order.
+func withoutHiddenViews(blocks []*model.Block, userID string) []*model.Block {
+	kept := blocks[:0:0]
+	for _, block := range blocks {
+		if model.ViewHiddenFrom(block, userID) {
+			continue
+		}
+		kept = append(kept, block)
+	}
+	return kept
+}
+
 // deletedBlockMessage is the block a deletion is announced with.
 //
 // BroadcastBlockDelete builds this message from an ID alone, which leaves the
@@ -508,9 +526,37 @@ func (a *App) DuplicateBlock(boardID string, blockID string, userID string, asTe
 		return nil, permErr
 	}
 
+	// The source is read before the copy is made: a copy of a private view
+	// would land in the requester's hands carrying everything the view shows.
+	source, err := a.store.GetBlock(blockID)
+	if err != nil && !model.IsErrNotFound(err) {
+		return nil, err
+	}
+	if permErr := a.requireViewWritePermission(userID, source, nil, board, viewWriteDuplicate); permErr != nil {
+		return nil, permErr
+	}
+
 	blocks, err := a.store.DuplicateBlock(boardID, blockID, userID, asTemplate)
 	if err != nil {
 		return nil, err
+	}
+
+	// A copied view is a new view of the person who copied it, and it starts as
+	// everyone's whatever the source was (022 FR-026). An admin-only view copied
+	// by an editor would otherwise become an admin-only view they own but may
+	// not change.
+	for _, copied := range blocks {
+		if copied == nil || copied.Type != model.TypeView {
+			continue
+		}
+		if _, carries := copied.Fields[model.ViewAccessModeKey]; !carries {
+			continue
+		}
+		clear := &model.BlockPatch{DeletedFields: []string{model.ViewAccessModeKey}}
+		if patchErr := a.store.PatchBlock(copied.ID, clear, userID); patchErr != nil {
+			return nil, patchErr
+		}
+		delete(copied.Fields, model.ViewAccessModeKey)
 	}
 
 	_, err = a.CopyAndUpdateCardFiles(boardID, userID, blocks, asTemplate)
@@ -560,6 +606,11 @@ func (a *App) PatchBlockAndNotify(blockID string, blockPatch *model.BlockPatch, 
 		return nil, permErr
 	}
 
+	// A view answers to its access mode (022): who may change what it shows.
+	if permErr := a.requireViewWritePermission(modifiedByID, oldBlock, blockPatch, board, viewWritePatch); permErr != nil {
+		return nil, permErr
+	}
+
 	err = a.store.PatchBlock(blockID, blockPatch, modifiedByID)
 	if err != nil {
 		return nil, err
@@ -573,6 +624,7 @@ func (a *App) PatchBlockAndNotify(blockID string, blockPatch *model.BlockPatch, 
 	a.blockChangeNotifier.Enqueue(func() error {
 		// broadcast on websocket
 		a.wsAdapter.BroadcastBlockChange(board.TeamID, block)
+		a.announceViewTurnedPrivate(board.TeamID, oldBlock, block)
 
 		// broadcast on webhooks
 		a.webhook.NotifyUpdate(block)
@@ -584,6 +636,23 @@ func (a *App) PatchBlockAndNotify(blockID string, blockPatch *model.BlockPatch, 
 		return nil
 	})
 	return block, nil
+}
+
+// announceViewTurnedPrivate tells everyone but the creator to forget a view
+// that just became private (022 FR-013).
+//
+// The block change itself only reaches the creator — the recipient filter keeps
+// a private view from everyone else — so the others would keep the shared copy
+// they already hold. An ID-only tombstone, sent to the audience minus the
+// creator, removes it without carrying any of what the view shows.
+func (a *App) announceViewTurnedPrivate(teamID string, before, after *model.Block) {
+	if before == nil || after == nil || after.Type != model.TypeView {
+		return
+	}
+	if model.ViewAccessModeOf(before) == model.ViewAccessPrivate || model.ViewAccessModeOf(after) != model.ViewAccessPrivate {
+		return
+	}
+	a.wsAdapter.BroadcastBlockDeleteExcept(teamID, after.ID, after.BoardID, after.CreatedBy)
 }
 
 func (a *App) PatchBlocks(teamID string, blockPatches *model.BlockPatchBatch, modifiedByID string) error {
@@ -639,6 +708,10 @@ func (a *App) PatchBlocksAndNotify(teamID string, blockPatches *model.BlockPatch
 		if permErr := a.requireConditionWrite(modifiedByID, oldBlock, projectPatch(oldBlock, patchByID[oldBlock.ID]), board); permErr != nil {
 			return permErr
 		}
+
+		if permErr := a.requireViewWritePermission(modifiedByID, oldBlock, patchByID[oldBlock.ID], board, viewWritePatch); permErr != nil {
+			return permErr
+		}
 	}
 
 	if err := a.store.PatchBlocks(blockPatches, modifiedByID); err != nil {
@@ -653,6 +726,9 @@ func (a *App) PatchBlocksAndNotify(teamID string, blockPatches *model.BlockPatch
 				return err
 			}
 			a.wsAdapter.BroadcastBlockChange(teamID, newBlock)
+			if i < len(oldBlocks) {
+				a.announceViewTurnedPrivate(teamID, oldBlocks[i], newBlock)
+			}
 			a.webhook.NotifyUpdate(newBlock)
 			if !disableNotify {
 				a.notifyBlockChanged(notify.Update, newBlock, oldBlocks[i], modifiedByID)
@@ -732,6 +808,22 @@ func (a *App) InsertBlocksAndNotify(blocks []*model.Block, modifiedByID string, 
 		existingBlock, checkErr := a.store.GetBlock(block.ID)
 		if checkErr != nil && !model.IsErrNotFound(checkErr) {
 			return nil, checkErr
+		}
+
+		// Re-posting a view under its own ID is a write to the stored view, so
+		// it is judged like a patch carrying the incoming title and fields. A
+		// view that does not exist yet answers only for the mode it claims.
+		// Views arrive one per request, so judging here — before this block's
+		// insert — is judging before anything of the view is stored.
+		if existingBlock != nil && existingBlock.Type == model.TypeView {
+			upsert := &model.BlockPatch{Title: &block.Title, UpdatedFields: block.Fields}
+			if permErr := a.requireViewWritePermission(modifiedByID, existingBlock, upsert, board, viewWriteUpsert); permErr != nil {
+				return nil, permErr
+			}
+		} else if existingBlock == nil {
+			if permErr := a.requireViewInsertPermission(modifiedByID, block, board); permErr != nil {
+				return nil, permErr
+			}
 		}
 
 		if existingBlock == nil && (block.Type == "image" || block.Type == "attachment") {
@@ -833,18 +925,31 @@ func (a *App) DeleteBlockAndNotify(blockID string, modifiedBy string, disableNot
 		return permErr
 	}
 
+	if permErr := a.requireViewWritePermission(modifiedBy, block, nil, board, viewWriteDelete); permErr != nil {
+		return permErr
+	}
+
+	return a.deleteBlockUnchecked(block, board, modifiedBy, disableNotify)
+}
+
+// deleteBlockUnchecked is DeleteBlockAndNotify past its permission gates: the
+// delete itself, its cascade and its announcement. DeleteBlockAndNotify is the
+// only caller that has asked the gates; DeletePrivateViewAsAdmin is the one
+// caller allowed to skip them.
+func (a *App) deleteBlockUnchecked(block *model.Block, board *model.Board, modifiedBy string, disableNotify bool) error {
+	blockID := block.ID
+
 	// Sub-cards are deleted along with their parent. Left behind, they keep a
 	// parentCardId pointing at a card that no longer exists, and the table view
 	// drops them entirely: they are neither top-level rows nor children of any
 	// rendered row.
 	if block.Type == model.TypeCard {
-		if err = a.deleteSubCards(blockID, modifiedBy); err != nil {
+		if err := a.deleteSubCards(blockID, modifiedBy); err != nil {
 			return err
 		}
 	}
 
-	err = a.store.DeleteBlock(blockID, modifiedBy)
-	if err != nil {
+	if err := a.store.DeleteBlock(blockID, modifiedBy); err != nil {
 		return err
 	}
 
@@ -906,6 +1011,18 @@ func (a *App) UndeleteBlock(blockID string, modifiedBy string) (*model.Block, er
 	if len(blocks) == 0 {
 		// undeleting non-existing block not considered an error
 		return nil, nil
+	}
+
+	// A view comes back under the mode it was deleted with, so the gate is asked
+	// before the restore. Other block types keep the path they had.
+	if blocks[0].Type == model.TypeView {
+		viewBoard, boardErr := a.store.GetBoard(blocks[0].BoardID)
+		if boardErr != nil {
+			return nil, boardErr
+		}
+		if permErr := a.requireViewWritePermission(modifiedBy, blocks[0], nil, viewBoard, viewWriteUndelete); permErr != nil {
+			return nil, permErr
+		}
 	}
 
 	err = a.store.UndeleteBlock(blockID, modifiedBy)

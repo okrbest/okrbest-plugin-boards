@@ -10,10 +10,14 @@ type Props = {
     onDelete: () => void
     onClose: () => void
     canDelete: boolean
+    // Renaming is view configuration: an admin-only view hides it from
+    // everyone but a board admin (022). Default true keeps old callers whole.
+    canRename?: boolean
 }
 
 const ViewTabMenu = (props: Props): React.JSX.Element => {
     const {onRename, onDuplicate, onDelete, onClose, canDelete} = props
+    const canRename = props.canRename ?? true
     const intl = useIntl()
     const menuRef = useRef<HTMLDivElement>(null)
 
@@ -32,16 +36,18 @@ const ViewTabMenu = (props: Props): React.JSX.Element => {
             className='ViewTabMenu'
             ref={menuRef}
         >
-            <div
-                className='ViewTabMenu__item'
-                onClick={(e) => {
-                    e.stopPropagation()
-                    onRename()
-                    onClose()
-                }}
-            >
-                {intl.formatMessage({id: 'ViewTabMenu.rename', defaultMessage: 'Rename'})}
-            </div>
+            {canRename && (
+                <div
+                    className='ViewTabMenu__item'
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onRename()
+                        onClose()
+                    }}
+                >
+                    {intl.formatMessage({id: 'ViewTabMenu.rename', defaultMessage: 'Rename'})}
+                </div>
+            )}
             <div
                 className='ViewTabMenu__item'
                 onClick={(e) => {

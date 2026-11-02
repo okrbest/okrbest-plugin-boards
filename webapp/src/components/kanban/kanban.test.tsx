@@ -320,6 +320,46 @@ describe('src/component/kanban/kanban', () => {
             expect(mockedChangeViewCardOrder).toBeCalled()
         })
     })
+    // 022 U-10 · W-17 — on an admin-only view an editor cannot bring a hidden
+    // column back; the "Show" menu of the hidden column is disabled.
+    test('hidden column show is disabled for an editor on an admin-only view', () => {
+        const lockedView = TestBlockFactory.createBoardView(board)
+        lockedView.createdBy = 'someone-else'
+        lockedView.fields.accessMode = 'admin'
+        const editorStore = mockStateStore([], {
+            ...state,
+            boards: {
+                ...state.boards,
+                myBoardMemberships: {board_id_1: {userId: 'user_id_1', schemeEditor: true}},
+            },
+            views: {views: {lockedView}, current: 'lockedView'},
+        })
+        const {container} = render(wrapDNDIntl(
+            <ReduxProvider store={editorStore}>
+                <Kanban
+                    board={board}
+                    activeView={lockedView}
+                    cards={[card1, card2]}
+                    groupByProperty={groupProperty}
+                    visibleGroups={[{option: optionQ1, cards: [card1, card2]}]}
+                    hiddenGroups={[{option: optionQ3, cards: []}]}
+                    selectedCardIds={[]}
+                    readonly={false}
+                    onCardClicked={jest.fn()}
+                    addCard={jest.fn()}
+                    addCardFromTemplate={jest.fn()}
+                    showCard={jest.fn()}
+                    hiddenCardsCount={0}
+                    showHiddenCardCountNotification={jest.fn()}
+                />
+            </ReduxProvider>,
+        ))
+
+        const hiddenMenu = container.querySelector('.octo-board-hidden-item .MenuWrapper')
+        expect(hiddenMenu).not.toBeNull()
+        expect(hiddenMenu).toHaveClass('disabled')
+    })
+
     test('return kanban and change card column to hidden column', async () => {
         const {container} = render(wrapDNDIntl(
             <ReduxProvider store={store}>

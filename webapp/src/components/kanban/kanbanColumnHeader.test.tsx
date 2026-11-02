@@ -35,6 +35,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         color: 'propColorDefault',
     }
     const state = {
+        users: {me: {id: 'user_id_1', props: {}}},
         teams: {
             current: {id: 'team-id'},
         },
@@ -258,6 +259,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
             return {
                 locked,
                 store: mockStateStore([], {
+                    users: {me: {id: 'user_id_1', props: {}}},
                     teams: {current: {id: 'team-id'}},
                     boards: {
                         current: locked.id,
@@ -315,5 +317,63 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
 
             expect(screen.getByText('Delete')).toBeDefined()
         })
+    })
+})
+
+// 022 U-10 · W-17 — on an admin-only view an editor can neither drag a column
+// nor hide it. Column name, colour and delete follow the 010 lock as before.
+describe('src/components/kanban/kanbanColumnHeader admin-only view', () => {
+    const intl = createIntl({locale: 'en-us'})
+    const board = TestBlockFactory.createBoard()
+    const lockedView = TestBlockFactory.createBoardView(board)
+    lockedView.createdBy = 'someone-else'
+    lockedView.fields.accessMode = 'admin'
+    const option: IPropertyOption = {id: 'id1', value: 'Title', color: 'propColorDefault'}
+
+    const renderHeader = (membership: Record<string, unknown>) => render(wrapDNDIntl(
+        <ReduxProvider store={mockStateStore([], {
+            users: {me: {id: 'user_id_1', props: {}}},
+            teams: {current: {id: 'team-id'}},
+            boards: {
+                current: board.id,
+                boards: {[board.id]: board},
+                myBoardMemberships: {[board.id]: {userId: 'user_id_1', ...membership}},
+            },
+            views: {current: lockedView.id, views: {[lockedView.id]: lockedView}},
+        })}
+        >
+            <KanbanColumnHeader
+                board={board}
+                activeView={lockedView}
+                group={{option, cards: []}}
+                groupByProperty={board.cardProperties[0]}
+                intl={intl}
+                readonly={false}
+                addCard={jest.fn()}
+                addCardFromTemplate={jest.fn()}
+                defaultTemplateID={'1'}
+                propertyNameChanged={jest.fn()}
+                onDropToColumn={jest.fn()}
+                calculationMenuOpen={false}
+                onCalculationMenuOpen={jest.fn()}
+                onCalculationMenuClose={jest.fn()}
+            />
+        </ReduxProvider>,
+    ))
+
+    test('W-17 an editor cannot drag the column or hide it', async () => {
+        const {container} = renderHeader({userId: 'user_id_1', schemeEditor: true})
+
+        expect(container.querySelector('.KanbanColumnHeader')?.getAttribute('draggable')).toBe('false')
+        await userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+        expect(screen.queryByText('Hide')).toBeNull()
+    })
+
+    test('a board admin drags and hides', async () => {
+        const {container} = renderHeader({userId: 'user_id_1', schemeAdmin: true})
+
+        expect(container.querySelector('.KanbanColumnHeader')?.getAttribute('draggable')).toBe('true')
+        await userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+        expect(screen.getByText('Hide')).toBeDefined()
     })
 })

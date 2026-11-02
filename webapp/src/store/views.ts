@@ -7,6 +7,7 @@ import isEqual from 'lodash/isEqual'
 
 import {BoardView, createBoardView} from '../blocks/boardView'
 import {Utils} from '../utils'
+import {isViewHiddenFrom} from '../viewAccess'
 
 import {initialReadOnlyLoad, loadBoardData} from './initialLoad'
 import {getCurrentBoard} from './boards'
@@ -101,18 +102,34 @@ export const {updateViews, setCurrent, updateView} = viewsSlice.actions
 export const {reducer} = viewsSlice
 
 export const getViews = (state: RootState): {[key: string]: BoardView} => state.views.views
+
+// The server never sends another person's private view, so this is a second
+// line of defence for the list selectors (022). Without a signed-in user (a
+// shared link) nothing is filtered — the server already did.
+const getMyUserId = (state: RootState): string | undefined => state.users.me?.id
+
+const visibleViews = (views: {[key: string]: BoardView}, userId: string | undefined): BoardView[] => {
+    const all = Object.values(views)
+    if (!userId) {
+        return all
+    }
+    return all.filter((view) => !isViewHiddenFrom(view, userId))
+}
+
 export const getSortedViews = createSelector(
     getViews,
-    (views) => {
-        return Object.values(views).sort((a, b) => a.title.localeCompare(b.title)).map((v) => createBoardView(v))
+    getMyUserId,
+    (views, userId) => {
+        return visibleViews(views, userId).sort((a, b) => a.title.localeCompare(b.title)).map((v) => createBoardView(v))
     },
 )
 
 export const getViewsByBoard = createSelector(
     getViews,
-    (views) => {
+    getMyUserId,
+    (views, userId) => {
         const result: {[key: string]: BoardView[]} = {}
-        Object.values(views).forEach((view) => {
+        visibleViews(views, userId).forEach((view) => {
             if (result[view.parentId]) {
                 result[view.parentId].push(view)
             } else {
@@ -132,8 +149,9 @@ export function getView(viewId: string): (state: RootState) => BoardView|null {
 export const getCurrentBoardViews = createSelector(
     (state: RootState) => state.boards.current,
     getViews,
-    (boardId, views) => {
-        const viewsList = Object.values(views).filter((v) => v.boardId === boardId)
+    getMyUserId,
+    (boardId, views, userId) => {
+        const viewsList = visibleViews(views, userId).filter((v) => v.boardId === boardId)
         Utils.log(`getCurrentBoardViews boardId: ${boardId} views: ${viewsList.length}`)
         return viewsList.sort((a, b) => a.title.localeCompare(b.title)).map((v) => createBoardView(v))
     },

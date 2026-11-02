@@ -497,9 +497,36 @@ func (pa *PluginAdapter) sendTeamMessage(event, teamID string, payload map[strin
 // sendBoardMessageSkipCluster sends a message to all the users
 // subscribed to a given team that belong to one of its boards.
 func (pa *PluginAdapter) sendBoardMessageSkipCluster(teamID, boardID string, payload map[string]interface{}, ensureUserIDs ...string) {
+	pa.deliverBoardMessage(teamID, boardID, payload, ensureUserIDs, nil)
+}
+
+// deliverBoardMessage is the one place a board message's recipient list is
+// assembled on this node: the board's audience, plus the ensured users, minus
+// the excluded ones, through the card access filter. Both the direct send and a
+// message arriving from another cluster node come through here.
+func (pa *PluginAdapter) deliverBoardMessage(teamID, boardID string, payload map[string]interface{}, ensureUserIDs, excludeUserIDs []string) {
 	userIDs := pa.getUserIDsForTeamAndBoard(teamID, boardID, ensureUserIDs...)
+	userIDs = withoutUserIDs(userIDs, excludeUserIDs)
 	userIDs = pa.filterBlockRecipients(userIDs, payload)
 	pa.sendUserMessageSkipCluster(websocketActionUpdateBoard, payload, userIDs...)
+}
+
+// withoutUserIDs removes the excluded users from a recipient list.
+func withoutUserIDs(userIDs, excluded []string) []string {
+	if len(excluded) == 0 {
+		return userIDs
+	}
+	drop := make(map[string]bool, len(excluded))
+	for _, userID := range excluded {
+		drop[userID] = true
+	}
+	kept := make([]string, 0, len(userIDs))
+	for _, userID := range userIDs {
+		if !drop[userID] {
+			kept = append(kept, userID)
+		}
+	}
+	return kept
 }
 
 // filterBlockRecipients applies card level access to a board message that
@@ -696,14 +723,50 @@ func (pa *PluginAdapter) BroadcastCategoryBoardChange(teamID, userID string, boa
 }
 
 func (pa *PluginAdapter) BroadcastBlockDelete(teamID, blockID, boardID string) {
+	pa.BroadcastBlockChange(teamID, deletedBlockTombstone(blockID, boardID))
+}
+
+// BroadcastBlockDeleteExcept sends an ID-only tombstone to the board's audience
+// minus the excluded users, on this node and on every other one.
+func (pa *PluginAdapter) BroadcastBlockDeleteExcept(teamID, blockID, boardID string, exceptUserIDs ...string) {
+	pa.logger.Trace("BroadcastBlockDeleteExcept",
+		mlog.String("teamID", teamID),
+		mlog.String("boardID", boardID),
+		mlog.String("blockID", blockID),
+		mlog.Int("excluded", len(exceptUserIDs)),
+	)
+
+	message := UpdateBlockMsg{
+		Action: websocketActionUpdateBlock,
+		TeamID: teamID,
+		Block:  deletedBlockTombstone(blockID, boardID),
+	}
+	payload := utils.StructToMap(message)
+
+	go func() {
+		clusterMessage := &ClusterMessage{
+			TeamID:       teamID,
+			BoardID:      boardID,
+			Payload:      payload,
+			ExcludeUsers: exceptUserIDs,
+		}
+
+		pa.sendMessageToCluster(clusterMessage)
+	}()
+
+	pa.deliverBoardMessage(teamID, boardID, payload, nil, exceptUserIDs)
+}
+
+// deletedBlockTombstone is the block a deletion is announced with when the
+// deleted block itself is not to be sent: the ID, the board, and the time.
+func deletedBlockTombstone(blockID, boardID string) *model.Block {
 	now := utils.GetMillis()
 	block := &model.Block{}
 	block.ID = blockID
 	block.BoardID = boardID
 	block.UpdateAt = now
 	block.DeleteAt = now
-
-	pa.BroadcastBlockChange(teamID, block)
+	return block
 }
 
 func (pa *PluginAdapter) BroadcastBoardChange(teamID string, board *model.Board) {

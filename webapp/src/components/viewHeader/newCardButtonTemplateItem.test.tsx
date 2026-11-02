@@ -33,6 +33,7 @@ describe('components/viewHeader/newCardButtonTemplateItem', () => {
                 id: 'user-id-1',
                 username: 'username_1'},
         },
+        teams: {current: {id: 'team-id'}},
         boards: {
             current: board.id,
             boards: {
@@ -143,5 +144,56 @@ describe('components/viewHeader/newCardButtonTemplateItem', () => {
         await userEvent.click(buttonSetAsDefault)
         expect(mockedMutator.setDefaultTemplate).toBeCalledTimes(1)
         expect(mockedMutator.setDefaultTemplate).toBeCalledWith(activeView.boardId, activeView.id, activeView.fields.defaultTemplateId, card.id)
+    })
+})
+
+// 022 U-08 — same lock as the empty card item.
+describe('components/viewHeader/newCardButtonTemplateItem admin-only view', () => {
+    beforeEach(() => {
+        jest.clearAllMocks()
+    })
+
+    const lockedView = TestBlockFactory.createBoardView(board)
+    lockedView.id = 'locked-view'
+    lockedView.createdBy = 'someone-else'
+    lockedView.fields.accessMode = 'admin'
+
+    const renderAs = (membership: Record<string, unknown>) => render(
+        wrapIntl(
+            <ReduxProvider store={mockStateStore([], {
+                users: {me: {id: 'user-id-1', username: 'username_1', props: {}}},
+                teams: {current: {id: 'team-id'}},
+                boards: {
+                    current: board.id,
+                    boards: {[board.id]: board},
+                    myBoardMemberships: {[board.id]: {userId: 'user-id-1', ...membership}},
+                },
+                views: {current: lockedView.id, views: {[lockedView.id]: lockedView}},
+            })}
+            >
+                <NewCardButtonTemplateItem
+                    cardTemplate={card}
+                    addCardFromTemplate={jest.fn()}
+                    editCardTemplate={jest.fn()}
+                />
+            </ReduxProvider>,
+        ),
+    )
+
+    test('an editor sees "Set as default" disabled', async () => {
+        renderAs({schemeEditor: true})
+        await userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+
+        const item = await screen.findByRole('button', {name: 'Set as default'})
+        expect(item).toHaveClass('menu-option--disabled')
+        await userEvent.click(item)
+        expect(mockedMutator.setDefaultTemplate).not.toHaveBeenCalled()
+    })
+
+    test('a board admin keeps it', async () => {
+        renderAs({schemeAdmin: true})
+        await userEvent.click(await screen.findByRole('button', {name: 'menuwrapper'}))
+
+        expect(await screen.findByRole('button', {name: 'Set as default'})).not.toHaveClass('menu-option--disabled')
     })
 })

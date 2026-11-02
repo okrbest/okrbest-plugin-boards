@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 
-import {IntlShape} from 'react-intl'
+import React from 'react'
+import {FormattedMessage, IntlShape} from 'react-intl'
 import {batch} from 'react-redux'
 import cloneDeep from 'lodash/cloneDeep'
 
@@ -10,6 +11,7 @@ import {BlockIcons} from './blockIcons'
 import {Block, BlockPatch, createPatchesFromBlocks} from './blocks/block'
 import {Board, BoardMember, BoardsAndBlocks, IPropertyOption, IPropertyTemplate, PropertyTypeEnum, createBoard, createPatchesFromBoards, createPatchesFromBoardsAndBlocks, createCardPropertiesPatches} from './blocks/board'
 import {BoardView, ISortOption, createBoardView, KanbanCalculationFields} from './blocks/boardView'
+import {ViewAccessMode} from './viewAccess'
 import {Card, createCard} from './blocks/card'
 import {CommentBlock} from './blocks/commentBlock'
 import {AttachmentBlock} from './blocks/attachmentBlock'
@@ -75,8 +77,14 @@ async function warnIfRefused(response: Response): Promise<Response> {
     // transport gave them, and a missing response must not turn a save into a
     // crash on the way to reporting it.
     if (response?.status === 403) {
+        // Neutral wording: a refusal here may be about a card or, since 022,
+        // about a view's configuration. The message is an element so the
+        // string stays an i18n message without an intl instance in this module.
         sendFlashMessage({
-            content: '이 카드를 편집할 권한이 없습니다.',
+            content: React.createElement(FormattedMessage, {
+                id: 'Mutator.edit-refused',
+                defaultMessage: "You don't have permission to edit this item.",
+            }),
             severity: 'high',
         })
     }
@@ -1140,6 +1148,48 @@ class Mutator {
             if (previousView) {
                 store.dispatch(updateView(previousView))
             }
+            throw err
+        }
+    }
+
+    // Who may see the view and who may change it (022). The server judges the
+    // transition; a refusal puts the view back the way it was and tells the user.
+    async changeViewAccessMode(boardId: string, viewId: string, oldMode: ViewAccessMode, newMode: ViewAccessMode): Promise<void> {
+        if (oldMode === newMode) {
+            return
+        }
+        const previousView = store.getState().views.views[viewId]
+        const optimisticView = previousView ? createBoardView(previousView) : undefined
+        if (optimisticView) {
+            optimisticView.fields.accessMode = newMode
+        }
+
+        const restore = () => {
+            if (previousView) {
+                store.dispatch(updateView(previousView))
+            }
+        }
+
+        try {
+            await undoManager.perform(
+                async () => {
+                    if (optimisticView) {
+                        store.dispatch(updateView(optimisticView))
+                    }
+                    const response = await warnIfRefused(await octoClient.patchBlock(boardId, viewId, {updatedFields: {accessMode: newMode}}))
+                    if (response?.status !== 200) {
+                        restore()
+                    }
+                },
+                async () => {
+                    restore()
+                    await octoClient.patchBlock(boardId, viewId, {updatedFields: {accessMode: oldMode}})
+                },
+                'change view access',
+                this.undoGroupId,
+            )
+        } catch (err) {
+            restore()
             throw err
         }
     }
